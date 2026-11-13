@@ -434,3 +434,28 @@ async def test_one_email_is_one_person(engine: AsyncEngine) -> None:
             await records.create("sys.person", {"name": "Case", "email": email.lower()})
     assert made.values["email"] == email.lower()
     assert [e.code for e in twice.value.errors] == ["not_unique"]
+
+
+async def test_another_app_while_signed_in(
+    engine: AsyncEngine, sealer: Sealer, upgraded: Settings, anonymous: None
+) -> None:
+    person = await _person(engine, sealer)
+    clock = Clock(datetime.now(UTC) + timedelta(minutes=2))
+    sign_in = _sign_in(engine, sealer, clock, upgraded)
+
+    async def signed_in() -> str:
+        clock.moment += timedelta(seconds=30)
+        waiting = await sign_in.start(person.email, PASSWORD)
+        return (await sign_in.finish(waiting.token, clock.code(person.key))).token
+
+    here, elsewhere = await signed_in(), await signed_in()
+    made = await sign_in.add_app(here, "Tablet")
+    assert await sign_in.confirm_app(here, made.credential, clock.code(_key(made))) == []
+    with pytest.raises(Problem):
+        await sign_in.session(elsewhere)  # adding a second factor ends the other sessions
+    for _ in range(3):  # 45 minutes later, used all along
+        clock.moment += timedelta(minutes=15)
+        await sign_in.session(here)
+    with pytest.raises(Problem) as stale:
+        await sign_in.add_app(here, "Old")
+    assert stale.value.code == "verify_again"

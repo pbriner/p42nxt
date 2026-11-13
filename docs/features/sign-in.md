@@ -19,7 +19,16 @@ The HTTP routes and the browser cookie come with the web layer; this is the serv
 - **Authenticator apps** (TOTP, RFC 6238): six digits, every 30 seconds. A code is accepted for
   the current step and one either side, and each step only once. The app's key is shown once
   (as a key and an `otpauth://` link for a QR code) and stored sealed with the master key.
-- An app counts once it gave its first right code. Adding one ends the person's other sessions.
+- An app counts once it gave its first right code.
+- **Passkeys and security keys** (WebAuthn): the browser signs a fresh challenge with a key that
+  never leaves the device, and only for this installation's address, so a look-alike site gets
+  nothing it could use. The installation keeps the public key, the passkey's ID and its signature
+  counter; a counter going backwards means the key was copied, and is refused. Each challenge
+  works once. Passkeys need `P42_PUBLIC_URL` (below); without it they're unavailable and
+  authenticator apps still work.
+- **Adding a second factor** while signed in needs the second factor given in the last 15
+  minutes, so whoever took over an open session can't add a key of their own. It ends the
+  person's other sessions.
 - **Recovery codes**: ten one-time codes (`ABCD-EFGH-JKLM-NPQR`), shown once when the first app is
   set up; new ones replace the old ones. Only their hashes are stored.
 - There's no SMS, and no way to switch the second factor off.
@@ -28,8 +37,9 @@ The HTTP routes and the browser cookie come with the web layer; this is the serv
 
 1. **Email and password.** A wrong password, an unknown email and an inactive person get the same
    answer after the same time. Someone without a second factor yet can only set one up.
-2. **The second factor.** An authenticator code or a recovery code. The waiting session ends and a
-   new one begins, with a new token.
+2. **The second factor.** An authenticator code, a recovery code, or a passkey. The waiting
+   session ends and a new one begins, with a new token. Someone without a second factor sets one
+   up here first (an app or a passkey) and gets their recovery codes.
 
 Waiting sessions end after 10 minutes.
 
@@ -43,12 +53,18 @@ Waiting sessions end after 10 minutes.
 - **Changes to access** (groups, memberships, roles, grants) need the second factor given in the
   last 15 minutes. Giving it again doesn't start a new session.
 
+## The installation's address
+
+`P42_PUBLIC_URL` is the address people open the app at, like `https://p42.example.com`: scheme
+and host (and port), nothing after. Passkeys are bound to it. In production it must use https,
+except for `localhost`.
+
 ## Slowing guessing down
 
 Every failed attempt is a security event. After 5 failures within 15 minutes for one email
 address (whether an account has it or not), or 20 from one network address, further attempts
-are refused for 15 minutes, with the right password too. The same goes for 5 wrong codes for one
-person, both while signing in and when giving the code again.
+are refused for 15 minutes, with the right password too. The same goes for 5 wrong codes or
+passkey answers for one person, both while signing in and when giving them again.
 
 ## Security events
 
@@ -58,7 +74,8 @@ Entries of the audit log without a record: `sign_in`, `sign_in_failed`, `second_
 
 ## Credentials and secrets
 
-Credentials (password hashes, sealed app keys, recovery code hashes) are `Secret` fields: never
+Credentials (password hashes, sealed app keys, passkeys' public keys, recovery code hashes) are
+`Secret` fields: never
 returned by the records service and masked in the audit log. Nobody has a grant on them.
 
 ## The master key

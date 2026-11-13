@@ -15,17 +15,26 @@ CREDENTIAL = Table(
         "person": Reference("Person", "sys.person", required=True),
         "kind": Choice(
             "Kind",
-            {"password": "Password", "totp": "Authenticator app", "recovery": "Recovery code"},
+            {
+                "password": "Password",
+                "totp": "Authenticator app",
+                "passkey": "Passkey or security key",
+                "recovery": "Recovery code",
+            },
             required=True,
         ),
-        # A password's hash, an authenticator's key sealed with the master key, or a recovery
-        # code's hash. Never read back, masked in the audit log.
+        # A password's hash, an authenticator's key sealed with the master key, a passkey's
+        # public key, or a recovery code's hash. Never read back, masked in the audit log.
         "secret": Secret("Secret", required=True),
         "label": String("Name", max_length=80),
         # An authenticator app counts once it gave a right code.
         "confirmed": DateTime("Confirmed"),
         # The last time step an authenticator's code was used: a code works only once.
         "last_step": Integer("Last step"),
+        # A passkey's ID, as the browser names it, and its signature counter: a counter going
+        # backwards means the key was copied.
+        "key_id": String("Passkey ID", max_length=1024),
+        "counter": Integer("Signature counter"),
         "last_used": DateTime("Last used"),
     },
     label_plural="Credentials",
@@ -50,6 +59,8 @@ SESSION = Table(
         "expires": DateTime("Ends at the latest", required=True),
         "last_seen": DateTime("Last used", required=True),
         "verified": DateTime("Second factor given"),
+        # A passkey challenge waiting for its answer; each works once.
+        "challenge": String("Passkey challenge", max_length=128),
         "address": String("Address", max_length=64),
         "agent": String("Browser", max_length=255),
     },

@@ -85,7 +85,8 @@ async def has_second_factor(conn: AsyncConnection, person: UUID) -> bool:
         await conn.scalar(
             text(
                 "SELECT EXISTS (SELECT 1 FROM sys.credential WHERE person = :p AND deleted IS NULL"
-                " AND (kind = 'recovery' OR (kind = 'totp' AND confirmed IS NOT NULL)))"
+                " AND (kind = 'recovery'"
+                " OR (kind IN ('totp', 'passkey') AND confirmed IS NOT NULL)))"
             ),
             {"p": person},
         )
@@ -145,6 +146,12 @@ async def confirm_totp(  # noqa: PLR0913 - the clock is passed in for tests
         {"now": now, "step": step, "id": credential},
     )
     await event(conn, "second_factor_added", person=str(person))
+    return await recovery_codes_if_none(conn, person)
+
+
+async def recovery_codes_if_none(conn: AsyncConnection, person: UUID) -> list[str]:
+    """New recovery codes with the first second factor; none if the person has some."""
+    await switch_role(conn, "sys")
     has_codes = await conn.scalar(
         text(
             "SELECT EXISTS (SELECT 1 FROM sys.credential WHERE person = :p"
