@@ -12,9 +12,9 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from p42.kernel.config import Settings
-from p42.kernel.db import create_engine
-from p42.kernel.setup import set_up_database
+from p42cloud.kernel.config import Settings
+from p42cloud.kernel.db import create_engine
+from p42cloud.kernel.setup import set_up_database
 
 ADMIN_URL = os.environ.get(
     "P42_TEST_ADMIN_URL", "postgresql+asyncpg://p42_admin:p42-admin-dev-only@localhost:5435/p42"

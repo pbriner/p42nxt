@@ -1,4 +1,5 @@
-# Local development: docker compose up -d
+# Local development (the dev instance, p42cloud-dev): docker compose up -d
+name: p42cloud-dev
 # Port 5435, so it doesn't clash with other local PostgreSQL instances.
 services:
   postgres:

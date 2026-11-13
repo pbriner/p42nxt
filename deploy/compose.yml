@@ -1,4 +1,4 @@
-# One installation: its database and the p42 app image. Created by install.sh, which writes the
+# One P42cloud installation: its database and the p42cloud app image. Created by install.sh, which writes the
 # .env next to this file. The database isn't reachable from outside the installation.
 name: ${COMPOSE_PROJECT_NAME}
 

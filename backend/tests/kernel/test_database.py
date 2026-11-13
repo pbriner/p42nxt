@@ -5,11 +5,11 @@ from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from p42.kernel.config import Settings
-from p42.kernel.context import Context, working_as
-from p42.kernel.db import module_role, transaction
-from p42.kernel.safety import problems
-from p42.kernel.setup import set_up_database
+from p42cloud.kernel.config import Settings
+from p42cloud.kernel.context import Context, working_as
+from p42cloud.kernel.db import module_role, transaction
+from p42cloud.kernel.safety import problems
+from p42cloud.kernel.setup import set_up_database
 from tests.conftest import ADMIN_URL
 
 

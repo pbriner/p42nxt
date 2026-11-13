@@ -42,7 +42,7 @@ Every feature is a documented HTTP API first. Everything else is a client of tha
 The core is the module `sys`. It has a manifest and a version, and its tables, fields, roles,
 views, navigation, widgets, jobs and help become records through install and upgrade, exactly
 like any other module's. Modules depend on it the same way they depend on each other:
-`depends_on={"sys": ">=1.2,<2"}`. Its code is the layers in `backend/src/p42` rather than a
+`depends_on={"sys": ">=1.2,<2"}`. Its code is the layers in `backend/src/p42cloud` rather than a
 folder in `modules/`.
 
 What isn't a module is the **engine**: the small part that starts the app, reads the metadata
@@ -59,7 +59,7 @@ disabled and removed on its own, as long as the version ranges in `depends_on` h
   indirectly) are core dependencies: installed with the core, always enabled, never disabled or
   removed. They're still upgraded on their own, within the ranges the core declares. The mark
   comes from the dependency graph, never from a flag a module sets on itself.
-- **A core dependency uses only the engine** (`p42.sdk`), never the core's tables or features,
+- **A core dependency uses only the engine** (`p42cloud.sdk`), never the core's tables or features,
   and is installed before `sys`.
 - A module can't be enabled before the modules it depends on, and a module others depend on
   can't be disabled or removed while they are enabled.
@@ -79,7 +79,7 @@ setting, and some protections can't be switched off at all (deny by default, the
 second factor with every password). Every feature is built and reviewed against the OWASP Top 10
 (2025):
 
-| Risk | How P42 counters it |
+| Risk | How P42cloud counters it |
 |---|---|
 | A01 Broken access control | Deny by default; every route declares its permission; record and field conditions are applied in SQL; records out of reach answer 404; each module's database role writes only its own schema |
 | A02 Security misconfiguration | Safe defaults for every setting; the app refuses to start on an unsafe database or unsafe settings; no debug output in production |
@@ -116,7 +116,7 @@ second factor with every password). Every feature is built and reviewed against 
 
 ## Layers
 
-The platform (`backend/src/p42`) is split into layers. A layer may import only the layers below
+The platform (`backend/src/p42cloud`) is split into layers. A layer may import only the layers below
 it, never the ones above. CI enforces this (`lint-imports`, contracts in
 `backend/pyproject.toml`).
 
@@ -172,8 +172,8 @@ feature manifests; there is no single large manifest file.
 
 ```
 modules/<id>/
-  pyproject.toml   package p42-<id> and its version (the only place the version lives)
-  src/p42_<id>/
+  pyproject.toml   package p42cloud-<id> and its version (the only place the version lives)
+  src/p42cloud_<id>/
     __init__.py    module = Module(...): the manifest, assembled from the parts below
     models.py, service.py, api.py, views.py, widgets.py, jobs.py, samples.py
   ui/              only if the module has its own screens (separate bundle)
@@ -187,7 +187,7 @@ modules/<id>/
 - **Each module is released on its own**: a change raises its version and adds a
   `CHANGELOG.md` entry (CI checks it); a tag per module (`task/v1.4.0`) builds, tests against
   its `depends_on` range, signs and publishes it.
-- **A module imports only `p42.sdk`**, never another module's code. CI enforces this.
+- **A module imports only `p42cloud.sdk`**, never another module's code. CI enforces this.
 - **Other modules' data goes through their API**, with the SDK's in-process client: the same
   routes, JSON, errors and access checks as over HTTP, without the network. Inside a request it
   shares the request's transaction.
@@ -203,7 +203,7 @@ modules/<id>/
 
 ## Field types
 
-One unit per type: `backend/src/p42/data/types/<type>.py` (storage, validation, filters,
+One unit per type: `backend/src/p42cloud/data/types/<type>.py` (storage, validation, filters,
 schema) and `frontend/src/app/field-types/<type>/` (editor, display, filter). Field types are
 records too; a field's record names its type, and the frontend looks the name up in its
 registry. Adding a type means adding these two files and nothing else.

@@ -5,7 +5,7 @@ import pkgutil
 import tomllib
 from pathlib import Path
 
-import p42
+import p42cloud
 
 PYPROJECT = Path(__file__).parents[1] / "pyproject.toml"
 
@@ -17,7 +17,9 @@ def declared_layers() -> set[str]:
 
 
 def test_every_package_is_in_a_layer() -> None:
-    packages = {f"p42.{info.name}" for info in pkgutil.iter_modules(p42.__path__) if info.ispkg}
+    packages = {
+        f"p42cloud.{info.name}" for info in pkgutil.iter_modules(p42cloud.__path__) if info.ispkg
+    }
     assert packages == declared_layers()
 
 

@@ -1,4 +1,4 @@
-"""The p42 command line.
+"""The p42cloud command line.
 
 Only the operator commands that must run before the app exists work on the database directly
 (docs/architecture.md, principle 2); everything else will go through the API.
@@ -9,10 +9,10 @@ import asyncio
 import os
 import sys
 
-from p42.kernel.config import get_settings
-from p42.kernel.db import create_engine
-from p42.kernel.safety import problems
-from p42.kernel.setup import set_up_database
+from p42cloud.kernel.config import get_settings
+from p42cloud.kernel.db import create_engine
+from p42cloud.kernel.safety import problems
+from p42cloud.kernel.setup import set_up_database
 
 
 async def _set_up() -> int:
@@ -41,7 +41,7 @@ async def _check() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="p42")
+    parser = argparse.ArgumentParser(prog="p42cloud")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser(
         "setup-database", help="create the roles and the core's schema (administrator, once)"

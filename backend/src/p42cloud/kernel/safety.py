@@ -7,7 +7,7 @@ found too.
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from p42.kernel.db import APP_ROLE, MODULE_ROLE_PREFIX, OWNER_ROLE
+from p42cloud.kernel.db import APP_ROLE, MODULE_ROLE_PREFIX, OWNER_ROLE
 
 MIN_SERVER_VERSION = 180000  # PostgreSQL 18: uuidv7(), virtual columns
 

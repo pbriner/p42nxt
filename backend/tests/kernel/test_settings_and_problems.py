@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from p42.kernel.config import Settings
-from p42.kernel.errors import FieldError, Problem
+from p42cloud.kernel.config import Settings
+from p42cloud.kernel.errors import FieldError, Problem
 
 APP = "postgresql+asyncpg://p42_app:secret-1@db/p42"
 OWNER = "postgresql+asyncpg://p42_owner:secret-2@db/p42"

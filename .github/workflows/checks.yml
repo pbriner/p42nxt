@@ -58,12 +58,12 @@ jobs:
           echo "P42_HOME=$RUNNER_TEMP/p42" >> "$GITHUB_ENV"
           echo "P42_BACKUPS=$RUNNER_TEMP/backups" >> "$GITHUB_ENV"
       - name: Image
-        run: docker build -t p42:ci .
+        run: docker build -t p42cloud:ci .
       - name: Install
-        run: deploy/install.sh ci --image p42:ci
+        run: deploy/install.sh ci --image p42cloud:ci
       - name: A second install under the same name is refused
         run: |
-          if deploy/install.sh ci --image p42:ci; then
+          if deploy/install.sh ci --image p42cloud:ci; then
             echo "the installer took over an existing installation" >&2; exit 1
           fi
       - name: Database log (when it fails)
