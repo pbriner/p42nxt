@@ -73,6 +73,24 @@ A table that a reference still points to can't be retired.
 The engine also refuses to narrow a column if a metadata record asks for it directly. Its
 constraints and indexes are named `p42_<field>_<kind><hash>`, after their definition.
 
+## Administrators' own tables
+
+Administrators build tables in the app (`POST /api/v1/tables`), in the schema `u` (`u.<name>`),
+with the same field types and the same rules as tables modules declare.
+
+- Their records and the database change together, as the owner role, in one transaction.
+- Only administrators may, with the second factor given in the last 15 minutes (so not with an
+  API token).
+- Each table gets two roles: `u.<name>.reader` (read) and `u.<name>.editor` (everything). They're
+  given to groups like any role, and custom roles may copy their grants. Being an administrator
+  doesn't make one a reader of every table.
+- Retiring one (`DELETE /api/v1/tables/<name>`) hides it and retires its roles; the data stays.
+
+## Display field
+
+A table names the field that names its records where they're referenced (`display=` in the
+declaration). Without one: `name` if the table has it, else its first text field.
+
 ## Metadata tables
 
 | Table | Holds |

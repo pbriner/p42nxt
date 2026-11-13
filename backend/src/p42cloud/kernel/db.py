@@ -18,7 +18,8 @@ from p42cloud.kernel.context import current
 OWNER_ROLE = "p42_owner"
 APP_ROLE = "p42_app"
 MODULE_ROLE_PREFIX = "p42_mod_"
-_MODULE_ID = re.compile(r"^[a-z][a-z0-9]{1,15}$")
+# A module's ID, or `u`: the schema of the tables admins build in the app.
+_MODULE_ID = re.compile(r"^(u|[a-z][a-z0-9]{1,15})$")
 
 
 def module_role(module_id: str) -> str:
@@ -35,6 +36,23 @@ async def run_script(conn: AsyncConnection, sql: str) -> None:
     """
     raw = await conn.get_raw_connection()
     await raw.driver_connection.execute(sql)  # pyright: ignore[reportOptionalMemberAccess, reportUnknownMemberType]
+
+
+async def ensure_module_role(conn: AsyncConnection, module_id: str) -> None:
+    """The module's database role, and the app's right to switch to it (as the owner)."""
+    role = module_role(module_id)  # checked, so it's safe in the statement
+    exists = await conn.scalar(text("SELECT 1 FROM pg_roles WHERE rolname = :r"), {"r": role})
+    if not exists:
+        await conn.execute(text(f'CREATE ROLE "{role}" NOLOGIN NOINHERIT'))
+    member = await conn.scalar(
+        text(
+            "SELECT 1 FROM pg_auth_members m JOIN pg_roles g ON g.oid = m.roleid"
+            " JOIN pg_roles u ON u.oid = m.member WHERE g.rolname = :r AND u.rolname = :app"
+        ),
+        {"r": role, "app": APP_ROLE},
+    )
+    if not member:
+        await conn.execute(text(f'GRANT "{role}" TO {APP_ROLE} WITH INHERIT FALSE, SET TRUE'))
 
 
 def create_engine(url: str) -> AsyncEngine:

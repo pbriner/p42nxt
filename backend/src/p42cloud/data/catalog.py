@@ -41,6 +41,17 @@ class TableDef:
     retired: bool = False
     owner_field: str | None = None  # a personal table: the field naming each record's owner
     switched_off: bool = False  # its module is switched off
+    display_field: str | None = None  # declared; see `display`
+
+    @property
+    def display(self) -> str | None:
+        """The field that names a record: declared, else `name`, else the first text field."""
+        fields = {f.name: f for f in self.active_fields()}
+        if self.display_field in fields:
+            return self.display_field
+        if "name" in fields:
+            return "name"
+        return next((n for n, f in fields.items() if f.type.kind in ("text", "translated")), None)
 
     @property
     def key(self) -> str:
@@ -60,7 +71,8 @@ class Catalog:
 
 _TABLES = text(
     'SELECT sys_id, "schema", name, label, label_plural, unique_together, owner_field,'
-    " coalesce(switched_off, false) AS switched_off, deleted IS NOT NULL AS retired"
+    " coalesce(switched_off, false) AS switched_off, display_field,"
+    " deleted IS NOT NULL AS retired"
     ' FROM sys."table"'
 )
 _FIELDS = text(
@@ -104,6 +116,7 @@ async def load_catalog(conn: AsyncConnection) -> Catalog:
             retired=row.retired,
             owner_field=row.owner_field,
             switched_off=row.switched_off,
+            display_field=row.display_field,
         )
         tables[table.key] = table
     return Catalog(tables)

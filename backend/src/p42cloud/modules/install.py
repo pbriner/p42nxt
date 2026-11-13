@@ -20,7 +20,7 @@ from p42cloud.data.catalog import load_catalog
 from p42cloud.data.hooks import HOOKS
 from p42cloud.data.metadata import declare
 from p42cloud.data.upgrade import upgrade
-from p42cloud.kernel.db import APP_ROLE, module_role, owner_transaction
+from p42cloud.kernel.db import ensure_module_role, owner_transaction
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.modules.manifest import CORE, Module
 from p42cloud.security.access.roles import write_roles
@@ -79,23 +79,6 @@ def compose(modules: list[Module]) -> None:
     for module in modules:
         HOOKS.add(*module.hooks)
         settings.declare(*module.settings)
-
-
-async def ensure_role(conn: AsyncConnection, module: str) -> None:
-    """The module's database role, and the app's right to switch to it."""
-    role = module_role(module)  # checked, so it's safe in the statement
-    exists = await conn.scalar(text("SELECT 1 FROM pg_roles WHERE rolname = :r"), {"r": role})
-    if not exists:
-        await conn.execute(text(f'CREATE ROLE "{role}" NOLOGIN NOINHERIT'))
-    member = await conn.scalar(
-        text(
-            "SELECT 1 FROM pg_auth_members m JOIN pg_roles g ON g.oid = m.roleid"
-            " JOIN pg_roles u ON u.oid = m.member WHERE g.rolname = :r AND u.rolname = :app"
-        ),
-        {"r": role, "app": APP_ROLE},
-    )
-    if not member:
-        await conn.execute(text(f'GRANT "{role}" TO {APP_ROLE} WITH INHERIT FALSE, SET TRUE'))
 
 
 def _pages(folder: Path) -> list[tuple[str, str, str]]:
@@ -247,7 +230,7 @@ async def install_modules(
             done += await upgrade(engine, list(module.tables))
         async with owner_transaction(engine) as conn:
             if module.id != CORE:
-                await ensure_role(conn, module.id)
+                await ensure_module_role(conn, module.id)
                 done += await declare(conn, module.id, list(module.tables))
             catalog = await load_catalog(conn)
             await write_roles(conn, catalog, module.id, list(module.roles))

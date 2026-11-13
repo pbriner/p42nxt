@@ -8,7 +8,9 @@
     POST   /api/v1/<module>/<table>/<id>/restore    restore
 
 Filters come as `filter[field][op]=value` (all ANDed; lists comma-separated) and as
-`where=<JSON>` for anything with OR or NOT; both together are ANDed.
+`where=<JSON>` for anything with OR or NOT; both together are ANDed. Lists and single records
+carry `_display` (references and choices named) and `_access` (what the caller may do with the
+record); `fields=a,b` keeps only those fields.
 """
 
 import json
@@ -18,6 +20,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
 
+from p42cloud.data.presenting import annotate
 from p42cloud.kernel.errors import Problem
 from p42cloud.web.caller import Caller, language, who
 from p42cloud.web.permissions import SIGNED_IN, requires
@@ -54,6 +57,18 @@ def _condition(request: Request, where: str | None) -> Any:
     return parts[0] if len(parts) == 1 else {"and": parts}
 
 
+_ALWAYS = frozenset({"sys_id", "_etag", "_display", "_access"})
+
+
+def _only(body: dict[str, Any], fields: str | None) -> dict[str, Any]:
+    if not fields:
+        return body
+    wanted = {f for f in fields.split(",") if f} | _ALWAYS
+    kept = {k: v for k, v in body.items() if k in wanted}
+    kept["_display"] = {k: v for k, v in body.get("_display", {}).items() if k in wanted}
+    return kept
+
+
 def _key(module: str, table: str) -> str:
     return f"{module}.{table}"
 
@@ -76,6 +91,7 @@ async def list_records(
     after: str | None = None,
     count: bool = True,
     deleted: bool = False,
+    fields: str | None = None,
 ) -> dict[str, Any]:
     services: Services = request.app.state.services
     key = _key(module, table)
@@ -89,9 +105,9 @@ async def list_records(
             count=count,
             deleted=deleted,
         )
-        found = [records.to_json(records.catalog.tables[key], r) for r in page.records]
+        found = await annotate(records, records.catalog.tables[key], page.records)
     return {
-        "records": found,
+        "records": [_only(r, fields) for r in found],
         "next": page.next,
         "total": page.total,
         "total_exact": page.total_exact,
@@ -120,13 +136,20 @@ async def create_record(
 @router.get("/{module}/{table}/{sys_id}")
 @requires(SIGNED_IN)
 async def read_record(
-    module: str, table: str, sys_id: UUID, request: Request, response: Response, caller: Who
+    module: str,
+    table: str,
+    sys_id: UUID,
+    request: Request,
+    response: Response,
+    caller: Who,
+    fields: str | None = None,
 ) -> dict[str, Any]:
     services: Services = request.app.state.services
     key = _key(module, table)
     async with services.records(caller.context(language(request))) as records:
-        found = records.to_json(records.catalog.tables[key], await records.read(key, sys_id))
-    return _one(response, found)
+        record = await records.read(key, sys_id)
+        (found,) = await annotate(records, records.catalog.tables[key], [record])
+    return _one(response, _only(found, fields))
 
 
 @router.patch("/{module}/{table}/{sys_id}")

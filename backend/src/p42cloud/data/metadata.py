@@ -48,6 +48,7 @@ METADATA_TABLES = [
             "owner_field": String("Owner field", max_length=40),
             # Its module is switched off: nobody reads or writes it until it's on again.
             "switched_off": Boolean("Switched off", required=True, default=False),
+            "display_field": String("Display field", max_length=40),
         },
         label_plural="Tables",
         unique_together=(("schema", "name"),),
@@ -113,7 +114,8 @@ async def sync_field_types(conn: AsyncConnection) -> None:
 _TABLE_VALUES = (
     '"schema" = :schema, name = :name, label = CAST(:label AS jsonb),'
     " label_plural = CAST(:label_plural AS jsonb),"
-    " unique_together = CAST(:unique_together AS jsonb), owner_field = :owner_field"
+    " unique_together = CAST(:unique_together AS jsonb), owner_field = :owner_field,"
+    " display_field = :display_field"
 )
 _FIELD_COLUMNS = (
     '"table", name, type, label, help, options, required, "unique", "default", personal, position'
@@ -132,6 +134,7 @@ async def _write_table(conn: AsyncConnection, schema: str, declared: Table) -> u
         "label_plural": _json({"en": declared.label_plural} if declared.label_plural else None),
         "unique_together": _json([list(u) for u in declared.unique_together] or None),
         "owner_field": declared.owner,
+        "display_field": declared.display,
     }
     row_id = await conn.scalar(
         text('SELECT sys_id FROM sys."table" WHERE "schema" = :schema AND name = :name'), values
@@ -141,9 +144,9 @@ async def _write_table(conn: AsyncConnection, schema: str, declared: Table) -> u
             text(
                 'INSERT INTO sys."table"'
                 ' ("schema", name, label, label_plural, unique_together, owner_field,'
-                " switched_off) VALUES (:schema, :name, CAST(:label AS jsonb),"
+                " display_field, switched_off) VALUES (:schema, :name, CAST(:label AS jsonb),"
                 " CAST(:label_plural AS jsonb), CAST(:unique_together AS jsonb), :owner_field,"
-                " false) RETURNING sys_id"
+                " :display_field, false) RETURNING sys_id"
             ),
             values,
         )
@@ -224,7 +227,9 @@ async def _write_fields(
     )
 
 
-async def write_declarations(conn: AsyncConnection, schema: str, tables: list[Table]) -> None:
+async def write_declarations(
+    conn: AsyncConnection, schema: str, tables: list[Table], *, retire_others: bool = True
+) -> None:
     """Writes a module's tables into the metadata records; what it no longer declares is retired.
 
     Retired tables and fields keep their records, columns and data, hidden and read-only.
@@ -239,6 +244,8 @@ async def write_declarations(conn: AsyncConnection, schema: str, tables: list[Ta
     for declared in tables:
         table_id = await _write_table(conn, schema, declared)
         await _write_fields(conn, f"{schema}.{declared.name}", table_id, declared, types)
+    if not retire_others:  # one table changed on its own (admins' tables)
+        return
     await conn.execute(
         text(
             'UPDATE sys."table" SET deleted = now()'

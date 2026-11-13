@@ -114,8 +114,10 @@ def _values(change: Change, before: dict[str, Any], name: str) -> list[Any]:
 
 
 async def holds_admin(conn: AsyncConnection, groups: frozenset[uuid.UUID]) -> bool:
-    """Whether one of these groups holds sys.admin (directly or through an included role)."""
-    await switch_role(conn, "sys")
+    """Whether one of these groups holds sys.admin (directly or through an included role).
+
+    On the caller's connection as it is: the core's role, or the owner's.
+    """
     return bool(await conn.scalar(_HOLDS_ADMIN, {"groups": list(groups)}))
 
 
