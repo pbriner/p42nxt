@@ -8,12 +8,40 @@ that another grant lets one see.
 
 Deny by default: no permit, no access. A permit whose condition can't be built any more (its
 field was retired) grants nothing.
+
+Personal tables (budgets, portfolios) name each record's owner. Only the owner and those they
+share a record with see it, whatever the grants say: no group, role or admin overrides that, only
+the system itself (installing, its own jobs). Shares are records of `sys.share`: read or edit,
+optionally until a time.
 """
 
 from p42cloud.data.catalog import Catalog, TableDef
 from p42cloud.data.conditions import SYSTEM_FIELDS, Filter, Query, Situation
+from p42cloud.data.declarations import Table
+from p42cloud.data.sql import ident
+from p42cloud.data.types.any_record import AnyRecord
+from p42cloud.data.types.boolean import Boolean
+from p42cloud.data.types.datetime import DateTime
+from p42cloud.data.types.reference import Reference
 from p42cloud.kernel.context import Access, Permit
 from p42cloud.kernel.errors import Problem
+
+SHARE = Table(
+    "share",
+    "Share",
+    {
+        "table": Reference("Table", "sys.table", required=True),
+        "record": AnyRecord("Record", required=True),
+        "person": Reference("Shared with", "sys.person", required=True),
+        "edit": Boolean("May change it", required=True, default=False),
+        "until": DateTime("Until"),
+        # Set by the system to the record's owner when the share is made.
+        "owner": Reference("Shared by", "sys.person"),
+    },
+    label_plural="Shares",
+    unique_together=(("table", "record", "person"),),
+)
+CHANGES = frozenset({"write", "delete", "restore"})
 
 
 def forbidden(detail: str | None = None) -> Problem:
@@ -36,6 +64,28 @@ class Rules:
         self.access = access
         self.query = query
         self._built: dict[tuple[str, str, str, int], str | None] = {}
+        self._me: str | None = None
+
+    def _personal(
+        self, table: TableDef, alias: str, operation: str, name: str | None
+    ) -> str | None:
+        """SQL limiting a personal table to its owner and those it's shared with; None if not.
+
+        Only the owner makes records and hands them on: someone a record is shared with, even to
+        change it, can't change whose it is.
+        """
+        if table.owner_field is None or self.access.unrestricted:
+            return None
+        if self._me is None:
+            self._me = self.query.bind(self.situation.person)
+        owner = f"{alias}.{ident(table.owner_field)} = {self._me}"
+        if operation == "create" or (operation in CHANGES and name == table.owner_field):
+            return owner
+        shared = (
+            f"sys.p42_shared({self.query.bind(table.key)}, {alias}.sys_id, {self._me},"
+            f" {'true' if operation in CHANGES else 'false'})"
+        )
+        return f"({owner} OR {shared})"
 
     def allows(self, table: TableDef, operation: str) -> bool:
         """Whether any grant allows the operation on the table at all."""
@@ -59,6 +109,13 @@ class Rules:
         return self._built[key]
 
     def _any(self, table: TableDef, alias: str, operation: str, name: str | None) -> str:
+        allowed = self._granted(table, alias, operation, name)
+        personal = self._personal(table, alias, operation, name)
+        if personal is None or allowed == "false":
+            return allowed
+        return personal if allowed == "true" else f"({allowed} AND {personal})"
+
+    def _granted(self, table: TableDef, alias: str, operation: str, name: str | None) -> str:
         parts: list[str] = []
         for number, permit in enumerate(self.access.of(table.key, operation)):
             if not _covers(permit, name):

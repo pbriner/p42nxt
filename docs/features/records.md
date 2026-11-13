@@ -31,6 +31,14 @@ ever written by that module's role. What each person may read and change comes f
 - Values are returned as stored. As JSON, exact numbers and times are text: `"199.50"`,
   `"2026-11-13"`, `"P1DT2H"`.
 
+## Hooks
+
+Features register hooks for a table's changes (`data/hooks.py`). One run *before* a change sees
+the values about to be written; it may refuse the change or add values the system sets itself
+(those don't need the person's rights). One run *after* works in the same transaction, so the
+change and its follow-ups succeed or fail together. Changes made with SQL outside the records
+service don't run hooks.
+
 ## Lists
 
 ```python

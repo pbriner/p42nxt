@@ -9,8 +9,6 @@ the ETag of the version they were made on. Nothing here knows HTTP; the API is a
 it.
 """
 
-import base64
-import binascii
 import hashlib
 import json
 from dataclasses import dataclass
@@ -24,6 +22,8 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from p42cloud.data.access import Rules, forbidden
 from p42cloud.data.catalog import Catalog, FieldDef, TableDef
 from p42cloud.data.conditions import SYSTEM_FIELDS, Filter, Query, Situation, column, field_of
+from p42cloud.data.hooks import HOOKS, Change
+from p42cloud.data.paging import Sort, after_cursor, cursor
 from p42cloud.data.schema import METADATA_TABLES
 from p42cloud.data.sql import ident, qualified
 from p42cloud.data.types import Invalid
@@ -52,13 +52,6 @@ class Page:
     next: str | None  # the cursor of the following page; None on the last one
     total: int | None = None  # None if not counted
     total_exact: bool = True  # False: more than EXACT_TOTAL
-
-
-@dataclass(frozen=True)
-class _Sort:
-    field: FieldDef
-    descending: bool
-    expression: str
 
 
 def _invalid(errors: list[FieldError]) -> Problem:
@@ -310,7 +303,9 @@ class Records:
         table = await self._table(key, write=True)
         if not self.access.of(table.key, "create"):
             raise forbidden(table.key)
-        checked = self._checked(table, values, creating=True)
+        change = Change(self, table, "create", None, dict(values))
+        await HOOKS.run("before", change)
+        checked = self._checked(table, change.values, creating=True)
         query = Query()
         bound = self._bind(table, checked, query)
         target = qualified(table.schema, table.name)
@@ -324,7 +319,10 @@ class Records:
             row = await self._write(
                 f"INSERT INTO {target} {values_sql} RETURNING sys_id", query.params
             )
+            # Only what they sent needs their rights; what hooks set is the system's.
             await self._check(table, row.sys_id, "create", [n for n in values if n in checked])
+            change.sys_id = row.sys_id
+            await HOOKS.run("after", change)
         try:
             return await self._row(table, row.sys_id)
         except Problem:
@@ -338,10 +336,12 @@ class Records:
         self._fresh(table, record, if_match)
         if record.values["deleted"] is not None:
             raise Problem(409, "deleted", "The record is deleted; restore it first.")
-        checked = self._checked(table, values, creating=False)
+        change = Change(self, table, "write", sys_id, dict(values))
+        await HOOKS.run("before", change)
+        checked = self._checked(table, change.values, creating=False)
         if not checked:
             return record
-        await self._check(table, sys_id, "write", list(checked))
+        await self._check(table, sys_id, "write", [n for n in values if n in checked])
         query = Query()
         bound = self._bind(table, checked, query)
         changes = ", ".join(f"{ident(n)} = {b}" for n, b in bound.items())
@@ -350,6 +350,7 @@ class Records:
             f" WHERE sys_id = {query.bind(sys_id)}",
             query.params,
         )
+        await HOOKS.run("after", change)
         return await self._row(table, sys_id)
 
     async def delete(self, key: str, sys_id: UUID, if_match: str | None) -> Record:
@@ -360,11 +361,14 @@ class Records:
         if record.values["deleted"] is not None:
             raise Problem(409, "deleted", "The record is already deleted.")
         await self._check(table, sys_id, "delete", [])
+        change = Change(self, table, "delete", sys_id)
+        await HOOKS.run("before", change)
         await self._write(
             f"UPDATE {qualified(table.schema, table.name)} SET deleted = now()"  # noqa: S608
             " WHERE sys_id = :id",
             {"id": sys_id},
         )
+        await HOOKS.run("after", change)
         return await self._row(table, sys_id)
 
     async def restore(self, key: str, sys_id: UUID) -> Record:
@@ -373,19 +377,22 @@ class Records:
         if record.values["deleted"] is None:
             raise Problem(409, "not_deleted", "The record isn't deleted.")
         await self._check(table, sys_id, "restore", [])
+        change = Change(self, table, "restore", sys_id)
+        await HOOKS.run("before", change)
         await self._write(
             f"UPDATE {qualified(table.schema, table.name)} SET deleted = NULL"  # noqa: S608
             " WHERE sys_id = :id",
             {"id": sys_id},
         )
+        await HOOKS.run("after", change)
         return await self._row(table, sys_id)
 
     # ---- lists ----
 
-    def _sorting(self, table: TableDef, sort: list[str], query: Query, rules: Rules) -> list[_Sort]:
+    def _sorting(self, table: TableDef, sort: list[str], query: Query, rules: Rules) -> list[Sort]:
         if len(sort) > MAX_SORT:
             raise _invalid([FieldError("sort", "too_many", f"Sort by at most {MAX_SORT} fields.")])
-        found: list[_Sort] = []
+        found: list[Sort] = []
         for item in sort:
             name = item.removeprefix("-")
             f = field_of(table, name)
@@ -395,57 +402,8 @@ class Records:
             readable = rules.field(table, "t", name)
             if readable != "true":  # a field they may not read sorts as empty
                 expression = f"(CASE WHEN {readable} THEN {expression} END)"
-            found.append(_Sort(f, item.startswith("-"), expression))
+            found.append(Sort(f, item.startswith("-"), expression))
         return found
-
-    def _sort_value(self, s: _Sort, record: Record) -> Any:
-        value = record.values.get(s.field.name)
-        if s.field.type.kind == "translated" and value is not None:
-            value = value.get(self.situation.language, value.get("en"))
-        return value if s.field.type.kind == "translated" else s.field.type.to_json(value)
-
-    def _cursor(self, sort: list[str], sorting: list[_Sort], record: Record) -> str:
-        state = {
-            "sort": sort,
-            "values": [self._sort_value(s, record) for s in sorting],
-            "id": str(record.sys_id),
-        }
-        return base64.urlsafe_b64encode(json.dumps(state).encode()).decode()
-
-    def _after(self, cursor: str, sort: list[str], sorting: list[_Sort], query: Query) -> str:
-        """Rows after the cursor's row in this order (keyset paging; empty values sort last)."""
-        bad = Problem(400, "bad_cursor", "The page link isn't valid; start from the first page.")
-        try:
-            state = json.loads(base64.urlsafe_b64decode(cursor.encode()))
-            if state["sort"] != sort or len(state["values"]) != len(sorting):
-                raise bad
-            values = [self._parse(s, raw) for s, raw in zip(sorting, state["values"], strict=True)]
-            last = UUID(state["id"])
-        except (ValueError, KeyError, TypeError, binascii.Error, Invalid) as error:
-            raise bad from error
-        options: list[str] = []
-        equal: list[str] = []
-        for s, value in zip(sorting, values, strict=True):
-            x = s.expression
-            if value is None:
-                options.append(f"({' AND '.join([*equal, 'false'])})")
-                equal.append(f"{x} IS NULL")
-                continue
-            bound = query.bind(value)
-            beyond = f"({x} {'<' if s.descending else '>'} {bound} OR {x} IS NULL)"
-            options.append(f"({' AND '.join([*equal, beyond])})")
-            equal.append(f"{x} = {bound}")
-        options.append(f"({' AND '.join([*equal, f't.sys_id > {query.bind(last)}'])})")
-        return f"({' OR '.join(options)})"
-
-    def _parse(self, s: _Sort, raw: Any) -> Any:
-        if raw is None:
-            return None
-        if s.field.type.kind == "translated":
-            if not isinstance(raw, str):
-                raise Invalid("Not text.")
-            return raw
-        return s.field.type.check(raw, s.field.field.options)
 
     async def list(  # noqa: PLR0913 - the list's options, all by keyword
         self,
@@ -484,7 +442,7 @@ class Records:
             )
             total, exact = min(int(counted or 0), EXACT_TOTAL), int(counted or 0) <= EXACT_TOTAL
         if after:
-            conditions.append(self._after(after, order, sorting, query))
+            conditions.append(after_cursor(after, order, sorting, query))
         ordering = [
             f"{s.expression} {'DESC' if s.descending else 'ASC'} NULLS LAST" for s in sorting
         ]
@@ -494,5 +452,9 @@ class Records:
         )
         rows = (await self.conn.execute(text(sql), query.params)).all()
         records = [self._record(table, row) for row in rows[:limit]]
-        following = self._cursor(order, sorting, records[-1]) if len(rows) > limit else None
+        following = (
+            cursor(order, sorting, records[-1].values, self.situation.language)
+            if len(rows) > limit
+            else None
+        )
         return Page(records, following, total, exact)

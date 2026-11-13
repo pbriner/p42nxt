@@ -39,6 +39,7 @@ class TableDef:
     label_plural: dict[str, str] | None = None
     unique_together: tuple[tuple[str, ...], ...] = ()
     retired: bool = False
+    owner_field: str | None = None  # a personal table: the field naming each record's owner
 
     @property
     def key(self) -> str:
@@ -57,8 +58,8 @@ class Catalog:
 
 
 _TABLES = text(
-    'SELECT sys_id, "schema", name, label, label_plural, unique_together, deleted IS NOT NULL'
-    ' AS retired FROM sys."table"'
+    'SELECT sys_id, "schema", name, label, label_plural, unique_together, owner_field,'
+    ' deleted IS NOT NULL AS retired FROM sys."table"'
 )
 _FIELDS = text(
     'SELECT f."table" AS table_id, f.name, t.name AS type, f.label, f.help, f.options,'
@@ -99,6 +100,7 @@ async def load_catalog(conn: AsyncConnection) -> Catalog:
             label_plural=row.label_plural,
             unique_together=_together(row.unique_together),
             retired=row.retired,
+            owner_field=row.owner_field,
         )
         tables[table.key] = table
     return Catalog(tables)

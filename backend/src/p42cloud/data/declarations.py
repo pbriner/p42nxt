@@ -26,6 +26,9 @@ class Table:
     label_plural: str | None = None
     # Sets of fields that together are unique among active records.
     unique_together: tuple[tuple[str, ...], ...] = field(default_factory=tuple[tuple[str, ...]])
+    # A personal table: this field (a reference to a person) names each record's owner, and
+    # only the owner and those they share a record with see it.
+    owner: str | None = None
 
 
 def _field_problems(table: str, name: str, declared: Field) -> list[FieldError]:
@@ -52,6 +55,12 @@ def _table_problems(declared: Table) -> list[FieldError]:
     found: list[FieldError] = []
     for name, declared_field in declared.fields.items():
         found += _field_problems(declared.name, name, declared_field)
+    if declared.owner is not None:
+        owner = declared.fields.get(declared.owner)
+        if owner is None or owner.type != "reference" or owner.options.get("table") != "sys.person":
+            found.append(
+                FieldError(declared.name, "bad_owner", "The owner must be a reference to a person.")
+            )
     for together in declared.unique_together:
         unknown = [n for n in together if n not in declared.fields]
         if unknown or not together:
@@ -87,6 +96,7 @@ def to_catalog(schema: str, tables: list[Table]) -> Catalog:
             fields=tuple(FieldDef(n, f, i) for i, (n, f) in enumerate(t.fields.items())),
             label_plural={"en": t.label_plural} if t.label_plural else None,
             unique_together=t.unique_together,
+            owner_field=t.owner,
         )
         for t in tables
     ]

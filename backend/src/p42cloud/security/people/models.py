@@ -24,4 +24,8 @@ PERSON = Table(
     label_plural="People",
 )
 
+# What a person may change about themselves (their profile). Group rules can't use these, so
+# nobody can put themselves into a group.
+SELF_SERVICE = frozenset({"name", "email"})
+
 TABLES = [PERSON]

@@ -18,6 +18,7 @@ from p42cloud.data.types.text import Text
 
 def test_every_type_is_found_by_name() -> None:
     assert sorted(FIELD_TYPES) == [
+        "any_record",
         "boolean",
         "choice",
         "color",
