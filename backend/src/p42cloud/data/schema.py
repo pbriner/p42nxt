@@ -243,6 +243,23 @@ def _announce(table: TableDef) -> Step:
     )
 
 
+def _add_column(name: str, f: FieldDef, wanted: str, where: str) -> list[Step]:
+    """A new column; with a default, the records already there get it (a new required field
+    can't leave them empty). The column keeps no default of its own: defaults are the records
+    service's."""
+    column = ident(f.name)
+    if f.field.default is None:
+        return [Step(f"ALTER TABLE {name} ADD COLUMN {column} {wanted}", f"Add {where}")]
+    value = f.type.sql_literal(f.field.default, f.field.options)
+    return [
+        Step(
+            f"ALTER TABLE {name} ADD COLUMN {column} {wanted} DEFAULT {value}",
+            f"Add {where}, with its default for the records already there",
+        ),
+        Step(f"ALTER TABLE {name} ALTER COLUMN {column} DROP DEFAULT", f"Add {where}"),
+    ]
+
+
 def _change(table: TableDef, existing: Existing) -> list[Step]:
     name = qualified(table.schema, table.name)
     steps: list[Step] = []
@@ -251,9 +268,7 @@ def _change(table: TableDef, existing: Existing) -> list[Step]:
         have = existing.columns.get(f.name)
         where = f"{table.key}.{f.name}"
         if have is None:
-            steps.append(
-                Step(f"ALTER TABLE {name} ADD COLUMN {ident(f.name)} {wanted}", f"Add {where}")
-            )
+            steps += _add_column(name, f, wanted, where)
         elif have != wanted:
             if not widens(have, wanted):
                 raise Problem(

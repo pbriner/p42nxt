@@ -59,6 +59,8 @@ ROLE = Table(
         "custom": Boolean("Custom", required=True, default=False),
         # Only members of a group holding sys.admin may give these to a group.
         "powerful": Boolean("Powerful", required=True, default=False),
+        # Its module is switched off: the role counts for nobody until it's on again.
+        "switched_off": Boolean("Switched off", required=True, default=False),
     },
     label_plural="Roles",
 )

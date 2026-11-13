@@ -19,7 +19,8 @@ from p42cloud.kernel.safety import problems
 from p42cloud.kernel.secrets import Sealer
 from p42cloud.kernel.setup import set_up_database
 from p42cloud.modules.core import CORE, compose
-from p42cloud.modules.install import install_modules
+from p42cloud.modules.install import install_modules, states
+from p42cloud.modules.lifecycle import remove, switch_off, switch_on
 from p42cloud.modules.registry import discover
 from p42cloud.security.sign_in.credentials import NewKey
 from p42cloud.security.sign_in.first_admin import create_first_admin
@@ -126,6 +127,34 @@ async def _create_admin(name: str, email: str) -> int:
     return 0
 
 
+async def _module(action: str, module: str | None) -> int:
+    engine = create_engine(get_settings().owner_database_url)
+    try:
+        with working_as(Context(channel=f"cli:module:{action}")):
+            if action == "list":
+                for name, state in sorted((await states(engine)).items()):
+                    shown = "removed" if state.removed else "on" if state.enabled else "off"
+                    print(f"{name:16} {state.version!s:12} {shown}")
+                return 0
+            if module is None:
+                print("Name the module.", file=sys.stderr)
+                return 2
+            if action == "install":
+                done = await install_modules(
+                    engine, [CORE, *discover()], bring_back=frozenset({module})
+                )
+                print("\n".join(done) or "Already up to date.")
+            else:
+                await {"on": switch_on, "off": switch_off, "remove": remove}[action](engine, module)
+                print(f"{module}: {action}.")
+    except Problem as problem:
+        print(f"{problem.title} {problem.detail or ''}".strip(), file=sys.stderr)
+        return 1
+    finally:
+        await engine.dispose()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="p42cloud")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -136,6 +165,9 @@ def main(argv: list[str] | None = None) -> int:
         "upgrade", help="bring the database, the core and every installed module to this version"
     )
     commands.add_parser("check", help="refuse a database that isn't set up safely")
+    modules = commands.add_parser("module", help="list, switch on or off, remove or bring back")
+    modules.add_argument("action", choices=["list", "on", "off", "remove", "install"])
+    modules.add_argument("module", nargs="?")
     admin = commands.add_parser(
         "create-admin", help="the first administrator of a new installation (asks for a password)"
     )
@@ -156,6 +188,8 @@ def main(argv: list[str] | None = None) -> int:
             return asyncio.run(_set_up())
         case "upgrade":
             return asyncio.run(_upgrade())
+        case "module":
+            return asyncio.run(_module(args.action, args.module))
         case "create-admin":
             return asyncio.run(_create_admin(args.name, args.email))
         case "audit":

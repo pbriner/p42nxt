@@ -46,6 +46,8 @@ METADATA_TABLES = [
             "label_plural": TranslatedText("Label for several"),
             "unique_together": Json("Unique together"),
             "owner_field": String("Owner field", max_length=40),
+            # Its module is switched off: nobody reads or writes it until it's on again.
+            "switched_off": Boolean("Switched off", required=True, default=False),
         },
         label_plural="Tables",
         unique_together=(("schema", "name"),),
@@ -138,9 +140,10 @@ async def _write_table(conn: AsyncConnection, schema: str, declared: Table) -> u
         row_id = await conn.scalar(
             text(
                 'INSERT INTO sys."table"'
-                ' ("schema", name, label, label_plural, unique_together, owner_field)'
-                " VALUES (:schema, :name, CAST(:label AS jsonb), CAST(:label_plural AS jsonb),"
-                " CAST(:unique_together AS jsonb), :owner_field) RETURNING sys_id"
+                ' ("schema", name, label, label_plural, unique_together, owner_field,'
+                " switched_off) VALUES (:schema, :name, CAST(:label AS jsonb),"
+                " CAST(:label_plural AS jsonb), CAST(:unique_together AS jsonb), :owner_field,"
+                " false) RETURNING sys_id"
             ),
             values,
         )

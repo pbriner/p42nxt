@@ -40,6 +40,7 @@ class TableDef:
     unique_together: tuple[tuple[str, ...], ...] = ()
     retired: bool = False
     owner_field: str | None = None  # a personal table: the field naming each record's owner
+    switched_off: bool = False  # its module is switched off
 
     @property
     def key(self) -> str:
@@ -59,7 +60,8 @@ class Catalog:
 
 _TABLES = text(
     'SELECT sys_id, "schema", name, label, label_plural, unique_together, owner_field,'
-    ' deleted IS NOT NULL AS retired FROM sys."table"'
+    " coalesce(switched_off, false) AS switched_off, deleted IS NOT NULL AS retired"
+    ' FROM sys."table"'
 )
 _FIELDS = text(
     'SELECT f."table" AS table_id, f.name, t.name AS type, f.label, f.help, f.options,'
@@ -101,6 +103,7 @@ async def load_catalog(conn: AsyncConnection) -> Catalog:
             unique_together=_together(row.unique_together),
             retired=row.retired,
             owner_field=row.owner_field,
+            switched_off=row.switched_off,
         )
         tables[table.key] = table
     return Catalog(tables)

@@ -26,6 +26,8 @@ ever written by that module's role. What each person may read and change comes f
   A change based on an older version is refused too (412), and the answer carries the current
   record. An update that changes nothing keeps the ETag.
 - A deleted record can't be changed until it's restored.
+- Tables of a **switched-off module** answer as if they weren't there (404), for everyone
+  (`modules.md`).
 - **Metadata** (`sys.table`, `sys.field`, `sys.field_type`) can be read and listed like any table,
   but change only through declarations (`tables.md`).
 - Values are returned as stored. As JSON, exact numbers and times are text: `"199.50"`,

@@ -54,7 +54,7 @@ class _Undo:
 
     async def entry(self, row: Any) -> None:
         table = self.catalog.table(row.table_name)
-        if table is None or table.retired or table.key in METADATA_TABLES:
+        if table is None or table.retired or table.switched_off or table.key in METADATA_TABLES:
             self.skip(row.table_name, row.record_id, "This table's changes can't be undone here.")
             return
         await switch_role(self.conn, table.schema)

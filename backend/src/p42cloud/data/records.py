@@ -102,7 +102,7 @@ class Records:
 
     async def _table(self, key: str, *, write: bool = False) -> TableDef:
         table = self.catalog.table(key)
-        if table is None:
+        if table is None or table.switched_off:  # a module switched off: as if not there
             raise Problem(404, "no_table", "There's no such table.", detail=key)
         if write and table.key in METADATA_TABLES:
             raise Problem(

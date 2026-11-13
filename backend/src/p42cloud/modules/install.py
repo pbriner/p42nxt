@@ -7,6 +7,7 @@ documentation, and its record with the version. A module is never downgraded.
 """
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 from packaging.specifiers import SpecifierSet
@@ -135,7 +136,8 @@ async def write_docs(conn: AsyncConnection, module: str, folder: Path | None) ->
     )
 
 
-async def _record(conn: AsyncConnection, module: Module) -> None:
+async def _record(conn: AsyncConnection, module: Module, protected: bool) -> None:
+    """The module's record: new ones start switched on; a returning one keeps its state."""
     installed = await conn.scalar(
         text("SELECT version FROM sys.module WHERE name = :id"), {"id": module.id}
     )
@@ -145,12 +147,15 @@ async def _record(conn: AsyncConnection, module: Module) -> None:
         "version": module.version,
         "depends_on": json.dumps(dict(module.depends_on)),
         "description": module.description[:255] or None,
+        "protected": protected,
     }
     if installed is None:
         await conn.execute(
             text(
-                "INSERT INTO sys.module (name, label, version, depends_on, description)"
-                " VALUES (:id, :label, :version, CAST(:depends_on AS jsonb), :description)"
+                "INSERT INTO sys.module"
+                " (name, label, version, depends_on, description, enabled, protected)"
+                " VALUES (:id, :label, :version, CAST(:depends_on AS jsonb), :description, true,"
+                " :protected)"
             ),
             values,
         )
@@ -159,31 +164,78 @@ async def _record(conn: AsyncConnection, module: Module) -> None:
             text(
                 "UPDATE sys.module SET label = :label, version = :version,"
                 " depends_on = CAST(:depends_on AS jsonb), description = :description,"
-                " deleted = NULL WHERE name = :id"
+                " protected = :protected, deleted = NULL WHERE name = :id"
             ),
             values,
         )
 
 
-async def _installed_version(engine: AsyncEngine, module: str) -> Version | None:
-    """The installed version, if the module table exists yet (not before the first install)."""
-    async with owner_transaction(engine) as conn:
+async def switch(conn: AsyncConnection, module: str, *, on: bool) -> None:
+    """Switches a module's tables and roles on or off (its data stays as it is)."""
+    params = {"id": module, "off": not on}
+    await conn.execute(
+        text('UPDATE sys."table" SET switched_off = :off WHERE "schema" = :id'), params
+    )
+    await conn.execute(
+        text("UPDATE sys.role SET switched_off = :off WHERE module = :id AND NOT custom"), params
+    )
+    await conn.execute(text("UPDATE sys.module SET enabled = NOT :off WHERE name = :id"), params)
+
+
+@dataclass(frozen=True)
+class State:
+    version: Version
+    enabled: bool
+    removed: bool
+
+
+async def states(engine: AsyncEngine) -> dict[str, State]:
+    """Every module installed once, removed ones included (none before the first install).
+
+    Only reads, so it needs no request context.
+    """
+    async with engine.connect() as conn:
         if not await conn.scalar(text("SELECT to_regclass('sys.module') IS NOT NULL")):
-            return None
-        found = await conn.scalar(
-            text("SELECT version FROM sys.module WHERE name = :id AND deleted IS NULL"),
-            {"id": module},
+            return {}
+        rows = await conn.execute(
+            text("SELECT name, version, enabled, deleted IS NOT NULL AS removed FROM sys.module")
         )
-    return Version(found) if found else None
+        return {r.name: State(Version(r.version), r.enabled, r.removed) for r in rows}
 
 
-async def install_modules(engine: AsyncEngine, modules: list[Module]) -> list[str]:
-    """Installs or upgrades the core and the modules (as the owner); returns what changed."""
-    ordered = in_order(modules)
+def _core_dependencies(ordered: list[Module]) -> set[str]:
+    """The core and every module it depends on, directly or not: never switched off."""
+    by_id = {m.id: m for m in ordered}
+    found = {CORE}
+    waiting = [CORE]
+    while waiting:
+        for other in by_id[waiting.pop()].depends_on:
+            if other not in found:
+                found.add(other)
+                waiting.append(other)
+    return found
+
+
+async def install_modules(
+    engine: AsyncEngine, modules: list[Module], *, bring_back: frozenset[str] = frozenset()
+) -> list[str]:
+    """Installs or upgrades the core and the modules (as the owner); returns what changed.
+
+    Removed modules stay removed even if their package is still there, unless named in
+    `bring_back`: then they return with their data, switched off. Switched-off modules are
+    upgraded too, and stay off.
+    """
+    known = await states(engine)
+    present = [
+        m for m in modules if not (m.id in known and known[m.id].removed and m.id not in bring_back)
+    ]
+    ordered = in_order(present)
     compose(ordered)
+    protected = _core_dependencies(ordered)
     done: list[str] = []
     for module in ordered:
-        before = await _installed_version(engine, module.id)
+        state = known.get(module.id)
+        before = state.version if state is not None else None
         if before is not None and before > module.parsed_version:
             raise _refuse(
                 f"{module.id} {before} is installed; {module.version} would go back. Modules are"
@@ -197,10 +249,24 @@ async def install_modules(engine: AsyncEngine, modules: list[Module]) -> list[st
                 done += await declare(conn, module.id, list(module.tables))
             catalog = await load_catalog(conn)
             await write_roles(conn, catalog, module.id, list(module.roles))
+            if before is not None:
+                done += await _migrate(conn, module, before)
             if module.seed is not None:
                 await module.seed(conn, catalog)
             await write_docs(conn, module.id, module.docs)
-            await _record(conn, module)
-        if before != module.parsed_version:
+            await _record(conn, module, module.id in protected)
+            if state is not None and (not state.enabled or state.removed):
+                await switch(conn, module.id, on=False)  # new tables and roles stay off too
+        if before != module.parsed_version or (state is not None and state.removed):
             done.append(f"{module.id} {before or 'new'} → {module.version}")
+    return done
+
+
+async def _migrate(conn: AsyncConnection, module: Module, before: Version) -> list[str]:
+    """The module's data migrations passed on the way from `before` to its version, in order."""
+    passed = [m for m in module.migrations if before < Version(m.version) <= module.parsed_version]
+    done: list[str] = []
+    for migration in sorted(passed, key=lambda m: Version(m.version)):
+        await migration.run(conn)
+        done.append(f"Moved {module.id}'s data for {migration.version}")
     return done

@@ -4,6 +4,7 @@ A type decides how a value is stored (column type and checks), which options a f
 how a value is checked, and which changes to a field keep every value.
 """
 
+import json
 import re
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, TypedDict
@@ -63,6 +64,14 @@ class FieldType:
     def to_json(self, value: Any) -> Any:
         """The stored value as JSON: exact numbers and times as text, never floats."""
         return value
+
+    def sql_literal(self, value: Any, options: dict[str, Any]) -> str:
+        """A value as a constant in a definition (a new column's value for existing records)."""
+        column = self.column_type(options)
+        stored = self.check(value, options)
+        if column == "jsonb":
+            return f"{literal(json.dumps(stored))}::jsonb"
+        return f"{literal(str(self.to_json(stored)))}::{column}"
 
     def option_problems(self, options: dict[str, Any]) -> list[str]:
         """What's wrong with a field's options; empty if fine."""
