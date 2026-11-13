@@ -304,6 +304,11 @@ def plan(catalog: Catalog, database: Database) -> list[Step]:
             Step(f"GRANT USAGE ON SCHEMA {ident(schema)} TO {ident(role)}", f"Let {role} in"),
             # The record rules on its tables call functions in sys; it reads no table there.
             Step(f"GRANT USAGE ON SCHEMA sys TO {ident(role)}", f"Let {role} use the record rules"),
+            Step(
+                "GRANT EXECUTE ON FUNCTION sys.p42_shared(text, uuid, uuid, boolean)"
+                f" TO {ident(role)}",
+                f"Let {role} check shares of personal records",
+            ),
         ]
     for table in sorted(catalog.tables.values(), key=lambda t: t.key):
         if table.retired:

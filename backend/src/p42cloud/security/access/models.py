@@ -28,6 +28,8 @@ GROUP = Table(
         "name": String("Name", max_length=80, required=True, unique=True),
         "description": Text("Description"),
         "assignable": Boolean("Work can be assigned to it", required=True, default=False),
+        # A group with a rule gets its members from it: every active person it matches.
+        "rule": Json("Members are the people where"),
     },
     label_plural="Groups",
 )
@@ -38,6 +40,8 @@ MEMBERSHIP = Table(
     {
         "group": Reference("Group", "sys.group", required=True),
         "person": Reference("Person", "sys.person", required=True),
+        # Kept by the group's rule, not by hand.
+        "from_rule": Boolean("From the group's rule", required=True, default=False),
     },
     label_plural="Memberships",
     unique_together=(("group", "person"),),

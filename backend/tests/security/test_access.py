@@ -7,7 +7,6 @@ notes never opens other people's notes.
 
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable
-from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 
@@ -25,12 +24,12 @@ from p42cloud.data.types.string import String
 from p42cloud.data.types.text import Text
 from p42cloud.data.undo import undo
 from p42cloud.kernel.config import Settings
-from p42cloud.kernel.context import EVERYTHING, Context, working_as
+from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction, transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.security.access.manifest import ADMINISTRATORS
 from p42cloud.security.access.roles import Grant, Role, write_roles
-from p42cloud.security.access.service import access_for
+from tests.security.helpers import acting, context_of
 
 MINE = {"field": "owner", "op": "eq", "value": "@me"}
 MY_TEAM = {"field": "team", "op": "in", "value": "@my_groups"}
@@ -73,23 +72,6 @@ class Shop:
         return f"{self.module}.item"
 
 
-async def _context(engine: AsyncEngine, person: uuid.UUID | None) -> Context:
-    """A request by the person, with the access their groups give them (None: the system)."""
-    if person is None:
-        return Context(channel="ui", access=EVERYTHING)
-    with working_as(Context(channel="ui", person_id=person)):
-        async with transaction(engine, "sys") as conn:
-            access = await access_for(conn, person)
-    return Context(channel="ui", person_id=person, access=access)
-
-
-@asynccontextmanager
-async def _as(engine: AsyncEngine, person: uuid.UUID | None) -> AsyncGenerator[Records]:
-    with working_as(await _context(engine, person)):
-        async with transaction(engine, "sys") as conn:
-            yield Records(conn, await load_catalog(conn))
-
-
 @pytest.fixture(scope="module")
 async def shop(
     new_module: Callable[[], Awaitable[str]], upgraded: Settings
@@ -121,7 +103,7 @@ async def shop(
     people: dict[str, uuid.UUID] = {}
     groups: dict[str, uuid.UUID] = {}
     items: dict[str, uuid.UUID] = {}
-    async with _as(engine, None) as records:
+    async with acting(engine, None) as records:
         for name in ("Anna", "Bob", "Cleo", "Dave", "Eve", "Fred"):
             made = await records.create("sys.person", {"name": f"{name} {m}"})
             people[name] = made.sys_id
@@ -202,7 +184,7 @@ def _by_key(shop: Shop, found: list[Record]) -> dict[str, dict[str, Any]]:
     ],
 )
 async def test_fields_count_per_record(shop: Shop, person: str, notes: set[str]) -> None:
-    async with _as(shop.engine, shop.people[person]) as records:
+    async with acting(shop.engine, shop.people[person]) as records:
         page = await records.list(shop.item, limit=500)
     seen = _by_key(shop, page.records)
     assert set(seen) == {"A1", "B1", "B2", "X1"}
@@ -212,14 +194,14 @@ async def test_fields_count_per_record(shop: Shop, person: str, notes: set[str])
 
 @pytest.mark.parametrize("person", ["Cleo", "Dave"])
 async def test_no_groups_or_inactive_means_no_access(shop: Shop, person: str) -> None:
-    async with _as(shop.engine, shop.people[person]) as records:
+    async with acting(shop.engine, shop.people[person]) as records:
         with pytest.raises(Problem) as refused:
             await records.list(shop.item)
     assert refused.value.status == 403
 
 
 async def test_records_out_of_reach_are_not_found(shop: Shop) -> None:
-    async with _as(shop.engine, shop.people["Eve"]) as records:
+    async with acting(shop.engine, shop.people["Eve"]) as records:
         page = await records.list(shop.item)
         with pytest.raises(Problem) as missing:
             await records.read(shop.item, shop.items["A1"])
@@ -228,7 +210,7 @@ async def test_records_out_of_reach_are_not_found(shop: Shop) -> None:
 
 
 async def test_hidden_fields_can_not_be_found_by_filtering(shop: Shop) -> None:
-    async with _as(shop.engine, shop.people["Anna"]) as records:
+    async with acting(shop.engine, shop.people["Anna"]) as records:
         bob = await records.list(
             shop.item, where={"field": "note", "op": "contains", "value": "bob"}
         )
@@ -244,19 +226,23 @@ async def test_hidden_fields_can_not_be_found_by_filtering(shop: Shop) -> None:
 
 
 async def test_following_a_reference_stays_within_what_may_be_read(shop: Shop) -> None:
-    async with _as(shop.engine, shop.people["Anna"]) as records:
-        page = await records.list(
-            shop.item, where={"field": "owner.name", "op": "contains", "value": "a"}
-        )
-    # Anna may not read people at all, so their names can't be used to find items.
-    assert page.records == []
+    bob = {"field": "owner.name", "op": "eq", "value": f"bob {shop.module}"}
+    by_email = {"field": "owner.email", "op": "empty"}
+    async with acting(shop.engine, shop.people["Anna"]) as records:
+        named = await records.list(shop.item, where=bob)
+        hidden = await records.list(shop.item, where=by_email)
+    # Everyone may read people's names, so Bob's items are found by his name, but only where
+    # Anna may read the owner: on his chair (her team's), not on his lamp (names and prices only).
+    assert set(_by_key(shop, named.records)) == {"B2"}
+    # ... but not their emails: those can't be used to find anything.
+    assert hidden.records == []
 
 
 # ---- who may change what ----
 
 
 async def test_changes_need_a_grant_for_the_record_and_each_field(shop: Shop) -> None:
-    async with _as(shop.engine, shop.people["Anna"]) as records:
+    async with acting(shop.engine, shop.people["Anna"]) as records:
         mine = await records.read(shop.item, shop.items["A1"])
         changed = await records.update(shop.item, mine.sys_id, {"note": "anna's new"}, mine.etag)
         bobs = await records.read(shop.item, shop.items["B2"])
@@ -268,7 +254,7 @@ async def test_changes_need_a_grant_for_the_record_and_each_field(shop: Shop) ->
 
 async def test_create_only_what_the_grant_allows(shop: Shop) -> None:
     anna = shop.people["Anna"]
-    async with _as(shop.engine, anna) as records:
+    async with acting(shop.engine, anna) as records:
         made = await records.create(shop.item, {"name": "Anna shelf", "owner": anna})
         for values in (
             {"name": "For Bob", "owner": shop.people["Bob"]},  # not her own
@@ -286,7 +272,7 @@ async def test_create_only_what_the_grant_allows(shop: Shop) -> None:
 
 async def test_delete_and_restore_need_their_own_grants(shop: Shop) -> None:
     anna = shop.people["Anna"]
-    async with _as(shop.engine, anna) as records:
+    async with acting(shop.engine, anna) as records:
         made = await records.create(shop.item, {"name": "Anna box", "owner": anna})
         bobs = await records.read(shop.item, shop.items["B2"])
         with pytest.raises(Problem) as not_hers:
@@ -299,13 +285,13 @@ async def test_delete_and_restore_need_their_own_grants(shop: Shop) -> None:
 
 
 async def test_undo_needs_the_rights_of_today(shop: Shop) -> None:
-    context = await _context(shop.engine, shop.people["Bob"])
+    context = await context_of(shop.engine, shop.people["Bob"])
     with working_as(context):
         async with transaction(shop.engine, "sys") as conn:
             records = Records(conn, await load_catalog(conn))
             lamp = await records.read(shop.item, shop.items["B1"])
             await records.update(shop.item, lamp.sys_id, {"price": "6"}, lamp.etag)
-    async with _as(shop.engine, shop.people["Anna"]) as records:
+    async with acting(shop.engine, shop.people["Anna"]) as records:
         result = await undo(records.conn, records.catalog, request=context.request_id)
     assert result.changed == []
     assert [s.reason for s in result.skipped] == [
@@ -317,7 +303,7 @@ async def test_undo_needs_the_rights_of_today(shop: Shop) -> None:
 
 
 async def test_the_administrators_group_holds_the_core_roles(shop: Shop) -> None:
-    async with _as(shop.engine, None) as records:
+    async with acting(shop.engine, None) as records:
         roles = await records.list(
             "sys.group_role", where={"field": "group", "op": "eq", "value": str(ADMINISTRATORS)}
         )
@@ -327,7 +313,7 @@ async def test_the_administrators_group_holds_the_core_roles(shop: Shop) -> None
         admin = await records.create("sys.person", {"name": "Admin"})
         await records.create("sys.membership", {"group": ADMINISTRATORS, "person": admin.sys_id})
     assert names == {"sys.admin", "sys.access_admin"}
-    async with _as(shop.engine, admin.sys_id) as records:
+    async with acting(shop.engine, admin.sys_id) as records:
         people = await records.list("sys.person", limit=500)
         with pytest.raises(Problem) as refused:
             await records.list(shop.item)
@@ -392,7 +378,7 @@ async def test_a_grant_that_breaks_grants_nothing(shop: Shop, upgraded: Settings
 
     await item_with("name", "note", "owner", "team")
     try:
-        async with _as(shop.engine, shop.people["Fred"]) as records:
+        async with acting(shop.engine, shop.people["Fred"]) as records:
             page = await records.list(shop.item, limit=500)
     finally:
         await item_with("name", "price", "note", "owner", "team")

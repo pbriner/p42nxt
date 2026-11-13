@@ -303,6 +303,42 @@ _UNACCENT = """
 CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA sys;
 """
 
+# Personal records (access.py): whether a record is shared with a person, and whose a record is.
+# With the owner's rights, so module roles needn't read the shares; the names in the dynamic SQL
+# come from the metadata, never from the caller.
+_PERSONAL = """
+CREATE FUNCTION sys.p42_shared(in_table text, in_record uuid, in_person uuid, in_edit boolean)
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = pg_catalog, sys AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM sys.share s JOIN sys."table" t ON t.sys_id = s."table"
+        WHERE t."schema" || '.' || t.name = in_table AND s.record = in_record
+          AND s.person = in_person AND s.deleted IS NULL
+          AND (s.until IS NULL OR s.until > now()) AND (s.edit OR NOT in_edit));
+END $$;
+
+CREATE FUNCTION sys.p42_owner_of(in_table text, in_record uuid)
+RETURNS uuid LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = pg_catalog, sys AS $$
+DECLARE
+    target record;
+    owner_id uuid;
+BEGIN
+    SELECT "schema", name, owner_field INTO target FROM sys."table"
+    WHERE "schema" || '.' || name = in_table AND deleted IS NULL AND owner_field IS NOT NULL;
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+    EXECUTE format('SELECT %I FROM %I.%I WHERE sys_id = $1',
+                   target.owner_field, target."schema", target.name)
+        INTO owner_id USING in_record;
+    RETURN owner_id;
+END $$;
+REVOKE ALL ON FUNCTION sys.p42_shared(text, uuid, uuid, boolean) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION sys.p42_shared(text, uuid, uuid, boolean) TO p42_mod_sys;
+REVOKE ALL ON FUNCTION sys.p42_owner_of(text, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION sys.p42_owner_of(text, uuid) TO p42_mod_sys;
+"""
+
 STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0001_context", _CONTEXT),
     ("0002_record_rules", _RECORD_RULES),
@@ -311,4 +347,5 @@ STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0005_audit_chain", _CHAIN),
     ("0006_metadata_changed", _METADATA_CHANGED),
     ("0007_unaccent", _UNACCENT),
+    ("0008_personal", _PERSONAL),
 )
