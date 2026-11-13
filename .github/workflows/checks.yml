@@ -5,6 +5,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  schedule:
+    - cron: "17 5 * * 1"  # weekly, for vulnerabilities published since the last change
 
 permissions:
   contents: read
@@ -29,6 +31,10 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --locked
+      - name: Known vulnerabilities in dependencies
+        run: |
+          uv export --locked --no-dev --no-emit-project -q -o "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit --strict --disable-pip --require-hashes -r "$RUNNER_TEMP/requirements.txt"
       - name: Lint
         run: |
           uv run ruff check .
