@@ -8,6 +8,7 @@ from p42cloud.data.types.base import Common, Field, FieldType, Invalid, declare
 class BooleanType(FieldType):
     name = "boolean"
     label = "Yes / no"
+    kind = "boolean"
 
     def column_type(self, options: dict[str, Any]) -> str:
         return "boolean"

@@ -10,6 +10,7 @@ MAX_LENGTH = 4000
 class StringType(FieldType):
     name = "string"
     label = "Text"
+    kind = "text"
 
     def option_problems(self, options: dict[str, Any]) -> list[str]:
         rest = {k: v for k, v in options.items() if k != "max_length"}

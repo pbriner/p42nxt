@@ -12,6 +12,10 @@ TABLE = re.compile(r"^[a-z][a-z0-9]{0,15}\.[a-z][a-z0-9_]{0,39}$")
 class ReferenceType(FieldType):
     name = "reference"
     label = "Reference"
+    kind = "reference"
+
+    def to_json(self, value: Any) -> Any:
+        return None if value is None else str(value)
 
     def option_problems(self, options: dict[str, Any]) -> list[str]:
         found = super().option_problems({k: v for k, v in options.items() if k != "table"})

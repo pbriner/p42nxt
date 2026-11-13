@@ -9,6 +9,10 @@ from p42cloud.data.types.base import Common, Field, FieldType, Invalid, declare
 class DateType(FieldType):
     name = "date"
     label = "Date"
+    kind = "date"
+
+    def to_json(self, value: Any) -> Any:
+        return None if value is None else value.isoformat()
 
     def column_type(self, options: dict[str, Any]) -> str:
         return "date"

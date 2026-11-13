@@ -56,6 +56,13 @@ class FieldType:
     label: ClassVar[str]
     # Masked in the audit log: that it changed, never the values.
     secret: ClassVar[bool] = False
+    # How lists filter and sort it (conditions.py): text, translated, number, date, datetime,
+    # choice, reference or boolean. None: not filterable or sortable.
+    kind: ClassVar[str | None] = None
+
+    def to_json(self, value: Any) -> Any:
+        """The stored value as JSON: exact numbers and times as text, never floats."""
+        return value
 
     def option_problems(self, options: dict[str, Any]) -> list[str]:
         """What's wrong with a field's options; empty if fine."""
@@ -101,6 +108,7 @@ class PatternType(FieldType):
     pattern: ClassVar[str]
     column: ClassVar[str] = "text"
     message: ClassVar[str]
+    kind = "text"
 
     def column_type(self, options: dict[str, Any]) -> str:
         return self.column

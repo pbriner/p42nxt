@@ -6,7 +6,7 @@ elsewhere if needed.
 
 import os
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 import pytest
 from sqlalchemy import text
@@ -87,3 +87,35 @@ async def owner_engine(upgraded: Settings) -> AsyncIterator[AsyncEngine]:
     engine = create_engine(upgraded.owner_database_url)
     yield engine
     await engine.dispose()
+
+
+@pytest.fixture(scope="session")
+async def new_module(
+    database: str, upgraded: Settings
+) -> AsyncIterator[Callable[[], Awaitable[str]]]:
+    """Makes modules with their own database role, as setting up a module will.
+
+    Roles belong to the whole server, not the test database, so they're dropped at the end.
+    """
+    url = ADMIN_URL.rsplit("/", 1)[0] + f"/{database}"
+    made: list[str] = []
+
+    async def make() -> str:
+        name = f"m{uuid.uuid4().hex[:10]}"
+        admin = create_async_engine(url, isolation_level="AUTOCOMMIT")
+        async with admin.connect() as conn:
+            await conn.execute(text(f'CREATE ROLE "p42_mod_{name}" NOLOGIN NOINHERIT'))
+            made.append(f"p42_mod_{name}")
+            await conn.execute(
+                text(f'GRANT "p42_mod_{name}" TO p42_app WITH INHERIT FALSE, SET TRUE')
+            )
+        await admin.dispose()
+        return name
+
+    yield make
+    admin = create_async_engine(url, isolation_level="AUTOCOMMIT")
+    async with admin.connect() as conn:
+        for role in made:
+            await conn.execute(text(f'DROP OWNED BY "{role}"'))
+            await conn.execute(text(f'DROP ROLE "{role}"'))
+    await admin.dispose()

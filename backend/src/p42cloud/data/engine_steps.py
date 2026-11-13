@@ -297,6 +297,12 @@ BEGIN
 END $$;
 """
 
+# Text filters ignore case and accents (`muller` finds `Müller`). A trusted extension, so the
+# owner can add it without an administrator.
+_UNACCENT = """
+CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA sys;
+"""
+
 STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0001_context", _CONTEXT),
     ("0002_record_rules", _RECORD_RULES),
@@ -304,4 +310,5 @@ STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0004_audit_trigger", _AUDIT_TRIGGER),
     ("0005_audit_chain", _CHAIN),
     ("0006_metadata_changed", _METADATA_CHANGED),
+    ("0007_unaccent", _UNACCENT),
 )

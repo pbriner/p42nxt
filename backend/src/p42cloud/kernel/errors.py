@@ -22,6 +22,8 @@ class Problem(Exception):
     title: str
     detail: str | None = None
     errors: list[FieldError] = field(default_factory=list[FieldError])
+    # More for programs, merged into the answer (the current record on a stale ETag).
+    extra: dict[str, Any] = field(default_factory=dict[str, Any])
 
     def __str__(self) -> str:
         return f"{self.status} {self.code}: {self.detail or self.title}"
@@ -39,4 +41,4 @@ class Problem(Exception):
             body["errors"] = [
                 {"field": e.field, "code": e.code, "message": e.message} for e in self.errors
             ]
-        return body
+        return {**self.extra, **body}

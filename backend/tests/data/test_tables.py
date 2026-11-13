@@ -3,14 +3,13 @@ engine, and the catalog every process caches."""
 
 import asyncio
 import json
-import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 
 import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from p42cloud.data.catalog import MetadataCache, load_catalog
 from p42cloud.data.declarations import Table
@@ -26,35 +25,13 @@ from p42cloud.data.types.text import Text
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import owner_transaction, transaction
 from p42cloud.kernel.errors import Problem
-from tests.conftest import ADMIN_URL
 
 Declare = Callable[[str, list[Table]], Awaitable[list[str]]]
 
 
-@pytest.fixture(scope="session")
-async def module_roles(database: str) -> AsyncIterator[list[str]]:
-    """Roles belong to the whole server, not the test database: dropped when the tests end."""
-    made: list[str] = []
-    yield made
-    admin = create_async_engine(
-        ADMIN_URL.rsplit("/", 1)[0] + f"/{database}", isolation_level="AUTOCOMMIT"
-    )
-    async with admin.connect() as conn:
-        for role in made:
-            await conn.execute(text(f'DROP OWNED BY "{role}"'))
-            await conn.execute(text(f'DROP ROLE "{role}"'))
-    await admin.dispose()
-
-
 @pytest.fixture
-async def module(admin_conn: AsyncEngine, upgraded: object, module_roles: list[str]) -> str:
-    """A new module with its own database role, as setting up a module will make it."""
-    name = f"m{uuid.uuid4().hex[:10]}"
-    async with admin_conn.connect() as conn:
-        await conn.execute(text(f'CREATE ROLE "p42_mod_{name}" NOLOGIN NOINHERIT'))
-        module_roles.append(f"p42_mod_{name}")
-        await conn.execute(text(f'GRANT "p42_mod_{name}" TO p42_app WITH INHERIT FALSE, SET TRUE'))
-    return name
+async def module(new_module: Callable[[], Awaitable[str]]) -> str:
+    return await new_module()
 
 
 @pytest.fixture
@@ -95,7 +72,7 @@ async def test_the_metadata_tables_describe_themselves(owner_engine: AsyncEngine
     with working_as(Context(channel="test")):
         async with owner_transaction(owner_engine) as conn:
             catalog = await load_catalog(conn)
-            database = await read_database(conn, {"sys"})
+            database = await read_database(conn, {t.schema for t in catalog.tables.values()})
     assert {"sys.table", "sys.field", "sys.field_type"} <= set(catalog.tables)
     field = catalog.tables["sys.field"]
     assert [f.name for f in field.fields][:3] == ["table", "name", "type"]

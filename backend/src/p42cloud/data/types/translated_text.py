@@ -12,6 +12,7 @@ LANGUAGE = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")
 class TranslatedTextType(FieldType):
     name = "translated_text"
     label = "Translated text"
+    kind = "translated"
 
     def column_type(self, options: dict[str, Any]) -> str:
         return "jsonb"
