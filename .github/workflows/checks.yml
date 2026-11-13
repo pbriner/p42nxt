@@ -30,10 +30,12 @@ jobs:
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
-      - run: uv sync --locked
+      # One workspace: the platform and every module, from the lock file at the root.
+      - run: uv sync --locked --all-packages
       - name: Known vulnerabilities in dependencies
         run: |
-          uv export --locked --no-dev --no-emit-project -q -o "$RUNNER_TEMP/requirements.txt"
+          uv export --locked --no-dev --no-emit-workspace --all-packages -q \
+            -o "$RUNNER_TEMP/requirements.txt"
           uvx pip-audit --strict --disable-pip --require-hashes -r "$RUNNER_TEMP/requirements.txt"
       - name: Lint
         run: |
@@ -45,6 +47,19 @@ jobs:
         run: uv run lint-imports
       - name: Tests
         run: uv run pytest -q
+      # Every module is checked in its own folder: lint, types and its own tests, against a
+      # fresh installation of the core and the module (modules import only the SDK: the
+      # platform's tests check that).
+      - name: Modules
+        working-directory: modules
+        run: |
+          for module in */; do
+            [ -f "$module/pyproject.toml" ] || continue
+            echo "::group::${module%/}"
+            (cd "$module" && uv run ruff check . && uv run ruff format --check . \
+              && uv run pyright && uv run pytest -q) || exit 1
+            echo "::endgroup::"
+          done
 
   # Setup must keep working after every change (docs/architecture.md, principle 5): the real
   # installer creates a fresh installation from the image built here.

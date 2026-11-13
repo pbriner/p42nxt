@@ -43,12 +43,16 @@ Docs describe what exists. A new module documents itself in its `README.md`, sta
 
 ## Done means
 
-All of these, in `backend/`:
+The repository is one uv workspace (`uv sync --all-packages` at the root). All of these, in
+`backend/`:
 
 1. `uv run ruff check .` and `uv run ruff format --check .`
 2. `uv run pyright` (strict, 0 errors)
 3. `uv run lint-imports` (all contracts kept)
-4. `uv run pytest`
+4. `uv run pytest` (this also checks that modules import only the SDK)
+
+And in every changed module's folder (`modules/<id>/`): `uv run ruff check .`,
+`uv run ruff format --check .`, `uv run pyright` and `uv run pytest`.
 
 Once they exist, also the frontend build, the Playwright tests and the fresh-install test. CI
 runs the same checks (`.github/workflows/checks.yml`).

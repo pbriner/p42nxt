@@ -34,11 +34,13 @@ Docker already knows. The web installer follows.
 
 ```bash
 docker compose up -d                 # the dev instance p42cloud-dev: PostgreSQL 18 on localhost:5435
-cd backend && uv sync
+uv sync --all-packages               # one workspace: the platform and every module
+cd backend
 uv run ruff check . && uv run ruff format --check .
 uv run pyright                       # strict
 uv run lint-imports                  # layer rules
 uv run pytest
+cd ../modules/hello && uv run pytest # each module, in its own folder
 ```
 
 ## License

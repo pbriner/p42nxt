@@ -1,10 +1,11 @@
 # Modules
 
 One folder per module, self-contained and released on its own: its own package and version
-(`pyproject.toml`), manifest, models, services, API, data migrations, translations, help
-(Markdown), sample data, tests and `CHANGELOG.md`. A module imports only `p42cloud.sdk`, never another
-module: it reaches other modules' data through their API. Layout and rules:
-`docs/architecture.md`.
+(`pyproject.toml`), manifest, models, services, API, data migrations, translations,
+documentation (Markdown), sample data, tests and `CHANGELOG.md`. A module imports only
+`p42cloud.sdk`, never another module: it reaches other modules' data through the SDK's client.
+Layout and rules: `docs/architecture.md`, `docs/features/modules.md` and
+`docs/features/sdk.md`. `hello/` is the reference module.
 
 Every module has its own version and is installed, upgraded, enabled, disabled and removed on
 its own. The core (`sys`) is a module too: its code is in `backend/src/p42cloud` and its docs in
