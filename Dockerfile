@@ -10,6 +10,8 @@ COPY LICENSE NOTICE /
 COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 COPY backend/src ./src
+# The core's documentation, written into the wiki's pages at install.
+COPY docs/features /docs/features
 RUN uv sync --locked --no-dev
 
 ENV PATH=/app/.venv/bin:$PATH

@@ -77,7 +77,8 @@ async def _powers(conn: AsyncConnection) -> list[str]:
             label
             for label, has in (
                 ("superuser", superuser),
-                ("create roles", createrole),
+                # The owner makes the modules' roles; the app never may.
+                ("create roles", createrole and name == APP_ROLE),
                 ("create databases", createdb),
                 ("replication", replication),
                 ("bypass row security", bypassrls),

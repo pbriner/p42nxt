@@ -48,6 +48,7 @@ ROLES = [
             Grant(TOKENS, ("delete",)),
             Grant("sys.identity_provider", ALL),
             Grant("sys.external_id", ("read",)),
+            Grant("sys.module", ("read",)),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",
@@ -76,6 +77,9 @@ ROLES = [
             Grant(SESSIONS, ("delete",), condition=YOURS),
             Grant(TOKENS, ("read",), condition=YOURS, fields=TOKEN_FIELDS),
             Grant(TOKENS, ("delete",), condition=YOURS),
+            # The documentation, and which modules there are.
+            Grant("sys.doc_page", ("read",)),
+            Grant("sys.module", ("read",), fields=("name", "label", "version", "description")),
         ),
         description="Everyone: sees who's who and shares their own records.",
     ),
