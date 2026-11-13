@@ -1,4 +1,5 @@
-"""Groups with a rule: their members are the active people the rule matches.
+"""Groups with a rule: their members are the active people the rule matches. Never service
+accounts: what they may do is given to them by hand, never by who they happen to resemble.
 
 The memberships are records marked "from the rule", kept in step in the same transaction as the
 change that moves someone in or out: a person's fields changing, a group's rule changing, a
@@ -80,6 +81,7 @@ async def _matching(
     found = await conn.execute(
         text(
             "SELECT t.sys_id FROM sys.person t WHERE t.deleted IS NULL AND t.active"  # noqa: S608
+            " AND t.kind <> 'service'"
             f" AND {condition}{only}"
         ),
         query.params,
