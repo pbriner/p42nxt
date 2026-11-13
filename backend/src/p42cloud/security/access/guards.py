@@ -178,11 +178,11 @@ async def role(change: Change) -> None:
     recently_verified(change)
     await switch_role(change.records.conn, "sys")
     if change.operation == "create":
-        change.values.update(custom=True, powerful=False, module="custom")
+        change.values.update(custom=True, powerful=False, module="custom", switched_off=False)
         return
     if not await change.records.conn.scalar(_CUSTOM, {"id": change.sys_id}):
         raise _refuse("declared_role", "Roles of modules change only with the module.")
-    if {"custom", "powerful", "module"} & change.values.keys():
+    if {"custom", "powerful", "module", "switched_off"} & change.values.keys():
         raise _refuse("system_field", "Whether a role is custom or powerful isn't set by hand.")
     if await change.records.conn.scalar(_POWERFUL, {"id": change.sys_id}):
         await _admins_only(change, "The role is powerful.")

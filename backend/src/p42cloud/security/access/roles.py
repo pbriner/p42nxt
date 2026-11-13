@@ -117,9 +117,9 @@ async def _write_role(conn: AsyncConnection, module: str, role: Role) -> uuid.UU
     if found is None:
         found = await conn.scalar(
             text(
-                "INSERT INTO sys.role (name, label, description, module, powerful, custom)"
-                " VALUES (:name, CAST(:label AS jsonb), CAST(:description AS jsonb), :module,"
-                " :powerful, false) RETURNING sys_id"
+                "INSERT INTO sys.role (name, label, description, module, powerful, custom,"
+                " switched_off) VALUES (:name, CAST(:label AS jsonb), CAST(:description AS jsonb),"
+                " :module, :powerful, false, false) RETURNING sys_id"
             ),
             values,
         )

@@ -277,7 +277,7 @@ class Filter:
             return f"COALESCE(({readable}) AND {self.compare(alias, f, leaf)}, false)"
         target_key = f.type.references(f.field.options)
         target = self.catalog.table(target_key) if target_key else None
-        if target is None or target.retired:
+        if target is None or target.retired or target.switched_off:
             raise refuse(path, "not_a_reference", f"{names[0]!r} can't be followed.")
         inner = self.query.alias()
         condition = self.walk(target, inner, names[1:], leaf)

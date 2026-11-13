@@ -60,7 +60,7 @@ does.
 
 | Change | What happens |
 |---|---|
-| Add a table or field | Created |
+| Add a table or field | Created. A new field with a default gets it on the records already there, so a new required field can be added to a table with data |
 | Label, help, default, more choices | Records updated |
 | Longer text, text to long text, whole number to decimal, more digits | Column widened |
 | A type change that could lose a value (shorter, fewer choices, text to number) | Refused |

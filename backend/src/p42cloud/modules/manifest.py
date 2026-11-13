@@ -30,6 +30,19 @@ from p42cloud.security.access.roles import Role
 # Called as the owner after the module's tables and roles are written, with the catalog.
 type Seed = Callable[[AsyncConnection, Catalog], Awaitable[None]]
 
+
+@dataclass(frozen=True)
+class Migration:
+    """Moves data when upgrading to `version` (tables come from the declarations, not from here).
+
+    Runs once, on the upgrade that passes its version, after the tables are adjusted and in the
+    same transaction: if it fails, the upgrade didn't happen.
+    """
+
+    version: str
+    run: Callable[[AsyncConnection], Awaitable[None]]
+
+
 MODULE_ID = re.compile(r"^[a-z][a-z0-9]{1,15}$")
 CORE = "sys"
 RESERVED = frozenset({"u"})  # admins' own tables
@@ -51,6 +64,7 @@ class Module:
     # Records the module makes once installed (the core's starting groups); must be safe to run
     # again at every upgrade.
     seed: Seed | None = None
+    migrations: tuple[Migration, ...] = ()
 
     @property
     def parsed_version(self) -> Version:
@@ -81,6 +95,15 @@ class Module:
             for h in self.hooks
             if not h.table.startswith(f"{self.id}.")
         ]
+        for migration in self.migrations:
+            try:
+                Version(migration.version)
+            except InvalidVersion:
+                found.append(
+                    FieldError(
+                        "migrations", "bad_version", f"Not a version: {migration.version!r}."
+                    )
+                )
         if self.docs is not None and not self.docs.is_dir():
             found.append(FieldError("docs", "missing", f"No folder {self.docs}."))
         return found

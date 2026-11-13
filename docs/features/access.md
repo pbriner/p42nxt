@@ -71,6 +71,8 @@ SQL:
 - **A narrowed group role** applies its condition on top of the role's grants, for that group's
   members only.
 - **A grant that can't be built any more** (its condition names a retired field) grants nothing.
+- **A switched-off module's** roles count for nobody, and grants on its tables give nothing, in
+  custom roles too.
 - The system itself (installing, upgrading) works with unrestricted access.
 
 ## Reading along references

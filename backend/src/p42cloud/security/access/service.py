@@ -40,10 +40,10 @@ allowed(role) AS (
 SELECT t."schema" || '.' || t.name AS table_key, g.operation, g.condition, g.fields,
        held.narrowing
 FROM held
-JOIN sys.role r ON r.sys_id = held.role AND r.deleted IS NULL
+JOIN sys.role r ON r.sys_id = held.role AND r.deleted IS NULL AND NOT r.switched_off
     AND (:everything OR r.sys_id IN (SELECT role FROM allowed))
 JOIN sys."grant" g ON g.role = r.sys_id AND g.deleted IS NULL
-JOIN sys."table" t ON t.sys_id = g."table" AND t.deleted IS NULL
+JOIN sys."table" t ON t.sys_id = g."table" AND t.deleted IS NULL AND NOT t.switched_off
 """
 )
 
