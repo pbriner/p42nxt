@@ -2,8 +2,9 @@
 
 Only while the Administrators group has no active member: after that, people are added in the
 app by those already there. The person gets a password and an authenticator app at once, so the
-first sign-in already needs the second factor. Everything happens in one transaction: if the
-app's code never comes right, nothing is made.
+first sign-in already needs the second factor, and emergency access: they keep signing in with a
+password even if a sign-in provider later claims their email's domain. Everything happens in one
+transaction: if the app's code never comes right, nothing is made.
 """
 
 from collections.abc import Awaitable, Callable
@@ -51,7 +52,9 @@ async def create_first_admin(  # noqa: PLR0913 - what the operator types, and ho
                 )
             records = Records(conn, await load_catalog(conn))
             person: UUID = (
-                await records.create("sys.person", {"name": name, "email": email})
+                await records.create(
+                    "sys.person", {"name": name, "email": email, "emergency_access": True}
+                )
             ).sys_id
             await records.create("sys.membership", {"group": group, "person": person})
             await credentials.set_password(conn, person, password)
