@@ -72,6 +72,26 @@ changed later is a record, changed in the app. Setup must keep working after eve
 installs a fresh installation with the real installer and runs a smoke test against it, and the
 development environment is created by the same installer.
 
+### 6. Secure by default
+
+Safe behaviour needs no configuration. Weakening it takes an explicit, visible and audited
+setting, and some protections can't be switched off at all (deny by default, the audit trail, a
+second factor with every password). Every feature is built and reviewed against the OWASP Top 10
+(2025):
+
+| Risk | How P42 counters it |
+|---|---|
+| A01 Broken access control | Deny by default; every route declares its permission; record and field conditions are applied in SQL; records out of reach answer 404; each module's database role writes only its own schema |
+| A02 Security misconfiguration | Safe defaults for every setting; the app refuses to start on an unsafe database or unsafe settings; no debug output in production |
+| A03 Software supply chain failures | Locked dependencies; every pull request and a weekly run check them for known vulnerabilities; module packages are signed; modules use only reviewed libraries |
+| A04 Cryptographic failures | Passwords hashed with Argon2id; secrets encrypted with the installation's master key and never written to logs or the audit trail |
+| A05 Injection | Conditions only through the filter language, turned into SQL with bound parameters; names come from the metadata, never from input; Markdown is sanitized; no scripts from admins or modules in the browser |
+| A06 Insecure design | Designed before it's built; layers and module boundaries enforced by tools; the server decides, the browser only shows |
+| A07 Authentication failures | A second factor with every password; breached passwords refused; attempts slowed down per account and address; sessions expire and rotate |
+| A08 Software or data integrity failures | Signed module packages; optimistic locking (ETag) on every change; the audit log is hash-chained; idempotency keys for retried calls |
+| A09 Logging and alerting failures | The database records every change and security event; reads of sensitive data are logged; failures raise alerts |
+| A10 Mishandling of exceptional conditions | Fail closed: a broken condition grants nothing; changes are all or nothing; errors tell people what to do without revealing internals |
+
 ## Runtime
 
 - **Processes**: one image with two roles: **web** (API and UI) and **worker** (jobs, schedules,

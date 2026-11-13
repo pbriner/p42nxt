@@ -34,6 +34,9 @@ Docs describe what exists. A new module documents itself in its `README.md`, sta
   engine builds the database from them. Migrations only move data.
 - **Setup stays easy.** Every setting has a safe default; a change that needs manual setup steps
   isn't done. The fresh-install test must pass.
+- **Secure by default.** Check every change against the OWASP Top 10 (`docs/architecture.md`,
+  principle 6). Safe behaviour needs no setting; anything that weakens it is explicit, visible
+  and audited. When unsure, fail closed.
 - **Never delete for real**: soft deletion and the audit trail are enforced in the database.
 - **Every route declares its permission**; nothing is reachable by default.
 - **No secrets or private files** in commits (`.env`, keys, dumps, `*.local.md`).
