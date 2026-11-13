@@ -2,6 +2,21 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.6.0
+
+- What the screens show is records: navigation items (module, section, item) and list views
+  that modules declare (every table gets a view made from its fields if its module declares
+  none), and themes (Violet, the default, and Blue).
+- Each person's own choices are personal records, through the normal records API: preferences
+  (light or dark, theme, records per page, language), favorites in folders, saved views and the
+  columns and sort last used on a list.
+- `GET /api/v1/navigation`: what the caller may open. `GET /api/v1/theme`: a theme's colours,
+  public so the sign-in page looks like the app. `GET /api/v1/search` and `/search/scopes`:
+  every list the caller may read, searched at once.
+- Settings for the default theme and the installation's stage (production, QA, test,
+  development).
+- Modules have a category and an icon, and declare `navigation`, `views` and `themes`.
+
 ## 0.5.0
 
 - Administrators build their own tables in the app (`u.<name>`): records and database change

@@ -31,6 +31,8 @@ SESSION_FIELDS = ("person", "stage", "expires", "last_seen", "verified", "addres
 TOKENS = "sys.api_token"
 # What people see of API tokens: never the token's hash.
 TOKEN_FIELDS = ("person", "name", "prefix", "roles", "expires", "last_used")
+SCREENS = ("sys.nav_item", "sys.list_view", "sys.theme")
+PERSONAL = ("sys.preference", "sys.favorite", "sys.saved_view", "sys.view_state")
 MINE = {"field": "owner", "op": "eq", "value": "@me"}
 # Sessions and tokens are the person's own.
 YOURS = {"field": "person", "op": "eq", "value": "@me"}
@@ -52,6 +54,7 @@ ROLES = [
             Grant("sys.module_update", ("read",)),
             Grant("sys.setting", ("read", "write")),
             Grant("sys.invitation", ("read",), fields=("person", "kind", "expires", "used")),
+            Grant("sys.theme", ALL),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",
@@ -87,7 +90,15 @@ ROLES = [
             Grant(
                 "sys.setting", ("read",), condition={"field": "public", "op": "eq", "value": True}
             ),
-            Grant("sys.module", ("read",), fields=("name", "label", "version", "description")),
+            Grant(
+                "sys.module",
+                ("read",),
+                fields=("name", "label", "version", "description", "category", "icon", "enabled"),
+            ),
+            # The screens: what there is to see, and each person's own choices (personal
+            # tables: nobody else sees them).
+            *(Grant(t, ("read",)) for t in SCREENS),
+            *(Grant(t, ALL) for t in PERSONAL),
         ),
         description="Everyone: sees who's who and shares their own records.",
     ),

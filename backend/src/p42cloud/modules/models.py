@@ -3,6 +3,7 @@
 from p42cloud.data.declarations import Table
 from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.choice import Choice
+from p42cloud.data.types.icon import Icon
 from p42cloud.data.types.json import Json
 from p42cloud.data.types.markdown import Markdown
 from p42cloud.data.types.string import String
@@ -16,6 +17,8 @@ MODULE = Table(
         "version": String("Version", max_length=40, required=True),
         "depends_on": Json("Depends on"),
         "description": String("Description", max_length=255),
+        "category": String("Category", max_length=40),
+        "icon": Icon("Icon"),
         # Switched off: its tables and roles count for nobody; its data stays.
         "enabled": Boolean("On", required=True, default=True),
         # The core and what it depends on: never switched off or removed.

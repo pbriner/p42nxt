@@ -1,6 +1,6 @@
 # Hello (`hello`)
 
-Version: 0.1.0 · Last updated: 2026-11-13
+Version: 0.2.0 · Last updated: 2026-11-13
 
 ## Purpose
 
@@ -11,7 +11,7 @@ hook, documentation and its own tests. People leave greetings for everyone to re
 
 | Module | Versions | What for |
 |---|---|---|
-| `sys` | `>=0.1,<1` | Always |
+| `sys` | `>=0.6,<1` | Always; 0.6 brings navigation and list views |
 
 Core dependency: no
 
@@ -26,6 +26,11 @@ Core dependency: no
 | Role | Can | Record conditions / personal data |
 |---|---|---|
 | `hello.user` (Greeter) | Read all greetings, leave new ones, change and delete their own | Change and delete: `author = @me` |
+
+## Views, navigation and dashboards
+
+In the navigator under Examples → Hello → Greetings: the list of greetings (text, language,
+author, when) and leaving a new one. No dashboards.
 
 ## Hooks
 

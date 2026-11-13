@@ -24,6 +24,7 @@ from p42cloud.security.sign_in import invitations
 from p42cloud.security.sign_in import models as sign_in
 from p42cloud.security.tokens import hooks as token_hooks
 from p42cloud.security.tokens import models as tokens
+from p42cloud.ui import manifest as ui
 
 # The repository's docs/features, which is also where the image puts them: the same place
 # relative to this file in both.
@@ -44,6 +45,7 @@ CORE = Module(
         *module_models.TABLES,
         settings.SETTING,
         invitations.INVITATION,
+        *ui.TABLES,
     ),
     roles=tuple(access.ROLES),
     hooks=(
@@ -52,11 +54,17 @@ CORE = Module(
         *token_hooks.TABLE_HOOKS,
         *provider_hooks.TABLE_HOOKS,
         *settings.TABLE_HOOKS,
+        *ui.HOOKS,
     ),
     docs=DOCS if DOCS.is_dir() else None,
     description="People, access, sign-in and the platform itself.",
     seed=access.seed,
-    settings=(settings.TIME_ZONE, sign_in.PASSWORDS_OFF),
+    settings=(settings.TIME_ZONE, sign_in.PASSWORDS_OFF, *ui.SETTINGS),
+    category="Platform",
+    icon="settings",
+    navigation=ui.NAVIGATION,
+    views=ui.VIEWS,
+    themes=ui.THEMES,
 )
 
 

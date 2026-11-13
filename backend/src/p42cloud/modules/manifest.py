@@ -27,6 +27,9 @@ from p42cloud.data.hooks import TableHook
 from p42cloud.data.settings import Setting
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.security.access.roles import Role
+from p42cloud.ui.navigation.models import Entry
+from p42cloud.ui.themes.models import Theme
+from p42cloud.ui.views.models import ListView
 
 # Called as the owner after the module's tables and roles are written, with the catalog.
 type Seed = Callable[[AsyncConnection, Catalog], Awaitable[None]]
@@ -45,8 +48,10 @@ class Migration:
 
 
 MODULE_ID = re.compile(r"^[a-z][a-z0-9]{1,15}$")
+ICON = re.compile(r"^[a-z0-9_]{1,64}$")
+MAX_CATEGORY = 40
 CORE = "sys"
-RESERVED = frozenset({"u"})  # admins' own tables
+RESERVED = frozenset({"u", "search"})  # admins' own tables; a route of its own
 
 
 @dataclass(frozen=True)
@@ -67,10 +72,21 @@ class Module:
     seed: Seed | None = None
     migrations: tuple[Migration, ...] = ()
     settings: tuple[Setting, ...] = ()
+    # Where it shows in the navigator, and what it shows there.
+    category: str = "General"
+    icon: str = "extension"
+    navigation: tuple[Entry, ...] = ()
+    views: tuple[ListView, ...] = ()
+    themes: tuple[Theme, ...] = ()
 
     @property
     def parsed_version(self) -> Version:
         return Version(self.version)
+
+    def _place_problems(self) -> list[FieldError]:
+        if 1 <= len(self.category) <= MAX_CATEGORY and ICON.match(self.icon):
+            return []
+        return [FieldError("category", "bad_place", "A category of 1 to 40 characters, an icon.")]
 
     def problems(self) -> list[FieldError]:
         """What's wrong with the manifest itself, before anything is installed."""
@@ -111,6 +127,7 @@ class Module:
                         "migrations", "bad_version", f"Not a version: {migration.version!r}."
                     )
                 )
+        found += self._place_problems()
         if self.docs is not None and not self.docs.is_dir():
             found.append(FieldError("docs", "missing", f"No folder {self.docs}."))
         return found

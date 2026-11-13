@@ -19,6 +19,10 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `GET /api/v1/meta/<module>/<table>` | The table described for the caller (below) |
 | `POST /api/v1/tables` | Make or change one of the administrators' own tables (`tables.md`) |
 | `DELETE /api/v1/tables/<name>` | Retire one of them |
+| `GET /api/v1/navigation` | The navigator: what the caller may open (`screens.md`) |
+| `GET /api/v1/theme` | A theme's colours and look (anyone) |
+| `GET /api/v1/search` | Every list the caller may read, searched at once |
+| `GET /api/v1/search/scopes` | The lists the caller may search in |
 | `POST /api/v1/undo` | Undo what a request did (`{"request": …}`) or one audit entry (`{"entry": …}`) |
 | `/api/v1/sign-in/…` | Signing in and out (below) |
 | `GET /api/v1/openapi.json` | The API's description |

@@ -8,6 +8,8 @@ from typing import Any
 import pytest
 from p42cloud.sdk import Client, Problem
 
+from p42cloud_hello import module
+
 Acting = Callable[..., AbstractAsyncContextManager[Client]]
 
 
@@ -39,7 +41,7 @@ async def test_the_module_is_installed_with_its_documentation(as_system: Acting)
         pages = await client.list(
             "sys.doc_page", where={"field": "module", "op": "eq", "value": "hello"}
         )
-    assert modules["records"][0]["version"] == "0.1.0"
+    assert modules["records"][0]["version"] == module.version
     assert [p["title"] for p in pages["records"]] == ["Hello"]
 
 
@@ -88,3 +90,15 @@ async def test_without_the_role_there_are_no_greetings(
         async with as_person(someone["sys_id"]) as client:
             await client.list("hello.greeting")
     assert refused.value.status == 403
+
+
+async def test_greetings_are_in_the_navigator(as_system: Acting) -> None:
+    async with as_system() as client:
+        items = await client.list(
+            "sys.nav_item", where={"field": "module", "op": "eq", "value": "hello"}
+        )
+        views = await client.list(
+            "sys.list_view", where={"field": "name", "op": "eq", "value": "hello.greeting"}
+        )
+    assert {r["name"] for r in items["records"]} == {"hello.greetings", "hello.greet"}
+    assert views["records"][0]["columns"] == ["text", "language", "author", "created"]

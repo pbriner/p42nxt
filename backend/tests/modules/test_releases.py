@@ -3,6 +3,7 @@
 import json
 import subprocess
 from collections.abc import AsyncGenerator
+from importlib.metadata import version
 from pathlib import Path
 
 import httpx
@@ -217,13 +218,14 @@ def test_publishing_signs_the_package_and_the_index(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("P42_RELEASE_KEY", PRIVATE)
-    wheel = tmp_path / "p42cloud_hello-0.1.0-py3-none-any.whl"
+    hello = version("p42cloud-hello")  # what's installed is what gets published
+    wheel = tmp_path / f"p42cloud_hello-{hello}-py3-none-any.whl"
     wheel.write_bytes(b"a package")
     index = tmp_path / "index.json"
     release_tool.publish("hello", wheel, index, "https://example.test/hello.whl")
     body = index.read_bytes()
     found = releases.read_index(body, (tmp_path / "index.json.sig").read_text(), KEYS)
     (release,) = found["modules"]["hello"]
-    assert release["version"] == "0.1.0"
+    assert release["version"] == hello
     assert releases.verify(b"a package", (tmp_path / f"{wheel.name}.sig").read_text(), KEYS)
     assert release["sha256"] == releases.sha256(b"a package")
