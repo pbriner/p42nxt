@@ -61,6 +61,23 @@ jobs:
             echo "::endgroup::"
           done
 
+  # Changing a package means releasing it (AGENTS.md): a new version and a CHANGELOG.md entry
+  # for every package whose shipped files changed in this pull request.
+  releases:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+      - run: uv sync --locked --all-packages
+      - name: Versions and changelogs
+        run: uv run python -m p42cloud.modules.release_tool check --base "origin/${{ github.base_ref }}"
+
   # Setup must keep working after every change (docs/architecture.md, principle 5): the real
   # installer creates a fresh installation from the image built here.
   fresh-install:

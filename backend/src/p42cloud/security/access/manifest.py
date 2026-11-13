@@ -49,6 +49,7 @@ ROLES = [
             Grant("sys.identity_provider", ALL),
             Grant("sys.external_id", ("read",)),
             Grant("sys.module", ("read",)),
+            Grant("sys.module_update", ("read",)),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",

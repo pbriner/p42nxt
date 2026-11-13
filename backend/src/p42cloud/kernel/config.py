@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # The address people open the app at (https://p42.example.com). Passkeys are bound to it;
     # without it they're unavailable, and authenticator apps still work.
     public_url: str | None = None
+    # Where module releases are published (the registry's index.json is read from there). Off by
+    # default: without it the installation never asks for updates.
+    registry_url: str | None = None
     # Sessions end after this long without use, and after this long in any case.
     session_idle_minutes: int = Field(default=30, ge=5, le=24 * 60)
     session_max_hours: int = Field(default=12, ge=1, le=24 * 30)
@@ -40,25 +43,28 @@ class Settings(BaseSettings):
             raise ValueError("the app and the owner must be different database roles")
         if app.database != owner.database:
             raise ValueError("the app and the owner must use the same database")
+        production = self.environment == "production"
         if self.public_url is not None:
-            public = urlsplit(self.public_url)
-            if (
-                public.scheme not in ("http", "https")
-                or not public.hostname
-                or public.path not in ("", "/")
-            ):
-                raise ValueError("public_url must be like https://p42.example.com")
-            if (
-                self.environment == "production"
-                and public.scheme != "https"
-                and public.hostname != "localhost"
-            ):
-                raise ValueError("public_url must use https in production")
-        if self.environment == "production":
+            _check_public_url(self.public_url, production=production)
+        if production and self.registry_url and not self.registry_url.startswith("https://"):
+            raise ValueError("registry_url must use https in production")
+        if production:
             for url in (app, owner):
                 if url.password and "dev-only" in url.password:
                     raise ValueError("development passwords are not allowed in production")
         return self
+
+
+def _check_public_url(address: str, *, production: bool) -> None:
+    public = urlsplit(address)
+    if (
+        public.scheme not in ("http", "https")
+        or not public.hostname
+        or public.path not in ("", "/")
+    ):
+        raise ValueError("public_url must be like https://p42.example.com")
+    if production and public.scheme != "https" and public.hostname != "localhost":
+        raise ValueError("public_url must use https in production")
 
 
 @lru_cache

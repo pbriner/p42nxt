@@ -10,6 +10,8 @@ import getpass
 import os
 import sys
 
+import httpx
+
 from p42cloud.data.audit import Anchor, missing_months, verify_chain
 from p42cloud.kernel.config import get_settings
 from p42cloud.kernel.context import Context, working_as
@@ -22,6 +24,7 @@ from p42cloud.modules.core import CORE, compose
 from p42cloud.modules.install import install_modules, states
 from p42cloud.modules.lifecycle import remove, switch_off, switch_on
 from p42cloud.modules.registry import discover
+from p42cloud.modules.updates import refresh
 from p42cloud.security.sign_in.credentials import NewKey
 from p42cloud.security.sign_in.first_admin import create_first_admin
 
@@ -131,6 +134,16 @@ async def _module(action: str, module: str | None) -> int:
     engine = create_engine(get_settings().owner_database_url)
     try:
         with working_as(Context(channel=f"cli:module:{action}")):
+            if action == "updates":
+                async with httpx.AsyncClient(timeout=15) as http:
+                    found = await refresh(engine, http, get_settings().registry_url)
+                for update in found:
+                    kind = "security update" if update.security else "update"
+                    state = "fits" if update.fits else update.needs
+                    versions = f"{update.installed} → {update.available}"
+                    print(f"{update.module:16} {versions}  {kind}, {state}")
+                print("" if found else "Everything is up to date.")
+                return 0
             if action == "list":
                 for name, state in sorted((await states(engine)).items()):
                     shown = "removed" if state.removed else "on" if state.enabled else "off"
@@ -166,7 +179,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     commands.add_parser("check", help="refuse a database that isn't set up safely")
     modules = commands.add_parser("module", help="list, switch on or off, remove or bring back")
-    modules.add_argument("action", choices=["list", "on", "off", "remove", "install"])
+    modules.add_argument("action", choices=["list", "updates", "on", "off", "remove", "install"])
     modules.add_argument("module", nargs="?")
     admin = commands.add_parser(
         "create-admin", help="the first administrator of a new installation (asks for a password)"

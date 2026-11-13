@@ -80,11 +80,17 @@ deleted.
   module can't be switched off while a module that's on needs it, nor removed while an installed
   one needs it, nor switched on while something it needs is off.
 
+## Releases and updates
+
+See `releases.md`: the version and changelog rule, signed packages, the registry and
+`p42cloud module updates`.
+
 ## Records
 
 | Table | Holds |
 |---|---|
 | `sys.module` | One record per installed module: ID, name, version, what it depends on, whether it's on, whether it's part of the core |
+| `sys.module_update` | The updates available for installed modules (`releases.md`) |
 | `sys.doc_page` | The documentation: one page per Markdown file of a module's `docs` folder, by path, titled by its first heading |
 
 A page a module no longer ships is retired. Everyone may read the documentation and see which
