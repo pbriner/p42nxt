@@ -1,6 +1,7 @@
 # Sign-in
 
-People sign in with a password and, always, a second factor. Sessions are kept on the server.
+People sign in with a password and, always, a second factor, or through a sign-in provider
+(`sign-in-providers.md`). Sessions are kept on the server.
 The HTTP routes and the browser cookie come with the web layer; this is the service under them
 (`backend/src/p42cloud/security/sign_in/`).
 
@@ -36,7 +37,8 @@ The HTTP routes and the browser cookie come with the web layer; this is the serv
 ## Signing in
 
 1. **Email and password.** A wrong password, an unknown email and an inactive person get the same
-   answer after the same time. Someone without a second factor yet can only set one up.
+   answer after the same time. Service accounts never sign in this way, and addresses in a domain
+   a sign-in provider claims sign in through it (except people with emergency access). Someone without a second factor yet can only set one up.
 2. **The second factor.** An authenticator code, a recovery code, or a passkey. The waiting
    session ends and a new one begins, with a new token. Someone without a second factor sets one
    up here first (an app or a passkey) and gets their recovery codes.

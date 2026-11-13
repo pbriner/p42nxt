@@ -120,7 +120,7 @@ Table("budget", "Budget", {..., "owner": Reference("Owner", "sys.person", requir
 
 | Role | Grants |
 |---|---|
-| `sys.admin` | People: everything. Groups, roles, grants and metadata: read. Sessions and API tokens: read and end |
+| `sys.admin` | People and sign-in providers: everything. Groups, roles, grants, metadata and external IDs: read. Sessions and API tokens: read and end |
 | `sys.access_admin` | People and metadata: read. Groups, memberships, roles, included roles, grants, group roles: everything |
 | `sys.user` | People's name, kind and whether active; groups' names: read. Their own shares: everything. Their own sessions and API tokens: read and end |
 

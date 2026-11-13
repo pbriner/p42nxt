@@ -76,12 +76,17 @@ def _slow_down() -> Problem:
 
 
 _ACCOUNT = text(
-    "SELECT p.sys_id, p.email, c.secret FROM sys.person p"
+    "SELECT p.sys_id, p.email, p.emergency_access, c.secret FROM sys.person p"
     " LEFT JOIN sys.credential c ON c.person = p.sys_id AND c.kind = 'password'"
     " AND c.deleted IS NULL"
     " WHERE lower(p.email) = :email AND p.deleted IS NULL AND p.active"
     # Service accounts work through API tokens only.
     " AND p.kind <> 'service'"
+)
+# An email domain a sign-in provider claims signs in through it.
+_CLAIMED = text(
+    "SELECT name FROM sys.identity_provider WHERE active AND deleted IS NULL"
+    " AND jsonb_exists(domains, :domain)"
 )
 _SESSION = text(
     "SELECT sys_id, person, stage, expires, last_seen, verified, challenge FROM sys.session"
@@ -187,7 +192,12 @@ class SignIn:
             )
             row = None if throttled else (await conn.execute(_ACCOUNT, {"email": email})).first()
             hashed = row.secret if row is not None else None
-            if throttled or not passwords.verify(hashed, password) or row is None:
+            right = not throttled and passwords.verify(hashed, password) and row is not None
+            claimed = await conn.scalar(_CLAIMED, {"domain": email.rpartition("@")[2]})
+            if claimed and not (right and row is not None and row.emergency_access):
+                # The same answer whether the account exists or not.
+                started = None
+            elif not right or row is None:
                 await event(conn, "sign_in_failed", email=email, address=address)
                 started = None
             else:
@@ -198,8 +208,26 @@ class SignIn:
                 started = await self._new_session(
                     conn, row.sys_id, stage, {"address": address, "agent": agent}
                 )
+        if started is None and claimed and not throttled:
+            raise Problem(
+                409,
+                "use_provider",
+                f"Sign in with {claimed}: it handles addresses like yours.",
+                extra={"provider": claimed},
+            )
         if started is None:
             raise _slow_down() if throttled else _wrong("Wrong email or password.")
+        return started
+
+    async def through_provider(
+        self, person: UUID, provider: str, address: str | None, agent: str | None
+    ) -> Started:
+        """A session for someone a sign-in provider vouched for: its second factor counts."""
+        async with self._work() as conn:
+            started = await self._new_session(
+                conn, person, "active", {"address": address, "agent": agent}
+            )
+            await event(conn, "sign_in", person=str(person), method=f"provider:{provider}")
         return started
 
     async def finish(

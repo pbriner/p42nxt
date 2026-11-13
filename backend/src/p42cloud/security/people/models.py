@@ -20,6 +20,9 @@ PERSON = Table(
         ),
         # An inactive person has no access at all, whatever their groups say.
         "active": Boolean("Active", required=True, default=True),
+        # Keeps signing in with a password and a second factor even where a sign-in provider
+        # claims their email's domain, so a provider's outage can't lock everyone out.
+        "emergency_access": Boolean("Emergency access", required=True, default=False),
     },
     label_plural="People",
 )

@@ -46,6 +46,8 @@ ROLES = [
             Grant(SESSIONS, ("delete",)),
             Grant(TOKENS, ("read",), fields=TOKEN_FIELDS),
             Grant(TOKENS, ("delete",)),
+            Grant("sys.identity_provider", ALL),
+            Grant("sys.external_id", ("read",)),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",
@@ -108,8 +110,8 @@ async def seed(conn: AsyncConnection, catalog: Catalog) -> None:
     for person, name in ((SYSTEM_PERSON, "System"), (DATABASE_PERSON, "Database")):
         await conn.execute(
             text(
-                "INSERT INTO sys.person (sys_id, name, kind, active)"
-                " VALUES (:id, :name, 'service', true)"
+                "INSERT INTO sys.person (sys_id, name, kind, active, emergency_access)"
+                " VALUES (:id, :name, 'service', true, false)"
                 " ON CONFLICT (sys_id) DO NOTHING"
             ),
             {"id": person, "name": name},
