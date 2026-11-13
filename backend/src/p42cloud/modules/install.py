@@ -24,6 +24,9 @@ from p42cloud.kernel.db import ensure_module_role, owner_transaction
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.modules.manifest import CORE, Module
 from p42cloud.security.access.roles import write_roles
+from p42cloud.ui.navigation.service import write_navigation
+from p42cloud.ui.themes.service import write_themes
+from p42cloud.ui.views.service import write_views
 
 MAX_PAGE_BYTES = 1_000_000
 MAX_PAGES = 500
@@ -133,14 +136,16 @@ async def _record(conn: AsyncConnection, module: Module, protected: bool) -> Non
         "depends_on": json.dumps(dict(module.depends_on)),
         "description": module.description[:255] or None,
         "protected": protected,
+        "category": module.category,
+        "icon": module.icon,
     }
     if installed is None:
         await conn.execute(
             text(
                 "INSERT INTO sys.module"
-                " (name, label, version, depends_on, description, enabled, protected)"
-                " VALUES (:id, :label, :version, CAST(:depends_on AS jsonb), :description, true,"
-                " :protected)"
+                " (name, label, version, depends_on, description, enabled, protected, category,"
+                " icon) VALUES (:id, :label, :version, CAST(:depends_on AS jsonb), :description,"
+                " true, :protected, :category, :icon)"
             ),
             values,
         )
@@ -149,7 +154,8 @@ async def _record(conn: AsyncConnection, module: Module, protected: bool) -> Non
             text(
                 "UPDATE sys.module SET label = :label, version = :version,"
                 " depends_on = CAST(:depends_on AS jsonb), description = :description,"
-                " protected = :protected, deleted = NULL WHERE name = :id"
+                " protected = :protected, category = :category, icon = :icon, deleted = NULL"
+                " WHERE name = :id"
             ),
             values,
         )
@@ -239,6 +245,9 @@ async def install_modules(
             if module.seed is not None:
                 await module.seed(conn, catalog)
             await write_docs(conn, module.id, module.docs)
+            await write_views(conn, catalog, module.id, module.views)
+            await write_navigation(conn, catalog, module.id, module.navigation)
+            await write_themes(conn, module.id, module.themes)
             await settings.write(conn, module.id, module.settings)
             await _record(conn, module, module.id in protected)
             if state is not None and (not state.enabled or state.removed):

@@ -1,6 +1,6 @@
 [project]
 name = "p42cloud-hello"
-version = "0.1.0"
+version = "0.2.0"
 description = "The reference module: how a module is built on the SDK alone"
 requires-python = ">=3.14"
 license = "Apache-2.0"
