@@ -6,6 +6,12 @@ resolution-markers = [
     "python_full_version < '3.15'",
 ]
 
+[manifest]
+members = [
+    "p42cloud",
+    "p42cloud-hello",
+]
+
 [[package]]
 name = "annotated-types"
 version = "0.8.0"
@@ -519,7 +525,7 @@ wheels = [
 [[package]]
 name = "p42cloud"
 version = "0.1.0"
-source = { editable = "." }
+source = { editable = "backend" }
 dependencies = [
     { name = "argon2-cffi" },
     { name = "asyncpg" },
@@ -561,6 +567,29 @@ dev = [
     { name = "pytest", specifier = ">=8.3" },
     { name = "pytest-asyncio", specifier = ">=0.24" },
     { name = "ruff", specifier = ">=0.8" },
+]
+
+[[package]]
+name = "p42cloud-hello"
+version = "0.1.0"
+source = { editable = "modules/hello" }
+dependencies = [
+    { name = "p42cloud" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "p42cloud", editable = "backend" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
 ]
 
 [[package]]

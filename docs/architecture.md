@@ -176,11 +176,11 @@ modules/<id>/
   src/p42cloud_<id>/
     __init__.py    module = Module(...): the manifest, assembled from the parts below
     models.py, service.py, api.py, views.py, widgets.py, jobs.py, samples.py
+    docs/          Markdown documentation (inside the package, so it ships with it)
   ui/              only if the module has its own screens (separate bundle)
   migrations/      data migrations only; tables come from the declarations
   translations/
-  docs/            Markdown documentation
-  tests/
+  tests/           run in the module's folder against a fresh installation (sdk.testing)
   CHANGELOG.md, README.md
 ```
 

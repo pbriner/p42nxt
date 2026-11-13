@@ -189,8 +189,8 @@ async def test_modules_depending_on_each_other_in_a_circle_are_refused(
     assert "circle" in refused.value.title
 
 
-def test_no_module_packages_are_installed_yet() -> None:
-    assert discover() == []
+def test_module_packages_are_found() -> None:
+    assert [m.id for m in discover()] == ["hello"]
 
 
 async def test_everyone_reads_the_documentation(app: AsyncEngine) -> None:

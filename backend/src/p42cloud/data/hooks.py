@@ -30,6 +30,11 @@ class Change:
     # The values given (create, write); a before hook may add or change them.
     values: dict[str, Any] = field(default_factory=dict[str, Any])
 
+    @property
+    def person(self) -> UUID:
+        """Who makes the change."""
+        return self.records.situation.person
+
 
 Hook = Callable[[Change], Awaitable[None]]
 

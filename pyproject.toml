@@ -1,0 +1,5 @@
+# The uv workspace: the platform (backend/) and every module (modules/<id>/), one lock file and
+# every package editable, so one `uv sync` gives a working environment for all of them.
+[tool.uv.workspace]
+members = ["backend", "modules/*"]
+exclude = ["modules/_template"]
