@@ -1,6 +1,10 @@
 """Credentials and sessions. Nobody reads credentials; people see and end their own sessions."""
 
+from typing import Any, cast
+
 from p42cloud.data.declarations import Table
+from p42cloud.data.settings import Setting
+from p42cloud.data.types import Invalid
 from p42cloud.data.types.choice import Choice
 from p42cloud.data.types.datetime import DateTime
 from p42cloud.data.types.integer import Integer
@@ -65,6 +69,23 @@ SESSION = Table(
         "agent": String("Browser", max_length=255),
     },
     label_plural="Sessions",
+)
+
+
+def _kinds(given: Any) -> list[str]:
+    allowed = {"employee", "external"}
+    if not isinstance(given, list) or not set(cast(list[Any], given)) <= allowed:
+        raise Invalid("A list of kinds of person: employee, external.")
+    return sorted(set(cast(list[str], given)))
+
+
+PASSWORDS_OFF = Setting(
+    "sys.passwords_off_for",
+    "No passwords for",
+    [],
+    check=_kinds,
+    help="Kinds of person who sign in only through a sign-in provider. People with emergency"
+    " access keep their password.",
 )
 
 TABLES = [CREDENTIAL, SESSION]

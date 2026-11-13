@@ -15,6 +15,7 @@ others (`backend/src/p42cloud/security/providers/`). An installation can have se
 | Email domains | Domains it claims: those addresses always sign in through it |
 | Creates people | Whether someone unknown is made a person at their first sign-in; off by default |
 | Vouches for emails | The provider stands for every email it sends (a company's own tenant), so people may be linked by email without an `email_verified` claim |
+| Groups claim | The claim listing the person's groups there (Entra: `groups`): groups following this provider take their members from it at each sign-in (`access.md`) |
 | Fields from claims | Person fields filled from the ID token at every sign-in, like `{"name": "name"}`. Never `kind`, `active`, `emergency_access` or `email` |
 | Active | Off: not offered, and nobody signs in through it |
 

@@ -14,6 +14,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
@@ -92,7 +93,7 @@ class Records:
         context = current()
         self.access = context.access
         self.situation = situation or Situation(
-            context.person_id, context.language, context.access.groups
+            context.person_id, context.language, context.access.groups, zone=ZoneInfo(context.zone)
         )
 
     def _rules(self, query: Query) -> Rules:

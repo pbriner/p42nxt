@@ -15,6 +15,7 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `PATCH /api/v1/<module>/<table>/<id>` | Change fields; needs `If-Match` |
 | `DELETE /api/v1/<module>/<table>/<id>` | Soft deletion; needs `If-Match` |
 | `POST /api/v1/<module>/<table>/<id>/restore` | Restore |
+| `POST /api/v1/people/<id>/invitation` | A one-time link for a person to set a password and a second factor (`{"reset": true}` first ends their sessions and credentials); administrators only |
 | `POST /api/v1/undo` | Undo what a request did (`{"request": …}`) or one audit entry (`{"entry": …}`) |
 | `/api/v1/sign-in/…` | Signing in and out (below) |
 | `GET /api/v1/openapi.json` | The API's description |
@@ -46,6 +47,7 @@ or **signed in**. What a signed-in caller may do with records is decided by thei
 | Route | What |
 |---|---|
 | `POST /api/v1/sign-in` | Email and password; answers the next stage: `second_factor` or `enroll` |
+| `POST /api/v1/sign-in/invitation` | An invitation's token and a new password; then the second factor is set up |
 | `POST /api/v1/sign-in/code` | An authenticator or recovery code: signed in (`active`) |
 | `POST /api/v1/sign-in/passkey/challenge`, `POST /api/v1/sign-in/passkey` | With a passkey |
 | `POST /api/v1/sign-in/setup/app`, `…/setup/app/confirm` | A first authenticator app; its first code signs in and returns the recovery codes |

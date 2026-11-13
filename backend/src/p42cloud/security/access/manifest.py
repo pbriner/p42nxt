@@ -50,6 +50,8 @@ ROLES = [
             Grant("sys.external_id", ("read",)),
             Grant("sys.module", ("read",)),
             Grant("sys.module_update", ("read",)),
+            Grant("sys.setting", ("read", "write")),
+            Grant("sys.invitation", ("read",), fields=("person", "kind", "expires", "used")),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",
@@ -82,6 +84,9 @@ ROLES = [
             Grant(TOKENS, ("delete",), condition=YOURS),
             # The documentation, and which modules there are.
             Grant("sys.doc_page", ("read",)),
+            Grant(
+                "sys.setting", ("read",), condition={"field": "public", "op": "eq", "value": True}
+            ),
             Grant("sys.module", ("read",), fields=("name", "label", "version", "description")),
         ),
         description="Everyone: sees who's who and shares their own records.",

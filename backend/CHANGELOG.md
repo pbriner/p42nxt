@@ -2,6 +2,16 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.4.0
+
+- Settings are records (`sys.setting`), declared by modules with a default and a check; values
+  people change are kept on upgrade. The first: the installation's time zone (used for today
+  and dates in filters) and the kinds of person who may not sign in with a password.
+- Invitations and resets: a one-time link (7 days) that administrators pass on, leading to a
+  new password and then a second factor; a reset ends the person's sessions and credentials.
+- A group can follow a sign-in provider's groups claim; such a group never holds a powerful
+  role, and its members aren't kept by hand.
+
 ## 0.3.0
 
 - The HTTP API: the generic record routes (list with `filter[...]` and `where`, read, create,

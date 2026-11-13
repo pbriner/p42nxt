@@ -5,6 +5,7 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from p42cloud.data import settings
 from p42cloud.data.access import SHARE
 from p42cloud.data.external_ids import EXTERNAL_ID
 from p42cloud.modules import models as module_models
@@ -19,6 +20,7 @@ from p42cloud.security.people import models as people
 from p42cloud.security.providers import hooks as provider_hooks
 from p42cloud.security.providers import models as providers
 from p42cloud.security.sign_in import hooks as sign_in_hooks
+from p42cloud.security.sign_in import invitations
 from p42cloud.security.sign_in import models as sign_in
 from p42cloud.security.tokens import hooks as token_hooks
 from p42cloud.security.tokens import models as tokens
@@ -40,6 +42,8 @@ CORE = Module(
         *tokens.TABLES,
         *providers.TABLES,
         *module_models.TABLES,
+        settings.SETTING,
+        invitations.INVITATION,
     ),
     roles=tuple(access.ROLES),
     hooks=(
@@ -47,10 +51,12 @@ CORE = Module(
         *sign_in_hooks.TABLE_HOOKS,
         *token_hooks.TABLE_HOOKS,
         *provider_hooks.TABLE_HOOKS,
+        *settings.TABLE_HOOKS,
     ),
     docs=DOCS if DOCS.is_dir() else None,
     description="People, access, sign-in and the platform itself.",
     seed=access.seed,
+    settings=(settings.TIME_ZONE, sign_in.PASSWORDS_OFF),
 )
 
 

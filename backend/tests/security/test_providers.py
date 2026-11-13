@@ -321,3 +321,66 @@ async def test_a_provider_must_keep_to_https(
     with pytest.raises(Problem) as refused:
         await world.providers.begin(world.provider)
     assert refused.value.code == "provider_unreachable"
+
+
+async def test_a_group_follows_the_providers_groups_claim(
+    engine: AsyncEngine, upgraded: Settings, anonymous: None
+) -> None:
+    world = await _world(engine, upgraded, create_people=True, groups_claim="groups")
+    async with acting(engine, None) as records:
+        group = await records.create(
+            "sys.group",
+            {
+                "name": f"Staff {uuid.uuid4().hex[:6]}",
+                "provider": world.provider,
+                "provider_group": "staff",
+            },
+        )
+    claims = _claims(world)
+    joined = await world.sign_in_as(claims | {"groups": ["staff", "other"]})
+    async with acting(engine, None) as records:
+        member = await records.list(
+            "sys.membership", where={"field": "group", "op": "eq", "value": str(group.sys_id)}
+        )
+    assert [r.values["person"] for r in member.records] == [joined.person]
+    await world.sign_in_as(claims | {"groups": ["other"]})
+    async with acting(engine, None) as records:
+        after = await records.list(
+            "sys.membership", where={"field": "group", "op": "eq", "value": str(group.sys_id)}
+        )
+    assert after.records == []  # left the provider's group: left ours at the next sign-in
+
+
+async def test_a_providers_group_is_never_powerful_nor_kept_by_hand(
+    engine: AsyncEngine, upgraded: Settings
+) -> None:
+    world = await _world(engine, upgraded)
+    async with acting(engine, None) as records:
+        group = await records.create(
+            "sys.group",
+            {
+                "name": f"Synced {uuid.uuid4().hex[:6]}",
+                "provider": world.provider,
+                "provider_group": "x",
+            },
+        )
+        admin_role = await records.conn.scalar(
+            text("SELECT sys_id FROM sys.role WHERE name = 'sys.admin'")
+        )
+        person = await records.create("sys.person", {"name": "Someone"})
+        with pytest.raises(Problem) as powerful:
+            await records.create("sys.group_role", {"group": group.sys_id, "role": admin_role})
+        with pytest.raises(Problem) as by_hand:
+            await records.create("sys.membership", {"group": group.sys_id, "person": person.sys_id})
+        with pytest.raises(Problem) as both:
+            await records.create(
+                "sys.group",
+                {
+                    "name": f"Both {uuid.uuid4().hex[:6]}",
+                    "provider": world.provider,
+                    "rule": {"field": "kind", "op": "eq", "value": "employee"},
+                },
+            )
+    assert powerful.value.code == "provider_group"  # even for the system itself
+    assert by_hand.value.code == "from_rule"
+    assert both.value.code == "validation"

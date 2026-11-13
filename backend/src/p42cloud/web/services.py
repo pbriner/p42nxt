@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import httpx
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from p42cloud.data import settings
 from p42cloud.data.catalog import MetadataCache
 from p42cloud.data.records import Records
 from p42cloud.kernel.config import Settings
@@ -32,6 +33,11 @@ class Services:
     cache: MetadataCache
     rates: Rates
     http: httpx.AsyncClient
+
+    async def time_zone(self) -> str:
+        """The installation's time zone (a setting)."""
+        async with transaction(self.engine, "sys") as conn:
+            return str(await settings.value(conn, "sys.time_zone"))
 
     async def tokens(self, token: str, address: str | None) -> TokenUse:
         return await use_token(self.engine, token, address)

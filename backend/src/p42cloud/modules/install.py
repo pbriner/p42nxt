@@ -15,6 +15,7 @@ from packaging.version import Version
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from p42cloud.data import settings
 from p42cloud.data.catalog import load_catalog
 from p42cloud.data.hooks import HOOKS
 from p42cloud.data.metadata import declare
@@ -77,6 +78,7 @@ def compose(modules: list[Module]) -> None:
     """Connects the modules' hooks; every process does it once at start."""
     for module in modules:
         HOOKS.add(*module.hooks)
+        settings.declare(*module.settings)
 
 
 async def ensure_role(conn: AsyncConnection, module: str) -> None:
@@ -254,6 +256,7 @@ async def install_modules(
             if module.seed is not None:
                 await module.seed(conn, catalog)
             await write_docs(conn, module.id, module.docs)
+            await settings.write(conn, module.id, module.settings)
             await _record(conn, module, module.id in protected)
             if state is not None and (not state.enabled or state.removed):
                 await switch(conn, module.id, on=False)  # new tables and roles stay off too
