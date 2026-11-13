@@ -1,9 +1,11 @@
 """Undo: reverses what one audit entry, or everything one request, did.
 
-Undo is a new change, never a rewrite of history: it is audited like any other, under the undo's
-own request ID and a channel that names what it undid (`ui:undo:<id>`). Undoing a create soft
-deletes, undoing a delete restores. A field changed again since isn't touched: it's listed as
-skipped with the reason, and so is anything the database refuses.
+Undo is a new change, never a rewrite of history. It is audited like any other, under the undo's
+own request ID and a channel that names what it undid (`ui:undo:<id>`), and needs the rights of a
+change today: undoing a create soft deletes (delete rights), undoing a delete restores (restore
+rights), undoing an update sets fields back (write rights on each). A field changed again since
+isn't touched: it's listed as skipped with the reason, and so is anything not allowed or refused
+by the database.
 """
 
 import json
@@ -16,7 +18,7 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from p42cloud.data.catalog import Catalog, TableDef
-from p42cloud.data.records import refusal
+from p42cloud.data.records import Records, refusal
 from p42cloud.data.schema import METADATA_TABLES
 from p42cloud.data.sql import ident, qualified
 from p42cloud.kernel.context import current
@@ -45,6 +47,7 @@ class _Undo:
         self.conn = conn
         self.catalog = catalog
         self.result = Undone()
+        self.records = Records(conn, catalog)
 
     def skip(self, table: str, record: UUID, reason: str, name: str | None = None) -> None:
         self.result.skipped.append(Skipped(table, record, name, reason))
@@ -70,11 +73,13 @@ class _Undo:
             case "insert" | "restore" if deleted:
                 self.skip(table.key, row.record_id, "The record is deleted already.")
             case "insert" | "restore":
-                await self.apply(table, row.record_id, "deleted = now()", {}, "deleted")
+                if await self.may(table, row.record_id, "delete"):
+                    await self.apply(table, row.record_id, "deleted = now()", {}, "deleted")
             case "delete" if not deleted:
                 self.skip(table.key, row.record_id, "The record was restored already.")
             case "delete":
-                await self.apply(table, row.record_id, "deleted = NULL", {}, "restored")
+                if await self.may(table, row.record_id, "restore"):
+                    await self.apply(table, row.record_id, "deleted = NULL", {}, "restored")
             case _ if deleted:
                 self.skip(table.key, row.record_id, "The record is deleted; restore it first.")
             case _:
@@ -94,7 +99,7 @@ class _Undo:
                 self.skip(table.key, record, "It was changed again since.", name)
             else:
                 back[name] = change[0]
-        if not back:
+        if not back or not await self.may(table, record, "write", list(back)):
             return
         # The audit log holds the values as the database wrote them, so the database reads them
         # back into the columns' own types.
@@ -107,6 +112,15 @@ class _Undo:
         await self.apply(
             table, record, assignment, {"back": json.dumps(back)}, f"set back {', '.join(back)}"
         )
+
+    async def may(
+        self, table: TableDef, record: UUID, operation: str, fields: list[str] | None = None
+    ) -> bool:
+        """Whether they may do this today; if not, it's skipped and said why."""
+        if await self.records.allowed(table.key, operation, record, fields):
+            return True
+        self.skip(table.key, record, f"You may not {operation} this record (or these fields).")
+        return False
 
     async def apply(
         self, table: TableDef, record: UUID, assignment: str, params: dict[str, Any], what: str

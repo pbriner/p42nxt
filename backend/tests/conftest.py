@@ -12,11 +12,11 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from p42cloud.data.upgrade import upgrade
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine
 from p42cloud.kernel.setup import set_up_database
+from p42cloud.modules.core import install_core
 
 ADMIN_URL = os.environ.get(
     "P42_TEST_ADMIN_URL", "postgresql+asyncpg://p42_admin:p42-admin-dev-only@localhost:5435/p42"
@@ -76,7 +76,7 @@ async def upgraded(installed: Settings) -> Settings:
     engine = create_engine(installed.owner_database_url)
     try:
         with working_as(Context(channel="upgrade")):
-            await upgrade(engine)
+            await install_core(engine)
     finally:
         await engine.dispose()
     return installed

@@ -22,7 +22,11 @@ def qualified(schema: str, name: str) -> str:
 
 
 def literal(value: str) -> str:
-    """A string constant in a definition (choice values, patterns): the engine's own, checked."""
-    if "\\" in value or "\0" in value:
+    """A string constant in a definition (choice values, patterns): the engine's own, checked.
+
+    Written as an escape string (E'…'), so a backslash means the same whatever the server's
+    settings for plain strings.
+    """
+    if "\0" in value:
         raise ValueError(f"not allowed in a literal: {value!r}")
-    return "'" + value.replace("'", "''") + "'"
+    return "E'" + value.replace("\\", "\\\\").replace("'", "''") + "'"

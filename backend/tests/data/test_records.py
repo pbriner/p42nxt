@@ -28,7 +28,7 @@ from p42cloud.data.types.string import String
 from p42cloud.data.types.translated_text import TranslatedText
 from p42cloud.data.undo import undo
 from p42cloud.kernel.config import Settings
-from p42cloud.kernel.context import Context, working_as
+from p42cloud.kernel.context import EVERYTHING, Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction, transaction
 from p42cloud.kernel.errors import Problem
 
@@ -62,7 +62,7 @@ def _shop(schema: str) -> list[Table]:
 async def _records(
     engine: AsyncEngine, channel: str = "ui", language: str = "en"
 ) -> AsyncGenerator[Records]:
-    with working_as(Context(channel=channel, person_id=ANNA, language=language)):
+    with working_as(Context(channel=channel, person_id=ANNA, language=language, access=EVERYTHING)):
         async with transaction(engine, "sys") as conn:
             catalog = await load_catalog(conn)
             yield Records(conn, catalog, Situation(ANNA, language, now=NOW))
@@ -410,7 +410,7 @@ async def test_only_own_fields_sort(shop: tuple[str, AsyncEngine], sort: list[st
 
 
 async def _request(engine: AsyncEngine, work: Callable[[Records], Awaitable[Any]]) -> uuid.UUID:
-    context = Context(channel="ui", person_id=ANNA)
+    context = Context(channel="ui", person_id=ANNA, access=EVERYTHING)
     with working_as(context):
         async with transaction(engine, "sys") as conn:
             await work(Records(conn, await load_catalog(conn), Situation(ANNA, now=NOW)))

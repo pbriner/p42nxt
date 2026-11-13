@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from p42cloud.data.catalog import MetadataCache, load_catalog
 from p42cloud.data.declarations import Table
 from p42cloud.data.metadata import declare
+from p42cloud.data.records import Records
 from p42cloud.data.schema import apply, plan, read_database
 from p42cloud.data.types import Field
 from p42cloud.data.types.choice import Choice
@@ -22,7 +23,7 @@ from p42cloud.data.types.integer import Integer
 from p42cloud.data.types.reference import Reference
 from p42cloud.data.types.string import String
 from p42cloud.data.types.text import Text
-from p42cloud.kernel.context import Context, working_as
+from p42cloud.kernel.context import EVERYTHING, Context, working_as
 from p42cloud.kernel.db import owner_transaction, transaction
 from p42cloud.kernel.errors import Problem
 
@@ -300,3 +301,25 @@ async def test_every_process_learns_about_a_change(
         assert after is await cache.catalog()  # kept until the next change
     finally:
         await cache.stop()
+
+
+async def test_a_module_reads_what_its_references_reach(
+    new_module: Callable[[], Awaitable[str]], build: Declare, app_engine: AsyncEngine
+) -> None:
+    """Filtering along a reference into another module reads that module's table."""
+    supplier, shop = await new_module(), await new_module()
+    await build(supplier, [Table("firm", "Firm", {"name": String("Name", max_length=40)})])
+    done = await build(
+        shop, [Table("order", "Order", {"firm": Reference("Firm", f"{supplier}.firm")})]
+    )
+    assert f"Let the module {shop} read {supplier}.firm (it refers to it)" in done
+    with working_as(Context(channel="ui", access=EVERYTHING)):
+        async with transaction(app_engine, "sys") as conn:
+            catalog = await load_catalog(conn)
+            records = Records(conn, catalog)
+            firm = await records.create(f"{supplier}.firm", {"name": "Acme"})
+            await records.create(f"{shop}.order", {"firm": firm.sys_id})
+            page = await records.list(
+                f"{shop}.order", where={"field": "firm.name", "op": "eq", "value": "acme"}
+            )
+    assert len(page.records) == 1
