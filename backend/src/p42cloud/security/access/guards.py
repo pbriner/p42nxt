@@ -11,15 +11,20 @@
   powerful role, is powerful itself, and then only administrators may change it while a group
   holds it.
 
+Every change to access (groups, memberships, roles, grants) also needs the second factor given
+in the last 15 minutes, so a session left open or taken over can't hand out rights.
+
 The system itself (installing, upgrading) is exempt.
 """
 
 import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import text
 
 from p42cloud.data.hooks import Change
+from p42cloud.kernel.context import current
 from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import Problem
 
@@ -67,8 +72,22 @@ RETURNING powerful
 )
 
 
+RECENT = timedelta(minutes=15)
+
+
 def _refuse(code: str, title: str, detail: str | None = None) -> Problem:
     return Problem(403, code, title, detail=detail)
+
+
+def recently_verified(change: Change) -> None:
+    """Refuses an access change unless the second factor was given in the last minutes."""
+    if change.records.access.unrestricted:
+        return
+    verified = current().verified_at
+    if verified is None or datetime.now(UTC) - verified > RECENT:
+        raise _refuse(
+            "verify_again", "Enter a code from your authenticator app again to change access."
+        )
 
 
 async def _row(change: Change, table: str, *columns: str) -> dict[str, Any]:
@@ -111,6 +130,7 @@ async def _admins_only(change: Change, why: str) -> None:
 
 async def group_role(change: Change) -> None:
     """Giving a powerful role to a group, or taking it away."""
+    recently_verified(change)
     await switch_role(change.records.conn, "sys")
     before = await _row(change, "sys.group_role", "role")
     for role in _values(change, before, "role"):
@@ -120,6 +140,7 @@ async def group_role(change: Change) -> None:
 
 async def membership(change: Change) -> None:
     """Joining or leaving a group that holds a powerful role, and members of rule-based groups."""
+    recently_verified(change)
     await switch_role(change.records.conn, "sys")
     before = await _row(change, "sys.membership", "group", "from_rule")
     if before.get("from_rule") or change.values.get("from_rule"):
@@ -137,6 +158,7 @@ async def membership(change: Change) -> None:
 
 async def group(change: Change) -> None:
     """A group holding a powerful role: its rule and its existence are for administrators."""
+    recently_verified(change)
     if change.sys_id is None or (change.operation == "write" and "rule" not in change.values):
         return
     await switch_role(change.records.conn, "sys")
@@ -148,6 +170,7 @@ async def role(change: Change) -> None:
     """Only custom roles change in the app; they start ordinary and become powerful by grants."""
     if change.records.access.unrestricted:
         return
+    recently_verified(change)
     await switch_role(change.records.conn, "sys")
     if change.operation == "create":
         change.values.update(custom=True, powerful=False, module="custom")
@@ -177,6 +200,7 @@ async def _custom_parts(change: Change, table: str) -> uuid.UUID | None:
 async def grant(change: Change) -> None:
     if change.records.access.unrestricted:
         return
+    recently_verified(change)
     owner = await _custom_parts(change, 'sys."grant"')
     if owner is None:
         return
@@ -195,6 +219,7 @@ async def grant(change: Change) -> None:
 async def role_include(change: Change) -> None:
     if change.records.access.unrestricted:
         return
+    recently_verified(change)
     owner = await _custom_parts(change, "sys.role_include")
     if owner is not None and await change.records.conn.scalar(_POWERFUL, {"id": owner}):
         await _admins_only(change, "The role is powerful.")

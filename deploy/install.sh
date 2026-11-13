@@ -89,4 +89,7 @@ The installation $name is ready.
 
 Keep a copy of $folder/master.key somewhere safe: without it, encrypted secrets
 can't be recovered.
+
+Make the first administrator (asks for a password and a code from an authenticator app):
+  docker compose --project-directory $folder run --rm create-admin --name "Your Name" --email you@example.com
 EOF

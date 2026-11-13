@@ -9,6 +9,8 @@ dependencies = [
     "pydantic-settings>=2.6",
     "sqlalchemy[asyncio]>=2.0.40",
     "asyncpg>=0.30",
+    "argon2-cffi>=25.1.0",
+    "cryptography>=50.0.2",
 ]
 
 [project.scripts]
@@ -47,7 +49,8 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "S", "PL", "C90"]
 
 [tool.ruff.lint.per-file-ignores]
 # Tests build SQL from the names of tables they declared themselves.
-"tests/**" = ["S101", "PLR2004", "S608"]
+# ... and use made-up passwords.
+"tests/**" = ["S101", "PLR2004", "S608", "S105", "S106"]
 
 [tool.pyright]
 include = ["src", "tests"]

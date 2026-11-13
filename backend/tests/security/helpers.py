@@ -3,6 +3,7 @@
 import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import text
@@ -22,7 +23,8 @@ async def context_of(engine: AsyncEngine, person: uuid.UUID | None) -> Context:
     with working_as(Context(channel="ui", person_id=person)):
         async with transaction(engine, "sys") as conn:
             access = await access_for(conn, person)
-    return Context(channel="ui", person_id=person, access=access)
+    # As if they had just given their second factor (access changes need it to be recent).
+    return Context(channel="ui", person_id=person, access=access, verified_at=datetime.now(UTC))
 
 
 @asynccontextmanager

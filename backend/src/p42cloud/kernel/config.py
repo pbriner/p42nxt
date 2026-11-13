@@ -8,7 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Self
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     # The owner role creates and changes tables. Only installing and upgrading use it.
     owner_database_url: str
     master_key_file: Path | None = None
+    # Sessions end after this long without use, and after this long in any case.
+    session_idle_minutes: int = Field(default=30, ge=5, le=24 * 60)
+    session_max_hours: int = Field(default=12, ge=1, le=24 * 30)
 
     @model_validator(mode="after")
     def _refuse_unsafe(self) -> Self:
