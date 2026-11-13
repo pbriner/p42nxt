@@ -1,0 +1,58 @@
+[project]
+name = "p42"
+version = "0.1.0"
+description = "P42 platform: a business platform for small companies"
+requires-python = ">=3.14"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.8",
+    "pyright>=1.1.390",
+    "import-linter>=2.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/p42"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=importlib"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "S", "PL", "C90"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "PLR2004"]
+
+[tool.pyright]
+include = ["src", "tests"]
+typeCheckingMode = "strict"
+pythonVersion = "3.14"
+
+# Layers (docs/architecture.md): a layer imports only the layers below it.
+[tool.importlinter]
+root_package = "p42"
+
+[[tool.importlinter.contracts]]
+name = "Platform layers"
+type = "layers"
+layers = [
+    "p42.web | p42.cli",
+    "p42.sdk",
+    "p42.modules",
+    "p42.ui",
+    "p42.services",
+    "p42.security",
+    "p42.data",
+    "p42.kernel",
+]

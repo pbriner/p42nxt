@@ -1,0 +1,21 @@
+# Local development: docker compose up -d
+# Port 5435, so it doesn't clash with other local PostgreSQL instances.
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: p42_admin
+      POSTGRES_PASSWORD: p42-admin-dev-only
+      POSTGRES_DB: p42
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U p42_admin -d p42"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
