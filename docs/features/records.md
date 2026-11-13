@@ -4,7 +4,8 @@ One service reads and changes the records of every table, from the catalog alone
 (`backend/src/p42cloud/data/records.py`). The HTTP API is a thin layer over it.
 
 Each operation runs as the database role of the table's module, so a module's records are only
-ever written by that module's role.
+ever written by that module's role. What each person may read and change comes from their grants
+(`access.md`).
 
 ## Reading and changing
 

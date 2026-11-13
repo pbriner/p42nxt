@@ -1,9 +1,12 @@
 """The generic records service: read, list, create, change, delete and restore any table's records.
 
 Works from the catalog only, for every table alike, and as the role of the table's module, so a
-module's records are written by that module's role. Values are checked by their field types; the
-database checks them again and its refusals come back as field errors. Changes need the ETag of
-the version they were made on. Nothing here knows HTTP; the API is a thin layer over it.
+module's records are written by that module's role. What the person may read and change comes
+from the access in the context (access.py): records out of reach answer 404, a table they may
+not use at all 403, and fields they may not read are absent. Values are checked by their field
+types; the database checks them again and its refusals come back as field errors. Changes need
+the ETag of the version they were made on. Nothing here knows HTTP; the API is a thin layer over
+it.
 """
 
 import base64
@@ -18,6 +21,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from p42cloud.data.access import Rules, forbidden
 from p42cloud.data.catalog import Catalog, FieldDef, TableDef
 from p42cloud.data.conditions import SYSTEM_FIELDS, Filter, Query, Situation, column, field_of
 from p42cloud.data.schema import METADATA_TABLES
@@ -93,7 +97,13 @@ class Records:
         self.conn = conn
         self.catalog = catalog
         context = current()
-        self.situation = situation or Situation(context.person_id, context.language)
+        self.access = context.access
+        self.situation = situation or Situation(
+            context.person_id, context.language, context.access.groups
+        )
+
+    def _rules(self, query: Query) -> Rules:
+        return Rules(self.catalog, self.situation, self.access, query)
 
     # ---- tables and rows ----
 
@@ -113,30 +123,100 @@ class Records:
         await switch_role(self.conn, table.schema)
         return table
 
-    def _fields(self, table: TableDef) -> list[FieldDef]:
-        system = [FieldDef(n, f, -1) for n, f in SYSTEM_FIELDS.items()]
-        return system + list(table.active_fields())
+    def _fields(self, table: TableDef) -> dict[str, FieldDef]:
+        system = {n: FieldDef(n, f, -1) for n, f in SYSTEM_FIELDS.items()}
+        return system | {f.name: f for f in table.active_fields()}
 
-    def _select(self, table: TableDef) -> str:
-        columns = ", ".join(f"t.{ident(f.name)}" for f in self._fields(table))
-        return f"SELECT {columns} FROM {qualified(table.schema, table.name)} t"  # noqa: S608
+    def _select(self, table: TableDef, rules: Rules) -> str:
+        """Every field they may read on a record; the others come back empty and flagged."""
+        columns = [f"t.{ident(n)}" for n in SYSTEM_FIELDS]
+        for f in table.active_fields():
+            readable = rules.field(table, "t", f.name)
+            if readable == "true":
+                columns.append(f"t.{ident(f.name)}")
+            elif readable != "false":
+                columns.append(
+                    f"CASE WHEN {readable} THEN t.{ident(f.name)} END AS {ident(f.name)}"
+                )
+                # Field names start with a letter, so this name can't be a field's.
+                columns.append(f'{readable} AS "_can_{f.name}"')
+        return f"SELECT {', '.join(columns)} FROM {qualified(table.schema, table.name)} t"  # noqa: S608
 
     def _record(self, table: TableDef, row: Any) -> Record:
         # By key: a field may be called like a method of the row (count, index).
-        values = {f.name: row._mapping[f.name] for f in self._fields(table)}
+        found = row._mapping
+        values = {
+            name: found[name]
+            for name in self._fields(table)
+            if name in found and found.get(f"_can_{name}", True)
+        }
         return Record(values, self._etag(table, values))
 
     def _etag(self, table: TableDef, values: dict[str, Any]) -> str:
-        shown = {f.name: f.type.to_json(values[f.name]) for f in self._fields(table)}
+        fields = self._fields(table)
+        shown = {name: fields[name].type.to_json(value) for name, value in values.items()}
         canonical = json.dumps(shown, sort_keys=True, default=str)
         return '"' + hashlib.sha256(canonical.encode()).hexdigest()[:16] + '"'
 
     async def _row(self, table: TableDef, sys_id: UUID, *, lock: bool = False) -> Record:
-        sql = self._select(table) + " WHERE t.sys_id = :id" + (" FOR UPDATE" if lock else "")
-        row = (await self.conn.execute(text(sql), {"id": sys_id})).first()
+        """One record they may read: 404 if out of reach, 403 if the table is closed to them."""
+        query = Query()
+        rules = self._rules(query)
+        if not rules.allows(table, "read"):
+            raise forbidden(table.key)
+        sql = (
+            f"{self._select(table, rules)} WHERE t.sys_id = {query.bind(sys_id)}"
+            f" AND {rules.rows(table, 't')}{' FOR UPDATE' if lock else ''}"
+        )
+        row = (await self.conn.execute(text(sql), query.params)).first()
         if row is None:
             raise _not_found(table)
         return self._record(table, row)
+
+    async def _check(
+        self, table: TableDef, sys_id: UUID, operation: str, fields: list[str]
+    ) -> None:
+        """Refuses unless the operation is allowed on this record and on each of `fields`."""
+        query = Query()
+        rules = self._rules(query)
+        if not rules.allows(table, operation):
+            raise forbidden(table.key)
+        columns = [f"{rules.rows(table, 't', operation)} AS ok"] + [
+            f'{rules.field(table, "t", n, operation)} AS "_can_{n}"' for n in fields
+        ]
+        row: Any = (
+            await self.conn.execute(
+                text(
+                    f"SELECT {', '.join(columns)} FROM {qualified(table.schema, table.name)} t"  # noqa: S608
+                    f" WHERE t.sys_id = {query.bind(sys_id)}"
+                ),
+                query.params,
+            )
+        ).first()
+        if row is None or not row.ok:
+            raise forbidden(table.key)
+        denied = [n for n in fields if not row._mapping[f"_can_{n}"]]
+        if denied:
+            raise Problem(
+                403,
+                "forbidden",
+                "You may not change some of these fields.",
+                errors=[
+                    FieldError(n, "read_only", "You may not change this field.") for n in denied
+                ],
+            )
+
+    async def allowed(
+        self, key: str, operation: str, sys_id: UUID, fields: list[str] | None = None
+    ) -> bool:
+        """Whether they may see the record and do the operation on it (and on `fields`)."""
+        table = await self._table(key)
+        try:
+            await self._row(table, sys_id)
+            await self._check(table, sys_id, operation, fields or [])
+        except Problem:
+            return False
+        return True
 
     async def _write(self, sql: str, params: dict[str, Any]) -> Any:
         try:
@@ -212,10 +292,10 @@ class Records:
             )
 
     def to_json(self, table: TableDef, record: Record) -> dict[str, Any]:
-        """A record as JSON: exact numbers and times as text."""
-        return {f.name: f.type.to_json(record.values[f.name]) for f in self._fields(table)} | {
-            "_etag": record.etag
-        }
+        """A record as JSON: exact numbers and times as text; hidden fields absent."""
+        fields = self._fields(table)
+        shown = {name: fields[name].type.to_json(v) for name, v in record.values.items()}
+        return shown | {"_etag": record.etag}
 
     # ---- the operations ----
 
@@ -223,7 +303,13 @@ class Records:
         return await self._row(await self._table(key), sys_id)
 
     async def create(self, key: str, values: dict[str, Any]) -> Record:
+        """A new record; the fields given must be ones they may set on such a record.
+
+        If they may not read what they made, only its ID comes back.
+        """
         table = await self._table(key, write=True)
+        if not self.access.of(table.key, "create"):
+            raise forbidden(table.key)
         checked = self._checked(table, values, creating=True)
         query = Query()
         bound = self._bind(table, checked, query)
@@ -233,9 +319,16 @@ class Records:
             values_sql = f"({names}) VALUES ({', '.join(bound.values())})"
         else:
             values_sql = "DEFAULT VALUES"
-        sql = f"INSERT INTO {target} {values_sql} RETURNING sys_id"
-        row = await self._write(sql, query.params)
-        return await self._row(table, row.sys_id)
+        # In a savepoint: a record they may not make is undone before anything else sees it.
+        async with self.conn.begin_nested():
+            row = await self._write(
+                f"INSERT INTO {target} {values_sql} RETURNING sys_id", query.params
+            )
+            await self._check(table, row.sys_id, "create", [n for n in values if n in checked])
+        try:
+            return await self._row(table, row.sys_id)
+        except Problem:
+            return Record({"sys_id": row.sys_id}, '""')
 
     async def update(
         self, key: str, sys_id: UUID, values: dict[str, Any], if_match: str | None
@@ -248,6 +341,7 @@ class Records:
         checked = self._checked(table, values, creating=False)
         if not checked:
             return record
+        await self._check(table, sys_id, "write", list(checked))
         query = Query()
         bound = self._bind(table, checked, query)
         changes = ", ".join(f"{ident(n)} = {b}" for n, b in bound.items())
@@ -265,6 +359,7 @@ class Records:
         self._fresh(table, record, if_match)
         if record.values["deleted"] is not None:
             raise Problem(409, "deleted", "The record is already deleted.")
+        await self._check(table, sys_id, "delete", [])
         await self._write(
             f"UPDATE {qualified(table.schema, table.name)} SET deleted = now()"  # noqa: S608
             " WHERE sys_id = :id",
@@ -277,6 +372,7 @@ class Records:
         record = await self._row(table, sys_id, lock=True)
         if record.values["deleted"] is None:
             raise Problem(409, "not_deleted", "The record isn't deleted.")
+        await self._check(table, sys_id, "restore", [])
         await self._write(
             f"UPDATE {qualified(table.schema, table.name)} SET deleted = NULL"  # noqa: S608
             " WHERE sys_id = :id",
@@ -286,7 +382,7 @@ class Records:
 
     # ---- lists ----
 
-    def _sorting(self, table: TableDef, sort: list[str], query: Query) -> list[_Sort]:
+    def _sorting(self, table: TableDef, sort: list[str], query: Query, rules: Rules) -> list[_Sort]:
         if len(sort) > MAX_SORT:
             raise _invalid([FieldError("sort", "too_many", f"Sort by at most {MAX_SORT} fields.")])
         found: list[_Sort] = []
@@ -296,11 +392,14 @@ class Records:
             if f is None or f.type.kind is None:
                 raise _invalid([FieldError("sort", "not_sortable", f"Can't sort by {name!r}.")])
             expression = column("t", f, query, self.situation)
+            readable = rules.field(table, "t", name)
+            if readable != "true":  # a field they may not read sorts as empty
+                expression = f"(CASE WHEN {readable} THEN {expression} END)"
             found.append(_Sort(f, item.startswith("-"), expression))
         return found
 
     def _sort_value(self, s: _Sort, record: Record) -> Any:
-        value = record.values[s.field.name]
+        value = record.values.get(s.field.name)
         if s.field.type.kind == "translated" and value is not None:
             value = value.get(self.situation.language, value.get("en"))
         return value if s.field.type.kind == "translated" else s.field.type.to_json(value)
@@ -361,13 +460,17 @@ class Records:
     ) -> Page:
         """One page of records; `deleted=True` lists only deleted ones (the bin)."""
         table = await self._table(key)
+        if not self.access.of(table.key, "read"):
+            raise forbidden(table.key)
         if not 1 <= limit <= MAX_LIMIT:
             raise _invalid([FieldError("limit", "out_of_range", f"From 1 to {MAX_LIMIT}.")])
         query = Query()
+        rules = self._rules(query)
         order = list(sort or [])
-        sorting = self._sorting(table, order, query)
+        sorting = self._sorting(table, order, query, rules)
         conditions = [
-            Filter(self.catalog, self.situation, query).sql(table, "t", where),
+            rules.rows(table, "t"),
+            Filter(self.catalog, self.situation, query, guard=rules).sql(table, "t", where),
             f"t.deleted IS {'NOT NULL' if deleted else 'NULL'}",
         ]
         total, exact = None, True
@@ -386,7 +489,7 @@ class Records:
             f"{s.expression} {'DESC' if s.descending else 'ASC'} NULLS LAST" for s in sorting
         ]
         sql = (
-            f"{self._select(table)} WHERE {' AND '.join(conditions)}"
+            f"{self._select(table, rules)} WHERE {' AND '.join(conditions)}"
             f" ORDER BY {', '.join([*ordering, 't.sys_id ASC'])} LIMIT {query.bind(limit + 1)}"
         )
         rows = (await self.conn.execute(text(sql), query.params)).all()

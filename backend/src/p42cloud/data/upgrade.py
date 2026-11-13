@@ -10,6 +10,7 @@ from datetime import UTC, date, datetime
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from p42cloud.data.declarations import Table
 from p42cloud.data.engine_steps import STEPS
 from p42cloud.data.metadata import build_metadata
 from p42cloud.kernel.db import owner_transaction, run_script
@@ -23,8 +24,13 @@ def add_months(month: date, months: int) -> date:
     return date(index // 12, index % 12 + 1, 1)
 
 
-async def upgrade(engine: AsyncEngine, *, today: date | None = None) -> list[str]:
-    """Apply what isn't applied yet; returns the steps' names and the schema changes."""
+async def upgrade(
+    engine: AsyncEngine, core_tables: list[Table], *, today: date | None = None
+) -> list[str]:
+    """Apply what isn't applied yet; returns the steps' names and the schema changes.
+
+    `core_tables` are all the core's tables besides the metadata tables: any left out is retired.
+    """
     applied: list[str] = []
     async with owner_transaction(engine) as conn:
         await conn.execute(
@@ -51,5 +57,5 @@ async def upgrade(engine: AsyncEngine, *, today: date | None = None) -> list[str
             {"first": month, "last": add_months(month, MONTHS_AHEAD)},
         )
     async with owner_transaction(engine) as conn:
-        applied += await build_metadata(conn)
+        applied += await build_metadata(conn, core_tables)
     return applied

@@ -10,12 +10,12 @@ import os
 import sys
 
 from p42cloud.data.audit import Anchor, missing_months, verify_chain
-from p42cloud.data.upgrade import upgrade
 from p42cloud.kernel.config import get_settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, transaction
 from p42cloud.kernel.safety import problems
 from p42cloud.kernel.setup import set_up_database
+from p42cloud.modules.core import install_core
 
 
 async def _set_up() -> int:
@@ -32,7 +32,7 @@ async def _upgrade() -> int:
     engine = create_engine(get_settings().owner_database_url)
     try:
         with working_as(Context(channel="upgrade")):
-            applied = await upgrade(engine)
+            applied = await install_core(engine)
     finally:
         await engine.dispose()
     print(f"Upgraded: {', '.join(applied)}." if applied else "Already up to date.")

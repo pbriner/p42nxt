@@ -48,6 +48,8 @@ class Database:
     schemas: frozenset[str]
     roles: frozenset[str]
     tables: dict[str, Existing]
+    # (module role, table) pairs that may read the table: for references into other modules.
+    reads: frozenset[tuple[str, str]] = frozenset()
 
 
 # ---- reading the database ----
@@ -70,6 +72,13 @@ _CONSTRAINTS = text(
 _INDEXES = text(
     "SELECT i.indrelid, c.relname FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid"
     " WHERE i.indrelid = ANY(CAST(:oids AS oid[])) AND c.relname LIKE 'p42\\_%'"
+)
+_READS = text(
+    "SELECT r.rolname, n.nspname || '.' || c.relname FROM pg_class c"
+    " JOIN pg_namespace n ON n.oid = c.relnamespace"
+    " CROSS JOIN LATERAL aclexplode(c.relacl) a JOIN pg_roles r ON r.oid = a.grantee"
+    " WHERE a.privilege_type = 'SELECT' AND n.nspname = ANY(:schemas)"
+    " AND r.rolname LIKE 'p42\\_mod\\_%'"
 )
 _TRIGGERS = text(
     "SELECT tgrelid, tgname, tgargs FROM pg_trigger"
@@ -98,7 +107,10 @@ async def read_database(conn: AsyncConnection, schemas: set[str]) -> Database:
         by_oid[oid].indexes.add(name)
     for oid, name, args in (await conn.execute(_TRIGGERS, oids)).all():
         by_oid[oid].triggers[name] = _arguments(bytes(args))
-    return Database(present, roles, tables)
+    reads = frozenset(
+        (role, key) for role, key in (await conn.execute(_READS, {"schemas": names})).all()
+    )
+    return Database(present, roles, tables, reads)
 
 
 # ---- what the catalog asks for ----
@@ -317,7 +329,45 @@ def plan(catalog: Catalog, database: Database) -> list[Step]:
             )
         for new in sorted(indexes.keys() - existing.indexes):
             adding.append(Step(indexes[new], _says(table, new, indexes[new])))
-    return building + dropping + adding
+    return building + dropping + adding + _reads(catalog, database)
+
+
+def _reads(catalog: Catalog, database: Database) -> list[Step]:
+    """Read rights for each module on the tables its references reach in other modules.
+
+    A list filtered along a reference (`owner.name`) reads the target table as the module's own
+    role. Which of those records and fields anyone gets is still decided by the grants, in SQL;
+    a module's role still writes only its own schema.
+    """
+    links: dict[str, set[str]] = {}
+    for table in catalog.tables.values():
+        for f in table.active_fields():
+            target = f.type.references(f.field.options)
+            if target is not None and not table.retired and catalog.table(target) is not None:
+                links.setdefault(table.key, set()).add(target)
+    steps: list[Step] = []
+    for schema in sorted({t.schema for t in catalog.tables.values()}):
+        reached: set[str] = set()
+        waiting = [t.key for t in catalog.tables.values() if t.schema == schema]
+        while waiting:
+            for target in links.get(waiting.pop(), set()) - reached:
+                reached.add(target)
+                waiting.append(target)
+        role = module_role(schema)
+        for key in sorted(reached):
+            target = catalog.tables[key]
+            if target.schema != schema and (role, key) not in database.reads:
+                steps += [
+                    Step(
+                        f"GRANT USAGE ON SCHEMA {ident(target.schema)} TO {ident(role)}",
+                        f"Let the module {schema} into {target.schema}",
+                    ),
+                    Step(
+                        f"GRANT SELECT ON {qualified(target.schema, target.name)} TO {ident(role)}",
+                        f"Let the module {schema} read {key} (it refers to it)",
+                    ),
+                ]
+    return steps
 
 
 def _says(table: TableDef, name: str, definition: str) -> str:

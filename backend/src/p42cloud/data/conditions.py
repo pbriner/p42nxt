@@ -13,7 +13,7 @@ import calendar
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, time, timedelta
-from typing import Any, cast
+from typing import Any, Protocol, cast
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -59,6 +59,7 @@ class Situation:
 
     person: UUID
     language: str = "en"
+    groups: frozenset[UUID] = frozenset()
     now: datetime = field(default_factory=lambda: datetime.now(UTC))
     zone: ZoneInfo = field(default_factory=lambda: ZoneInfo("UTC"))
 
@@ -196,6 +197,18 @@ def value_of(f: FieldDef, raw: Any, situation: Situation) -> Any:
 # ---- building ----
 
 
+class Guard(Protocol):
+    """What the person a list is for may read; filters never reach past it."""
+
+    def rows(self, table: TableDef, alias: str) -> str:
+        """SQL: the records of `table` (as `alias`) they may read."""
+        ...
+
+    def field(self, table: TableDef, alias: str, name: str) -> str:
+        """SQL: whether they may read field `name` of that record."""
+        ...
+
+
 @dataclass(frozen=True)
 class _Leaf:
     path: str
@@ -210,6 +223,8 @@ class Filter:
     catalog: Catalog
     situation: Situation
     query: Query
+    # None for conditions written by admins (grants, groups): they see every field.
+    guard: Guard | None = None
     conditions: int = 0
 
     def sql(self, table: TableDef, alias: str, condition: Any) -> str:
@@ -256,19 +271,24 @@ class Filter:
         f = field_of(table, names[0])
         if f is None:
             raise refuse(path, "unknown_field", f"{table.key} has no field {names[0]!r}.")
+        # A field they may not read can't be filtered on: that would reveal its values.
+        readable = self.guard.field(table, alias, f.name) if self.guard else "true"
         if len(names) == 1:
-            return f"COALESCE({self.compare(alias, f, leaf)}, false)"
+            return f"COALESCE(({readable}) AND {self.compare(alias, f, leaf)}, false)"
         target_key = f.type.references(f.field.options)
         target = self.catalog.table(target_key) if target_key else None
         if target is None or target.retired:
             raise refuse(path, "not_a_reference", f"{names[0]!r} can't be followed.")
         inner = self.query.alias()
         condition = self.walk(target, inner, names[1:], leaf)
+        if self.guard:
+            condition = f"({self.guard.rows(target, inner)}) AND {condition}"
         ref = f"{alias}.{ident(f.name)}"
         source = qualified(target.schema, target.name)
         # Names from the catalog, checked by ident(); values are bound in `condition`.
         found = f"{ref} IN (SELECT {inner}.sys_id FROM {source} {inner} WHERE {condition})"  # noqa: S608
-        return f"({ref} IS NULL OR {found})" if op in KEEPS_EMPTY else f"COALESCE({found}, false)"
+        walked = f"({ref} IS NULL OR {found})" if op in KEEPS_EMPTY else found
+        return f"COALESCE(({readable}) AND {walked}, false)"
 
     def compare(self, alias: str, f: FieldDef, leaf: _Leaf) -> str:
         path, op, raw = leaf.path, leaf.op, leaf.value
@@ -294,6 +314,8 @@ class Filter:
             raise refuse(path, "bad_value", str(error)) from error
 
     def values(self, f: FieldDef, op: str, raw: Any) -> list[Any]:
+        if op in _LIST_OPERATORS and raw == "@my_groups" and f.type.kind == "reference":
+            return list(self.situation.groups)  # may be empty: then `in` matches nothing
         if op in _LIST_OPERATORS or op == "between":
             if not isinstance(raw, list) or not raw:
                 raise Invalid("Needs a list of values.")
@@ -327,6 +349,8 @@ class Filter:
 
     def plain(self, x: str, f: FieldDef, op: str, raw: Any) -> str:
         values = [self.query.bind(v) for v in self.values(f, op, raw)]
+        if not values:  # `in @my_groups` without groups
+            return "false" if op == "in" else "true"
         if op == "between":
             return f"({x} >= {values[0]} AND {x} <= {values[1]})"
         if op in _LIST_OPERATORS:

@@ -251,8 +251,9 @@ async def declare(conn: AsyncConnection, schema: str, tables: list[Table]) -> li
     return await apply(conn, await load_catalog(conn))
 
 
-async def build_metadata(conn: AsyncConnection) -> list[str]:
-    """The metadata tables: built from their declarations first, then described by records."""
+async def build_metadata(conn: AsyncConnection, core_tables: list[Table]) -> list[str]:
+    """The core's tables: the metadata tables built from their declarations first, then all of
+    them (with `core_tables`, the ones upper layers declare) described by records and built."""
     done = await apply(conn, to_catalog(CORE, METADATA_TABLES))
     await sync_field_types(conn)
-    return done + await declare(conn, CORE, METADATA_TABLES)
+    return done + await declare(conn, CORE, [*METADATA_TABLES, *core_tables])

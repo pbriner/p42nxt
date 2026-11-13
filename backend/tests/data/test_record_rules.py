@@ -12,11 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from p42cloud.data.audit import Anchor, missing_months, verify_chain
 from p42cloud.data.engine_steps import DATABASE_PERSON, STEPS, SYSTEM_COLUMNS
-from p42cloud.data.upgrade import upgrade
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction, transaction
 from p42cloud.kernel.safety import problems
+from p42cloud.modules.core import install_core
 
 ANNA = uuid.UUID("01900000-0000-7000-8000-00000000a001")
 BOB = uuid.UUID("01900000-0000-7000-8000-00000000b002")
@@ -64,7 +64,7 @@ async def _entries(engine: AsyncEngine, record: uuid.UUID) -> list[tuple[str, di
 
 async def test_upgrading_again_changes_nothing(owner_engine: AsyncEngine) -> None:
     with working_as(Context(channel="test")):
-        assert await upgrade(owner_engine) == []
+        assert await install_core(owner_engine) == []
         async with owner_transaction(owner_engine) as conn:
             done = list((await conn.execute(text("SELECT id FROM sys.engine_step"))).scalars())
     assert sorted(done) == [step for step, _ in STEPS]
