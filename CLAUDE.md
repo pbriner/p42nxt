@@ -1,4 +1,4 @@
-# P42
+# P42cloud
 
 The rules for every coding agent are in AGENTS.md (imported here):
 

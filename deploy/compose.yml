@@ -1,4 +1,4 @@
-# One installation: its database and the p42 app image. Created by install.sh, which writes the
+# One P42cloud installation: its database and the p42cloud app image. Created by install.sh, which writes the
 # .env next to this file. The database isn't reachable from outside the installation.
 name: ${COMPOSE_PROJECT_NAME}
 
@@ -40,9 +40,17 @@ services:
       P42_DATABASE_URL: postgresql+asyncpg://p42_app:${P42_APP_PASSWORD}@postgres/p42
       P42_OWNER_DATABASE_URL: postgresql+asyncpg://p42_owner:${P42_OWNER_PASSWORD}@postgres/p42
     profiles: [tools]
+  upgrade:
+    <<: *p42
+    command: ["upgrade"]
+    profiles: [tools]
   check:
     <<: *p42
     command: ["check"]
+    profiles: [tools]
+  audit-verify:
+    <<: *p42
+    command: ["audit", "verify"]
     profiles: [tools]
 
 secrets:

@@ -12,9 +12,11 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from p42.kernel.config import Settings
-from p42.kernel.db import create_engine
-from p42.kernel.setup import set_up_database
+from p42cloud.data.upgrade import upgrade
+from p42cloud.kernel.config import Settings
+from p42cloud.kernel.context import Context, working_as
+from p42cloud.kernel.db import create_engine
+from p42cloud.kernel.setup import set_up_database
 
 ADMIN_URL = os.environ.get(
     "P42_TEST_ADMIN_URL", "postgresql+asyncpg://p42_admin:p42-admin-dev-only@localhost:5435/p42"
@@ -64,5 +66,24 @@ async def admin_conn(database: str) -> AsyncIterator[AsyncEngine]:
     engine = create_async_engine(
         ADMIN_URL.rsplit("/", 1)[0] + f"/{database}", isolation_level="AUTOCOMMIT"
     )
+    yield engine
+    await engine.dispose()
+
+
+@pytest.fixture(scope="session")
+async def upgraded(installed: Settings) -> Settings:
+    """The database set up and upgraded, the way the installer leaves it."""
+    engine = create_engine(installed.owner_database_url)
+    try:
+        with working_as(Context(channel="upgrade")):
+            await upgrade(engine)
+    finally:
+        await engine.dispose()
+    return installed
+
+
+@pytest.fixture
+async def owner_engine(upgraded: Settings) -> AsyncIterator[AsyncEngine]:
+    engine = create_engine(upgraded.owner_database_url)
     yield engine
     await engine.dispose()

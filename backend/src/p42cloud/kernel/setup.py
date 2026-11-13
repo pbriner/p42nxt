@@ -11,8 +11,8 @@ from sqlalchemy import text
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
 
-from p42.kernel.config import Settings
-from p42.kernel.db import APP_ROLE, OWNER_ROLE, module_role
+from p42cloud.kernel.config import Settings
+from p42cloud.kernel.db import APP_ROLE, OWNER_ROLE, module_role
 
 CORE_MODULE = "sys"
 _NAME = re.compile(r"^[a-z_][a-z0-9_]*$")

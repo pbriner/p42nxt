@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
-from p42.kernel.context import current
+from p42cloud.kernel.context import current
 
 OWNER_ROLE = "p42_owner"
 APP_ROLE = "p42_app"
@@ -28,27 +28,51 @@ def module_role(module_id: str) -> str:
     return f"{MODULE_ROLE_PREFIX}{module_id}"
 
 
+async def run_script(conn: AsyncConnection, sql: str) -> None:
+    """Several statements at once (the engine's steps), inside the connection's transaction.
+
+    Only for SQL written in the code: the driver's plain protocol takes no parameters.
+    """
+    raw = await conn.get_raw_connection()
+    await raw.driver_connection.execute(sql)  # pyright: ignore[reportOptionalMemberAccess, reportUnknownMemberType]
+
+
 def create_engine(url: str) -> AsyncEngine:
     return create_async_engine(url, pool_pre_ping=True)
+
+
+async def _hand_over_context(conn: AsyncConnection) -> None:
+    context = current()
+    await conn.execute(
+        text(
+            "SELECT set_config('p42.request_id', :request_id, true),"
+            " set_config('p42.person_id', :person_id, true),"
+            " set_config('p42.channel', :channel, true)"
+        ),
+        {
+            "request_id": str(context.request_id),
+            "person_id": str(context.person_id),
+            "channel": context.channel,
+        },
+    )
 
 
 @asynccontextmanager
 async def transaction(engine: AsyncEngine, module_id: str) -> AsyncGenerator[AsyncConnection]:
     """One transaction as `module_id`'s role, with the current context handed to the database."""
     role = module_role(module_id)  # checked, so it's safe to put into the statement
-    context = current()
     async with engine.begin() as conn:
         await conn.execute(text(f'SET LOCAL ROLE "{role}"'))
-        await conn.execute(
-            text(
-                "SELECT set_config('p42.request_id', :request_id, true),"
-                " set_config('p42.person_id', :person_id, true),"
-                " set_config('p42.channel', :channel, true)"
-            ),
-            {
-                "request_id": str(context.request_id),
-                "person_id": str(context.person_id),
-                "channel": context.channel,
-            },
-        )
+        await _hand_over_context(conn)
+        yield conn
+
+
+@asynccontextmanager
+async def owner_transaction(engine: AsyncEngine) -> AsyncGenerator[AsyncConnection]:
+    """One transaction as the owner (installing and upgrading only), with the context set."""
+    async with engine.begin() as conn:
+        user = await conn.scalar(text("SELECT current_user"))
+        if user != OWNER_ROLE:
+            raise RuntimeError(f"expected the owner role {OWNER_ROLE}, connected as {user}")
+        await _hand_over_context(conn)
         yield conn

@@ -1,24 +1,24 @@
 #!/bin/sh
-# Creates a new P42 installation and starts it; the rest happens in the web installer.
+# Creates a new P42cloud installation and starts it; the rest happens in the web installer.
 #
-#   deploy/install.sh <name> [--image p42:<version>] [--qa]
+#   deploy/install.sh <name> [--image p42cloud:<version>] [--qa]
 #
-# Writes the installation's folder ($P42_HOME/<name>, by default ~/.p42/<name>) with its
+# Writes the installation's folder ($P42_HOME/<name>, by default ~/.p42cloud/<name>) with its
 # settings (random passwords, the one-time setup code) and its master key, makes the backup
-# folder ($P42_BACKUPS/p42-<name>, by default ~/Backups/p42-<name>), starts the database, sets
+# folder ($P42_BACKUPS/p42cloud-<name>, by default ~/Backups/p42cloud-<name>), starts the database, sets
 # it up and checks that it's safe. Refuses to touch an installation that exists already.
 # --qa: an installation that never acts in the real world.
 set -eu
 
 usage() {
-    echo "usage: $0 <name> [--image p42:<version>] [--qa]" >&2
+    echo "usage: $0 <name> [--image p42cloud:<version>] [--qa]" >&2
     exit 2
 }
 
 [ $# -ge 1 ] || usage
 name=$1
 shift
-image=p42:latest
+image=p42cloud:latest
 environment=production
 while [ $# -gt 0 ]; do
     case $1 in
@@ -36,10 +36,10 @@ for tool in docker openssl; do
 done
 docker compose version >/dev/null 2>&1 || { echo "Docker Compose is needed." >&2; exit 1; }
 
-home=${P42_HOME:-$HOME/.p42}
+home=${P42_HOME:-$HOME/.p42cloud}
 folder=$home/$name
-backups=${P42_BACKUPS:-$HOME/Backups}/p42-$name
-project=p42-$name
+backups=${P42_BACKUPS:-$HOME/Backups}/p42cloud-$name
+project=p42cloud-$name
 if [ -e "$folder" ]; then
     echo "An installation named $name exists already ($folder). Nothing changed." >&2
     exit 1
@@ -75,6 +75,8 @@ echo "Starting the database of $name ..."
 docker compose up -d --wait postgres
 echo "Setting up the database ..."
 docker compose run --rm setup
+echo "Bringing it to this version ..."
+docker compose run --rm upgrade
 echo "Checking that it's safe ..."
 docker compose run --rm check
 

@@ -28,7 +28,7 @@ Docs describe what exists. A new module documents itself in its `README.md`, sta
   `CHANGELOG.md` entry (CI checks it).
 - **Respect the layers.** A layer imports only the layers below it. No imports inside functions
   to get around a cycle: move the code or pass the dependency in.
-- **Modules import only `p42.sdk`**, never each other. Another module's data goes through its
+- **Modules import only `p42cloud.sdk`**, never each other. Another module's data goes through its
   API, with the SDK's in-process client. The engine never names a module.
 - **Declare tables, don't migrate them.** Tables and fields are declared in the manifest; the
   engine builds the database from them. Migrations only move data.

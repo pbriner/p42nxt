@@ -1,4 +1,4 @@
-# P42
+# P42cloud
 
 One platform for small companies, with sign-in, roles and groups, audit,
 generic forms, lists and dashboards, and modules that declare everything they provide. One
@@ -21,18 +21,19 @@ docs/        architecture and docs of built features
 ## Install
 
 ```bash
-docker build -t p42:latest .
-deploy/install.sh <name>             # creates ~/.p42/<name>, starts the database, sets it up
+docker build -t p42cloud:latest .
+deploy/install.sh <name>             # creates ~/.p42cloud/<name>, starts the database, sets it up
 ```
 
 The installer writes the installation's folder (settings with random passwords, the master key),
-makes the backup folder, sets up the database and checks that it's safe. It refuses a name
+makes the backup folder, sets up the database, brings it to this version (`p42cloud upgrade`)
+and checks that it's safe. `p42cloud audit verify` checks the audit log's hash chain. It refuses a name
 Docker already knows. The web installer follows.
 
 ## Checks
 
 ```bash
-docker compose up -d                 # PostgreSQL 18 on localhost:5435
+docker compose up -d                 # the dev instance p42cloud-dev: PostgreSQL 18 on localhost:5435
 cd backend && uv sync
 uv run ruff check . && uv run ruff format --check .
 uv run pyright                       # strict
