@@ -14,6 +14,16 @@ from typing import Final
 DATABASE_PERSON: Final = "00000000-0000-7000-8000-000000000002"
 
 # Every table's system fields. The record trigger fills them; nobody else may.
+SYSTEM_FIELDS: Final = (
+    "sys_id",
+    "created",
+    "created_by",
+    "updated",
+    "updated_by",
+    "source",
+    "deleted",
+    "deleted_by",
+)
 SYSTEM_COLUMNS: Final = """
     sys_id uuid PRIMARY KEY DEFAULT uuidv7(),
     created timestamptz NOT NULL,
@@ -278,10 +288,20 @@ CREATE TRIGGER p42_no_truncate BEFORE TRUNCATE ON sys.audit_chain
 GRANT SELECT ON sys.audit_log, sys.audit_chain TO p42_mod_sys;
 """
 
+# Every process keeps the metadata in memory; this tells them all when it changed.
+_METADATA_CHANGED = """
+CREATE FUNCTION sys.p42_metadata_changed() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    PERFORM pg_notify('p42_metadata', TG_TABLE_NAME);
+    RETURN NULL;
+END $$;
+"""
+
 STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0001_context", _CONTEXT),
     ("0002_record_rules", _RECORD_RULES),
     ("0003_audit_log", _AUDIT_LOG),
     ("0004_audit_trigger", _AUDIT_TRIGGER),
     ("0005_audit_chain", _CHAIN),
+    ("0006_metadata_changed", _METADATA_CHANGED),
 )
