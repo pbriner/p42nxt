@@ -7,6 +7,7 @@ Unsafe combinations are refused at start, not discovered later.
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Self
+from urllib.parse import urlsplit
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -25,6 +26,9 @@ class Settings(BaseSettings):
     # The owner role creates and changes tables. Only installing and upgrading use it.
     owner_database_url: str
     master_key_file: Path | None = None
+    # The address people open the app at (https://p42.example.com). Passkeys are bound to it;
+    # without it they're unavailable, and authenticator apps still work.
+    public_url: str | None = None
     # Sessions end after this long without use, and after this long in any case.
     session_idle_minutes: int = Field(default=30, ge=5, le=24 * 60)
     session_max_hours: int = Field(default=12, ge=1, le=24 * 30)
@@ -36,6 +40,20 @@ class Settings(BaseSettings):
             raise ValueError("the app and the owner must be different database roles")
         if app.database != owner.database:
             raise ValueError("the app and the owner must use the same database")
+        if self.public_url is not None:
+            public = urlsplit(self.public_url)
+            if (
+                public.scheme not in ("http", "https")
+                or not public.hostname
+                or public.path not in ("", "/")
+            ):
+                raise ValueError("public_url must be like https://p42.example.com")
+            if (
+                self.environment == "production"
+                and public.scheme != "https"
+                and public.hostname != "localhost"
+            ):
+                raise ValueError("public_url must use https in production")
         if self.environment == "production":
             for url in (app, owner):
                 if url.password and "dev-only" in url.password:
