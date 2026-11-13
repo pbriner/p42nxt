@@ -11,6 +11,7 @@ from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 # Who works when no person does: installing, upgrading, jobs. Fixed IDs, the same in every
@@ -54,6 +55,9 @@ class Context:
     language: str = "en"
     request_id: uuid.UUID = field(default_factory=uuid.uuid7)
     access: Access = NOTHING  # deny by default
+    # When the person last gave their second factor in this session; changes to access need it
+    # to be recent.
+    verified_at: datetime | None = None
 
 
 _current: ContextVar[Context | None] = ContextVar("p42_context", default=None)

@@ -1,4 +1,7 @@
-"""An email address: text with an @ and a domain."""
+"""An email address: text with an @ and a domain, in lower case.
+
+Lower case, so one address is one person: `Anna@x.ch` and `anna@x.ch` can't be two accounts.
+"""
 
 from typing import Unpack
 
@@ -13,7 +16,7 @@ class EmailType(PatternType):
     message = "Must be an email address, like anna@example.com."
 
     def normalize(self, value: str) -> str:
-        return value.strip()
+        return value.strip().lower()
 
 
 TYPE = EmailType()

@@ -35,6 +35,7 @@ def test_every_type_is_found_by_name() -> None:
         "percent",
         "phone",
         "reference",
+        "secret",
         "string",
         "text",
         "translated_text",

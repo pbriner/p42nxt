@@ -52,6 +52,13 @@ services:
     <<: *p42
     command: ["audit", "verify"]
     profiles: [tools]
+  # Asks for the password and the authenticator code: run it with `docker compose run --rm`.
+  create-admin:
+    <<: *p42
+    entrypoint: ["p42cloud", "create-admin"]
+    stdin_open: true
+    tty: true
+    profiles: [tools]
 
 secrets:
   master_key:

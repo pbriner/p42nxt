@@ -6,6 +6,7 @@ Only the operator commands that must run before the app exists work on the datab
 
 import argparse
 import asyncio
+import getpass
 import os
 import sys
 
@@ -13,9 +14,13 @@ from p42cloud.data.audit import Anchor, missing_months, verify_chain
 from p42cloud.kernel.config import get_settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, transaction
+from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.safety import problems
+from p42cloud.kernel.secrets import Sealer
 from p42cloud.kernel.setup import set_up_database
-from p42cloud.modules.core import install_core
+from p42cloud.modules.core import compose, install_core
+from p42cloud.security.sign_in.credentials import NewKey
+from p42cloud.security.sign_in.first_admin import create_first_admin
 
 
 async def _set_up() -> int:
@@ -79,6 +84,46 @@ async def _verify(anchor: Anchor | None) -> int:
     return 1
 
 
+async def _ask_code(key: NewKey) -> str:
+    print("\nAdd this account to your authenticator app (scan the link as a QR code, or type")
+    print(f"the key):\n\n  {key.link}\n  Key: {key.key}\n")
+    return await asyncio.to_thread(input, "Code from the app: ")
+
+
+async def _create_admin(name: str, email: str) -> int:
+    password = getpass.getpass("Password (12 characters or more): ")
+    if getpass.getpass("The same again: ") != password:
+        print("The passwords differ; nothing was made.", file=sys.stderr)
+        return 1
+    settings = get_settings()
+    compose()
+    engine = create_engine(settings.database_url)
+    try:
+        codes = await create_first_admin(
+            engine,
+            Sealer.from_file(settings.master_key_file),
+            name=name,
+            email=email,
+            password=password,
+            ask_code=_ask_code,
+        )
+    except Problem as problem:
+        print(f"{problem.title} {' '.join(e.message for e in problem.errors)}", file=sys.stderr)
+        return 1
+    except RuntimeError as error:  # no master key
+        print(error, file=sys.stderr)
+        return 1
+    finally:
+        await engine.dispose()
+    print(
+        f"\n{name} is an administrator. Keep these recovery codes somewhere safe; each works once"
+    )
+    print("when the app isn't at hand:\n")
+    for code in codes:
+        print(f"  {code}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="p42cloud")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -87,6 +132,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     commands.add_parser("upgrade", help="bring the database to this version (owner)")
     commands.add_parser("check", help="refuse a database that isn't set up safely")
+    admin = commands.add_parser(
+        "create-admin", help="the first administrator of a new installation (asks for a password)"
+    )
+    admin.add_argument("--name", required=True)
+    admin.add_argument("--email", required=True)
     audit = commands.add_parser("audit", help="the audit log")
     verify = audit.add_subparsers(dest="audit_command", required=True).add_parser(
         "verify", help="recompute the hash chain and report tampering"
@@ -102,6 +152,8 @@ def main(argv: list[str] | None = None) -> int:
             return asyncio.run(_set_up())
         case "upgrade":
             return asyncio.run(_upgrade())
+        case "create-admin":
+            return asyncio.run(_create_admin(args.name, args.email))
         case "audit":
             return asyncio.run(_verify(args.anchor))
         case _:

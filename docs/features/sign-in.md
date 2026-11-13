@@ -1,0 +1,82 @@
+# Sign-in
+
+People sign in with a password and, always, a second factor. Sessions are kept on the server.
+The HTTP routes and the browser cookie come with the web layer; this is the service under them
+(`backend/src/p42cloud/security/sign_in/`).
+
+## Passwords
+
+- At least 12 characters and at most 256.
+- Not one of the breached passwords that ship with each release: the entries of 12 characters
+  or more of a list of the million most used breached passwords (see `NOTICE`), compared without
+  regard to case. Checked offline: nothing leaves the installation.
+- Not containing the person's email name.
+- Hashed with Argon2id. A hash made with older settings is renewed at the next sign-in.
+- A new password ends the person's other sessions.
+
+## Second factor
+
+- **Authenticator apps** (TOTP, RFC 6238): six digits, every 30 seconds. A code is accepted for
+  the current step and one either side, and each step only once. The app's key is shown once
+  (as a key and an `otpauth://` link for a QR code) and stored sealed with the master key.
+- An app counts once it gave its first right code. Adding one ends the person's other sessions.
+- **Recovery codes**: ten one-time codes (`ABCD-EFGH-JKLM-NPQR`), shown once when the first app is
+  set up; new ones replace the old ones. Only their hashes are stored.
+- There's no SMS, and no way to switch the second factor off.
+
+## Signing in
+
+1. **Email and password.** A wrong password, an unknown email and an inactive person get the same
+   answer after the same time. Someone without a second factor yet can only set one up.
+2. **The second factor.** An authenticator code or a recovery code. The waiting session ends and a
+   new one begins, with a new token.
+
+Waiting sessions end after 10 minutes.
+
+## Sessions
+
+- The browser holds a random token; only its hash is stored.
+- A session ends after `P42_SESSION_IDLE_MINUTES` without use (default 30) and after
+  `P42_SESSION_MAX_HOURS` in any case (default 12).
+- People see their own sessions and end them; administrators see and end anyone's. Nobody sees
+  a session's token.
+- **Changes to access** (groups, memberships, roles, grants) need the second factor given in the
+  last 15 minutes. Giving it again doesn't start a new session.
+
+## Slowing guessing down
+
+Every failed attempt is a security event. After 5 failures within 15 minutes for one email
+address (whether an account has it or not), or 20 from one network address, further attempts
+are refused for 15 minutes, with the right password too. The same goes for 5 wrong codes for one
+person, both while signing in and when giving the code again.
+
+## Security events
+
+Entries of the audit log without a record: `sign_in`, `sign_in_failed`, `second_factor_failed`,
+`sign_out`, `session_expired`, `session_ended`, `password_changed`, `second_factor_added`,
+`recovery_codes_made`, `recovery_code_used`. Only the core writes them.
+
+## Credentials and secrets
+
+Credentials (password hashes, sealed app keys, recovery code hashes) are `Secret` fields: never
+returned by the records service and masked in the audit log. Nobody has a grant on them.
+
+## The master key
+
+The installer makes a random master key (`master.key` in the installation's folder,
+`P42_MASTER_KEY_FILE`). Secrets that must be read back, like an authenticator's key, are sealed
+with it: AES-GCM, with a key derived for each purpose, so a value sealed for one purpose can't be
+opened as another. Without the master key nothing is sealed, and sealed secrets can't be
+recovered.
+
+## The first administrator
+
+```bash
+docker compose --project-directory ~/.p42cloud/<name> run --rm create-admin \
+  --name "Anna Muster" --email anna@example.com
+```
+
+Asks for the password twice (it never appears on the command line), shows the key for an
+authenticator app, asks for its first code, and prints the recovery codes. The person joins the
+Administrators group. Works only while that group has no active member, and makes nothing if the
+code is wrong three times.

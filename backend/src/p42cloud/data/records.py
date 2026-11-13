@@ -124,6 +124,8 @@ class Records:
         """Every field they may read on a record; the others come back empty and flagged."""
         columns = [f"t.{ident(n)}" for n in SYSTEM_FIELDS]
         for f in table.active_fields():
+            if f.type.secret:
+                continue  # written, never read back
             readable = rules.field(table, "t", f.name)
             if readable == "true":
                 columns.append(f"t.{ident(f.name)}")

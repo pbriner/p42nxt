@@ -83,6 +83,9 @@ by the grants.
 
 Nobody can give themselves more rights than they were given:
 
+- **Every change to access** (groups, memberships, roles, grants, group roles) needs the second
+  factor given in the last 15 minutes (`sign-in.md`).
+
 - **Powerful roles** are given to a group, or taken from it, only by members of a group holding
   `sys.admin`. The same goes for adding or removing members of a group holding a powerful role,
   changing its rule, or deleting it. So an access administrator can't join the Administrators
@@ -116,9 +119,9 @@ Table("budget", "Budget", {..., "owner": Reference("Owner", "sys.person", requir
 
 | Role | Grants |
 |---|---|
-| `sys.admin` | People: everything. Groups, roles, grants and metadata: read |
+| `sys.admin` | People: everything. Groups, roles, grants and metadata: read. Sessions: read and end |
 | `sys.access_admin` | People and metadata: read. Groups, memberships, roles, included roles, grants, group roles: everything |
-| `sys.user` | People's name, kind and whether active; groups' names: read. Their own shares: everything |
+| `sys.user` | People's name, kind and whether active; groups' names: read. Their own shares: everything. Their own sessions: read and end |
 
 `sys.admin` and `sys.access_admin` are powerful. A new installation has an **Administrators**
 group holding both, an **Everyone** group (rule: every employee and external person) holding

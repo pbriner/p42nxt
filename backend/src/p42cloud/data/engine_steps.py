@@ -339,6 +339,20 @@ REVOKE ALL ON FUNCTION sys.p42_owner_of(text, uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.p42_owner_of(text, uuid) TO p42_mod_sys;
 """
 
+# Security events (sign-ins, failures, sign-outs, credential changes): audit entries without a
+# record, written by the core alone. The index finds recent failures, to slow guessing down.
+_SECURITY_EVENTS = """
+CREATE FUNCTION sys.p42_security_event(in_event text, in_details jsonb)
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog, sys AS $$
+    INSERT INTO sys.audit_log (operation, person_id, channel, request_id, changes)
+    VALUES (in_event, sys.p42_person(), sys.p42_channel(), sys.p42_request(),
+            coalesce(in_details, '{}'::jsonb));
+$$;
+REVOKE ALL ON FUNCTION sys.p42_security_event(text, jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION sys.p42_security_event(text, jsonb) TO p42_mod_sys;
+CREATE INDEX audit_log_security ON sys.audit_log (operation, created) WHERE table_name IS NULL;
+"""
+
 STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0001_context", _CONTEXT),
     ("0002_record_rules", _RECORD_RULES),
@@ -348,4 +362,5 @@ STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0006_metadata_changed", _METADATA_CHANGED),
     ("0007_unaccent", _UNACCENT),
     ("0008_personal", _PERSONAL),
+    ("0009_security_events", _SECURITY_EVENTS),
 )

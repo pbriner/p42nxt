@@ -25,7 +25,11 @@ ACCESS_TABLES = (
 )
 METADATA = ("sys.table", "sys.field", "sys.field_type")
 SHARES = "sys.share"
+SESSIONS = "sys.session"
+# What people see of sessions: never the token's hash.
+SESSION_FIELDS = ("person", "stage", "expires", "last_seen", "verified", "address", "agent")
 MINE = {"field": "owner", "op": "eq", "value": "@me"}
+OWN_SESSIONS = {"field": "person", "op": "eq", "value": "@me"}
 
 ROLES = [
     Role(
@@ -34,6 +38,8 @@ ROLES = [
         grants=(
             Grant(PEOPLE, ALL),
             *(Grant(t, ("read",)) for t in (*ACCESS_TABLES, *METADATA)),
+            Grant(SESSIONS, ("read",), fields=SESSION_FIELDS),
+            Grant(SESSIONS, ("delete",)),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",
@@ -58,6 +64,8 @@ ROLES = [
             Grant("sys.group", ("read",), fields=("name", "description", "assignable")),
             Grant(SHARES, ALL, condition=MINE),
             Grant(SHARES, ("read",), condition={"field": "person", "op": "eq", "value": "@me"}),
+            Grant(SESSIONS, ("read",), condition=OWN_SESSIONS, fields=SESSION_FIELDS),
+            Grant(SESSIONS, ("delete",), condition=OWN_SESSIONS),
         ),
         description="Everyone: sees who's who and shares their own records.",
     ),
