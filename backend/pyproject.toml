@@ -3,6 +3,8 @@ name = "p42"
 version = "0.1.0"
 description = "P42 platform: a business platform for small companies"
 requires-python = ">=3.14"
+license = "Apache-2.0"
+license-files = ["../LICENSE", "../NOTICE"]
 dependencies = []
 
 [dependency-groups]

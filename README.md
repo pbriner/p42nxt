@@ -28,3 +28,7 @@ uv run pyright                       # strict
 uv run lint-imports                  # layer rules
 uv run pytest
 ```
+
+## License
+
+Apache License 2.0, see [LICENSE](LICENSE) and [NOTICE](NOTICE).
