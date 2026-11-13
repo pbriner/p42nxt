@@ -2,6 +2,16 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.5.0
+
+- Administrators build their own tables in the app (`u.<name>`): records and database change
+  together, as the owner, by the engine's rules; each table gets a reader and an editor role.
+- `GET /api/v1/meta/<module>/<table>` describes a table for the caller: labels in their
+  language, fields with types, options and choices, what they may do.
+- Records over HTTP carry `_display` (references and choices named) and `_access` (what the
+  caller may do with each record); `fields=` keeps only some fields.
+- Tables name their display field.
+
 ## 0.4.0
 
 - Settings are records (`sys.setting`), declared by modules with a default and a check; values

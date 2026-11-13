@@ -202,6 +202,31 @@ class Records:
                 ],
             )
 
+    async def may(
+        self, table: TableDef, ids: list[UUID], operations: tuple[str, ...]
+    ) -> dict[UUID, dict[str, bool]]:
+        """For each record, whether the person may do each operation on it (one query)."""
+        if not ids:
+            return {}
+        await switch_role(self.conn, table.schema)
+        query = Query()
+        rules = self._rules(query)
+        columns = ", ".join(
+            f'{rules.rows(table, "t", op)} AS "{op}"' for op in operations if op.isalpha()
+        )
+        rows = await self.conn.execute(
+            text(
+                f"SELECT t.sys_id, {columns} FROM {qualified(table.schema, table.name)} t"  # noqa: S608
+                f" WHERE t.sys_id = ANY({query.bind(ids)})"
+            ),
+            query.params,
+        )
+        found: dict[UUID, dict[str, bool]] = {}
+        for row in rows:
+            values: Any = row._mapping  # pyright: ignore[reportPrivateUsage] - public in SQLAlchemy
+            found[values["sys_id"]] = {op: bool(values[op]) for op in operations}
+        return found
+
     async def allowed(
         self, key: str, operation: str, sys_id: UUID, fields: list[str] | None = None
     ) -> bool:

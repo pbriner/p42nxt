@@ -27,6 +27,8 @@ if TYPE_CHECKING:
 class Services:
     settings: Settings
     engine: AsyncEngine
+    # The owner's connection: for changes to the database's tables (admins' tables) only.
+    owner: AsyncEngine
     sealer: Sealer
     sign_in: SignIn
     providers: Providers | None  # needs the installation's address

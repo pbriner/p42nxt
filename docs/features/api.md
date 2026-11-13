@@ -16,13 +16,28 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `DELETE /api/v1/<module>/<table>/<id>` | Soft deletion; needs `If-Match` |
 | `POST /api/v1/<module>/<table>/<id>/restore` | Restore |
 | `POST /api/v1/people/<id>/invitation` | A one-time link for a person to set a password and a second factor (`{"reset": true}` first ends their sessions and credentials); administrators only |
+| `GET /api/v1/meta/<module>/<table>` | The table described for the caller (below) |
+| `POST /api/v1/tables` | Make or change one of the administrators' own tables (`tables.md`) |
+| `DELETE /api/v1/tables/<name>` | Retire one of them |
 | `POST /api/v1/undo` | Undo what a request did (`{"request": …}`) or one audit entry (`{"entry": …}`) |
 | `/api/v1/sign-in/…` | Signing in and out (below) |
 | `GET /api/v1/openapi.json` | The API's description |
 
 The record routes are the records service (`records.md`): the same rules, access and errors for
 every table. Records are JSON: exact numbers and times as text, the version as `_etag`, fields
-the caller may not read left out.
+the caller may not read left out. Lists and single records also carry:
+
+- `_display`: the display value of each reference (the referenced record's display field, if
+  the caller may read it) and the label of each choice, in the caller's language;
+- `_access`: whether the caller may `write`, `delete` and `restore` this record.
+
+`fields=a,b` keeps only those fields (and `sys_id`, `_etag`, `_display`, `_access`).
+
+**Describing a table** (`/api/v1/meta/<module>/<table>`), for anyone who may read it: its labels
+in the caller's language, its display field, whether it's personal, which operations the caller
+may use (on some records), and every field (system fields too) with its type, label, help,
+options (choices with their labels), whether it's required or unique, its default, whether it
+can be filtered, and whether the caller may read, set or change it.
 
 **Lists** take `limit` (1 to 500, default 50), `after` (the `next` of the previous page), `sort`
 (`-price,name`), `count`, `deleted`, and filters in two forms, both ANDed:
