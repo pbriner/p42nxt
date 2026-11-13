@@ -33,6 +33,19 @@ _MEMBER_OF = text(
 )
 
 
+# Records are never deleted: no role the app works as may delete rows or empty a table.
+_DELETE_RIGHTS = text(
+    "SELECT r.rolname, n.nspname || '.' || c.relname FROM pg_class c"
+    " JOIN pg_namespace n ON n.oid = c.relnamespace CROSS JOIN pg_roles r"
+    " WHERE c.relkind IN ('r', 'p') AND n.nspname NOT LIKE 'pg\\_%'"
+    " AND n.nspname <> 'information_schema'"
+    " AND (r.rolname = :app OR r.rolname LIKE :modules)"
+    " AND (has_table_privilege(r.oid, c.oid, 'DELETE')"
+    " OR has_table_privilege(r.oid, c.oid, 'TRUNCATE'))"
+    " ORDER BY 1, 2"
+)
+
+
 async def problems(engine: AsyncEngine) -> list[str]:
     """Everything that makes the database unsafe for the app, in plain words; empty if safe."""
     async with engine.connect() as conn:
@@ -41,6 +54,7 @@ async def problems(engine: AsyncEngine) -> list[str]:
             *await _powers(conn),
             *await _ownership_and_creation(conn),
             *await _memberships(conn),
+            *await _delete_rights(conn),
         ]
 
 
@@ -99,3 +113,10 @@ async def _memberships(conn: AsyncConnection) -> list[str]:
         elif inherits:
             found.append(f"The role {APP_ROLE} inherits the rights of {group}.")
     return found
+
+
+async def _delete_rights(conn: AsyncConnection) -> list[str]:
+    rows = await conn.execute(
+        _DELETE_RIGHTS, {"app": APP_ROLE, "modules": MODULE_ROLE_PREFIX.replace("_", "\\_") + "%"}
+    )
+    return [f"The role {role} may delete rows of {table}." for role, table in rows.all()]

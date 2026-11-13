@@ -52,6 +52,8 @@ _RECORD_RULES = """
 CREATE FUNCTION sys.p42_record_fields() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
     person uuid := sys.p42_person();
+    system_fields text[] := ARRAY['sys_id', 'created', 'created_by', 'updated', 'updated_by',
+                                  'source', 'deleted', 'deleted_by'];
 BEGIN
     IF TG_OP = 'INSERT' THEN
         NEW.created := now();
@@ -69,8 +71,6 @@ BEGIN
         RAISE EXCEPTION 'sys_id, created, created_by and source never change'
             USING ERRCODE = 'P4201';
     END IF;
-    NEW.updated := now();
-    NEW.updated_by := person;
     IF OLD.deleted IS NULL AND NEW.deleted IS NOT NULL THEN
         NEW.deleted := now();
         NEW.deleted_by := person;
@@ -79,7 +79,16 @@ BEGIN
     ELSE
         NEW.deleted := OLD.deleted;
         NEW.deleted_by := OLD.deleted_by;
+        IF to_jsonb(NEW) - system_fields = to_jsonb(OLD) - system_fields THEN
+            -- Nothing changed, so the audit log gets no entry: updated_by must not name
+            -- someone the log can't account for.
+            NEW.updated := OLD.updated;
+            NEW.updated_by := OLD.updated_by;
+            RETURN NEW;
+        END IF;
     END IF;
+    NEW.updated := now();
+    NEW.updated_by := person;
     RETURN NEW;
 END $$;
 
@@ -111,7 +120,7 @@ CREATE INDEX audit_log_request ON sys.audit_log (request_id);
 CREATE INDEX audit_log_seq ON sys.audit_log (seq);
 
 -- Months are ranges of sys_id: a UUIDv7 starts with its time, so the smallest one of a month
--- bounds it.
+-- bounds it. Months are UTC, whatever the session's time zone, so bounds always line up.
 CREATE FUNCTION sys.p42_uuidv7_floor(ts timestamptz) RETURNS uuid LANGUAGE sql IMMUTABLE AS $$
     SELECT (lpad(to_hex((extract(epoch FROM ts) * 1000)::bigint), 12, '0')
             || '70008000000000000000')::uuid
@@ -127,8 +136,8 @@ BEGIN
             'CREATE TABLE IF NOT EXISTS sys.%I PARTITION OF sys.audit_log'
             ' FOR VALUES FROM (%L) TO (%L)',
             'audit_log_' || to_char(month, 'YYYY_MM'),
-            sys.p42_uuidv7_floor(month::timestamptz),
-            sys.p42_uuidv7_floor((month + interval '1 month')::timestamptz));
+            sys.p42_uuidv7_floor(month::timestamp AT TIME ZONE 'UTC'),
+            sys.p42_uuidv7_floor((month + interval '1 month')::timestamp AT TIME ZONE 'UTC'));
         month := month + interval '1 month';
     END LOOP;
 END $$;
@@ -178,6 +187,8 @@ BEGIN
             sys.p42_person(), sys.p42_channel(), sys.p42_request(), changes);
     RETURN NULL;
 END $$;
+-- Triggers fire without EXECUTE; this only stops anyone else attaching it to a table.
+REVOKE ALL ON FUNCTION sys.p42_audit() FROM PUBLIC;
 
 -- Puts the rules on a table: called by the engine for every table it builds.
 CREATE FUNCTION sys.p42_attach_record_rules(target regclass, secrets text[] DEFAULT '{}')
@@ -190,6 +201,8 @@ BEGIN
                    ' FOR EACH ROW EXECUTE FUNCTION sys.p42_record_fields()', target);
     EXECUTE format('CREATE TRIGGER p42_no_delete BEFORE DELETE ON %s'
                    ' FOR EACH ROW EXECUTE FUNCTION sys.p42_no_delete()', target);
+    EXECUTE format('CREATE TRIGGER p42_no_truncate BEFORE TRUNCATE ON %s'
+                   ' FOR EACH STATEMENT EXECUTE FUNCTION sys.p42_no_delete()', target);
     EXECUTE format('CREATE TRIGGER p42_audit AFTER INSERT OR UPDATE ON %s'
                    ' FOR EACH ROW EXECUTE FUNCTION sys.p42_audit(%s)', target, arguments);
 END $$;
@@ -236,6 +249,8 @@ BEGIN
     UPDATE sys.audit_chain SET seq = next_seq, hash = next_hash;
     RETURN NULL;
 END $$;
+
+REVOKE ALL ON FUNCTION sys.p42_audit_seal() FROM PUBLIC;
 
 CREATE CONSTRAINT TRIGGER p42_audit_seal AFTER INSERT ON sys.audit_log
     DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION sys.p42_audit_seal();

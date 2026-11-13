@@ -10,14 +10,16 @@ from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from p42cloud.data.audit import missing_months, verify_chain
+from p42cloud.data.audit import Anchor, missing_months, verify_chain
 from p42cloud.data.engine_steps import DATABASE_PERSON, STEPS, SYSTEM_COLUMNS
 from p42cloud.data.upgrade import upgrade
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction, transaction
+from p42cloud.kernel.safety import problems
 
 ANNA = uuid.UUID("01900000-0000-7000-8000-00000000a001")
+BOB = uuid.UUID("01900000-0000-7000-8000-00000000b002")
 
 
 @pytest.fixture(scope="module")
@@ -251,4 +253,86 @@ async def test_months_ahead_exist_and_missing_ones_are_found(
             assert await missing_months(conn, today=datetime(2099, 1, 15, tzinfo=UTC)) == [
                 "2099-01",
                 "2099-02",
+                "2099-03",
             ]
+
+
+async def _updated_by(engine: AsyncEngine, record: uuid.UUID) -> uuid.UUID:
+    with working_as(Context(channel="test")):
+        async with transaction(engine, "sys") as conn:
+            person = await conn.scalar(
+                text("SELECT updated_by FROM sys.thing WHERE sys_id = :r"), {"r": record}
+            )
+    assert isinstance(person, uuid.UUID)
+    return person
+
+
+async def test_an_update_that_changes_nothing_keeps_who_changed_it_last(
+    app_engine: AsyncEngine, thing: str
+) -> None:
+    record = await _insert(app_engine, Context(channel="ui", person_id=ANNA), name="Mug")
+    with working_as(Context(channel="ui", person_id=BOB)):
+        async with transaction(app_engine, "sys") as conn:
+            await conn.execute(
+                text("UPDATE sys.thing SET name = 'Mug' WHERE sys_id = :r"), {"r": record}
+            )
+    assert await _updated_by(app_engine, record) == ANNA
+    with working_as(Context(channel="ui", person_id=BOB)):
+        async with transaction(app_engine, "sys") as conn:
+            await conn.execute(
+                text("UPDATE sys.thing SET name = 'Cup' WHERE sys_id = :r"), {"r": record}
+            )
+    assert await _updated_by(app_engine, record) == BOB
+
+
+async def test_tables_can_not_be_emptied(owner_engine: AsyncEngine, thing: str) -> None:
+    with working_as(Context(channel="test")), pytest.raises(DBAPIError, match="never deleted"):
+        async with owner_transaction(owner_engine) as conn:
+            await conn.execute(text("TRUNCATE sys.thing"))
+
+
+async def test_a_right_to_delete_is_found(
+    app_engine: AsyncEngine, owner_engine: AsyncEngine, thing: str
+) -> None:
+    with working_as(Context(channel="test")):
+        async with owner_transaction(owner_engine) as conn:
+            await conn.execute(text("GRANT DELETE, TRUNCATE ON sys.thing TO p42_mod_sys"))
+        try:
+            found = await problems(app_engine)
+        finally:
+            async with owner_transaction(owner_engine) as conn:
+                await conn.execute(text("REVOKE DELETE, TRUNCATE ON sys.thing FROM p42_mod_sys"))
+    assert found == ["The role p42_mod_sys may delete rows of sys.thing."]
+    assert await problems(app_engine) == []
+
+
+async def test_months_are_utc_whatever_the_time_zone(owner_engine: AsyncEngine) -> None:
+    with working_as(Context(channel="test")):
+        async with owner_transaction(owner_engine) as conn:
+            await conn.execute(text("SET LOCAL TimeZone = 'Pacific/Kiritimati'"))
+            await conn.execute(
+                text("SELECT sys.p42_create_audit_partitions('2098-01-01', '2098-01-01')")
+            )
+            bound = await conn.scalar(
+                text(
+                    "SELECT pg_get_expr(relpartbound, oid) FROM pg_class"
+                    " WHERE relname = 'audit_log_2098_01'"
+                )
+            )
+    start = int(datetime(2098, 1, 1, tzinfo=UTC).timestamp() * 1000)
+    floor = uuid.UUID(f"{start:012x}70008000000000000000")
+    assert f"FROM ('{floor}')" in str(bound)
+
+
+async def test_an_anchor_finds_a_rewritten_chain(app_engine: AsyncEngine, thing: str) -> None:
+    await _insert(app_engine, Context(channel="ui"), name="Anchored")
+    with working_as(Context(channel="test")):
+        async with transaction(app_engine, "sys") as conn:
+            head = (await verify_chain(conn)).head
+            kept = await verify_chain(conn, head)
+            rewritten = await verify_chain(conn, Anchor(head.seq, bytes(32)))
+            cut_off = await verify_chain(conn, Anchor(head.seq + 1, head.hash))
+    assert kept.intact, kept.problem
+    assert rewritten.problem == f"Entry {head.seq} differs from the copy kept outside."
+    assert cut_off.problem == f"Entry {head.seq + 1}, kept outside, isn't in the chain."
+    assert Anchor.parse(str(head)) == head
