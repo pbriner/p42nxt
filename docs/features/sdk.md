@@ -2,7 +2,7 @@
 
 `p42cloud.sdk` is everything a module may use of the platform, and the only part of it a module
 may import. The platform's tests read every module's source and refuse any other import of the
-platform, and any import of another module.
+platform, any import of another module, and loading code by name (`importlib`, `__import__`).
 
 ## What it holds
 

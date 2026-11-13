@@ -2,6 +2,7 @@
 
 from p42cloud.data.declarations import Table
 from p42cloud.data.types.boolean import Boolean
+from p42cloud.data.types.choice import Choice
 from p42cloud.data.types.json import Json
 from p42cloud.data.types.markdown import Markdown
 from p42cloud.data.types.string import String
@@ -36,4 +37,26 @@ DOC_PAGE = Table(
     unique_together=(("module", "path"),),
 )
 
-TABLES = [MODULE, DOC_PAGE]
+MODULE_UPDATE = Table(
+    "module_update",
+    "Available update",
+    {
+        "module": String("Module", max_length=16, required=True),
+        "installed": String("Installed", max_length=40, required=True),
+        "available": String("Available", max_length=40, required=True),
+        "kind": Choice(
+            "Kind",
+            {"normal": "Update", "security": "Security update"},
+            required=True,
+            default="normal",
+        ),
+        "notes": Markdown("Release notes"),
+        # It fits what's installed now; otherwise `needs` says what to update first.
+        "fits": Boolean("Fits", required=True, default=False),
+        "needs": String("Needs first", max_length=255),
+        "package": String("Package", max_length=500),
+    },
+    label_plural="Available updates",
+)
+
+TABLES = [MODULE, DOC_PAGE, MODULE_UPDATE]

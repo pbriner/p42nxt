@@ -1,0 +1,76 @@
+# Releasing a module: push a tag `<module>/v<version>` (like `hello/v0.1.0`).
+# Its checks and tests run, then its package is built, signed with the release key (the secret
+# P42_RELEASE_KEY) and published as a GitHub Release, and added to the signed registry index (the
+# release `registry`, which installations read through P42_REGISTRY_URL). The core is released
+# as the app image, not here.
+name: Release a module
+
+on:
+  push:
+    tags: ["*/v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: registry  # one release at a time: they all write the same index
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TAG: ${{ github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Which module and version
+        run: |
+          module="${TAG%%/v*}"
+          version="${TAG#*/v}"
+          if [ "$module" = "sys" ]; then
+            echo "The core is released as the app image, not as a module package." >&2
+            exit 1
+          fi
+          declared=$(sed -n 's/^version = "\(.*\)"$/\1/p' "modules/$module/pyproject.toml")
+          if [ "$declared" != "$version" ]; then
+            echo "The tag says $version; modules/$module/pyproject.toml says $declared." >&2
+            exit 1
+          fi
+          echo "MODULE=$module" >> "$GITHUB_ENV"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Database
+        run: docker compose up -d --wait postgres
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+      - run: uv sync --locked --all-packages
+      - name: Checks and tests
+        working-directory: modules/${{ env.MODULE }}
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run pyright
+          uv run pytest -q
+      - name: Build
+        run: uv build --package "p42cloud-$MODULE" --wheel -o dist
+      - name: Sign and add to the index
+        env:
+          P42_RELEASE_KEY: ${{ secrets.P42_RELEASE_KEY }}
+        run: |
+          wheel=$(ls dist/*.whl)
+          mkdir -p registry
+          gh release download registry -p index.json -D registry || true
+          uv run python -m p42cloud.modules.release_tool publish \
+            --module "$MODULE" --wheel "$wheel" --index registry/index.json \
+            --url "https://github.com/${{ github.repository }}/releases/download/$TAG/$(basename "$wheel")"
+      - name: Publish
+        run: |
+          uv run python -m p42cloud.modules.release_tool notes \
+            --changelog "modules/$MODULE/CHANGELOG.md" --version "$VERSION" > notes.md
+          gh release create "$TAG" dist/*.whl dist/*.whl.sig --title "$MODULE $VERSION" --notes-file notes.md
+          gh release view registry >/dev/null 2>&1 || \
+            gh release create registry --title "Module registry" \
+              --notes "The signed index of every module release (index.json, index.json.sig)."
+          gh release upload registry registry/index.json registry/index.json.sig --clobber
