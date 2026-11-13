@@ -18,6 +18,17 @@ frontend/    Angular app
 docs/        architecture and docs of built features
 ```
 
+## Install
+
+```bash
+docker build -t p42:latest .
+deploy/install.sh <name>             # creates ~/.p42/<name>, starts the database, sets it up
+```
+
+The installer writes the installation's folder (settings with random passwords, the master key),
+makes the backup folder, sets up the database and checks that it's safe. It refuses a name
+Docker already knows. The web installer follows.
+
 ## Checks
 
 ```bash

@@ -5,11 +5,19 @@ description = "P42 platform: a business platform for small companies"
 requires-python = ">=3.14"
 license = "Apache-2.0"
 license-files = ["../LICENSE", "../NOTICE"]
-dependencies = []
+dependencies = [
+    "pydantic-settings>=2.6",
+    "sqlalchemy[asyncio]>=2.0.40",
+    "asyncpg>=0.30",
+]
+
+[project.scripts]
+p42 = "p42.cli.main:main"
 
 [dependency-groups]
 dev = [
     "pytest>=8.3",
+    "pytest-asyncio>=0.24",
     "ruff>=0.8",
     "pyright>=1.1.390",
     "import-linter>=2.1",
@@ -24,7 +32,11 @@ packages = ["src/p42"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 addopts = ["--import-mode=importlib"]
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100

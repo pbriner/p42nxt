@@ -1,0 +1,53 @@
+# One installation: its database and the p42 app image. Created by install.sh, which writes the
+# .env next to this file. The database isn't reachable from outside the installation.
+name: ${COMPOSE_PROJECT_NAME}
+
+x-p42: &p42
+  image: ${P42_IMAGE}
+  environment:
+    P42_ENVIRONMENT: ${P42_ENVIRONMENT}
+    P42_DATABASE_URL: postgresql+asyncpg://p42_app:${P42_APP_PASSWORD}@postgres/p42
+    P42_OWNER_DATABASE_URL: postgresql+asyncpg://p42_owner:${P42_OWNER_PASSWORD}@postgres/p42
+    P42_MASTER_KEY_FILE: /run/secrets/master_key
+  secrets: [master_key]
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: p42_admin
+      POSTGRES_PASSWORD: ${P42_ADMIN_PASSWORD}
+      POSTGRES_DB: p42
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U p42_admin -d p42"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  # One-off commands, run by install.sh.
+  setup:
+    <<: *p42
+    command: ["setup-database"]
+    environment:
+      P42_ENVIRONMENT: ${P42_ENVIRONMENT}
+      P42_ADMIN_DATABASE_URL: postgresql+asyncpg://p42_admin:${P42_ADMIN_PASSWORD}@postgres/p42
+      P42_DATABASE_URL: postgresql+asyncpg://p42_app:${P42_APP_PASSWORD}@postgres/p42
+      P42_OWNER_DATABASE_URL: postgresql+asyncpg://p42_owner:${P42_OWNER_PASSWORD}@postgres/p42
+    profiles: [tools]
+  check:
+    <<: *p42
+    command: ["check"]
+    profiles: [tools]
+
+secrets:
+  master_key:
+    file: ./master.key
+
+volumes:
+  pgdata:

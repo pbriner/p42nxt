@@ -22,6 +22,9 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v7
+      - name: Database
+        working-directory: .
+        run: docker compose up -d --wait postgres
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
@@ -36,3 +39,27 @@ jobs:
         run: uv run lint-imports
       - name: Tests
         run: uv run pytest -q
+
+  # Setup must keep working after every change (docs/architecture.md, principle 5): the real
+  # installer creates a fresh installation from the image built here.
+  fresh-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Where installations go
+        run: |
+          echo "P42_HOME=$RUNNER_TEMP/p42" >> "$GITHUB_ENV"
+          echo "P42_BACKUPS=$RUNNER_TEMP/backups" >> "$GITHUB_ENV"
+      - name: Image
+        run: docker build -t p42:ci .
+      - name: Install
+        run: deploy/install.sh ci --image p42:ci
+      - name: A second install under the same name is refused
+        run: |
+          if deploy/install.sh ci --image p42:ci; then
+            echo "the installer took over an existing installation" >&2; exit 1
+          fi
+      - name: Database log (when it fails)
+        if: failure()
+        run: docker compose --project-directory "$P42_HOME/ci" logs --tail 200 postgres
