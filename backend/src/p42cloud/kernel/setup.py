@@ -20,6 +20,9 @@ _NAME = re.compile(r"^[a-z_][a-z0-9_]*$")
 # Roles get no powers beyond logging in; the app role doesn't even inherit its module roles,
 # it has to switch to one explicitly.
 _LIMITS = "NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS"
+# The owner makes a role for each module it installs. Since PostgreSQL 16 that lets it manage only
+# the roles it made, never give powers it lacks (superuser, replication, bypassing row security).
+_OWNER_LIMITS = "NOSUPERUSER NOCREATEDB CREATEROLE NOREPLICATION NOBYPASSRLS"
 
 
 def _ident(name: str) -> str:
@@ -56,7 +59,7 @@ async def set_up_database(admin_url: str, settings: Settings) -> None:
     try:
         async with engine.connect() as conn:
             await _ensure_role(
-                conn, OWNER_ROLE, f"LOGIN {_LIMITS} PASSWORD {_literal(_password(owner))}"
+                conn, OWNER_ROLE, f"LOGIN {_OWNER_LIMITS} PASSWORD {_literal(_password(owner))}"
             )
             await _ensure_role(
                 conn, APP_ROLE, f"LOGIN NOINHERIT {_LIMITS} PASSWORD {_literal(_password(app))}"

@@ -5,7 +5,7 @@ from typing import Any, cast
 from urllib.parse import urlsplit
 
 from p42cloud.data.conditions import SYSTEM_FIELDS
-from p42cloud.data.hooks import HOOKS, Change
+from p42cloud.data.hooks import Change, TableHook
 from p42cloud.kernel.errors import FieldError, Problem
 
 DOMAIN = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$")
@@ -55,5 +55,4 @@ async def _provider(change: Change) -> None:
                 raise _invalid("claims", f"{name!r} can't be filled from a provider's claims.")
 
 
-def register() -> None:
-    HOOKS.on("sys.identity_provider", before=_provider)
+TABLE_HOOKS = (TableHook("sys.identity_provider", before=_provider),)

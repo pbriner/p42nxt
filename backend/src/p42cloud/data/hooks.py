@@ -34,6 +34,15 @@ class Change:
 Hook = Callable[[Change], Awaitable[None]]
 
 
+@dataclass(frozen=True)
+class TableHook:
+    """What a feature or module declares: code to run when one table's records change."""
+
+    table: str
+    before: Hook | None = None
+    after: Hook | None = None
+
+
 @dataclass
 class Hooks:
     before: dict[str, list[Hook]] = field(default_factory=dict[str, list[Hook]])
@@ -51,6 +60,10 @@ class Hooks:
             await hook(change)
         if hooks:  # hooks may work as another module; the change goes on as the table's
             await switch_role(change.records.conn, change.table.schema)
+
+    def add(self, *declared: TableHook) -> None:
+        for hook in declared:
+            self.on(hook.table, before=hook.before, after=hook.after)
 
 
 HOOKS = Hooks()

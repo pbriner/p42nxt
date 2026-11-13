@@ -18,7 +18,9 @@ from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.safety import problems
 from p42cloud.kernel.secrets import Sealer
 from p42cloud.kernel.setup import set_up_database
-from p42cloud.modules.core import compose, install_core
+from p42cloud.modules.core import CORE, compose
+from p42cloud.modules.install import install_modules
+from p42cloud.modules.registry import discover
 from p42cloud.security.sign_in.credentials import NewKey
 from p42cloud.security.sign_in.first_admin import create_first_admin
 
@@ -37,7 +39,7 @@ async def _upgrade() -> int:
     engine = create_engine(get_settings().owner_database_url)
     try:
         with working_as(Context(channel="upgrade")):
-            applied = await install_core(engine)
+            applied = await install_modules(engine, [CORE, *discover()])
     finally:
         await engine.dispose()
     print(f"Upgraded: {', '.join(applied)}." if applied else "Already up to date.")
@@ -130,7 +132,9 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser(
         "setup-database", help="create the roles and the core's schema (administrator, once)"
     )
-    commands.add_parser("upgrade", help="bring the database to this version (owner)")
+    commands.add_parser(
+        "upgrade", help="bring the database, the core and every installed module to this version"
+    )
     commands.add_parser("check", help="refuse a database that isn't set up safely")
     admin = commands.add_parser(
         "create-admin", help="the first administrator of a new installation (asks for a password)"
