@@ -71,6 +71,8 @@ ROLES = [
         "User",
         grants=(
             Grant(PEOPLE, ("read",), fields=("name", "kind", "active")),
+            # All of their own record.
+            Grant(PEOPLE, ("read",), condition={"field": "sys_id", "op": "eq", "value": "@me"}),
             Grant("sys.group", ("read",), fields=("name", "description", "assignable")),
             Grant(SHARES, ALL, condition=MINE),
             Grant(SHARES, ("read",), condition={"field": "person", "op": "eq", "value": "@me"}),

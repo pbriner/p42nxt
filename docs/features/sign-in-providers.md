@@ -19,7 +19,7 @@ others (`backend/src/p42cloud/security/providers/`). An installation can have se
 | Active | Off: not offered, and nobody signs in through it |
 
 Providers need `P42_PUBLIC_URL`: the provider sends people back to
-`<public url>/api/v1/sign-in/provider/callback`. Only administrators manage providers.
+`<public url>/api/v1/sign-in/provider-callback`. Only administrators manage providers.
 
 ## Signing in
 

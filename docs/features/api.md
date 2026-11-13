@@ -1,0 +1,85 @@
+# The HTTP API
+
+Every feature is an HTTP API first; the browser app, the command line and integrations all use
+it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42cloud-web`).
+
+## Routes
+
+| Route | What |
+|---|---|
+| `GET /api/v1/health` | Whether the app is up (anyone) |
+| `GET /api/v1/me` | The caller: their person record, groups, how they're signed in |
+| `GET /api/v1/<module>/<table>` | A page of records |
+| `POST /api/v1/<module>/<table>` | A new record (201, `Location`, `ETag`) |
+| `GET /api/v1/<module>/<table>/<id>` | One record (`ETag`) |
+| `PATCH /api/v1/<module>/<table>/<id>` | Change fields; needs `If-Match` |
+| `DELETE /api/v1/<module>/<table>/<id>` | Soft deletion; needs `If-Match` |
+| `POST /api/v1/<module>/<table>/<id>/restore` | Restore |
+| `POST /api/v1/undo` | Undo what a request did (`{"request": …}`) or one audit entry (`{"entry": …}`) |
+| `/api/v1/sign-in/…` | Signing in and out (below) |
+| `GET /api/v1/openapi.json` | The API's description |
+
+The record routes are the records service (`records.md`): the same rules, access and errors for
+every table. Records are JSON: exact numbers and times as text, the version as `_etag`, fields
+the caller may not read left out.
+
+**Lists** take `limit` (1 to 500, default 50), `after` (the `next` of the previous page), `sort`
+(`-price,name`), `count`, `deleted`, and filters in two forms, both ANDed:
+
+- `filter[state][in]=open,waiting&filter[assigned_to]=@me` for simple filters (the operator
+  defaults to `eq`; lists comma-separated);
+- `where=<JSON in the filter language>` for anything with OR or NOT.
+
+## Who may call what
+
+Every route declares it, and a test refuses a route that doesn't: **public** (health, signing in)
+or **signed in**. What a signed-in caller may do with records is decided by their grants.
+
+- **Scripts, integrations, agents**: `Authorization: Bearer <API token>` (`api-tokens.md`).
+- **The browser**: the session cookie (`p42_session`: HttpOnly, SameSite=Lax, Secure except on
+  plain-http development). Every change made with it also needs the header `X-CSRF-Token`, with
+  the value of the readable cookie `p42_csrf` (set when signing in), and, when the browser sends
+  one, an `Origin` of this installation (`P42_PUBLIC_URL`).
+
+## Signing in
+
+| Route | What |
+|---|---|
+| `POST /api/v1/sign-in` | Email and password; answers the next stage: `second_factor` or `enroll` |
+| `POST /api/v1/sign-in/code` | An authenticator or recovery code: signed in (`active`) |
+| `POST /api/v1/sign-in/passkey/challenge`, `POST /api/v1/sign-in/passkey` | With a passkey |
+| `POST /api/v1/sign-in/setup/app`, `…/setup/app/confirm` | A first authenticator app; its first code signs in and returns the recovery codes |
+| `POST /api/v1/sign-in/setup/passkey/options`, `…/setup/passkey` | A first passkey |
+| `POST /api/v1/sign-in/verify` | The second factor again (access changes need it recent) |
+| `POST /api/v1/sign-in/out` | Signing out |
+| `GET /api/v1/sign-in/providers` | The sign-in providers to offer |
+| `GET /api/v1/sign-in/provider/<id>` | Off to a provider; it sends the browser back to `…/sign-in/provider-callback` |
+
+## Problems
+
+Errors are RFC 9457 problem details (`application/problem+json`): `type`, `title`, `status`,
+`code`, and `errors` per field where it applies. `code` is stable and meant for programs; `title`
+and the messages are for people. Unexpected errors say only that something went wrong; the
+details go to the log.
+
+## Limits and protection
+
+- **Rate limits**: `P42_REQUESTS_PER_MINUTE` (default 600) per person, API token and network
+  address; more are refused (429, `Retry-After`) for the rest of the minute. Counted per process.
+- Every answer carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+  `Referrer-Policy: no-referrer` and a `Content-Security-Policy` that allows no framing; API
+  answers aren't cached.
+- **Behind a reverse proxy** (which does TLS): set `P42_TRUSTED_PROXIES` to its address, so its
+  `X-Forwarded-For` is believed and limits count per real client. Without it, the address the
+  request comes from counts.
+
+## At start
+
+The app refuses to start on a database that isn't safe (`p42cloud check`), then brings the
+database, the core and the installed modules to their versions. The installer starts it on the
+first free local port from 8080 and waits until it answers.
+
+## The contract
+
+`docs/api/openapi.json` is the API's description. A test fails when the API differs from it:
+`uv run python -m p42cloud.web.openapi` writes it again, and the difference shows in review.

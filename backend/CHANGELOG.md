@@ -2,6 +2,18 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.3.0
+
+- The HTTP API: the generic record routes (list with `filter[...]` and `where`, read, create,
+  change with `If-Match`, delete, restore), signing in and out (password, code, passkey,
+  setting up a second factor, sign-in providers), `me`, `undo` and `health`; errors as problem
+  details; every route declares who may call it.
+- The browser's session in an HttpOnly cookie, with a CSRF header and an Origin check for
+  changes; rate limits per person, token and address; protective response headers.
+- `p42cloud-web` runs the app: the installation's `web` service on a free local port; the app refuses
+  an unsafe database and upgrades at start. `P42_TRUSTED_PROXIES` names the reverse proxy.
+- Everyone may read all of their own person record.
+
 ## 0.2.0
 
 - Releases: every changed package needs a new version and a changelog entry (checked in CI);

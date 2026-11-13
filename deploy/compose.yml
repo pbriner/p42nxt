@@ -30,6 +30,14 @@ services:
       retries: 30
     restart: unless-stopped
 
+  # The app: the HTTP API. Only on this machine: a reverse proxy in front of it does TLS.
+  web:
+    <<: *p42
+    entrypoint: ["p42cloud-web"]
+    ports:
+      - "127.0.0.1:${P42_PORT}:8000"
+    restart: unless-stopped
+
   # One-off commands, run by install.sh.
   setup:
     <<: *p42

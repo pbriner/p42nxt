@@ -1,0 +1,180 @@
+"""The generic record routes: the same for every table of every module.
+
+    GET    /api/v1/<module>/<table>                 a page of records
+    POST   /api/v1/<module>/<table>                 a new record
+    GET    /api/v1/<module>/<table>/<id>            one record (its version in ETag)
+    PATCH  /api/v1/<module>/<table>/<id>            change fields (needs If-Match)
+    DELETE /api/v1/<module>/<table>/<id>            soft deletion (needs If-Match)
+    POST   /api/v1/<module>/<table>/<id>/restore    restore
+
+Filters come as `filter[field][op]=value` (all ANDed; lists comma-separated) and as
+`where=<JSON>` for anything with OR or NOT; both together are ANDed.
+"""
+
+import json
+import re
+from typing import Annotated, Any
+from uuid import UUID
+
+from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
+
+from p42cloud.kernel.errors import Problem
+from p42cloud.web.caller import Caller, language, who
+from p42cloud.web.permissions import SIGNED_IN, requires
+from p42cloud.web.services import Services
+
+router = APIRouter(prefix="/api/v1", tags=["records"])
+Who = Annotated[Caller, Depends(who)]
+_FILTER = re.compile(r"^filter\[([a-z0-9_.]+)\](?:\[([a-z_]+)\])?$")
+_LISTS = frozenset({"in", "not_in", "between"})
+_NO_VALUE = frozenset({"empty", "not_empty"})
+
+
+def _condition(request: Request, where: str | None) -> Any:
+    """The URL's filters as one condition in the filter language."""
+    parts: list[Any] = []
+    for key, value in request.query_params.multi_items():
+        found = _FILTER.match(key)
+        if found is None:
+            continue
+        field, op = found[1], found[2] or "eq"
+        leaf: dict[str, Any] = {"field": field, "op": op}
+        if op not in _NO_VALUE:
+            leaf["value"] = value.split(",") if op in _LISTS else value
+        parts.append(leaf)
+    if where:
+        try:
+            parts.append(json.loads(where))
+        except json.JSONDecodeError as error:
+            raise Problem(
+                400, "bad_where", "`where` must be JSON in the filter language."
+            ) from error
+    if not parts:
+        return None
+    return parts[0] if len(parts) == 1 else {"and": parts}
+
+
+def _key(module: str, table: str) -> str:
+    return f"{module}.{table}"
+
+
+def _one(response: Response, body: dict[str, Any]) -> dict[str, Any]:
+    response.headers["ETag"] = body["_etag"]
+    return body
+
+
+@router.get("/{module}/{table}")
+@requires(SIGNED_IN)
+async def list_records(
+    module: str,
+    table: str,
+    request: Request,
+    caller: Who,
+    where: str | None = None,
+    sort: str | None = None,
+    limit: Annotated[int, Query(ge=1, le=500)] = 50,
+    after: str | None = None,
+    count: bool = True,
+    deleted: bool = False,
+) -> dict[str, Any]:
+    services: Services = request.app.state.services
+    key = _key(module, table)
+    async with services.records(caller.context(language(request))) as records:
+        page = await records.list(
+            key,
+            where=_condition(request, where),
+            sort=[s for s in (sort or "").split(",") if s],
+            limit=limit,
+            after=after,
+            count=count,
+            deleted=deleted,
+        )
+        found = [records.to_json(records.catalog.tables[key], r) for r in page.records]
+    return {
+        "records": found,
+        "next": page.next,
+        "total": page.total,
+        "total_exact": page.total_exact,
+    }
+
+
+@router.post("/{module}/{table}", status_code=201)
+@requires(SIGNED_IN)
+async def create_record(
+    module: str,
+    table: str,
+    values: Annotated[dict[str, Any], Body()],
+    request: Request,
+    response: Response,
+    caller: Who,
+) -> dict[str, Any]:
+    services: Services = request.app.state.services
+    key = _key(module, table)
+    async with services.records(caller.context(language(request))) as records:
+        made = await records.create(key, values)
+        body = records.to_json(records.catalog.tables[key], made)
+    response.headers["Location"] = f"/api/v1/{module}/{table}/{made.sys_id}"
+    return _one(response, body) if body.get("_etag") not in (None, '""') else body
+
+
+@router.get("/{module}/{table}/{sys_id}")
+@requires(SIGNED_IN)
+async def read_record(
+    module: str, table: str, sys_id: UUID, request: Request, response: Response, caller: Who
+) -> dict[str, Any]:
+    services: Services = request.app.state.services
+    key = _key(module, table)
+    async with services.records(caller.context(language(request))) as records:
+        found = records.to_json(records.catalog.tables[key], await records.read(key, sys_id))
+    return _one(response, found)
+
+
+@router.patch("/{module}/{table}/{sys_id}")
+@requires(SIGNED_IN)
+async def change_record(
+    module: str,
+    table: str,
+    sys_id: UUID,
+    values: Annotated[dict[str, Any], Body()],
+    request: Request,
+    response: Response,
+    caller: Who,
+    if_match: Annotated[str | None, Header()] = None,
+) -> dict[str, Any]:
+    services: Services = request.app.state.services
+    key = _key(module, table)
+    async with services.records(caller.context(language(request))) as records:
+        changed = await records.update(key, sys_id, values, if_match)
+        found = records.to_json(records.catalog.tables[key], changed)
+    return _one(response, found)
+
+
+@router.delete("/{module}/{table}/{sys_id}")
+@requires(SIGNED_IN)
+async def delete_record(
+    module: str,
+    table: str,
+    sys_id: UUID,
+    request: Request,
+    response: Response,
+    caller: Who,
+    if_match: Annotated[str | None, Header()] = None,
+) -> dict[str, Any]:
+    services: Services = request.app.state.services
+    key = _key(module, table)
+    async with services.records(caller.context(language(request))) as records:
+        gone = await records.delete(key, sys_id, if_match)
+        found = records.to_json(records.catalog.tables[key], gone)
+    return _one(response, found)
+
+
+@router.post("/{module}/{table}/{sys_id}/restore")
+@requires(SIGNED_IN)
+async def restore_record(
+    module: str, table: str, sys_id: UUID, request: Request, response: Response, caller: Who
+) -> dict[str, Any]:
+    services: Services = request.app.state.services
+    key = _key(module, table)
+    async with services.records(caller.context(language(request))) as records:
+        back = records.to_json(records.catalog.tables[key], await records.restore(key, sys_id))
+    return _one(response, back)
