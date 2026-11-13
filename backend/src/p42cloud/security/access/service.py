@@ -29,11 +29,19 @@ WITH RECURSIVE held(role, narrowing) AS (
   UNION
     SELECT ri.includes, held.narrowing FROM sys.role_include ri
     JOIN held ON ri.role = held.role WHERE ri.deleted IS NULL
+),
+-- An API token may be limited to some roles: those, and the roles they include.
+allowed(role) AS (
+    SELECT sys_id FROM sys.role WHERE name = ANY(:only) AND deleted IS NULL
+  UNION
+    SELECT ri.includes FROM sys.role_include ri JOIN allowed ON ri.role = allowed.role
+    WHERE ri.deleted IS NULL
 )
 SELECT t."schema" || '.' || t.name AS table_key, g.operation, g.condition, g.fields,
        held.narrowing
 FROM held
 JOIN sys.role r ON r.sys_id = held.role AND r.deleted IS NULL
+    AND (:everything OR r.sys_id IN (SELECT role FROM allowed))
 JOIN sys."grant" g ON g.role = r.sys_id AND g.deleted IS NULL
 JOIN sys."table" t ON t.sys_id = g."table" AND t.deleted IS NULL
 """
@@ -47,14 +55,24 @@ def _both(*conditions: Any) -> Any:
     return given[0] if len(given) == 1 else {"and": given}
 
 
-async def access_for(conn: AsyncConnection, person: uuid.UUID) -> Access:
-    """Everything the person may do; nothing if they're inactive or unknown."""
+async def access_for(
+    conn: AsyncConnection, person: uuid.UUID, only: frozenset[str] | None = None
+) -> Access:
+    """Everything the person may do; nothing if they're inactive or unknown.
+
+    `only` limits it to these roles (by name) and the roles they include, as far as the person
+    holds them: what an API token naming its roles gets. Never more than the person has.
+    """
     await switch_role(conn, "sys")
     groups = frozenset((await conn.execute(_GROUPS, {"person": person})).scalars())
     if not groups:
         return NOTHING
     permits: dict[tuple[str, str], list[Permit]] = {}
-    for row in await conn.execute(_GRANTS, {"groups": list(groups)}):
+    found = await conn.execute(
+        _GRANTS,
+        {"groups": list(groups), "only": sorted(only or ()), "everything": only is None},
+    )
+    for row in found:
         fields = frozenset(row.fields) if row.fields is not None else None
         permit = Permit(_both(row.condition, row.narrowing), fields)
         found = permits.setdefault((row.table_key, row.operation), [])

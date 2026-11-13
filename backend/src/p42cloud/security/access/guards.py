@@ -22,6 +22,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from p42cloud.data.hooks import Change
 from p42cloud.kernel.context import current
@@ -112,11 +113,15 @@ def _values(change: Change, before: dict[str, Any], name: str) -> list[Any]:
     return [v for v in found if v is not None]
 
 
+async def holds_admin(conn: AsyncConnection, groups: frozenset[uuid.UUID]) -> bool:
+    """Whether one of these groups holds sys.admin (directly or through an included role)."""
+    await switch_role(conn, "sys")
+    return bool(await conn.scalar(_HOLDS_ADMIN, {"groups": list(groups)}))
+
+
 async def _is_admin(change: Change) -> bool:
     access = change.records.access
-    if access.unrestricted:
-        return True
-    return bool(await change.records.conn.scalar(_HOLDS_ADMIN, {"groups": list(access.groups)}))
+    return access.unrestricted or await holds_admin(change.records.conn, access.groups)
 
 
 async def _admins_only(change: Change, why: str) -> None:

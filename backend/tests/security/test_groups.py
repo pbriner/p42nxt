@@ -54,17 +54,26 @@ async def test_members_follow_the_rule(engine: AsyncEngine) -> None:
 
 async def test_a_changed_rule_moves_people_at_once(engine: AsyncEngine) -> None:
     tag = uuid.uuid4().hex[:6]
+    staff = {"field": "kind", "op": "eq", "value": "employee"}
     async with acting(engine, None) as records:
-        person = await records.create("sys.person", {"name": f"Vendor {tag}", "kind": "service"})
-        group = await records.create("sys.group", {"name": f"Bots {tag}", "rule": EXTERNALS})
+        person = await records.create("sys.person", {"name": f"Vendor {tag}", "kind": "external"})
+        group = await records.create("sys.group", {"name": f"Moving {tag}", "rule": staff})
         assert person.sys_id not in await _members_in(records, group.sys_id)
-        services = {"field": "kind", "op": "eq", "value": "service"}
-        await change(records, "sys.group", group.sys_id, {"rule": services})
+        await change(records, "sys.group", group.sys_id, {"rule": EXTERNALS})
         assert person.sys_id in await _members_in(records, group.sys_id)
         # Without a rule the group is kept by hand; its members stay.
         await change(records, "sys.group", group.sys_id, {"rule": None})
     members = await _members(engine, group.sys_id)
     assert members.get(person.sys_id) is False
+
+
+async def test_service_accounts_are_never_found_by_a_rule(engine: AsyncEngine) -> None:
+    tag = uuid.uuid4().hex[:6]
+    services = {"field": "kind", "op": "eq", "value": "service"}
+    async with acting(engine, None) as records:
+        robot = await records.create("sys.person", {"name": f"Robot {tag}", "kind": "service"})
+        group = await records.create("sys.group", {"name": f"Robots {tag}", "rule": services})
+    assert robot.sys_id not in await _members(engine, group.sys_id)
 
 
 async def _members_in(records: Any, group: uuid.UUID) -> set[uuid.UUID]:

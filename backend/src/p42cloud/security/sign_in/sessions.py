@@ -80,6 +80,8 @@ _ACCOUNT = text(
     " LEFT JOIN sys.credential c ON c.person = p.sys_id AND c.kind = 'password'"
     " AND c.deleted IS NULL"
     " WHERE lower(p.email) = :email AND p.deleted IS NULL AND p.active"
+    # Service accounts work through API tokens only.
+    " AND p.kind <> 'service'"
 )
 _SESSION = text(
     "SELECT sys_id, person, stage, expires, last_seen, verified, challenge FROM sys.session"

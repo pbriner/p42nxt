@@ -28,8 +28,12 @@ SHARES = "sys.share"
 SESSIONS = "sys.session"
 # What people see of sessions: never the token's hash.
 SESSION_FIELDS = ("person", "stage", "expires", "last_seen", "verified", "address", "agent")
+TOKENS = "sys.api_token"
+# What people see of API tokens: never the token's hash.
+TOKEN_FIELDS = ("person", "name", "prefix", "roles", "expires", "last_used")
 MINE = {"field": "owner", "op": "eq", "value": "@me"}
-OWN_SESSIONS = {"field": "person", "op": "eq", "value": "@me"}
+# Sessions and tokens are the person's own.
+YOURS = {"field": "person", "op": "eq", "value": "@me"}
 
 ROLES = [
     Role(
@@ -40,6 +44,8 @@ ROLES = [
             *(Grant(t, ("read",)) for t in (*ACCESS_TABLES, *METADATA)),
             Grant(SESSIONS, ("read",), fields=SESSION_FIELDS),
             Grant(SESSIONS, ("delete",)),
+            Grant(TOKENS, ("read",), fields=TOKEN_FIELDS),
+            Grant(TOKENS, ("delete",)),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",
@@ -64,8 +70,10 @@ ROLES = [
             Grant("sys.group", ("read",), fields=("name", "description", "assignable")),
             Grant(SHARES, ALL, condition=MINE),
             Grant(SHARES, ("read",), condition={"field": "person", "op": "eq", "value": "@me"}),
-            Grant(SESSIONS, ("read",), condition=OWN_SESSIONS, fields=SESSION_FIELDS),
-            Grant(SESSIONS, ("delete",), condition=OWN_SESSIONS),
+            Grant(SESSIONS, ("read",), condition=YOURS, fields=SESSION_FIELDS),
+            Grant(SESSIONS, ("delete",), condition=YOURS),
+            Grant(TOKENS, ("read",), condition=YOURS, fields=TOKEN_FIELDS),
+            Grant(TOKENS, ("delete",), condition=YOURS),
         ),
         description="Everyone: sees who's who and shares their own records.",
     ),

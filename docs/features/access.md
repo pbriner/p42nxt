@@ -30,6 +30,7 @@ rule matches, for example `{"field": "kind", "op": "in", "value": ["external"]}`
   A group whose rule is removed keeps its members, kept by hand from then on.
 - **Rules can't be gamed**: they use only the person's own fields, and none people change about
   themselves (name and email). `@me`, `@my_groups` and `@person` are refused.
+- Service accounts are never members of a group with a rule.
 - Changes made with SQL outside the app don't recalculate memberships.
 
 ## Declaring roles
@@ -119,9 +120,9 @@ Table("budget", "Budget", {..., "owner": Reference("Owner", "sys.person", requir
 
 | Role | Grants |
 |---|---|
-| `sys.admin` | People: everything. Groups, roles, grants and metadata: read. Sessions: read and end |
+| `sys.admin` | People: everything. Groups, roles, grants and metadata: read. Sessions and API tokens: read and end |
 | `sys.access_admin` | People and metadata: read. Groups, memberships, roles, included roles, grants, group roles: everything |
-| `sys.user` | People's name, kind and whether active; groups' names: read. Their own shares: everything. Their own sessions: read and end |
+| `sys.user` | People's name, kind and whether active; groups' names: read. Their own shares: everything. Their own sessions and API tokens: read and end |
 
 `sys.admin` and `sys.access_admin` are powerful. A new installation has an **Administrators**
 group holding both, an **Everyone** group (rule: every employee and external person) holding

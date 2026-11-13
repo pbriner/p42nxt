@@ -17,9 +17,17 @@ from p42cloud.security.access.roles import Role, write_roles
 from p42cloud.security.people import models as people
 from p42cloud.security.sign_in import hooks as sign_in_hooks
 from p42cloud.security.sign_in import models as sign_in
+from p42cloud.security.tokens import hooks as token_hooks
+from p42cloud.security.tokens import models as tokens
 
 CORE = "sys"
-TABLES: list[Table] = [*people.TABLES, *access_models.TABLES, SHARE, *sign_in.TABLES]
+TABLES: list[Table] = [
+    *people.TABLES,
+    *access_models.TABLES,
+    SHARE,
+    *sign_in.TABLES,
+    *tokens.TABLES,
+]
 ROLES: list[Role] = access.ROLES
 
 
@@ -27,6 +35,7 @@ def compose() -> None:
     """Connects the core's features to each other (their hooks); every process does it once."""
     access_hooks.register()
     sign_in_hooks.register()
+    token_hooks.register()
 
 
 async def install_core(engine: AsyncEngine) -> list[str]:
