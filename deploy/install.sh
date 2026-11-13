@@ -75,6 +75,8 @@ echo "Starting the database of $name ..."
 docker compose up -d --wait postgres
 echo "Setting up the database ..."
 docker compose run --rm setup
+echo "Bringing it to this version ..."
+docker compose run --rm upgrade
 echo "Checking that it's safe ..."
 docker compose run --rm check
 

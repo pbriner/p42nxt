@@ -28,6 +28,15 @@ def module_role(module_id: str) -> str:
     return f"{MODULE_ROLE_PREFIX}{module_id}"
 
 
+async def run_script(conn: AsyncConnection, sql: str) -> None:
+    """Several statements at once (the engine's steps), inside the connection's transaction.
+
+    Only for SQL written in the code: the driver's plain protocol takes no parameters.
+    """
+    raw = await conn.get_raw_connection()
+    await raw.driver_connection.execute(sql)  # pyright: ignore[reportOptionalMemberAccess, reportUnknownMemberType]
+
+
 def create_engine(url: str) -> AsyncEngine:
     return create_async_engine(url, pool_pre_ping=True)
 
