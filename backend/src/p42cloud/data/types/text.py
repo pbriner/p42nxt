@@ -8,6 +8,7 @@ from p42cloud.data.types.base import Common, Field, FieldType, declare, string_v
 class TextType(FieldType):
     name = "text"
     label = "Long text"
+    kind = "text"
 
     def column_type(self, options: dict[str, Any]) -> str:
         return "text"

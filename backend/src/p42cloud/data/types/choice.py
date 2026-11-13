@@ -16,6 +16,7 @@ def values_of(options: dict[str, Any]) -> list[str]:
 class ChoiceType(FieldType):
     name = "choice"
     label = "Choice"
+    kind = "choice"
 
     def option_problems(self, options: dict[str, Any]) -> list[str]:
         found = super().option_problems({k: v for k, v in options.items() if k != "values"})

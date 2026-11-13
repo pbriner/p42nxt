@@ -10,6 +10,7 @@ LIMIT = 2**63
 class IntegerType(FieldType):
     name = "integer"
     label = "Whole number"
+    kind = "number"
 
     def column_type(self, options: dict[str, Any]) -> str:
         return "bigint"

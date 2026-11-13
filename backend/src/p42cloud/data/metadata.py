@@ -75,10 +75,6 @@ def _json(value: Any) -> str | None:
     return None if value is None else json.dumps(value)
 
 
-def _loaded(value: Any) -> Any:
-    return json.loads(value) if isinstance(value, str) else value
-
-
 async def sync_field_types(conn: AsyncConnection) -> None:
     """One record per field type this version of the code has; others are retired."""
     existing = {
@@ -205,7 +201,7 @@ async def _write_fields(
             continue
         _refuse_loss(
             f"{where}.{name}",
-            Field(old.type, {}, _loaded(old.options) or {}),
+            Field(old.type, {}, old.options or {}),
             new,
         )
         await conn.execute(

@@ -57,12 +57,17 @@ async def _hand_over_context(conn: AsyncConnection) -> None:
     )
 
 
+async def switch_role(conn: AsyncConnection, module_id: str) -> None:
+    """Work as `module_id` from here to the end of the transaction (one module's part of it)."""
+    role = module_role(module_id)  # checked, so it's safe to put into the statement
+    await conn.execute(text(f'SET LOCAL ROLE "{role}"'))
+
+
 @asynccontextmanager
 async def transaction(engine: AsyncEngine, module_id: str) -> AsyncGenerator[AsyncConnection]:
     """One transaction as `module_id`'s role, with the current context handed to the database."""
-    role = module_role(module_id)  # checked, so it's safe to put into the statement
     async with engine.begin() as conn:
-        await conn.execute(text(f'SET LOCAL ROLE "{role}"'))
+        await switch_role(conn, module_id)
         await _hand_over_context(conn)
         yield conn
 

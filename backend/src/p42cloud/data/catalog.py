@@ -5,7 +5,6 @@ in memory and drops it when PostgreSQL announces a change to those tables (`LIST
 process sees a change as soon as it's committed.
 """
 
-import json
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -69,11 +68,6 @@ _FIELDS = text(
 )
 
 
-def _json(value: Any) -> Any:
-    # asyncpg hands jsonb over as text unless told otherwise.
-    return json.loads(value) if isinstance(value, str) else value
-
-
 def _together(value: Any) -> tuple[tuple[str, ...], ...]:
     groups: list[list[str]] = value or []
     return tuple(tuple(group) for group in groups)
@@ -84,12 +78,12 @@ async def load_catalog(conn: AsyncConnection) -> Catalog:
     for row in (await conn.execute(_FIELDS)).all():
         declared = Field(
             type=row.type,
-            label=_json(row.label),
-            options=_json(row.options) or {},
+            label=row.label,
+            options=row.options or {},
             required=row.required,
             unique=row.unique,
-            default=_json(row.default),
-            help=_json(row.help),
+            default=row.default,
+            help=row.help,
             personal=row.personal,
         )
         fields.setdefault(row.table_id, []).append(
@@ -100,10 +94,10 @@ async def load_catalog(conn: AsyncConnection) -> Catalog:
         table = TableDef(
             schema=row.schema,
             name=row.name,
-            label=_json(row.label),
+            label=row.label,
             fields=tuple(fields.get(row.sys_id, [])),
-            label_plural=_json(row.label_plural),
-            unique_together=_together(_json(row.unique_together)),
+            label_plural=row.label_plural,
+            unique_together=_together(row.unique_together),
             retired=row.retired,
         )
         tables[table.key] = table

@@ -13,9 +13,29 @@ ISO = re.compile(
 )
 
 
+def iso_duration(value: timedelta) -> str:
+    sign, value = ("-", -value) if value < timedelta(0) else ("", value)
+    hours, rest = divmod(value.seconds, 3600)
+    minutes, seconds = divmod(rest, 60)
+    second = f"{seconds}.{value.microseconds:06d}".rstrip("0").rstrip(".")
+    time = "".join(
+        f"{n}{unit}"
+        for n, unit in ((hours, "H"), (minutes, "M"), (second, "S"))
+        if n not in (0, "0")
+    )
+    days = f"{value.days}D" if value.days else ""
+    if not days and not time:
+        return "PT0S"
+    return f"{sign}P{days}{'T' + time if time else ''}"
+
+
 class DurationType(FieldType):
     name = "duration"
     label = "Duration"
+    kind = "number"
+
+    def to_json(self, value: Any) -> Any:
+        return None if value is None else iso_duration(value)
 
     def column_type(self, options: dict[str, Any]) -> str:
         return "interval"

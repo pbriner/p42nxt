@@ -35,6 +35,10 @@ def fit(value: Number, precision: int, scale: int) -> Number:
 class DecimalType(FieldType):
     name = "decimal"
     label = "Decimal number"
+    kind = "number"
+
+    def to_json(self, value: Any) -> Any:
+        return None if value is None else str(value)
 
     def option_problems(self, options: dict[str, Any]) -> list[str]:
         rest = {k: v for k, v in options.items() if k not in ("precision", "scale")}

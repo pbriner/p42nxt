@@ -11,6 +11,10 @@ PRECISION, SCALE = 12, 6
 class PercentType(FieldType):
     name = "percent"
     label = "Percentage"
+    kind = "number"
+
+    def to_json(self, value: Any) -> Any:
+        return None if value is None else str(value)
 
     def column_type(self, options: dict[str, Any]) -> str:
         return f"numeric({PRECISION},{SCALE})"
