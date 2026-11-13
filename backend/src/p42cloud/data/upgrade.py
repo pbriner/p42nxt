@@ -1,4 +1,5 @@
-"""Bringing an installation's database to this version: the engine's steps, then housekeeping.
+"""Bringing an installation's database to this version: the engine's steps, the metadata
+tables, then housekeeping.
 
 Runs as the owner role (`p42cloud upgrade`), once after setting up and after every update.
 Each step runs once, in its own transaction, and is recorded; running it again changes nothing.
@@ -10,6 +11,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from p42cloud.data.engine_steps import STEPS
+from p42cloud.data.metadata import build_metadata
 from p42cloud.kernel.db import owner_transaction, run_script
 
 # Audit partitions are made this many months ahead, so writing never waits for a new month.
@@ -22,7 +24,7 @@ def add_months(month: date, months: int) -> date:
 
 
 async def upgrade(engine: AsyncEngine, *, today: date | None = None) -> list[str]:
-    """Apply the steps not applied yet; returns their names."""
+    """Apply what isn't applied yet; returns the steps' names and the schema changes."""
     applied: list[str] = []
     async with owner_transaction(engine) as conn:
         await conn.execute(
@@ -41,10 +43,13 @@ async def upgrade(engine: AsyncEngine, *, today: date | None = None) -> list[str
                 text("INSERT INTO sys.engine_step (id) VALUES (:id)"), {"id": step_id}
             )
         applied.append(step_id)
+    # The months first: building the metadata writes records, and every record is audited.
     month = (today or datetime.now(UTC).date()).replace(day=1)
     async with owner_transaction(engine) as conn:
         await conn.execute(
             text("SELECT sys.p42_create_audit_partitions(:first, :last)"),
             {"first": month, "last": add_months(month, MONTHS_AHEAD)},
         )
+    async with owner_transaction(engine) as conn:
+        applied += await build_metadata(conn)
     return applied

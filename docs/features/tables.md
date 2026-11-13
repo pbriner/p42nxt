@@ -1,0 +1,92 @@
+# Tables and fields
+
+Tables are declared once. The declaration is written into metadata records, and the engine builds
+the database from those records.
+
+## Declaring a table
+
+```python
+Table("product", "Product", {
+    "name": String("Name", max_length=40, required=True, unique=True),
+    "price": Decimal("Price", precision=10, scale=2),
+    "state": Choice("State", {"draft": "Draft", "sold": "Sold"}),
+    "category": Reference("Category", "shop.category"),
+}, unique_together=(("name", "category"),))
+```
+
+A module's tables live in the module's own schema (`shop.product`), and only the module's database
+role may write them. Every table also gets the system fields and the record rules
+(`records-and-audit.md`).
+
+Field names use `a-z`, `0-9` and `_`, at most 40 characters. They can't start with `sys_` or
+reuse a system field's name. Declarations are checked before anything is written, and every
+problem is reported at once.
+
+Options every field takes: `required`, `unique`, `default`, `help`, `personal` (personal data).
+
+## Field types
+
+One file per type in `backend/src/p42cloud/data/types/`. Each type decides the column, the checks
+the database makes, how a value is checked and stored, and which changes keep every value.
+
+| Type | Stored as | Checked |
+|---|---|---|
+| `String(max_length)` | `varchar(n)` | Length |
+| `Text`, `Markdown` | `text` | |
+| `TranslatedText` | `jsonb` | One text per language code (`en`, `de-CH`); plain text becomes `{"en": …}` |
+| `Email`, `Url`, `Phone`, `Hostname`, `Color`, `Icon` | `text` (`varchar(253)` for host names) | Format, in the app and in the database. Web addresses only `http` and `https` |
+| `Integer` | `bigint` | Whole numbers only |
+| `Decimal(precision, scale)` | `numeric(p,s)` | Rounded half away from zero, as the database does; never a float |
+| `Percent` | `numeric(12,6)` | Stored as a fraction (0.05 is 5 %) |
+| `Boolean` | `boolean` | |
+| `Date`, `DateTime`, `Duration` | `date`, `timestamptz`, `interval` | A date and time needs a time zone and is stored in UTC. Durations are ISO 8601 without years or months (`P1DT2H30M`) |
+| `Choice(values)` | `text` | One of the declared values (`a-z`, `0-9`, `_`), each with a label |
+| `Reference(table)` | `uuid` | The record exists (foreign key, indexed) |
+| `Json` | `jsonb` | Valid JSON |
+
+## What the database enforces
+
+- **Required**: no *active* record may leave the field empty. Deleted records may, so retiring a
+  field or soft-deleting a record never fails on it.
+- **Unique**: among active records. A deleted record's value can be used again.
+- Choices, formats and references are checked by the database too, so they hold for SQL outside
+  the app.
+
+## Changing a table
+
+Declare the table again. The engine compares the records with the database and applies only the
+difference, in the same transaction as the change of the records: either both change or neither
+does.
+
+| Change | What happens |
+|---|---|
+| Add a table or field | Created |
+| Label, help, default, more choices | Records updated |
+| Longer text, text to long text, whole number to decimal, more digits | Column widened |
+| A type change that could lose a value (shorter, fewer choices, text to number) | Refused |
+| Make a field required | Only if no active record leaves it empty; otherwise refused |
+| Remove a field or table from the declaration | **Retired**: its record is marked deleted, the column and data stay; a retired field is no longer required or checked |
+| Declare a retired field or table again | Back, with its data |
+
+A table that a reference still points to can't be retired.
+
+The engine also refuses to narrow a column if a metadata record asks for it directly. Its
+constraints and indexes are named `p42_<field>_<kind><hash>`, after their definition.
+
+## Metadata tables
+
+| Table | Holds |
+|---|---|
+| `sys.field_type` | One record per field type this version has |
+| `sys.table` | One record per table: module (schema), name, labels, unique field sets |
+| `sys.field` | One record per field: table, name, type, labels, help, options, required, unique, default, personal data, position |
+
+They describe themselves: `p42cloud upgrade` builds them from their declarations and then writes
+their own records. Changes to them are audited like any other record.
+
+## The catalog
+
+The catalog (all tables and fields) is read from these records, never from code. Each process
+keeps it in memory and drops it as soon as PostgreSQL announces a change to the metadata tables
+(`LISTEN` / `NOTIFY` on `p42_metadata`). If that connection is lost, the process reads the records
+again for every use rather than trust an old copy.
