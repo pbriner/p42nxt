@@ -9,6 +9,8 @@ import asyncio
 import getpass
 import os
 import sys
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 import httpx
 
@@ -196,19 +198,15 @@ def main(argv: list[str] | None = None) -> int:
         help="an entry's <number>:<hash> noted earlier; finds a chain rewritten as a whole",
     )
     args = parser.parse_args(argv)
-    match args.command:
-        case "setup-database":
-            return asyncio.run(_set_up())
-        case "upgrade":
-            return asyncio.run(_upgrade())
-        case "module":
-            return asyncio.run(_module(args.action, args.module))
-        case "create-admin":
-            return asyncio.run(_create_admin(args.name, args.email))
-        case "audit":
-            return asyncio.run(_verify(args.anchor))
-        case _:
-            return asyncio.run(_check())
+    commands_run: dict[str, Callable[[], Coroutine[Any, Any, int]]] = {
+        "setup-database": _set_up,
+        "upgrade": _upgrade,
+        "module": lambda: _module(args.action, args.module),
+        "create-admin": lambda: _create_admin(args.name, args.email),
+        "audit": lambda: _verify(args.anchor),
+        "check": _check,
+    }
+    return asyncio.run(commands_run[args.command]())
 
 
 if __name__ == "__main__":

@@ -234,8 +234,8 @@ async def test_following_a_reference_stays_within_what_may_be_read(shop: Shop) -
     # Everyone may read people's names, so Bob's items are found by his name, but only where
     # Anna may read the owner: on his chair (her team's), not on his lamp (names and prices only).
     assert set(_by_key(shop, named.records)) == {"B2"}
-    # ... but not their emails: those can't be used to find anything.
-    assert hidden.records == []
+    # ... but not other people's emails: only her own (empty) one finds anything, her own desk.
+    assert set(_by_key(shop, hidden.records)) == {"A1"}
 
 
 # ---- who may change what ----

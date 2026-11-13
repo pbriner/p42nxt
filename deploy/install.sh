@@ -53,6 +53,21 @@ if [ -n "$(docker ps -aq --filter "label=$label")$(docker volume ls -q --filter 
     exit 1
 fi
 
+# The first free port on this machine from 8080 on (other installations may run here too).
+port=${P42_PORT:-}
+if [ -z "$port" ]; then
+    for candidate in $(seq 8080 8180); do
+        if ! (exec 3<>"/dev/tcp/127.0.0.1/$candidate") 2>/dev/null; then
+            port=$candidate
+            break
+        fi
+    done
+fi
+if [ -z "$port" ]; then
+    echo "No free port between 8080 and 8180; set P42_PORT. Nothing changed." >&2
+    exit 1
+fi
+
 here=$(cd "$(dirname "$0")" && pwd)
 umask 077
 mkdir -p "$folder" "$backups"
@@ -68,6 +83,7 @@ P42_OWNER_PASSWORD=$(openssl rand -hex 24)
 P42_APP_PASSWORD=$(openssl rand -hex 24)
 P42_SETUP_CODE=$setup_code
 P42_BACKUPS=$backups
+P42_PORT=$port
 EOF
 
 cd "$folder"
@@ -79,6 +95,18 @@ echo "Bringing it to this version ..."
 docker compose run --rm upgrade
 echo "Checking that it's safe ..."
 docker compose run --rm check
+echo "Starting the app ..."
+docker compose up -d web
+for _ in $(seq 1 60); do
+    if curl -fsS "http://127.0.0.1:$port/api/v1/health" >/dev/null 2>&1; then
+        break
+    fi
+    sleep 1
+done
+if ! curl -fsS "http://127.0.0.1:$port/api/v1/health" >/dev/null; then
+    echo "The app didn't start; see: docker compose --project-directory $folder logs web" >&2
+    exit 1
+fi
 
 cat <<EOF
 
@@ -86,6 +114,7 @@ The installation $name is ready.
   Folder:      $folder
   Backups:     $backups
   Setup code:  $setup_code
+  App:         http://127.0.0.1:$port (put a reverse proxy with TLS in front of it)
 
 Keep a copy of $folder/master.key somewhere safe: without it, encrypted secrets
 can't be recovered.

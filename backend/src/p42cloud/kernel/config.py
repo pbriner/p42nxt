@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     # Where module releases are published (the registry's index.json is read from there). Off by
     # default: without it the installation never asks for updates.
     registry_url: str | None = None
+    # The reverse proxy in front of the app (addresses, comma-separated): only its
+    # X-Forwarded-For is believed, so throttling per address sees the real client. None: the
+    # address the request comes from.
+    trusted_proxies: str | None = None
+    # Requests per person, token or address and minute; more are refused for the rest of it.
+    requests_per_minute: int = Field(default=600, ge=10, le=100_000)
     # Sessions end after this long without use, and after this long in any case.
     session_idle_minutes: int = Field(default=30, ge=5, le=24 * 60)
     session_max_hours: int = Field(default=12, ge=1, le=24 * 30)

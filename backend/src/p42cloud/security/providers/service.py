@@ -40,7 +40,7 @@ from p42cloud.kernel.secrets import Sealer
 from p42cloud.security.sign_in.events import event
 from p42cloud.security.sign_in.sessions import SignIn, Started
 
-CALLBACK = "/api/v1/sign-in/provider/callback"
+CALLBACK = "/api/v1/sign-in/provider-callback"
 FLOW_LIFE = timedelta(minutes=10)
 ALGORITHMS = ["RS256", "ES256"]  # never "none", never a shared-secret algorithm
 LEEWAY = 60
