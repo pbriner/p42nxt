@@ -58,6 +58,8 @@ class Context:
     # When the person last gave their second factor in this session; changes to access need it
     # to be recent.
     verified_at: datetime | None = None
+    # The installation's time zone (a setting): where its days begin, for `@today` and dates.
+    zone: str = "UTC"
 
 
 _current: ContextVar[Context | None] = ContextVar("p42_context", default=None)

@@ -24,6 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from p42cloud.data.catalog import Catalog
 from p42cloud.data.declarations import Table
 from p42cloud.data.hooks import TableHook
+from p42cloud.data.settings import Setting
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.security.access.roles import Role
 
@@ -65,6 +66,7 @@ class Module:
     # again at every upgrade.
     seed: Seed | None = None
     migrations: tuple[Migration, ...] = ()
+    settings: tuple[Setting, ...] = ()
 
     @property
     def parsed_version(self) -> Version:
@@ -90,6 +92,11 @@ class Module:
             found.append(FieldError("depends_on", "needs_core", "Every module depends on sys."))
         if self.id in self.depends_on:
             found.append(FieldError("depends_on", "itself", "A module can't depend on itself."))
+        found += [
+            FieldError("settings", "not_its_setting", f"{s.name} must start with {self.id}.")
+            for s in self.settings
+            if not s.name.startswith(f"{self.id}.")
+        ]
         found += [
             FieldError("hooks", "not_its_table", f"{h.table} isn't one of this module's tables.")
             for h in self.hooks

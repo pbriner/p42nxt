@@ -138,8 +138,17 @@ async def group_role(change: Change) -> None:
     recently_verified(change)
     await switch_role(change.records.conn, "sys")
     before = await _row(change, "sys.group_role", "role")
+    group = change.values.get("group", (await _row(change, "sys.group_role", "group")).get("group"))
+    synced = group is not None and await change.records.conn.scalar(
+        text('SELECT provider IS NOT NULL FROM sys."group" WHERE sys_id = :g'), {"g": group}
+    )
     for role in _values(change, before, "role"):
         if await change.records.conn.scalar(_POWERFUL, {"id": role}):
+            if synced and change.operation != "delete":
+                raise _refuse(
+                    "provider_group",
+                    "A group following a sign-in provider can't hold a powerful role.",
+                )
             await _admins_only(change, "The role is powerful.")
 
 
@@ -152,18 +161,30 @@ async def membership(change: Change) -> None:
         raise Problem(409, "from_rule", "Members of a group with a rule come from the rule only.")
     for group in _values(change, before, "group"):
         if await change.records.conn.scalar(
-            text('SELECT rule IS NOT NULL FROM sys."group" WHERE sys_id = :g'), {"g": group}
+            text(
+                'SELECT rule IS NOT NULL OR provider IS NOT NULL FROM sys."group" WHERE sys_id = :g'
+            ),
+            {"g": group},
         ):
             raise Problem(
-                409, "from_rule", "Members of a group with a rule come from the rule only."
+                409,
+                "from_rule",
+                "Members of this group come from its rule or its sign-in provider only.",
             )
         if await change.records.conn.scalar(_GROUP_IS_POWERFUL, {"group": group}):
             await _admins_only(change, "The group holds a powerful role.")
 
 
 async def group(change: Change) -> None:
-    """A group holding a powerful role: its rule and its existence are for administrators."""
+    """A group holding a powerful role: its rule and its existence are for administrators; it
+    can't start following a provider."""
     recently_verified(change)
+    if change.sys_id is not None and change.values.get("provider") is not None:
+        await switch_role(change.records.conn, "sys")
+        if await change.records.conn.scalar(_GROUP_IS_POWERFUL, {"group": change.sys_id}):
+            raise _refuse(
+                "provider_group", "A group holding a powerful role can't follow a provider."
+            )
     if change.sys_id is None or (change.operation == "write" and "rule" not in change.values):
         return
     await switch_role(change.records.conn, "sys")

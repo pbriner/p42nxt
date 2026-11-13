@@ -15,6 +15,7 @@ from uuid import UUID
 
 from fastapi import Request
 
+from p42cloud.data import settings
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Access, Context, working_as
 from p42cloud.kernel.db import transaction
@@ -36,6 +37,7 @@ class Caller:
     channel: str
     verified_at: datetime | None
     session: UUID | None  # the session, for the browser; None for a token
+    zone: str = "UTC"  # the installation's time zone
 
     def context(self, language: str) -> Context:
         return Context(
@@ -44,6 +46,7 @@ class Caller:
             language=language,
             access=self.access,
             verified_at=self.verified_at,
+            zone=self.zone,
         )
 
 
@@ -100,7 +103,9 @@ async def who(request: Request) -> Caller:
         if authorization.lower().startswith("bearer "):
             use = await services.tokens(authorization[7:].strip(), address(request))
             services.rates.take(f"person:{use.person}")
-            return Caller(use.person, use.access, use.channel, None, None)
+            return Caller(
+                use.person, use.access, use.channel, None, None, await services.time_zone()
+            )
         token = request.cookies.get(SESSION_COOKIE)
         if not token:
             raise Problem(401, "not_signed_in", "Please sign in.")
@@ -113,4 +118,5 @@ async def who(request: Request) -> Caller:
         services.rates.take(f"person:{session.person}")
         async with transaction(services.engine, "sys") as conn:
             access = await access_for(conn, session.person)
-    return Caller(session.person, access, "ui", session.verified, session.sys_id)
+            zone = await settings.value(conn, "sys.time_zone")
+    return Caller(session.person, access, "ui", session.verified, session.sys_id, str(zone))

@@ -83,6 +83,11 @@ class Passkey(BaseModel):
     label: str = "Passkey"
 
 
+class Accept(BaseModel):
+    token: str
+    password: str
+
+
 class NewApp(BaseModel):
     label: str = "Authenticator app"
 
@@ -100,6 +105,18 @@ async def start(body: Password, request: Request, response: Response) -> dict[st
     with working_as(Context(channel="ui")):
         started = await services.sign_in.start(
             body.email, body.password, address(request), request.headers.get("user-agent")
+        )
+    return _set(response, services, started)
+
+
+@router.post("/invitation")
+@requires(PUBLIC)
+async def accept_invitation(body: Accept, request: Request, response: Response) -> dict[str, Any]:
+    """An invitation's token and a new password; then the second factor is set up."""
+    services = _services(request)
+    with working_as(Context(channel="ui")):
+        started = await services.sign_in.accept_invitation(
+            body.token, body.password, address(request), request.headers.get("user-agent")
         )
     return _set(response, services, started)
 

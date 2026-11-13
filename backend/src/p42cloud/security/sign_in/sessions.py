@@ -25,11 +25,12 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from p42cloud.data import settings
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.db import transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.secrets import Sealer
-from p42cloud.security.sign_in import credentials, passkeys, passwords
+from p42cloud.security.sign_in import credentials, invitations, passkeys, passwords
 from p42cloud.security.sign_in.events import event, failures
 
 PENDING = timedelta(minutes=10)
@@ -76,7 +77,7 @@ def _slow_down() -> Problem:
 
 
 _ACCOUNT = text(
-    "SELECT p.sys_id, p.email, p.emergency_access, c.secret FROM sys.person p"
+    "SELECT p.sys_id, p.email, p.kind, p.emergency_access, c.secret FROM sys.person p"
     " LEFT JOIN sys.credential c ON c.person = p.sys_id AND c.kind = 'password'"
     " AND c.deleted IS NULL"
     " WHERE lower(p.email) = :email AND p.deleted IS NULL AND p.active"
@@ -194,6 +195,12 @@ class SignIn:
             hashed = row.secret if row is not None else None
             right = not throttled and passwords.verify(hashed, password) and row is not None
             claimed = await conn.scalar(_CLAIMED, {"domain": email.rpartition("@")[2]})
+            off: list[str] = list(await settings.value(conn, "sys.passwords_off_for") or [])
+            if right and row is not None and row.kind in off and not row.emergency_access:
+                # Only after the right password, so it says nothing about who has an account.
+                raise Problem(
+                    409, "passwords_off", "Sign in through your organization's sign-in provider."
+                )
             if claimed and not (right and row is not None and row.emergency_access):
                 # The same answer whether the account exists or not.
                 started = None
@@ -217,6 +224,51 @@ class SignIn:
             )
         if started is None:
             raise _slow_down() if throttled else _wrong("Wrong email or password.")
+        return started
+
+    async def accept_invitation(
+        self, token: str, password: str, address: str | None = None, agent: str | None = None
+    ) -> Started:
+        """An invitation's link and a new password: then the second factor is set up."""
+        now = self.now()
+        async with self._work() as conn:
+            refused = address is not None and (
+                await failures(conn, "invitation_refused", "address", address, now - WINDOW)
+                >= ADDRESS_FAILURES
+            )
+            row = None
+            if not refused:
+                row = (
+                    await conn.execute(
+                        text(
+                            "SELECT i.sys_id, i.person, i.expires FROM sys.invitation i"
+                            " JOIN sys.person p ON p.sys_id = i.person"
+                            " WHERE i.token = :t AND i.deleted IS NULL AND i.used IS NULL"
+                            " AND p.deleted IS NULL AND p.active FOR UPDATE OF i"
+                        ),
+                        {"t": invitations.hashed(token)},
+                    )
+                ).first()
+            if row is None or row.expires <= now:
+                await event(conn, "invitation_refused", address=address)
+                started = None
+            else:
+                await credentials.set_password(conn, row.person, password)
+                await conn.execute(
+                    text("UPDATE sys.invitation SET used = :now WHERE sys_id = :id"),
+                    {"now": now, "id": row.sys_id},
+                )
+                has_second = await credentials.has_second_factor(conn, row.person)
+                started = await self._new_session(
+                    conn,
+                    row.person,
+                    "second_factor" if has_second else "enroll",
+                    {"address": address, "agent": agent},
+                )
+        if started is None:
+            if refused:
+                raise _slow_down()
+            raise Problem(401, "invitation", "This link doesn't work any more; ask for a new one.")
         return started
 
     async def through_provider(

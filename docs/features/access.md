@@ -31,6 +31,17 @@ rule matches, for example `{"field": "kind", "op": "in", "value": ["external"]}`
 - **Rules can't be gamed**: they use only the person's own fields, and none people change about
   themselves (name and email). `@me`, `@my_groups` and `@person` are refused.
 - Service accounts are never members of a group with a rule.
+
+## Groups following a sign-in provider
+
+A group can name a sign-in provider and a value of that provider's groups claim (`provider`,
+`provider_group`; the provider names its claim, like `groups` for Entra). At each sign-in through
+the provider, the person joins or leaves the group as the claim says.
+
+- **Never powerful**: such a group can't hold a powerful role, whoever asks, and a group holding
+  one can't start following a provider. Whoever runs the provider's groups can't make
+  administrators.
+- Its members come only from the provider; a group has a rule or a provider, not both.
 - Changes made with SQL outside the app don't recalculate memberships.
 
 ## Declaring roles

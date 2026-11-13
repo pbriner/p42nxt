@@ -141,12 +141,15 @@ async def recalculate_group(conn: AsyncConnection, catalog: Catalog, group: uuid
     """
     row = (
         await conn.execute(
-            text('SELECT rule, deleted IS NOT NULL AS gone FROM sys."group" WHERE sys_id = :g'),
+            text(
+                'SELECT rule, provider, deleted IS NOT NULL AS gone FROM sys."group"'
+                " WHERE sys_id = :g"
+            ),
             {"g": group},
         )
     ).first()
-    if row is None:
-        return
+    if row is None or row.provider is not None:
+        return  # a provider's group follows the provider, at sign-in
     if row.rule is None:
         # Static now: the members stay, kept by hand from here on.
         await conn.execute(
@@ -176,10 +179,42 @@ async def recalculate_person(conn: AsyncConnection, catalog: Catalog, person: uu
 
 
 async def check_group(change: Change) -> None:
-    """Before a group is saved: its rule must be one people can't game."""
+    """Before a group is saved: its rule must be one people can't game, and its members come
+    from a rule or from a provider, not both."""
     rule = change.values.get("rule")
     if rule is not None:
         check_rule(change.records.catalog, rule)
+    before: dict[str, object] = {}
+    if change.sys_id is not None:
+        await switch_role(change.records.conn, "sys")
+        found = (
+            await change.records.conn.execute(
+                text('SELECT rule, provider FROM sys."group" WHERE sys_id = :g'),
+                {"g": change.sys_id},
+            )
+        ).first()
+        before = dict(found._mapping) if found else {}  # pyright: ignore[reportPrivateUsage]
+    merged = before | change.values
+    if merged.get("rule") is not None and merged.get("provider") is not None:
+        raise Problem(422, "validation", "Members come from a rule or from a provider, not both.")
+
+
+async def sync_from_provider(
+    conn: AsyncConnection, provider: uuid.UUID, person: uuid.UUID, names: set[str]
+) -> None:
+    """The person's place in every group following this provider, from its groups claim."""
+    groups = (
+        await conn.execute(
+            text(
+                'SELECT sys_id, provider_group FROM sys."group" WHERE provider = :p'
+                " AND deleted IS NULL"
+            ),
+            {"p": provider},
+        )
+    ).all()
+    for group in groups:
+        members = {person} if group.provider_group in names else set[uuid.UUID]()
+        await _sync(conn, group.sys_id, members, person)
 
 
 async def group_changed(change: Change) -> None:

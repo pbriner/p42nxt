@@ -37,6 +37,7 @@ from p42cloud.kernel.context import EVERYTHING, Context, current, working_as
 from p42cloud.kernel.db import switch_role, transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.secrets import Sealer
+from p42cloud.security.access.groups import sync_from_provider
 from p42cloud.security.sign_in.events import event
 from p42cloud.security.sign_in.sessions import SignIn, Started
 
@@ -79,7 +80,7 @@ async def set_client_secret(
 
 _PROVIDER = text(
     "SELECT sys_id, name, issuer, client_id, client_secret, scopes, kind, create_people,"
-    " trust_email, claims FROM sys.identity_provider"
+    " trust_email, claims, groups_claim FROM sys.identity_provider"
     " WHERE sys_id = :id AND active AND deleted IS NULL"
 )
 
@@ -308,6 +309,11 @@ class Providers:
                     raise Refused("no matching person, and the provider doesn't make people")
                 await self._check_person(conn, provider, person)
                 await self._update(records, provider, person, claims)
+                if provider.groups_claim:
+                    found = claims.get(provider.groups_claim, [])
+                    names = {found} if isinstance(found, str) else set(cast(list[Any], found))
+                    await switch_role(conn, "sys")
+                    await sync_from_provider(conn, provider.sys_id, person, {str(n) for n in names})
         return person
 
     async def _find(self, conn: AsyncConnection, system: str, subject: str) -> UUID | None:

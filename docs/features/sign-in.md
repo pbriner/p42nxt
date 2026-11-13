@@ -55,6 +55,26 @@ Waiting sessions end after 10 minutes.
 - **Changes to access** (groups, memberships, roles, grants) need the second factor given in the
   last 15 minutes. Giving it again doesn't start a new session.
 
+## Invitations and resets
+
+Administrators bring people in with a one-time link, valid 7 days, which they pass on (email
+comes later). It leads to setting a password, then a second factor.
+
+- A **reset** first ends the person's sessions and retires all their credentials (password,
+  apps, passkeys, recovery codes), then makes a new link.
+- Only administrators make links, with the second factor given in the last 15 minutes. Service
+  accounts get none; they use API tokens.
+- Only the newest link of a person works, and each works once. Only its hash is stored. Wrong
+  links are security events (`invitation_refused`) and slow an address down like failed
+  sign-ins.
+- An administrator never chooses anyone's password.
+
+## Passwords switched off
+
+The setting `sys.passwords_off_for` (`settings.md`) names kinds of person who sign in only
+through a sign-in provider. They're told so only after giving the right password, so it reveals
+nothing about who has an account. People with emergency access keep their password.
+
 ## The installation's address
 
 `P42_PUBLIC_URL` is the address people open the app at, like `https://p42.example.com`: scheme
@@ -72,7 +92,8 @@ passkey answers for one person, both while signing in and when giving them again
 
 Entries of the audit log without a record: `sign_in`, `sign_in_failed`, `second_factor_failed`,
 `sign_out`, `session_expired`, `session_ended`, `password_changed`, `second_factor_added`,
-`recovery_codes_made`, `recovery_code_used`. Only the core writes them.
+`recovery_codes_made`, `recovery_code_used`, `invitation_made`, `invitation_refused`,
+`credentials_reset`. Only the core writes them.
 
 ## Credentials and secrets
 

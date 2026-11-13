@@ -35,6 +35,8 @@ IDENTITY_PROVIDER = Table(
         # The provider vouches for every email it sends (a company's own tenant), so an existing
         # person may be linked by email even without an email_verified claim.
         "trust_email": Boolean("Vouches for emails", required=True, default=False),
+        # The claim listing the person's groups there (Entra: "groups"), for groups that follow it.
+        "groups_claim": String("Groups claim", max_length=80),
         # Person fields filled from claims at every sign-in: {"field": "claim"}.
         "claims": Json("Fields from claims"),
         "active": Boolean("Active", required=True, default=True),

@@ -24,7 +24,7 @@ from p42cloud.security.providers.service import Providers
 from p42cloud.security.sign_in.sessions import SignIn
 from p42cloud.web import problems as problem_answers
 from p42cloud.web.caller import Rates
-from p42cloud.web.routes import meta, records, sign_in
+from p42cloud.web.routes import meta, people, records, sign_in
 from p42cloud.web.services import Services
 
 
@@ -105,5 +105,6 @@ def create_app(
 
     app.include_router(meta.router)
     app.include_router(sign_in.router)
+    app.include_router(people.router)
     app.include_router(records.router)  # last: its paths take any module and table
     return app

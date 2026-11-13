@@ -30,6 +30,10 @@ GROUP = Table(
         "assignable": Boolean("Work can be assigned to it", required=True, default=False),
         # A group with a rule gets its members from it: every active person it matches.
         "rule": Json("Members are the people where"),
+        # Or from a sign-in provider: who the provider's groups claim names, at each sign-in.
+        # Such a group never holds a powerful role.
+        "provider": Reference("Members from the provider", "sys.identity_provider"),
+        "provider_group": String("The provider's group", max_length=255),
     },
     label_plural="Groups",
 )
