@@ -5,13 +5,18 @@ as JSON (exact numbers and times as text), the person making the request is the 
 the request's transaction is shared. A module never writes another module's tables any other way.
 """
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import Any
 from uuid import UUID
+
+import httpx
 
 from p42cloud.data.catalog import TableDef
 from p42cloud.data.hooks import Change
 from p42cloud.data.records import Record, Records
 from p42cloud.kernel.errors import Problem
+from p42cloud.services.connections.service import connect
 from p42cloud.ui.actions.service import run
 
 type Json = dict[str, Any]
@@ -80,3 +85,14 @@ class Client:
     ) -> Json:
         """Runs a UI action on a record, checked as over HTTP: a message, where to go next."""
         return await run(self._records, table, name, self._id(sys_id), given=inputs or {})
+
+    @asynccontextmanager
+    async def connection(
+        self, type_name: str, *, owner: UUID | str | None = None, label: str | None = None
+    ) -> AsyncGenerator[httpx.AsyncClient]:
+        """A ready client for a connection of one of the module's types: the person's own, or
+        (in the module's jobs) the one of the person they work for. It knows the address and
+        signs in; the module never sees a secret."""
+        who = self._id(owner) if owner is not None else None
+        async with connect(self._records, type_name, owner=who, label=label) as http:
+            yield http

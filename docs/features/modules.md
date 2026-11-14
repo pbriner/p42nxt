@@ -30,6 +30,7 @@ module = Module(
 | `migrations` | Code that moves data on the upgrade to a version (below) |
 | `category`, `icon` | Where the module shows in the navigator (`General` and `extension` if not given) |
 | `jobs`, `schedules` | Work it runs, and when (`jobs.md`) |
+| `connection_types` | The outside systems it talks to (`connections.md`) |
 | `navigation`, `views`, `forms`, `actions`, `rules`, `widgets`, `themes` | Its navigator items, list views, form views, UI actions, form rules, widgets and themes (`screens.md`) |
 
 The package names its manifest as an entry point, which is how the platform finds it:

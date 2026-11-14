@@ -10,6 +10,9 @@ const PAGES = [
   '/list/sys.person',
   '/form/sys.group/new',
   '/form/hello.greeting/new',
+  '/dashboard/hello',
+  '/list/sys.connection',
+  '/list/sys.schedule',
 ];
 
 test.describe('signed in', () => {

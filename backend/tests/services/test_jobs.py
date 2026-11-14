@@ -10,7 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from p42cloud.data.types import Invalid
-from p42cloud.kernel.config import Settings
+from p42cloud.kernel.config import Settings, get_settings
 from p42cloud.kernel.context import EVERYTHING, Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction, transaction
 from p42cloud.kernel.errors import Problem
@@ -210,3 +210,24 @@ async def test_administrators_change_when_a_schedule_runs(engine: AsyncEngine) -
         await change(records, "sys.schedule", found.sys_id, {"cron": "23 2 * * *"})
     assert wrong.value.code == "validation"
     assert changed.values["next_run"].hour == 4
+
+
+async def test_the_update_check_runs_daily_and_says_when_there_is_no_registry(
+    engine: AsyncEngine, monkeypatch: pytest.MonkeyPatch, upgraded: Settings
+) -> None:
+    await _quiet_queue(engine)
+    for name, value in (
+        ("P42_DATABASE_URL", upgraded.database_url),
+        ("P42_OWNER_DATABASE_URL", upgraded.owner_database_url),
+    ):
+        monkeypatch.setenv(name, value)
+    monkeypatch.setenv("P42_ENVIRONMENT", "test")
+    monkeypatch.delenv("P42_REGISTRY_URL", raising=False)
+    get_settings.cache_clear()
+    try:
+        assert await run_job(engine, "sys.check_updates") == (
+            "succeeded",
+            "No module registry is set: nothing to check.",
+        )
+    finally:
+        get_settings.cache_clear()

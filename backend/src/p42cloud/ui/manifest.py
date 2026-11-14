@@ -1,5 +1,6 @@
 """What the screens add to the core: their tables, hooks, settings, views, navigation, themes."""
 
+from p42cloud.services.connections.service import check
 from p42cloud.services.jobs.service import queue
 from p42cloud.ui.actions.models import UI_ACTION, ActionResult, ActionRun, UIAction
 from p42cloud.ui.favorites import models as favorites
@@ -57,6 +58,13 @@ VIEWS = (
         searchable=False,
     ),
     ListView(
+        "sys.connection",
+        ("label", "type", "base_url", "health", "checked"),
+        sort=("label",),
+        searchable=False,
+    ),
+    ListView("sys.connection_secret", ("name", "connection", "updated"), searchable=False),
+    ListView(
         "sys.job_run",
         ("job", "state", "trigger", "attempt", "started", "finished", "message"),
         sort=("-created",),
@@ -92,6 +100,18 @@ NAVIGATION = (
         ),
     ),
     Section(
+        "Connections",
+        (
+            Item(
+                "connections",
+                "Connections",
+                "sys.connection",
+                icon="cable",
+                keywords=("api", "keys", "integrations"),
+            ),
+        ),
+    ),
+    Section(
         "Appearance",
         (Item("themes", "Themes", "sys.theme", icon="palette", keywords=("colours", "colors")),),
     ),
@@ -119,7 +139,20 @@ async def _run_now(run: ActionRun) -> ActionResult:
     return ActionResult(message="Queued: it starts as soon as a worker is free.")
 
 
+async def _check(run: ActionRun) -> ActionResult:
+    """Whether the connection works: the type's check, through the safe client."""
+    return ActionResult(message=await check(run.records, run.sys_id))
+
+
 ACTIONS = (
+    UIAction(
+        "check",
+        "sys.connection",
+        "Check",
+        places=("form_button", "list_row"),
+        icon="cable",
+        handler=_check,
+    ),
     UIAction(
         "run_now",
         "sys.schedule",

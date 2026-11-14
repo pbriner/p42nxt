@@ -15,6 +15,7 @@ from datetime import UTC, datetime, timedelta
 
 from p42cloud.kernel.config import Settings, get_settings
 from p42cloud.kernel.db import create_engine
+from p42cloud.kernel.secrets import Sealer, use_sealer
 from p42cloud.modules.core import CORE
 from p42cloud.modules.install import compose
 from p42cloud.modules.registry import discover
@@ -30,6 +31,8 @@ async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
     settings = settings or get_settings()
     engine = create_engine(settings.database_url)
     compose([CORE, *discover()])
+    if settings.master_key_file is not None:  # without it, jobs can't open the vault
+        use_sealer(Sealer.from_file(settings.master_key_file))
     name = f"{socket.gethostname()}:{id(stop)}"
     last_tick = last_recover = datetime.min.replace(tzinfo=UTC)
     try:

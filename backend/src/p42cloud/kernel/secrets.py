@@ -61,3 +61,18 @@ class Sealer:
             )
         except (InvalidTag, ValueError) as error:
             raise SealError("can't be opened") from error
+
+
+# The process's sealer, set once at start (by the web app and the worker), so features that seal
+# on the way into the database (a hook on connection secrets) can reach it.
+_PROCESS: list[Sealer] = []
+
+
+def use_sealer(sealer: Sealer) -> None:
+    _PROCESS[:] = [sealer]
+
+
+def process_sealer() -> Sealer:
+    if not _PROCESS:
+        raise RuntimeError("no sealer: the process sets one at start (use_sealer)")
+    return _PROCESS[0]

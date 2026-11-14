@@ -2,6 +2,17 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.14.0
+
+- One safe client for every outside call: https only, no redirects, hosts resolved first and
+  refused if they lead inside a network, optionally only certain hosts. Sign-in providers use it.
+- Connection types that modules declare (`ConnectionType`: allowed hosts, how to sign in,
+  secrets, a check); each person's connections and secrets as personal records, secrets sealed
+  on the way in and never read back. `Client.connection()` gives modules a ready client; a
+  module's jobs may use its own types' connections for the people they work for. A Check action.
+- The module update check runs daily as a job, through the safe client.
+- The master key's sealer is the process's, set by the web app and the worker at start.
+
 ## 0.13.1
 
 - Forms: in related lists, references link to their records (the person on a group's
