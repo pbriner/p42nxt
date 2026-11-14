@@ -10,7 +10,7 @@ from typing import Any
 import httpx
 from p42cloud.sdk import Client, JobRun, Problem
 
-from p42cloud_dca import kraken, strategy
+from p42cloud_dca import kraken, stats, strategy
 from p42cloud_dca.kraken import KrakenError, Pair
 from p42cloud_dca.orders import apply_fill, hold, tell_bought
 
@@ -291,7 +291,101 @@ async def run(job: JobRun) -> str:
             bought += did
         except (KrakenError, Problem, httpx.HTTPError, OSError, ValueError, KeyError) as error:
             await _problem(client, plan, _short(error), job.now)
-    return f"{checked} plan(s) checked, {bought} bought."
+    reached = await check_targets(client, job.now)
+    said = f"{checked} plan(s) checked, {bought} bought."
+    return said + (f" {reached} target(s) reached." if reached else "")
+
+
+NAMES = {
+    "profit_percent": ("Profit target", "target_profit_percent", "+{} %"),
+    "profit": ("Profit target", "target_profit", "+{} {cur}"),
+    "loss_percent": ("Loss limit", "loss_limit_percent", "-{} %"),
+    "loss": ("Loss limit", "loss_limit", "-{} {cur}"),
+}
+
+
+async def _value_price(client: Client, plan: dict[str, Any], pair: Pair, now: datetime) -> Decimal:
+    checked = _moment(plan["last_check"])
+    last = _decimal(plan["last_price"])
+    if last is not None and checked is not None and now - checked < timedelta(minutes=10):
+        return last
+    async with client.connection(kraken.TYPE, owner=plan["owner"]) as http:
+        return await kraken.price(http, pair.name)
+
+
+async def check_targets(client: Client, now: datetime) -> int:
+    """Each plan with targets (inactive ones too): its owner hears once each time one is
+    reached; one no longer reached can be reached, and told, again."""
+    plans = (await client.list("dca.plan", limit=500))["records"]
+    told = 0
+    for plan in plans:
+        targets = stats.Targets(*(_decimal(plan[NAMES[k][1]]) for k in NAMES))
+        if all(t is None for t in vars(targets).values()):
+            continue
+        orders = await _orders(client, plan)
+        real = [o for o in orders if o["state"] == "filled"]
+        counted = real or [o for o in orders if o["state"] == "dry_run"]
+        at = stats.position(
+            [
+                stats.Buy(
+                    now,
+                    _decimal(o["amount"]) or Decimal(0),
+                    Decimal(0),
+                    _decimal(o["cost"]) or Decimal(0),
+                    _decimal(o["fee"]) or Decimal(0),
+                    "",
+                )
+                for o in counted
+            ]
+        )
+        pair = Pair(plan["pair"].upper())
+        try:
+            price = await _value_price(client, plan, pair, now)
+        except KrakenError, Problem, httpx.HTTPError:
+            continue  # asked again at the next check
+        reached = stats.reached(targets, at, price)
+        before = set(plan["targets_hit"] or [])
+        for key in sorted(reached - before):
+            told += 1
+            await _tell_target(client, plan, key, at, price=price, pair=pair, dry=not real)
+        if reached != before:
+            current = await client.get("dca.plan", plan["sys_id"])
+            await client.update(
+                "dca.plan",
+                plan["sys_id"],
+                {"targets_hit": sorted(reached) or None},
+                current["_etag"],
+            )
+    return told
+
+
+async def _tell_target(  # noqa: PLR0913 - what was reached, for which plan, at what price
+    client: Client,
+    plan: dict[str, Any],
+    key: str,
+    at: stats.Position,
+    *,
+    price: Decimal,
+    pair: Pair,
+    dry: bool,
+) -> None:
+    name, field, form = NAMES[key]
+    cur = pair.currency
+    limit = form.format(f"{Decimal(str(plan[field])):,.2f}", cur=cur)
+    profit = at.profit(price)
+    percent = at.profit_percent(price) or Decimal(0)
+    await client.notify(
+        "dca.target",
+        f"{name} reached: {plan['name']} {percent:+.2f} %",
+        people=[plan["owner"]],
+        message=(
+            f"{name} {limit} reached at {price:,.2f} {cur}{' (dry runs)' if dry else ''}: "
+            f"invested {at.invested:,.2f} {cur}, worth {at.value(price):,.2f} {cur}, "
+            f"{'profit' if profit >= 0 else 'loss'} {abs(profit):,.2f} {cur} after fees."
+        ),
+        link=f"/dashboard/dca?plan={plan['sys_id']}",
+        severity="success" if key.startswith("profit") else "warning",
+    )
 
 
 async def _problem(client: Client, plan: dict[str, Any], said: str, now: datetime) -> None:

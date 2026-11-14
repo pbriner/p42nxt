@@ -2,6 +2,13 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.21.0
+
+- Widgets about one record the person picks (`Widget(param=("plan", "dca.plan"))`, source
+  widgets only): the dashboard offers the table's records above the widgets, keeps the choice in
+  the address (the first one by default), and passes it to each source route; without one the
+  card says to choose.
+
 ## 0.20.0
 
 - Outside calls tell their module when they end without an answer (`OutsideCall(gave_up=...)`,

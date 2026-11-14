@@ -17,6 +17,7 @@ const PAGES = [
   '/list/sys.notification',
   '/list/dca.plan',
   '/form/dca.plan/new',
+  '/dashboard/dca',
 ];
 
 test.describe('signed in', () => {

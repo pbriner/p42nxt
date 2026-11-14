@@ -162,6 +162,12 @@ for the detail, `link` a page of the app); a chart's
 `{"subtitle": "…", "points": [{"key": "de", "label": "German", "value": 3.5}]}`. A chart of one
 series is drawn in the widget's accent; a donut gives each slice its colour.
 
+A source widget can be about one record the person picks:
+`Widget(..., source="/widget/profit", param=("plan", "dca.plan"))`. The dashboard offers that
+table's records (those the person may read) above the widgets, keeps the choice in the address
+(`?plan=<id>`; the first record by default) and passes it to the route (`?plan=<id>`); with
+nothing to choose, the card says so.
+
 ## Each person's own
 
 These are personal tables: only their owner sees their records, administrators included. They

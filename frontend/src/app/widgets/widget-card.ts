@@ -65,6 +65,9 @@ export class WidgetCard {
   private readonly router = inject(Router);
   readonly widget = input.required<WidgetDef>();
   readonly compact = input(false);
+  /** What the page chose for widgets about one record (a plan). */
+  readonly params = input<Record<string, string>>({});
+  protected readonly unchosen = signal(false);
 
   protected readonly busy = signal(false);
   protected readonly failed = signal(false);
@@ -116,6 +119,7 @@ export class WidgetCard {
     effect(() => {
       const w = this.widget();
       this.range();
+      this.params();
       untracked(() => void this.load(w));
     });
     let timer: ReturnType<typeof setInterval> | null = null;
@@ -168,7 +172,14 @@ export class WidgetCard {
 
   /** A source widget: the module's route works out the figure or the points. */
   private async fromSource(w: WidgetDef): Promise<void> {
-    const { data } = await this.api.get<SourceAnswer>(w.source!);
+    const value = w.param ? this.params()[w.param] : null;
+    this.unchosen.set(!!w.param && !value);
+    if (w.param && !value) {
+      return;
+    }
+    const { data } = await this.api.get<SourceAnswer>(w.source!, {
+      query: w.param ? { [w.param]: value } : {},
+    });
     this.answer.set(data);
     if (w.kind === 'figure') {
       this.value.set(typeof data.value === 'number' ? data.value : null);

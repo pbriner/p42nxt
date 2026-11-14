@@ -20,6 +20,23 @@
     <mat-progress-bar mode="indeterminate" />
   }
 
+  @if (choices().length) {
+    <div class="choices">
+      @for (choice of choices(); track choice.param) {
+        @if (options()[choice.param]; as offered) {
+          <mat-form-field appearance="outline" class="choice">
+            <mat-label>{{ offered.label }}</mat-label>
+            <mat-select [value]="params()[choice.param]" (selectionChange)="choose(choice.param, $event.value)">
+              @for (record of offered.records; track record.sys_id) {
+                <mat-option [value]="record.sys_id">{{ record.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+      }
+    </div>
+  }
+
   @if (fresh().length && !editing()) {
     <div class="notice" role="status">
       <span>{{ fresh().length === 1 ? i18n.t('dash.new_one') : i18n.t('dash.new_many', { n: fresh().length }) }}</span>
@@ -114,7 +131,7 @@
               }
             </div>
           }
-          <app-widget-card [widget]="w" [compact]="item.size === 's'" />
+          <app-widget-card [widget]="w" [compact]="item.size === 's'" [params]="params()" />
           <div class="placeholder" *cdkDragPlaceholder></div>
         </div>
       }

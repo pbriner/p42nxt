@@ -40,6 +40,20 @@ at most once per cooldown (24 hours unless you set it).
 Every buy is an order under Kraken DCA → **Orders**, and a notification. Dry runs use your real
 balance and real prices, so you see what the plan would do.
 
+## Dashboard
+
+Kraken DCA → **Dashboard** shows one plan at a time: choose it above the widgets. Its figures
+(invested, bought, average price, current value, profit or loss after fees, fees, next buy …) and
+charts (profit or loss by day, invested per month, holdings …) count your real orders, or your dry
+runs while there are none. **Customize** adds or arranges widgets; each can go on your home
+dashboard too.
+
+## Targets
+
+Set a **profit target** or a **loss limit** on a plan, in % or in its currency, on the profit
+after fees. You're notified once when one is reached, and again if it's reached after having been
+left. Inactive plans are checked too.
+
 ## Real orders
 
 1. Make sure your Kraken key can't withdraw money, and tick **My Kraken key can't withdraw**.

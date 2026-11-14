@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any, cast
 from urllib.parse import parse_qs
@@ -200,3 +201,11 @@ async def find(http: httpx.AsyncClient, userref: int) -> Fill | None:
         for txid, info in cast(dict[str, Any], result.get(key) or {}).items():
             return _fill(txid, cast(dict[str, Any], info))
     return None
+
+
+async def closes(http: httpx.AsyncClient, pair: str) -> list[tuple[datetime, Decimal]]:
+    """Each day's close (UTC days), as far back as Kraken gives them (720 days)."""
+    candles = cast(
+        list[list[Any]], _of_pair(await public(http, "OHLC", pair=pair, interval="1440"), pair)
+    )
+    return [(datetime.fromtimestamp(int(c[0]), tz=UTC), Decimal(str(c[4]))) for c in candles]

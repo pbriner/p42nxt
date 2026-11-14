@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0
+
+- A dashboard (Kraken DCA → Dashboard) for one plan at a time, chosen above the widgets: running
+  mode, Kraken balance, invested, bought, average price, current value, profit or loss after
+  fees, fees, last and next buy, planned buys, targets; charts of profit or loss by day (Kraken's
+  daily closes), invested per month, buy prices, average buy price, holdings, invested over time
+  and buys by type. Real orders, or the dry runs while there are none.
+- Profit targets and loss limits on a plan (in % or the currency): checked at every cycle, also
+  for inactive plans; the owner is notified once each time one is reached (Telegram by default).
+- Needs the core 0.21 or later.
+
 ## 0.2.0
 
 - Real orders: a plan's owner switches **Real orders** on after confirming their Kraken key

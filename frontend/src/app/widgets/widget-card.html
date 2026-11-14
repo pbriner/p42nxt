@@ -19,6 +19,8 @@
   <div class="body">
     @if (failed()) {
       <p class="muted">{{ i18n.t('widget.failed') }}</p>
+    } @else if (unchosen()) {
+      <p class="muted">{{ i18n.t('widget.choose') }}</p>
     } @else {
       @switch (widget().kind) {
         @case ('text') {

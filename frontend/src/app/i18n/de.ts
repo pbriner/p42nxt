@@ -325,6 +325,7 @@ export const DE: Record<TextKey, string> = {
   'dash.size_wide': 'Breit',
   'dash.size_large': 'Gross',
   'widget.show_all': 'Alle zeigen',
+  'widget.choose': 'Nichts zu zeigen, bis oben etwas gewählt ist.',
   'widget.nothing': 'Nichts hier.',
   'widget.reached': '{p}% von {target} erreicht',
   'widget.total': 'total',
