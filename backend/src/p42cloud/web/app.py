@@ -1,4 +1,4 @@
-"""The web app: the HTTP API (and, later, the browser app).
+"""The web app: the HTTP API and the browser app.
 
 At start it refuses an unsafe database, brings the database and the modules to this version (as
 the owner, so audit months never run out), connects the hooks and starts the catalog cache.
@@ -7,6 +7,7 @@ the owner, so audit months never run out), connects the hooks and starts the cat
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from importlib.metadata import version
+from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, Request, Response
@@ -22,6 +23,7 @@ from p42cloud.modules.install import compose, install_modules
 from p42cloud.modules.registry import discover
 from p42cloud.security.providers.service import Providers
 from p42cloud.security.sign_in.sessions import SignIn
+from p42cloud.web import frontend
 from p42cloud.web import problems as problem_answers
 from p42cloud.web.caller import Rates
 from p42cloud.web.routes import meta, people, records, screens, sign_in, tables
@@ -34,6 +36,7 @@ def create_app(
     sealer: Sealer | None = None,
     http: httpx.AsyncClient | None = None,
     upgrade: bool = True,
+    frontend_dir: Path | None = frontend.BUILT,
 ) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
@@ -97,7 +100,10 @@ def create_app(
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"
-        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+        # The app's page sets its own, less strict policy; everything else may load nothing.
+        response.headers.setdefault(
+            "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
+        )
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
         return response
@@ -107,5 +113,6 @@ def create_app(
     app.include_router(people.router)
     app.include_router(tables.router)
     app.include_router(screens.router)
-    app.include_router(records.router)  # last: its paths take any module and table
+    app.include_router(records.router)  # its paths take any module and table
+    frontend.install(app, frontend_dir)  # last: it answers every other address
     return app

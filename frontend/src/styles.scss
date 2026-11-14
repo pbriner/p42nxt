@@ -1,0 +1,260 @@
+// The app's look: Material 3 with the theme's colours on top (set on <html> by the theme
+// service), and the tokens for the parts of the frame. Components use tokens only.
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light dark;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: (
+        plain-family: var(--app-font),
+        brand-family: var(--app-font),
+      ),
+      density: 0,
+    )
+  );
+
+  --app-font: Roboto, system-ui, sans-serif;
+  --app-radius: 4px;
+  --app-radius-small: min(var(--app-radius), max(2px, calc(var(--app-radius) / 2)));
+  --app-page-background: var(--mat-sys-surface);
+  --app-card: var(--mat-sys-surface);
+  --app-toolbar: var(--mat-sys-surface-container);
+  --app-nav-background: var(--mat-sys-surface-container-low);
+  --app-nav-background-end: var(--app-nav-background);
+  --app-on-nav: var(--mat-sys-on-surface);
+  --app-on-nav-variant: var(--mat-sys-on-surface-variant);
+  --app-nav-accent: var(--mat-sys-primary);
+  --app-nav-active: var(--mat-sys-secondary-container);
+  --app-on-nav-active: var(--mat-sys-on-secondary-container);
+  --app-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --toolbar-height: 64px;
+
+  --chart-1: light-dark(#2a78d6, #3987e5);
+  --chart-2: light-dark(#eb6834, #d95926);
+  --chart-3: light-dark(#1baf7a, #199e70);
+  --chart-4: light-dark(#eda100, #c98500);
+  --chart-5: light-dark(#e87ba4, #d55181);
+  --chart-6: light-dark(#008300, #008300);
+  --chart-7: light-dark(#6250d6, #9085e9);
+  --chart-8: light-dark(#e34948, #e66767);
+  --chart-other: light-dark(#a3a29b, #6f6e68);
+
+  // Corners follow the theme: the smallest ones half as round.
+  --mat-sys-corner-extra-small: var(--app-radius-small);
+  --mat-sys-corner-small: var(--app-radius);
+  --mat-sys-corner-medium: var(--app-radius);
+  --mat-sys-corner-large: var(--app-radius);
+  --mat-sys-corner-extra-large: var(--app-radius);
+  --mat-sys-corner-full: var(--app-radius);
+}
+
+html.theme-light {
+  color-scheme: light;
+}
+
+html.theme-dark {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font: var(--mat-sys-body-medium);
+  background: var(--app-page-background);
+  color: var(--mat-sys-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--mat-sys-primary);
+}
+
+.mat-mdc-card {
+  --mat-card-elevated-container-color: var(--app-card);
+  --mat-card-outlined-container-color: var(--app-card);
+}
+
+html[data-cards='raised'] .mat-mdc-card {
+  border: none;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--mat-sys-shadow) 6%, transparent),
+    0 4px 16px color-mix(in srgb, var(--mat-sys-shadow) 8%, transparent);
+}
+
+.mat-mdc-paginator {
+  background: transparent;
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1;
+}
+
+// A page of the app: the content area below the top bar.
+.page {
+  box-sizing: border-box;
+  max-width: 2400px;
+  padding: 24px 32px;
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  h1 {
+    font: var(--mat-sys-headline-small);
+    margin: 0;
+  }
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.error-text {
+  color: var(--mat-sys-error);
+}
+
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -48px;
+  z-index: 1000;
+  padding: 8px 16px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  border-radius: var(--app-radius);
+
+  &:focus {
+    top: 8px;
+  }
+}
+
+.markdown {
+  line-height: 1.55;
+
+  h1 {
+    font-size: 1.5em;
+  }
+  h2 {
+    font-size: 1.3em;
+  }
+  h3 {
+    font-size: 1.15em;
+  }
+  img {
+    max-width: 100%;
+    border-radius: 4px;
+  }
+  code,
+  pre {
+    font-family: var(--app-mono);
+    background: var(--mat-sys-surface-container-high);
+  }
+  blockquote {
+    border-left: 3px solid var(--mat-sys-outline-variant);
+    margin-left: 0;
+    padding-left: 12px;
+  }
+  table {
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+  td,
+  th {
+    border: 1px solid var(--mat-sys-outline-variant);
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 959px) {
+  .page {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 599px) {
+  .page {
+    padding: 16px;
+  }
+}
+
+@media (min-width: 720px) {
+  .mat-mdc-table {
+    --mat-table-row-item-container-height: 52px;
+    --mat-table-header-container-height: 44px;
+  }
+}
+
+@media (pointer: coarse) {
+  .mat-mdc-icon-button,
+  .mat-mdc-button,
+  .mat-mdc-unelevated-button,
+  .mat-mdc-outlined-button {
+    min-height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// The search's panels live outside its component.
+.search-scope-panel {
+  min-width: 280px;
+}
+
+.search-panel.mat-mdc-autocomplete-panel {
+  min-width: min(720px, 90vw);
+  max-height: min(70vh, 720px);
+
+  .option-icon {
+    vertical-align: -6px;
+    margin-right: 8px;
+  }
+
+  .hit {
+    min-height: 56px;
+
+    .mdc-list-item__primary-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+  }
+
+  .hit-title {
+    font: var(--mat-sys-body-large);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hit-subtitle {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .show-all {
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    color: var(--mat-sys-primary);
+  }
+}

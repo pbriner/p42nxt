@@ -1,0 +1,72 @@
+<div class="bar" role="search">
+  <mat-select
+    class="scope"
+    panelClass="search-scope-panel"
+    [value]="scope()"
+    (selectionChange)="changeScope($event.value)"
+    [aria-label]="i18n.t('search.in')"
+  >
+    <mat-option value="">{{ i18n.t('search.everywhere') }}</mat-option>
+    @for (s of scopes(); track s.list) {
+      <mat-option [value]="s.list">
+        {{ s.label }} <span class="muted">· {{ s.module_label }}</span>
+      </mat-option>
+    }
+  </mat-select>
+  <input
+    #field
+    type="search"
+    class="input"
+    [placeholder]="i18n.t('search.placeholder')"
+    [attr.aria-label]="i18n.t('search.title')"
+    [matAutocomplete]="panel"
+    #trigger="matAutocompleteTrigger"
+    (input)="typed($any($event.target).value)"
+    (keydown.enter)="enter($event, !!trigger.activeOption)"
+  />
+  <button mat-icon-button type="button" [attr.aria-label]="i18n.t('search.show_all_results')" (click)="showAll()">
+    <span class="material-symbols-outlined" aria-hidden="true">search</span>
+  </button>
+</div>
+
+<mat-autocomplete
+  #panel="matAutocomplete"
+  class="search-panel"
+  [displayWith]="display"
+  (optionSelected)="chosen($event)"
+>
+  @if (goTo().length) {
+    <mat-optgroup [label]="i18n.t('search.go_to')">
+      @for (found of goTo(); track found.item.name) {
+        <mat-option [value]="{ kind: 'nav', found }">
+          <span class="material-symbols-outlined option-icon" aria-hidden="true">{{
+            found.item.icon ?? 'chevron_right'
+          }}</span>
+          {{ found.item.label }} <span class="muted">· {{ found.module.name }}</span>
+        </mat-option>
+      }
+    </mat-optgroup>
+  }
+  @if (results(); as found) {
+    @for (group of found.groups; track group.list) {
+      <mat-optgroup [label]="group.label + ' (' + (group.total ?? group.records.length) + ')'">
+        @for (hit of group.records; track hit.sys_id) {
+          <mat-option class="hit" [value]="{ kind: 'record', group, hit }">
+            <span class="hit-title">{{ hit.title }}</span>
+            @if (hit.subtitle) {
+              <span class="hit-subtitle">{{ hit.subtitle }}</span>
+            }
+          </mat-option>
+        }
+      </mat-optgroup>
+    }
+    @if (found.groups.length) {
+      <mat-option class="show-all" [value]="{ kind: 'all' }">
+        <span class="material-symbols-outlined option-icon" aria-hidden="true">manage_search</span>
+        {{ i18n.t('search.show_all', { n: total(), q: found.query }) }}
+      </mat-option>
+    } @else if (!goTo().length) {
+      <mat-option disabled>{{ i18n.t('search.none', { q: found.query }) }}</mat-option>
+    }
+  }
+</mat-autocomplete>

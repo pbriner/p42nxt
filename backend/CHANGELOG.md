@@ -2,6 +2,15 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.7.0
+
+- The browser app, served by the web app at the same address: signing in (password, provider,
+  authenticator code or passkey; setting up the second factor, with recovery codes), invitation
+  links, the navigator with favorites and folders, the search across lists, home, a first list,
+  and the profile (light or dark, theme, records per page, language). In English and German.
+- Pages get a strict Content-Security-Policy; the API keeps its own.
+- The core's version also covers the browser app: changing it releases the core.
+
 ## 0.6.0
 
 - What the screens show is records: navigation items (module, section, item) and list views

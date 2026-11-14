@@ -1,0 +1,168 @@
+<main class="screen">
+  <mat-card class="card" [class.wide]="step() === 'app' || step() === 'codes'" appearance="outlined">
+    @if (busy()) {
+      <mat-progress-bar mode="indeterminate" class="progress" />
+    }
+    <div class="brand">
+      <span class="material-symbols-outlined brand-icon" aria-hidden="true">hub</span>
+      <h1>P42cloud</h1>
+    </div>
+
+    @switch (step()) {
+      @case ('password') {
+        <p class="muted">{{ i18n.t('sign_in.continue') }}</p>
+        @if (providers().length) {
+          @for (p of providers(); track p.id) {
+            <a mat-stroked-button class="full" [href]="'/api/v1/sign-in/provider/' + p.id">{{
+              i18n.t('sign_in.with', { name: p.name })
+            }}</a>
+          }
+          <div class="divider">
+            <mat-divider /><span>{{ i18n.t('sign_in.or_password') }}</span
+            ><mat-divider />
+          </div>
+        }
+        <form (ngSubmit)="withPassword()">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ i18n.t('sign_in.email') }}</mat-label>
+            <input matInput name="email" type="email" autocomplete="username" [(ngModel)]="email" required />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ i18n.t('sign_in.password') }}</mat-label>
+            <input
+              matInput
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              [(ngModel)]="password"
+              required
+            />
+          </mat-form-field>
+          <ng-container *ngTemplateOutlet="problem" />
+          <button mat-flat-button class="full" type="submit" [disabled]="busy() || !email.trim() || !password">
+            {{ i18n.t('sign_in.button') }}
+          </button>
+        </form>
+      }
+      @case ('second_factor') {
+        <h2>{{ i18n.t('sign_in.code_title') }}</h2>
+        <form (ngSubmit)="withCode()">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ i18n.t('sign_in.code') }}</mat-label>
+            <input matInput name="code" autocomplete="one-time-code" inputmode="text" [(ngModel)]="code" required />
+            <mat-hint>{{ i18n.t('sign_in.code_hint') }}</mat-hint>
+          </mat-form-field>
+          <ng-container *ngTemplateOutlet="problem" />
+          <div class="actions">
+            <button mat-button type="button" (click)="startAgain()">
+              {{ i18n.t('sign_in.start_again') }}
+            </button>
+            <button mat-flat-button type="submit" [disabled]="busy() || !code.trim()">
+              {{ i18n.t('sign_in.verify') }}
+            </button>
+          </div>
+        </form>
+        @if (passkeys) {
+          <div class="divider">
+            <mat-divider /><span>{{ i18n.t('sign_in.or_passkey') }}</span
+            ><mat-divider />
+          </div>
+          <button mat-stroked-button class="full" type="button" (click)="withPasskey()">
+            <span class="material-symbols-outlined" aria-hidden="true">passkey</span>
+            {{ i18n.t('sign_in.passkey') }}
+          </button>
+        }
+      }
+      @case ('enroll') {
+        <h2>{{ i18n.t('enroll.title') }}</h2>
+        <p>{{ i18n.t('enroll.text') }}</p>
+        <ng-container *ngTemplateOutlet="problem" />
+        <button mat-flat-button class="full" type="button" (click)="setUpApp()">
+          {{ i18n.t('enroll.app') }}
+        </button>
+        @if (passkeys) {
+          <button mat-stroked-button class="full" type="button" (click)="setUpPasskey()">
+            {{ i18n.t('enroll.passkey') }}
+          </button>
+        }
+        <button mat-button class="full" type="button" (click)="startAgain()">
+          {{ i18n.t('sign_in.start_again') }}
+        </button>
+      }
+      @case ('app') {
+        <h2>{{ i18n.t('enroll.title') }}</h2>
+        <ol class="steps">
+          <li>{{ i18n.t('enroll.step1') }}</li>
+          <li>
+            {{ i18n.t('enroll.step2') }}
+            @if (qr(); as image) {
+              <img class="qr" [src]="image" [alt]="i18n.t('enroll.qr')" width="200" height="200" />
+            }
+            <p class="key">
+              <span class="muted">{{ i18n.t('enroll.key') }}:</span> <code>{{ app()?.key }}</code>
+            </p>
+            @if (appLink(); as link) {
+              <a [href]="link">{{ i18n.t('enroll.open') }}</a>
+            }
+          </li>
+          <li>{{ i18n.t('enroll.step3') }}</li>
+        </ol>
+        <form (ngSubmit)="confirmApp()">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ i18n.t('sign_in.code') }}</mat-label>
+            <input
+              matInput
+              name="code"
+              autocomplete="one-time-code"
+              inputmode="numeric"
+              maxlength="6"
+              [(ngModel)]="code"
+              required
+            />
+          </mat-form-field>
+          <ng-container *ngTemplateOutlet="problem" />
+          <div class="actions">
+            <button mat-button type="button" (click)="startAgain()">
+              {{ i18n.t('sign_in.start_again') }}
+            </button>
+            <button mat-flat-button type="submit" [disabled]="busy() || code.trim().length < 6">
+              {{ i18n.t('enroll.confirm') }}
+            </button>
+          </div>
+        </form>
+      }
+      @case ('codes') {
+        <h2>{{ i18n.t('codes.title') }}</h2>
+        <p>{{ i18n.t('codes.text') }}</p>
+        <ul class="codes">
+          @for (c of codes(); track c) {
+            <li>
+              <code>{{ c }}</code>
+            </li>
+          }
+        </ul>
+        <div class="actions start">
+          <button mat-stroked-button type="button" (click)="copyCodes()">
+            {{ copied() ? i18n.t('common.copied') : i18n.t('common.copy') }}
+          </button>
+          <button mat-stroked-button type="button" (click)="downloadCodes()">
+            {{ i18n.t('codes.download') }}
+          </button>
+        </div>
+        <mat-checkbox [(ngModel)]="saved">{{ i18n.t('codes.saved') }}</mat-checkbox>
+        <ng-container *ngTemplateOutlet="problem" />
+        <button mat-flat-button class="full" type="button" [disabled]="!saved || busy()" (click)="finish()">
+          {{ i18n.t('codes.continue') }}
+        </button>
+      }
+    }
+  </mat-card>
+</main>
+
+<ng-template #problem>
+  @if (error(); as message) {
+    <p class="error-line" role="alert">
+      <span class="material-symbols-outlined" aria-hidden="true">error</span>{{ message }}
+    </p>
+  }
+</ng-template>

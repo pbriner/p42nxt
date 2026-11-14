@@ -54,8 +54,9 @@ The repository is one uv workspace (`uv sync --all-packages` at the root). All o
 And in every changed module's folder (`modules/<id>/`): `uv run ruff check .`,
 `uv run ruff format --check .`, `uv run pyright` and `uv run pytest`.
 
-Once they exist, also the frontend build, the Playwright tests and the fresh-install test. CI
-runs the same checks (`.github/workflows/checks.yml`).
+And in `frontend/`: `npm run format:check`, `npm run build` and `npm run e2e` (the Playwright
+tests at four sizes, against a real installation; needs the development PostgreSQL). Once it
+exists, also the fresh-install test. CI runs the same checks (`.github/workflows/checks.yml`).
 
 ## Writing
 

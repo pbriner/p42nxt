@@ -1,0 +1,249 @@
+<nav class="nav" [attr.aria-label]="i18n.t('nav.label')">
+  <a class="head" routerLink="/" (click)="navigated.emit()">
+    <span class="material-symbols-outlined brand-icon" aria-hidden="true">hub</span>
+    <span class="brand">P42cloud</span>
+  </a>
+
+  <div class="body">
+    <label class="filter">
+      <span class="material-symbols-outlined" aria-hidden="true">search</span>
+      <input
+        type="search"
+        [placeholder]="i18n.t('nav.filter')"
+        [attr.aria-label]="i18n.t('nav.filter')"
+        [value]="query()"
+        (input)="query.set($any($event.target).value)"
+      />
+      @if (query()) {
+        <button type="button" class="clear" [attr.aria-label]="i18n.t('nav.clear')" (click)="query.set('')">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      }
+    </label>
+
+    <mat-button-toggle-group class="tabs" hideSingleSelectionIndicator [value]="tab()" (change)="tab.set($event.value)">
+      <mat-button-toggle value="all">{{ i18n.t('nav.all') }}</mat-button-toggle>
+      <mat-button-toggle value="favorites">
+        <span class="material-symbols-outlined small" aria-hidden="true">star</span>
+        {{ i18n.t('nav.favorites') }}
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+
+    @if (tab() === 'all') {
+      @if (!query()) {
+        <a
+          class="row top"
+          routerLink="/"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="navigated.emit()"
+        >
+          <span class="material-symbols-outlined icon" aria-hidden="true">dashboard</span>
+          <span class="label">{{ i18n.t('nav.dashboard') }}</span>
+        </a>
+      }
+      @for (entry of modules(); track entry.module.id; let first = $first) {
+        @if (first || modules()[$index - 1]?.category !== entry.category) {
+          <div class="category">{{ entry.category }}</div>
+        }
+        <div role="group" [attr.aria-label]="entry.module.name">
+          <button
+            type="button"
+            class="row module"
+            [class.current]="currentModule() === entry.module.id"
+            [attr.aria-expanded]="isOpen(entry.module.id)"
+            (click)="toggleModule(entry.module.id)"
+          >
+            <span class="material-symbols-outlined icon" aria-hidden="true">{{
+              entry.module.icon ?? 'extension'
+            }}</span>
+            <span class="label">{{ entry.module.name }}</span>
+            <span class="material-symbols-outlined chevron" [class.open]="isOpen(entry.module.id)" aria-hidden="true"
+              >chevron_right</span
+            >
+          </button>
+          @if (isOpen(entry.module.id)) {
+            @for (section of entry.module.sections; track $index) {
+              @if (section.label) {
+                <div class="section" [class.first]="$first">{{ section.label }}</div>
+              }
+              @for (item of section.items; track item.name) {
+                <div class="child-row" [class.under-section]="!!section.label">
+                  <a
+                    class="row child"
+                    [routerLink]="target(item).commands"
+                    [queryParams]="target(item).query"
+                    routerLinkActive="active"
+                    [routerLinkActiveOptions]="{
+                      paths: 'exact',
+                      queryParams: 'ignored',
+                      matrixParams: 'ignored',
+                      fragment: 'ignored',
+                    }"
+                    (click)="navigated.emit()"
+                  >
+                    <span class="label">{{ item.label }}</span>
+                  </a>
+                  <button
+                    type="button"
+                    class="star"
+                    [class.set]="favorites.marked().has(item.name)"
+                    [attr.aria-pressed]="favorites.marked().has(item.name)"
+                    [attr.aria-label]="
+                      i18n.t(favorites.marked().has(item.name) ? 'nav.remove_favorite' : 'nav.add_favorite', {
+                        label: item.label,
+                      })
+                    "
+                    (click)="star(item)"
+                  >
+                    <span
+                      class="material-symbols-outlined"
+                      [class.filled]="favorites.marked().has(item.name)"
+                      aria-hidden="true"
+                      >star</span
+                    >
+                  </button>
+                </div>
+              }
+            }
+          }
+        </div>
+      } @empty {
+        @if (query()) {
+          <p class="empty">{{ i18n.t('nav.nothing', { q: query() }) }}</p>
+        }
+      }
+    } @else {
+      @if (!query()) {
+        <button type="button" class="row top" (click)="newFolder()">
+          <span class="material-symbols-outlined icon" aria-hidden="true">create_new_folder</span>
+          <span class="label">{{ i18n.t('fav.new_folder') }}</span>
+        </button>
+      }
+      @for (folder of topLevel().folders; track folder.sys_id) {
+        <div role="group" [attr.aria-label]="folder.label">
+          <div class="child-row">
+            <button
+              type="button"
+              class="row module"
+              [attr.aria-expanded]="folderOpen(folder.sys_id)"
+              (click)="toggleFolder(folder.sys_id)"
+            >
+              <span class="material-symbols-outlined icon" aria-hidden="true">{{
+                folderOpen(folder.sys_id) ? 'folder_open' : 'folder'
+              }}</span>
+              <span class="label">{{ folder.label }}</span>
+              <span
+                class="material-symbols-outlined chevron"
+                [class.open]="folderOpen(folder.sys_id)"
+                aria-hidden="true"
+                >chevron_right</span
+              >
+            </button>
+            <button
+              type="button"
+              class="star more"
+              [matMenuTriggerFor]="folderMenu"
+              [attr.aria-label]="i18n.t('fav.more', { label: folder.label ?? '' })"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">more_vert</span>
+            </button>
+            <mat-menu #folderMenu="matMenu">
+              <button mat-menu-item (click)="run(favorites.move.bind(favorites, folder, -1))">
+                {{ i18n.t('fav.move_up') }}
+              </button>
+              <button mat-menu-item (click)="run(favorites.move.bind(favorites, folder, 1))">
+                {{ i18n.t('fav.move_down') }}
+              </button>
+              <button mat-menu-item (click)="rename(folder)">{{ i18n.t('fav.rename') }}</button>
+              <button mat-menu-item (click)="run(favorites.remove.bind(favorites, folder))">
+                {{ i18n.t('fav.delete_folder') }}
+              </button>
+            </mat-menu>
+          </div>
+          @if (folderOpen(folder.sys_id)) {
+            @for (row of rows(folder.sys_id).items; track row.favorite.sys_id) {
+              <ng-container *ngTemplateOutlet="favoriteRow; context: { $implicit: row, nested: true }" />
+            } @empty {
+              <p class="empty nested">{{ i18n.t('fav.empty_folder') }}</p>
+            }
+          }
+        </div>
+      }
+      @for (row of topLevel().items; track row.favorite.sys_id) {
+        <ng-container *ngTemplateOutlet="favoriteRow; context: { $implicit: row, nested: false }" />
+      }
+      @if (!topLevel().folders.length && !topLevel().items.length) {
+        <p class="empty">
+          {{ query() ? i18n.t('fav.no_match', { q: query() }) : i18n.t('fav.none') }}
+        </p>
+      }
+    }
+  </div>
+</nav>
+
+<ng-template #favoriteRow let-row let-nested="nested">
+  <div class="child-row">
+    <a
+      class="row favorite"
+      [class.nested]="nested"
+      [routerLink]="target(row.found.item).commands"
+      [queryParams]="target(row.found.item).query"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{
+        paths: 'exact',
+        queryParams: 'ignored',
+        matrixParams: 'ignored',
+        fragment: 'ignored',
+      }"
+      (click)="navigated.emit()"
+    >
+      <span class="material-symbols-outlined icon" aria-hidden="true">{{
+        row.found.item.icon ?? row.found.module.icon ?? 'chevron_right'
+      }}</span>
+      <span class="two-lines">
+        <span class="label">{{ row.found.item.label }}</span>
+        <span class="module-name">{{ row.found.module.name }}</span>
+      </span>
+    </a>
+    <button
+      type="button"
+      class="star set"
+      aria-pressed="true"
+      [attr.aria-label]="i18n.t('nav.remove_favorite', { label: row.found.item.label })"
+      (click)="run(favorites.remove.bind(favorites, row.favorite))"
+    >
+      <span class="material-symbols-outlined filled" aria-hidden="true">star</span>
+    </button>
+    <button
+      type="button"
+      class="star more"
+      [matMenuTriggerFor]="favoriteMenu"
+      [attr.aria-label]="i18n.t('fav.more', { label: row.found.item.label })"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">more_vert</span>
+    </button>
+    <mat-menu #favoriteMenu="matMenu">
+      <button mat-menu-item (click)="run(favorites.move.bind(favorites, row.favorite, -1))">
+        {{ i18n.t('fav.move_up') }}
+      </button>
+      <button mat-menu-item (click)="run(favorites.move.bind(favorites, row.favorite, 1))">
+        {{ i18n.t('fav.move_down') }}
+      </button>
+      <button mat-menu-item [matMenuTriggerFor]="folderChoice">{{ i18n.t('fav.move_to') }}</button>
+      <button mat-menu-item (click)="run(favorites.remove.bind(favorites, row.favorite))">
+        {{ i18n.t('fav.remove') }}
+      </button>
+    </mat-menu>
+    <mat-menu #folderChoice="matMenu">
+      @for (folder of folders(); track folder.sys_id) {
+        <button mat-menu-item (click)="moveTo(row.favorite, folder.sys_id)">
+          {{ folder.label }}
+        </button>
+      }
+      <button mat-menu-item (click)="moveTo(row.favorite, null)">
+        {{ i18n.t('fav.top_level') }}
+      </button>
+    </mat-menu>
+  </div>
+</ng-template>
