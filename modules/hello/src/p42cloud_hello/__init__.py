@@ -29,6 +29,7 @@ from p42cloud.sdk import (
     Table,
     TableHook,
     UIAction,
+    Widget,
 )
 
 GREETING = Table(
@@ -87,8 +88,8 @@ async def _sign(run: ActionRun) -> ActionResult:
 module = Module(
     id="hello",
     name="Hello",
-    version="0.3.0",
-    depends_on={"sys": ">=0.10,<1"},
+    version="0.4.0",
+    depends_on={"sys": ">=0.11,<1"},
     tables=(GREETING,),
     roles=(USER,),
     hooks=(TableHook("hello.greeting", before=_before_saving),),
@@ -153,10 +154,67 @@ module = Module(
         ),
         FormRule("author_is_set", "hello.greeting", read_only=("author",)),
     ),
+    widgets=(
+        Widget(
+            "greetings",
+            "Greetings",
+            "figure",
+            list="hello.greeting",
+            icon="chat",
+            accent=7,
+            trend="created",
+            target=50,
+        ),
+        Widget(
+            "pinned",
+            "Pinned greetings",
+            "list",
+            list="hello.greeting",
+            filter={"field": "pinned", "op": "eq", "value": True},
+            dashboard="hello",
+            sizes=("wide", "large"),
+            size="wide",
+        ),
+        Widget(
+            "by_language",
+            "By language",
+            "chart",
+            list="hello.greeting",
+            group="language",
+            chart="donut",
+            dashboard="hello",
+            sizes=("s", "wide", "large"),
+        ),
+        Widget(
+            "per_month",
+            "Per month",
+            "chart",
+            list="hello.greeting",
+            group="created",
+            period="month",
+            chart="column",
+            dashboard="hello",
+            sizes=("wide", "large"),
+            size="wide",
+        ),
+        Widget(
+            "about",
+            "About greetings",
+            "text",
+            text="Leave a greeting for everyone, or for one team. Pin the ones that matter.",
+            dashboard="hello",
+            filled=True,
+            accent=1,
+            shown="available",
+        ),
+    ),
     navigation=(
         Section(
             "Greetings",
             (
+                Item(
+                    "dashboard", "Dashboard", kind="page", path="/dashboard/hello", icon="dashboard"
+                ),
                 Item("greetings", "Greetings", "hello.greeting", icon="chat"),
                 Item("greet", "Leave a greeting", "hello.greeting", kind="create", icon="add"),
             ),

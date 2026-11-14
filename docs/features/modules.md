@@ -29,7 +29,7 @@ module = Module(
 | `seed` | Records it makes once installed; run again at every upgrade, so it must do nothing twice |
 | `migrations` | Code that moves data on the upgrade to a version (below) |
 | `category`, `icon` | Where the module shows in the navigator (`General` and `extension` if not given) |
-| `navigation`, `views`, `forms`, `actions`, `rules`, `themes` | Its navigator items, list views, form views, UI actions, form rules and themes (`screens.md`) |
+| `navigation`, `views`, `forms`, `actions`, `rules`, `widgets`, `themes` | Its navigator items, list views, form views, UI actions, form rules, widgets and themes (`screens.md`) |
 
 The package names its manifest as an entry point, which is how the platform finds it:
 

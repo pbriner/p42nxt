@@ -2,9 +2,9 @@
 
 A module declares itself with `Module`, its tables with `Table` and the field types, its roles
 with `Role` and `Grant`, its navigation with `Section` and `Item`, its lists with `ListView`,
-its forms with `FormView`, its buttons with `UIAction`, its form rules with `FormRule`, reacts to
-its own records' changes with `TableHook`, moves data with `Migration`, and reads and changes any
-module's records with `Client`. Refusals are `Problem`s.
+its forms with `FormView`, its buttons with `UIAction`, its form rules with `FormRule`, its
+widgets with `Widget`, reacts to its own records' changes with `TableHook`, moves data with
+`Migration`, and reads and changes any module's records with `Client`. Refusals are `Problem`s.
 """
 
 from p42cloud.data.declarations import Table
@@ -40,6 +40,7 @@ from p42cloud.ui.forms.models import FormSection, FormView, RelatedList
 from p42cloud.ui.navigation.models import Item, Section
 from p42cloud.ui.rules.models import FormRule
 from p42cloud.ui.views.models import ListView
+from p42cloud.ui.widgets.models import Widget
 
 __all__ = [
     "ActionInput",
@@ -85,4 +86,5 @@ __all__ = [
     "TranslatedText",
     "UIAction",
     "Url",
+    "Widget",
 ]

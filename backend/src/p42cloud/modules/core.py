@@ -65,6 +65,7 @@ CORE = Module(
     navigation=ui.NAVIGATION,
     views=ui.VIEWS,
     themes=ui.THEMES,
+    widgets=ui.WIDGETS,
 )
 
 

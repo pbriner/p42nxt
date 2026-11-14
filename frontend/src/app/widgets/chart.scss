@@ -1,0 +1,259 @@
+:host {
+  display: block;
+  position: relative;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
+
+.bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bar-row {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 42px;
+}
+
+.compact .bar-row {
+  min-height: 26px;
+}
+
+.bar-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font: var(--mat-sys-body-small);
+}
+
+.bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-value {
+  color: var(--mat-sys-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  display: block;
+  height: 14px;
+}
+
+.compact .track {
+  height: 6px;
+}
+
+.bar {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+}
+
+.donut {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+
+  svg {
+    flex: none;
+  }
+}
+
+.slice {
+  stroke-linecap: butt;
+  transition: opacity 120ms;
+  cursor: pointer;
+
+  &.dim {
+    opacity: 0.4;
+  }
+}
+
+.centre {
+  font: var(--mat-sys-title-large);
+  fill: var(--mat-sys-on-surface);
+}
+
+.caption {
+  font: var(--mat-sys-body-small);
+  fill: var(--mat-sys-on-surface-variant);
+}
+
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 140px;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 3px 0;
+  font: var(--mat-sys-body-small);
+}
+
+.legend-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.columns {
+  position: relative;
+}
+
+.column-area {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  height: 140px;
+}
+
+// A few columns stay columns, not blocks.
+.column {
+  flex: 1;
+  max-width: 48px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  min-width: 0;
+}
+
+.column-bar {
+  display: block;
+  width: 100%;
+  border-radius: 2px 2px 0 0;
+  opacity: 0.45;
+  transition: opacity 120ms;
+}
+
+.column.latest .column-bar,
+.column:hover .column-bar,
+.column:focus-visible .column-bar {
+  opacity: 1;
+}
+
+.column-labels {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+
+  span {
+    flex: 1;
+    max-width: 48px;
+    overflow: visible;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-align: center;
+    font: var(--mat-sys-label-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.line {
+  position: relative;
+  margin-left: 36px;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+}
+
+.grid {
+  stroke: var(--mat-sys-outline-variant);
+  stroke-width: 1;
+}
+
+.zero {
+  stroke: var(--mat-sys-outline);
+  stroke-dasharray: 4 4;
+}
+
+.area {
+  opacity: 0.14;
+}
+
+.cross {
+  stroke: var(--mat-sys-outline);
+}
+
+.y-label {
+  position: absolute;
+  left: -36px;
+  width: 32px;
+  transform: translateY(-50%);
+  text-align: right;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--app-card);
+  transform: translate(-50%, -50%);
+}
+
+.x-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-left: 36px;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 4px 8px;
+  border-radius: var(--app-radius-small);
+  background: var(--mat-sys-inverse-surface);
+  color: var(--mat-sys-inverse-on-surface);
+  font: var(--mat-sys-body-small);
+  pointer-events: none;
+}

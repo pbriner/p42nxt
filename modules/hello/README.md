@@ -1,6 +1,6 @@
 # Hello (`hello`)
 
-Version: 0.3.0 · Last updated: 2026-11-13
+Version: 0.4.0 · Last updated: 2026-11-13
 
 ## Purpose
 
@@ -11,7 +11,7 @@ hook, documentation and its own tests. People leave greetings for everyone to re
 
 | Module | Versions | What for |
 |---|---|---|
-| `sys` | `>=0.10,<1` | Always; 0.10 brings UI actions and form rules |
+| `sys` | `>=0.11,<1` | Always; 0.11 brings widgets and dashboards |
 
 Core dependency: no
 
@@ -30,7 +30,11 @@ Core dependency: no
 ## Views, navigation and dashboards
 
 In the navigator under Examples → Hello → Greetings: the list of greetings (text, language,
-author, pinned, when) and leaving a new one. The form has two sections. No dashboards.
+author, pinned, when) and leaving a new one. The form has two sections.
+
+Dashboard (Examples → Hello → Dashboard): pinned greetings, greetings by language (donut) and
+per month (columns), a note (available, not placed). On home: the number of greetings, with a
+target of 50 and a 12-month trend.
 
 Actions: Pin (a button; also on several at once), Unpin (in the form's menu), Sign (asks for a
 signature, runs the module's code). Form rules: the team shows and is required only for a team

@@ -28,7 +28,14 @@ do nothing a script with the same rights couldn't.
 
 ## Pages
 
-- **Home**: a greeting and the modules the person may open, with their items.
+- **Home** and each module's dashboard (`/dashboard/<module>`): the person's widgets in a grid
+  (cards of 1, 2 or 2×2 cells; one on small screens). **Customize** adds widgets from a picker
+  (search, kinds, modules; new ones marked), removes them (not the required ones), reorders them
+  (by dragging, or with ‹ › from the keyboard), sizes them; **Reset to default**.
+  - Figures link to their list; a target shows how much is reached; a trend shows 12 months.
+  - Charts: bars, a donut with its legend and shares, columns over time, a line with a
+    crosshair; dates in 3 months, a year or all; clicking a bar or slice opens the matching
+    list; every chart can show as a table.
 - **Lists** (`/list/<list view>`), the same for every table:
   - **The address holds the list**: filters in the API's own form (`filter[kind][in]=service`),
     the sort, the search and the saved view, so a list can be bookmarked or sent.

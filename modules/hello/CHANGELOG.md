@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+- A dashboard: pinned greetings, greetings by language and per month, and a note about
+  greetings; on home, the number of greetings. Its navigator has a Dashboard item.
+- Needs the core 0.11 or later.
+
 ## 0.3.0
 
 - Greetings can be pinned and unpinned (buttons, and on several at once), and signed (asks for

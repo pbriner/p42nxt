@@ -33,6 +33,7 @@ from p42cloud.ui.navigation.models import Entry
 from p42cloud.ui.rules.models import FormRule
 from p42cloud.ui.themes.models import Theme
 from p42cloud.ui.views.models import ListView
+from p42cloud.ui.widgets.models import Widget
 
 # Called as the owner after the module's tables and roles are written, with the catalog.
 type Seed = Callable[[AsyncConnection, Catalog], Awaitable[None]]
@@ -83,6 +84,7 @@ class Module:
     forms: tuple[FormView, ...] = ()
     actions: tuple[UIAction, ...] = ()
     rules: tuple[FormRule, ...] = ()
+    widgets: tuple[Widget, ...] = ()
     themes: tuple[Theme, ...] = ()
 
     @property

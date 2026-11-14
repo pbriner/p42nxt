@@ -14,6 +14,9 @@ from p42cloud.ui.themes.models import THEME
 from p42cloud.ui.views import models as views
 from p42cloud.ui.views import service as view_service
 from p42cloud.ui.views.models import ListView
+from p42cloud.ui.widgets import models as widgets
+from p42cloud.ui.widgets import service as widget_service
+from p42cloud.ui.widgets.models import Widget
 
 TABLES = (
     NAV_ITEM,
@@ -21,6 +24,7 @@ TABLES = (
     FORM_VIEW,
     UI_ACTION,
     FORM_RULE,
+    *widgets.TABLES,
     THEME,
     preferences.PREFERENCE,
     favorites.FAVORITE,
@@ -31,6 +35,7 @@ HOOKS = (
     *preferences.TABLE_HOOKS,
     *favorites.TABLE_HOOKS,
     *rules.TABLE_HOOKS,
+    *widget_service.TABLE_HOOKS,
 )
 SETTINGS = (STAGE, themes.DEFAULT_THEME)
 THEMES = builtin.THEMES
@@ -66,5 +71,20 @@ NAVIGATION = (
     Section(
         "Appearance",
         (Item("themes", "Themes", "sys.theme", icon="palette", keywords=("colours", "colors")),),
+    ),
+)
+
+# On everyone's home, for those who may read people.
+WIDGETS = (
+    Widget(
+        "people",
+        "People",
+        "figure",
+        list="sys.person",
+        filter={"field": "active", "op": "eq", "value": True},
+        icon="group",
+        accent=1,
+        trend="created",
+        shown="available",
     ),
 )

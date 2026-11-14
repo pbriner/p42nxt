@@ -1,0 +1,84 @@
+<h2 mat-dialog-title>{{ i18n.t('picker.title') }}</h2>
+<mat-dialog-content class="content">
+  <input
+    class="search"
+    type="search"
+    cdkFocusInitial
+    [placeholder]="i18n.t('picker.search')"
+    [attr.aria-label]="i18n.t('picker.search')"
+    [value]="query()"
+    (input)="query.set($any($event.target).value)"
+    (keydown.enter)="$event.preventDefault(); first()"
+  />
+  <div class="pills" role="group">
+    @for (k of kinds; track k) {
+      <button
+        type="button"
+        class="pill"
+        [class.on]="kind() === k"
+        [attr.aria-pressed]="kind() === k"
+        (click)="kind.set(k)"
+      >
+        {{ kindLabel(k) }}
+      </button>
+    }
+  </div>
+  @if (!data.widgets.length) {
+    <p class="muted">{{ i18n.t('picker.all_placed') }}</p>
+  } @else {
+    <div class="panes">
+      <nav class="modules" [attr.aria-label]="i18n.t('picker.all_modules')">
+        <button type="button" class="module" [class.on]="!module()" (click)="module.set(null)">
+          {{ i18n.t('picker.all_modules') }}
+        </button>
+        @for (m of modules(); track m.id) {
+          <button type="button" class="module" [class.on]="module() === m.id" (click)="module.set(m.id)">
+            {{ m.name }} <span class="muted">{{ m.count }}</span>
+          </button>
+        }
+      </nav>
+      <div class="results" aria-live="polite">
+        @for (g of groups(); track g.id) {
+          <h3 class="group">{{ g.name }}</h3>
+          <ul>
+            @for (w of g.widgets; track w.name) {
+              <li>
+                <button type="button" class="entry" (click)="pick(w)">
+                  <span
+                    class="material-symbols-outlined icon"
+                    [style.color]="'var(--chart-' + (w.accent ?? 1) + ')'"
+                    aria-hidden="true"
+                    >{{
+                      w.icon ??
+                        (w.kind === 'chart'
+                          ? 'bar_chart'
+                          : w.kind === 'list'
+                            ? 'list'
+                            : w.kind === 'text'
+                              ? 'notes'
+                              : 'tag')
+                    }}</span
+                  >
+                  <span class="entry-text">
+                    <span class="entry-title">
+                      {{ w.title }}
+                      @if (data.fresh.includes(w.name)) {
+                        <span class="badge">{{ i18n.t('picker.new') }}</span>
+                      }
+                    </span>
+                    <span class="muted small">{{ describe(w) }}</span>
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+        } @empty {
+          <p class="muted">{{ i18n.t('picker.none', { q: query() }) }}</p>
+        }
+      </div>
+    </div>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" mat-dialog-close>{{ i18n.t('common.cancel') }}</button>
+</mat-dialog-actions>

@@ -116,6 +116,33 @@ what a person may read or change is still decided by their roles. Conditions use
 own fields with these operators: `eq`, `ne`, `in`, `not_in`, `empty`, `not_empty`, `contains`,
 `not_contains`, `starts_with`, `ends_with`, `lt`, `lte`, `gt`, `gte`, `between`, and `@me`.
 
+## Widgets and dashboards
+
+Home and each module have a dashboard of widgets. A widget is a record of `sys.widget`; its data
+comes from a list view, read through the API as the person, so each sees only what they may.
+
+```python
+Widget("by_language", "By language", "chart", list="hello.greeting",
+       group="language", chart="donut", dashboard="hello")
+```
+
+| Part | Meaning |
+|---|---|
+| `kind` | `figure` (a number, with an optional `target` and a 12-month `trend` by a date field), `chart` (`bar`, `donut`, `column`, `line`, grouped by a field; dates per `period`), `list` (the first records), `text` |
+| `list`, `filter` | The list view it reads, and a filter on top |
+| `measure`, `field` | `count` (default), or `sum`, `avg`, `min`, `max` of a number field |
+| `dashboard` | `home`, or the module's own |
+| `icon`, `accent`, `filled` | An icon tile, its chart colour (1 to 8), the whole card in that colour |
+| `sizes`, `size`, `refresh` | Allowed sizes (`s`, `wide`, `large`), the starting one; reload every so many seconds |
+| `shown` | For everyone who may read it: `available` (in the picker), `default` (placed), `mandatory` (always there) |
+
+Administrators set how a widget is shown per group with `sys.widget_audience`; the strongest
+for a person counts. `GET /api/v1/dashboards/<name>` returns the widgets a person may see and
+their arrangement: their own (`sys.dashboard_layout`, a personal record), else the defaults;
+mandatory widgets are always in it, and widgets they haven't seen offered yet are `new`.
+
+Totals come from `GET /api/v1/<module>/<table>/aggregate` (`api.md`).
+
 ## Each person's own
 
 These are personal tables: only their owner sees their records, administrators included. They

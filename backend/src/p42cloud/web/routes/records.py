@@ -35,7 +35,7 @@ _LISTS = frozenset({"in", "not_in", "between"})
 _NO_VALUE = frozenset({"empty", "not_empty"})
 
 
-def _condition(request: Request, where: str | None) -> Any:
+def condition_of(request: Request, where: str | None) -> Any:
     """The URL's filters as one condition in the filter language."""
     parts: list[Any] = []
     for key, value in request.query_params.multi_items():
@@ -100,7 +100,7 @@ async def list_records(
     async with services.records(caller.context(language(request))) as records:
         page = await records.list(
             key,
-            where=_condition(request, where),
+            where=condition_of(request, where),
             sort=[s for s in (sort or "").split(",") if s],
             limit=limit,
             after=after,

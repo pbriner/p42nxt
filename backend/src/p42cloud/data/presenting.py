@@ -109,7 +109,7 @@ def describe(
     }
 
 
-async def _displays(
+async def display_names(
     records: Records, catalog: Catalog, target_key: str, ids: set[UUID]
 ) -> dict[UUID, Any]:
     """The display values of referenced records the person may read; the others stay unnamed."""
@@ -145,7 +145,8 @@ async def annotate(records: Records, table: TableDef, found: list[Record]) -> li
                 r.values[f.name] for r in found if r.values.get(f.name) is not None
             )
     names = {
-        key: await _displays(records, records.catalog, key, ids) for key, ids in references.items()
+        key: await display_names(records, records.catalog, key, ids)
+        for key, ids in references.items()
     }
     allowed = await records.may(table, [r.sys_id for r in found], _PER_RECORD)
     for record, body in zip(found, bodies, strict=True):
