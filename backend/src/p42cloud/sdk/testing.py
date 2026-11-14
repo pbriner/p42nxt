@@ -11,20 +11,21 @@ In the module's `tests/conftest.py`:
 Each test session gets its own database, set up the way the installer does it, with the core
 and these modules installed. `as_system()` and `as_person(id)` give a `Client` for one request
 (committed at the end); `run_job(name)` runs a job as the worker would and returns its state and
-what it said; `call_route(person, method, address)` calls a module route as that person. Needs
-the development PostgreSQL (`docker compose up -d`); `P42_TEST_ADMIN_URL` points elsewhere. The
-modules' database roles are kept between sessions: they belong to the whole server and own
-nothing.
+what it said; `call_route(person, method, address)` calls a module route as that person;
+`stand_in(type, answer)` answers for an outside system. Needs the development PostgreSQL
+(`docker compose up -d`); `P42_TEST_ADMIN_URL` points elsewhere. The modules' database roles are
+kept between sessions: they belong to the whole server and own nothing.
 """
 
 import os
 import re
 import uuid
-from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from datetime import UTC, datetime
 from typing import Any
 
+import httpx
 import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
@@ -34,12 +35,14 @@ from p42cloud.data.records import Records
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import EVERYTHING, Context, working_as
 from p42cloud.kernel.db import create_engine, transaction
+from p42cloud.kernel.secrets import Sealer, use_sealer
 from p42cloud.kernel.setup import set_up_database
 from p42cloud.modules.core import CORE
 from p42cloud.modules.install import install_modules
 from p42cloud.modules.manifest import Module
 from p42cloud.sdk.client import Client
 from p42cloud.security.access.service import access_for
+from p42cloud.services.connections.service import TEST_TRANSPORTS
 from p42cloud.services.jobs.service import run_job as run_now
 from p42cloud.services.routes.models import RouteRequest
 from p42cloud.services.routes.service import ROUTES
@@ -183,3 +186,22 @@ def call_route(p42_engine: AsyncEngine) -> CallRoute:
         raise LookupError(f"No route {method} {address}")
 
     return calling
+
+
+type StandIn = Callable[[str, Callable[[httpx.Request], httpx.Response]], None]
+
+
+@pytest.fixture
+def stand_in() -> Iterator[StandIn]:
+    """Answers a connection type's requests with the test's own function instead of the outside
+    system: `stand_in("dca.kraken", answer)`. Secrets are sealed with a key made for the test."""
+    use_sealer(Sealer(os.urandom(32)))
+    named: list[str] = []
+
+    def standing_in(type_name: str, answer: Callable[[httpx.Request], httpx.Response]) -> None:
+        TEST_TRANSPORTS[type_name] = httpx.MockTransport(answer)
+        named.append(type_name)
+
+    yield standing_in
+    for type_name in named:
+        TEST_TRANSPORTS.pop(type_name, None)

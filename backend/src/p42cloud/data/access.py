@@ -23,7 +23,7 @@ from p42cloud.data.types.any_record import AnyRecord
 from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.datetime import DateTime
 from p42cloud.data.types.reference import Reference
-from p42cloud.kernel.context import Access, Permit
+from p42cloud.kernel.context import Access, Permit, current
 from p42cloud.kernel.errors import Problem
 
 SHARE = Table(
@@ -75,6 +75,10 @@ class Rules:
         change it, can't change whose it is.
         """
         if table.owner_field is None or self.access.unrestricted:
+            return None
+        # A module's own jobs work for everyone on its personal tables (a buy for each plan's
+        # owner), as its service account; nobody else's tables, and only within its grants.
+        if table.schema != "sys" and current().channel.startswith(f"job:{table.schema}."):
             return None
         if self._me is None:
             self._me = self.query.bind(self.situation.person)
