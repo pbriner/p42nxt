@@ -7,6 +7,8 @@ from p42cloud.data.sql import ident, literal
 from p42cloud.data.types.base import Common, Field, FieldType, Invalid, declare, string_value
 
 VALUE = re.compile(r"^[a-z0-9_]{1,40}$")
+# How a value stands out in lists: the theme's colours, never fixed ones.
+TONES = ("primary", "tertiary", "error", "muted")
 
 
 def values_of(options: dict[str, Any]) -> list[str]:
@@ -34,6 +36,9 @@ class ChoiceType(FieldType):
                 found.append(f"The choice {value!r} is listed twice.")
             else:
                 seen.add(value)
+            tone: Any = cast(dict[str, Any], entry).get("tone") if isinstance(entry, dict) else None
+            if tone is not None and tone not in TONES:
+                found.append(f"{value}: the tone is one of {', '.join(TONES)}.")
         return found
 
     def column_type(self, options: dict[str, Any]) -> str:
@@ -57,7 +62,19 @@ class ChoiceType(FieldType):
 TYPE = ChoiceType()
 
 
-def Choice(label: str, values: dict[str, str], **common: Unpack[Common]) -> Field:
-    """`values` maps each stored value to its English label, in the order shown."""
-    entries = [{"value": value, "label": {"en": text}} for value, text in values.items()]
+def Choice(
+    label: str,
+    values: dict[str, str],
+    *,
+    tones: dict[str, str] | None = None,
+    **common: Unpack[Common],
+) -> Field:
+    """`values` maps each stored value to its English label, in the order shown; `tones` says
+    how some stand out in lists (`{"done": "primary", "cancelled": "muted"}`)."""
+    entries: list[dict[str, Any]] = [
+        {"value": value, "label": {"en": text}} for value, text in values.items()
+    ]
+    for entry in entries:
+        if tones and entry["value"] in tones:
+            entry["tone"] = tones[entry["value"]]
     return declare("choice", label, {"values": entries}, common)

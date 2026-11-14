@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { Page, TestInfo, expect } from '@playwright/test';
+import { Locator, Page, TestInfo, expect } from '@playwright/test';
 
 export interface Person {
   name: string;
@@ -62,4 +62,48 @@ export async function noSidewaysScroll(page: Page): Promise<void> {
 
 export function compact(info: TestInfo): boolean {
   return (info.project.use.viewport?.width ?? 1440) < 960;
+}
+
+/** Lists show cards below 720 pixels. */
+export function cardsShown(info: TestInfo): boolean {
+  return (info.project.use.viewport?.width ?? 1440) < 720;
+}
+
+/** The API as the signed-in person of this page (cookies and CSRF token). */
+export async function api(page: Page): Promise<{
+  get: (path: string) => Promise<any>;
+  post: (path: string, data: unknown) => Promise<any>;
+  remove: (path: string, etag: string) => Promise<void>;
+}> {
+  const cookies = await page.context().cookies();
+  const csrf = cookies.find((c) => c.name === 'p42_csrf')?.value ?? '';
+  const headers = { 'X-CSRF-Token': csrf, Origin: state().url };
+  return {
+    get: async (path) => (await page.request.get(path, { headers })).json(),
+    post: async (path, data) => {
+      const answer = await page.request.post(path, { headers, data });
+      expect(answer.ok(), await answer.text()).toBeTruthy();
+      return answer.json();
+    },
+    remove: async (path, etag) => {
+      await page.request.delete(path, { headers: { ...headers, 'If-Match': etag } });
+    },
+  };
+}
+
+/** Forgets the person's saved views and remembered columns of a list. */
+export async function freshList(page: Page, view: string): Promise<void> {
+  const client = await api(page);
+  for (const table of ['saved_view', 'view_state']) {
+    const found = await client.get(`/api/v1/sys/${table}?filter[view]=${view}&limit=100`);
+    for (const record of found.records ?? []) {
+      await client.remove(`/api/v1/sys/${table}/${record.sys_id}`, record._etag);
+    }
+  }
+}
+
+/** The dialog once it has finished opening: taps during its animation are lost. */
+export async function opened(page: Page): Promise<Locator> {
+  await expect(page.locator('.mat-mdc-dialog-container.mdc-dialog--open')).toBeVisible();
+  return page.getByRole('dialog');
 }

@@ -48,11 +48,17 @@ def _field(table: TableDef, f: FieldDef, access: Access, language: str) -> dict[
         "create": not system and _covers(access, table, "create", f.name),
         "write": not system and _covers(access, table, "write", f.name),
         "filter": f.type.kind is not None,
+        # Which operators apply (the filter language's kinds); None: not filtered or sorted.
+        "kind": f.type.kind,
     }
     options = dict(f.field.options)
     if f.field.type == "choice":
         options["values"] = [
-            {"value": v["value"], "label": translated(v.get("label"), language)}
+            {
+                "value": v["value"],
+                "label": translated(v.get("label"), language),
+                "tone": v.get("tone"),
+            }
             for v in options.get("values", [])
         ]
     described["options"] = options

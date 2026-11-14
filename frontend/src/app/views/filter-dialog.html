@@ -1,0 +1,128 @@
+<h2 mat-dialog-title>{{ i18n.t('filter.title') }}</h2>
+<form (ngSubmit)="add()">
+  <mat-dialog-content>
+    <mat-form-field appearance="outline" class="field">
+      <mat-label>{{ i18n.t('filter.field') }}</mat-label>
+      <mat-select [value]="field()" (selectionChange)="chooseField($event.value)" [disabled]="fields.length === 1">
+        @for (f of fields; track f.name) {
+          <mat-option [value]="f">{{ f.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (field(); as f) {
+      <mat-form-field appearance="outline" class="field">
+        <mat-label>{{ i18n.t('filter.condition') }}</mat-label>
+        <mat-select [value]="op()" (selectionChange)="op.set($event.value)">
+          @for (o of ops(); track o) {
+            <mat-option [value]="o">{{ opLabel(o) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (needsValue()) {
+        @switch (f.kind) {
+          @case ('choice') {
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>{{ i18n.t('filter.value') }}</mat-label>
+              <mat-select name="values" multiple [(ngModel)]="values">
+                @for (v of f.options.values ?? []; track v.value) {
+                  <mat-option [value]="v.value">{{ v.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+          @case ('boolean') {
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>{{ i18n.t('filter.value') }}</mat-label>
+              <mat-select name="value" [(ngModel)]="value">
+                <mat-option value="true">{{ i18n.t('common.yes') }}</mat-option>
+                <mat-option value="false">{{ i18n.t('common.no') }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          }
+          @case ('reference') {
+            <div class="field">
+              <app-reference-picker
+                [table]="$any(f.options.table)"
+                [label]="i18n.t('filter.value')"
+                (valueChange)="value = $event ?? ''"
+              />
+            </div>
+          }
+          @default {
+            @if (dated()) {
+              <div class="pair">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ i18n.t('filter.value') }}</mat-label>
+                  <mat-select name="dateChoice" [(ngModel)]="dateChoice">
+                    <mat-option [value]="pick">{{ i18n.t('filter.date') }}</mat-option>
+                    @for (r of relatives; track r) {
+                      <mat-option [value]="r">{{ relativeLabel(r) }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                @if (dateChoice === pick) {
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ i18n.t('filter.date') }}</mat-label>
+                    <input matInput type="date" name="value" [(ngModel)]="value" />
+                  </mat-form-field>
+                }
+              </div>
+              @if (op() === 'between') {
+                <div class="pair">
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ i18n.t('filter.and') }}</mat-label>
+                    <mat-select name="secondChoice" [(ngModel)]="secondChoice">
+                      <mat-option [value]="pick">{{ i18n.t('filter.date') }}</mat-option>
+                      @for (r of relatives; track r) {
+                        <mat-option [value]="r">{{ relativeLabel(r) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  @if (secondChoice === pick) {
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ i18n.t('filter.date') }}</mat-label>
+                      <input matInput type="date" name="second" [(ngModel)]="second" />
+                    </mat-form-field>
+                  }
+                </div>
+              }
+            } @else {
+              <div class="pair">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ i18n.t('filter.value') }}</mat-label>
+                  <input
+                    matInput
+                    name="value"
+                    [type]="f.kind === 'number' ? 'number' : 'text'"
+                    [(ngModel)]="value"
+                    cdkFocusInitial
+                  />
+                  @if (f.type === 'percent') {
+                    <span matTextSuffix>%</span>
+                  }
+                </mat-form-field>
+                @if (op() === 'between') {
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ i18n.t('filter.and') }}</mat-label>
+                    <input
+                      matInput
+                      name="second"
+                      [type]="f.kind === 'number' ? 'number' : 'text'"
+                      [(ngModel)]="second"
+                    />
+                  </mat-form-field>
+                }
+              </div>
+            }
+          }
+        }
+      }
+    }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>{{ i18n.t('common.cancel') }}</button>
+    <button mat-flat-button type="submit" [disabled]="!condition()">{{ i18n.t('filter.add') }}</button>
+  </mat-dialog-actions>
+</form>

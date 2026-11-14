@@ -29,8 +29,27 @@ do nothing a script with the same rights couldn't.
 ## Pages
 
 - **Home**: a greeting and the modules the person may open, with their items.
-- **Lists** (`/list/<list view>`): the view's columns, sorted by a click on a header, a page at a
-  time (records per page from the profile).
+- **Lists** (`/list/<list view>`), the same for every table:
+  - **The address holds the list**: filters in the API's own form (`filter[kind][in]=service`),
+    the sort, the search and the saved view, so a list can be bookmarked or sent.
+  - **Filters**: "Add filter" builds one condition (a field, what to check, a value; dates also
+    as "today", "30 days ago", "the start of this month" …); each condition shows as a chip in
+    words, and its × removes it. Conditions all apply.
+  - **Columns and sort**: a click on a header sorts; "Columns" chooses and orders them (by
+    dragging, or with arrow buttons). Both are remembered per person.
+  - **Saved views**: the columns, sort, filters and search under a name; one may open the list
+    by default. "Reset to default" forgets what was remembered.
+  - **Right-click** a value: show matching or filter it out, on or after / on or before (dates),
+    this or more / less (numbers), where empty; open a referenced record; copy the value or a
+    link. Right-click a header: sort, filter on it, hide it. With `Ctrl`, `⌘` or `Shift` the
+    browser's own menu opens instead.
+  - **Choosing records** (for those who may change them): "Update selected" sets one field on
+    each, checked and recorded record by record, and says which weren't changed.
+  - **Deleting** asks first and can be undone from the message that follows.
+  - Choices that stand out (`tables.md`, tones) show in colour; a value the person may not see
+    shows as "(no access)".
+  - Below 720 pixels the list shows cards: the first column as the title, the second as the
+    main line, the rest below.
 - **Profile**: light, dark or like the system; the colour theme; the language (English, German,
   or like the browser); records per page. Each is saved as soon as it changes.
 - A page that doesn't exist says so; a list the person may not see says they have no access.

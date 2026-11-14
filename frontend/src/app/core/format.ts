@@ -8,12 +8,35 @@ export function textIn(value: unknown, language: string): string {
 }
 
 /** Values as people read them in lists. */
+export interface ChoiceValue {
+  value: string;
+  label: string;
+  tone: 'primary' | 'tertiary' | 'error' | 'muted' | null;
+}
+
 export interface FieldInfo {
   name: string;
   type: string;
+  /** Which filter operators apply; null: not filtered or sorted. */
+  kind: string | null;
   label: string;
+  help: string | null;
+  required: boolean;
+  system: boolean;
   read: boolean;
-  options: Record<string, unknown>;
+  create: boolean;
+  write: boolean;
+  options: { values?: ChoiceValue[]; table?: string; [name: string]: unknown };
+}
+
+export interface TableInfo {
+  table: string;
+  label: string;
+  label_plural: string | null;
+  display: string | null;
+  personal: boolean;
+  operations: Record<string, boolean>;
+  fields: FieldInfo[];
 }
 
 export const NUMBER_TYPES = new Set(['integer', 'decimal', 'percent', 'duration']);

@@ -177,10 +177,10 @@ async def test_a_table_is_described_for_each_person(world: World) -> None:
     }
     assert for_editor["operations"]["write"] is True
     assert state["options"]["values"] == [
-        {"value": "open", "label": "Offen"},
-        {"value": "done", "label": "Erledigt"},
+        {"value": "open", "label": "Offen", "tone": None},
+        {"value": "done", "label": "Erledigt", "tone": None},
     ]
-    assert (state["read"], state["write"]) == (True, False)
+    assert (state["read"], state["write"], state["kind"]) == (True, False, "choice")
     assert any(f["name"] == "sys_id" and f["system"] for f in for_reader["fields"])
 
 

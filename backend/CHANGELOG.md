@@ -2,6 +2,15 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.8.0
+
+- Lists in the browser app: filters as chips (with relative dates), right-click menus on values
+  and headers, columns chosen and ordered, sort and columns remembered, saved views (one may open
+  by default), choosing records and updating them at once, deleting with undo, cards on small
+  screens. The list's state is in its address.
+- Choices may declare tones (`primary`, `tertiary`, `error`, `muted`) to stand out in lists.
+- Table descriptions give each field's kind (which filter operators apply).
+
 ## 0.7.0
 
 - The browser app, served by the web app at the same address: signing in (password, provider,

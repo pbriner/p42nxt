@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 
 import { Api } from './api';
+import { Condition } from './filters';
 
 export interface NavItem {
   name: string;
@@ -85,8 +86,32 @@ export function target(item: NavItem): { commands: string[]; query: Record<strin
   if (item.kind === 'create') {
     return { commands: ['/form', item.table ?? '', 'new'], query: {} };
   }
-  return {
-    commands: ['/list', list],
-    query: item.filter ? { where: JSON.stringify(item.filter) } : {},
-  };
+  return { commands: ['/list', list], query: filterQuery(item.filter) };
+}
+
+/** A filter as list parameters: plain conditions as chips, anything else as a fixed filter. */
+function filterQuery(filter: unknown): Record<string, string> {
+  if (!filter || typeof filter !== 'object') {
+    return {};
+  }
+  const node = filter as Record<string, unknown>;
+  const leaves = Array.isArray(node['and']) ? (node['and'] as unknown[]) : [node];
+  const plain = leaves.every(
+    (l) =>
+      !!l &&
+      typeof l === 'object' &&
+      'field' in l &&
+      !('and' in l) &&
+      !('or' in l) &&
+      !('not' in l),
+  );
+  if (!plain) {
+    return { where: JSON.stringify(filter) };
+  }
+  const query: Record<string, string> = {};
+  for (const leaf of leaves as Condition[]) {
+    const value = Array.isArray(leaf.value) ? leaf.value.join(',') : (leaf.value ?? '');
+    query[`filter[${leaf.field}][${leaf.op ?? 'eq'}]`] = value;
+  }
+  return query;
 }

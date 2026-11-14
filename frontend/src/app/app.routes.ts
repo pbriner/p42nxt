@@ -24,7 +24,7 @@ export const routes: Routes = [
       { path: '', loadComponent: () => import('./pages/home').then((m) => m.Home), title: TITLE },
       {
         path: 'list/:view',
-        loadComponent: () => import('./pages/list-page').then((m) => m.ListPage),
+        loadComponent: () => import('./views/list-page').then((m) => m.ListPage),
         title: TITLE,
       },
       {
