@@ -23,12 +23,14 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from p42cloud.data.catalog import Catalog
 from p42cloud.data.declarations import Table
-from p42cloud.data.hooks import TableHook
+from p42cloud.data.hooks import EVERY_TABLE, TableHook
 from p42cloud.data.settings import Setting
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.security.access.roles import Role
+from p42cloud.ui.actions.models import UIAction
 from p42cloud.ui.forms.models import FormView
 from p42cloud.ui.navigation.models import Entry
+from p42cloud.ui.rules.models import FormRule
 from p42cloud.ui.themes.models import Theme
 from p42cloud.ui.views.models import ListView
 
@@ -79,6 +81,8 @@ class Module:
     navigation: tuple[Entry, ...] = ()
     views: tuple[ListView, ...] = ()
     forms: tuple[FormView, ...] = ()
+    actions: tuple[UIAction, ...] = ()
+    rules: tuple[FormRule, ...] = ()
     themes: tuple[Theme, ...] = ()
 
     @property
@@ -118,7 +122,9 @@ class Module:
         found += [
             FieldError("hooks", "not_its_table", f"{h.table} isn't one of this module's tables.")
             for h in self.hooks
+            # Only the core watches every table (EVERY_TABLE).
             if not h.table.startswith(f"{self.id}.")
+            and not (self.id == CORE and h.table == EVERY_TABLE)
         ]
         for migration in self.migrations:
             try:

@@ -14,7 +14,7 @@ function pad(n: number): string {
   selector: 'app-date-editor',
   imports: [MatFormFieldModule, MatInputModule],
   template: `
-    <mat-form-field appearance="outline" class="field">
+    <mat-form-field appearance="outline" class="field" [class.mat-form-field-invalid]="!!error()">
       <mat-label>{{ field().label }}</mat-label>
       <input
         matInput
@@ -23,11 +23,10 @@ function pad(n: number): string {
         [value]="text()"
         (change)="typed($any($event.target).value)"
       />
-      @if (field().help) {
-        <mat-hint>{{ field().help }}</mat-hint>
-      }
       @if (error()) {
-        <mat-error>{{ error() }}</mat-error>
+        <mat-hint class="field-error" role="alert">{{ error() }}</mat-hint>
+      } @else if (field().help) {
+        <mat-hint>{{ field().help }}</mat-hint>
       }
     </mat-form-field>
   `,

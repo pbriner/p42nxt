@@ -18,7 +18,11 @@ const LANGUAGES = [
     <fieldset class="group">
       <legend>{{ field().label }}</legend>
       @for (l of languages; track l.code) {
-        <mat-form-field appearance="outline" class="field">
+        <mat-form-field
+          appearance="outline"
+          class="field"
+          [class.mat-form-field-invalid]="!!error()"
+        >
           <mat-label>{{ l.name }}</mat-label>
           <input
             matInput

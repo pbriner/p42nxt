@@ -12,7 +12,7 @@ const INPUT_TYPES: Record<string, string> = { email: 'email', url: 'url', phone:
   selector: 'app-text-editor',
   imports: [MatFormFieldModule, MatInputModule],
   template: `
-    <mat-form-field appearance="outline" class="field">
+    <mat-form-field appearance="outline" class="field" [class.mat-form-field-invalid]="!!error()">
       <mat-label>{{ field().label }}</mat-label>
       <input
         matInput
@@ -22,11 +22,10 @@ const INPUT_TYPES: Record<string, string> = { email: 'email', url: 'url', phone:
         [value]="value() ?? ''"
         (input)="value.set($any($event.target).value || null)"
       />
-      @if (field().help) {
-        <mat-hint>{{ field().help }}</mat-hint>
-      }
       @if (error()) {
-        <mat-error>{{ error() }}</mat-error>
+        <mat-hint class="field-error" role="alert">{{ error() }}</mat-hint>
+      } @else if (field().help) {
+        <mat-hint>{{ field().help }}</mat-hint>
       }
     </mat-form-field>
   `,

@@ -10,7 +10,7 @@ import { FieldEditor } from '../unit';
   selector: 'app-number-editor',
   imports: [MatFormFieldModule, MatInputModule],
   template: `
-    <mat-form-field appearance="outline" class="field">
+    <mat-form-field appearance="outline" class="field" [class.mat-form-field-invalid]="!!error()">
       <mat-label>{{ field().label }}</mat-label>
       <input
         matInput
@@ -23,11 +23,10 @@ import { FieldEditor } from '../unit';
       @if (percent()) {
         <span matTextSuffix>%</span>
       }
-      @if (field().help) {
-        <mat-hint>{{ field().help }}</mat-hint>
-      }
       @if (error()) {
-        <mat-error>{{ error() }}</mat-error>
+        <mat-hint class="field-error" role="alert">{{ error() }}</mat-hint>
+      } @else if (field().help) {
+        <mat-hint>{{ field().help }}</mat-hint>
       }
     </mat-form-field>
   `,

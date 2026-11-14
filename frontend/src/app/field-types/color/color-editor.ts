@@ -12,7 +12,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
   selector: 'app-color-editor',
   imports: [MatFormFieldModule, MatInputModule],
   template: `
-    <mat-form-field appearance="outline" class="field">
+    <mat-form-field appearance="outline" class="field" [class.mat-form-field-invalid]="!!error()">
       <mat-label>{{ field().label }}</mat-label>
       <span
         matTextPrefix
@@ -35,7 +35,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
         (input)="value.set($any($event.target).value)"
       />
       @if (error() ?? (value() && !valid() ? 'Use the format #rrggbb' : null); as message) {
-        <mat-error>{{ message }}</mat-error>
+        <mat-hint class="field-error" role="alert">{{ message }}</mat-hint>
       }
     </mat-form-field>
   `,

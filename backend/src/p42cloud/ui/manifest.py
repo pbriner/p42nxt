@@ -1,9 +1,12 @@
 """What the screens add to the core: their tables, hooks, settings, views, navigation, themes."""
 
+from p42cloud.ui.actions.models import UI_ACTION
 from p42cloud.ui.favorites import models as favorites
 from p42cloud.ui.forms.models import FORM_VIEW
 from p42cloud.ui.navigation.models import NAV_ITEM, Item, Section
 from p42cloud.ui.preferences import models as preferences
+from p42cloud.ui.rules import service as rules
+from p42cloud.ui.rules.models import FORM_RULE
 from p42cloud.ui.shell import STAGE
 from p42cloud.ui.themes import builtin
 from p42cloud.ui.themes import service as themes
@@ -16,6 +19,8 @@ TABLES = (
     NAV_ITEM,
     *views.TABLES,
     FORM_VIEW,
+    UI_ACTION,
+    FORM_RULE,
     THEME,
     preferences.PREFERENCE,
     favorites.FAVORITE,
@@ -25,6 +30,7 @@ HOOKS = (
     *themes.TABLE_HOOKS,
     *preferences.TABLE_HOOKS,
     *favorites.TABLE_HOOKS,
+    *rules.TABLE_HOOKS,
 )
 SETTINGS = (STAGE, themes.DEFAULT_THEME)
 THEMES = builtin.THEMES

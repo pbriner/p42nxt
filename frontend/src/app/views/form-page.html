@@ -1,7 +1,8 @@
 @if (failed(); as problem) {
   <app-problem-state [status]="problem.status" [detail]="problem.detail ?? problem.title" />
 } @else if (info(); as table) {
-  <form class="page form" (submit)="$event.preventDefault(); save()">
+  <!-- Our checks and the server's say what's missing, at the field: not the browser's bubbles. -->
+  <form class="page form" novalidate (submit)="$event.preventDefault(); save()">
     <header class="page-header">
       <button
         mat-icon-button
@@ -14,6 +15,36 @@
       </button>
       <h1>{{ title() }}</h1>
       <span class="spacer"></span>
+      @for (a of buttons(); track a.name) {
+        <button mat-stroked-button type="button" [disabled]="changed().length > 0 || busy()" (click)="act(a)">
+          @if (a.icon) {
+            <span class="material-symbols-outlined" aria-hidden="true">{{ a.icon }}</span>
+          }
+          {{ actionLabel(a) }}
+        </button>
+      }
+      @if (menu().length) {
+        <button
+          mat-icon-button
+          type="button"
+          [disabled]="changed().length > 0 || busy()"
+          [attr.aria-label]="i18n.t('action.more')"
+          [matTooltip]="i18n.t('action.more')"
+          [matMenuTriggerFor]="actionMenu"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">more_vert</span>
+        </button>
+        <mat-menu #actionMenu="matMenu">
+          @for (a of menu(); track a.name) {
+            <button mat-menu-item type="button" (click)="act(a)">
+              @if (a.icon) {
+                <span class="material-symbols-outlined" aria-hidden="true">{{ a.icon }}</span>
+              }
+              {{ actionLabel(a) }}
+            </button>
+          }
+        </mat-menu>
+      }
       @if (!creating() && access()['delete'] && !deleted()) {
         <button
           mat-icon-button

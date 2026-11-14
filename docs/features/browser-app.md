@@ -62,6 +62,10 @@ do nothing a script with the same rights couldn't.
   - **Delete** asks first and can be undone; a deleted record says so and can be restored.
   - **Related**: a tab per kind of record pointing here, with its count; empty ones wait under
     "More". "New" in a tab makes a record that already points back.
+  - **Actions**: the record's buttons, and more under ⋮, shown only when the server offers
+    them for this record; they may ask first or ask for something. Lists offer them on chosen
+    records and in a record's right-click menu.
+  - **Form rules** hide fields, require them or lock them as the values change.
   - Who made and last changed the record, and when.
 - **Profile**: light, dark or like the system; the colour theme; the language (English, German,
   or like the browser); records per page. Each is saved as soon as it changes.

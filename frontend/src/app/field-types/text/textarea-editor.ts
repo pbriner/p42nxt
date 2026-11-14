@@ -10,7 +10,11 @@ import { FieldEditor } from '../unit';
   selector: 'app-textarea-editor',
   imports: [MatFormFieldModule, MatInputModule],
   template: `
-    <mat-form-field appearance="outline" class="field">
+    <mat-form-field
+      appearance="outline"
+      class="field"
+      [class.mat-form-field-invalid]="!!(problem() ?? error())"
+    >
       <mat-label>{{ field().label }}</mat-label>
       <textarea
         matInput
@@ -20,11 +24,10 @@ import { FieldEditor } from '../unit';
         [value]="text()"
         (input)="typed($any($event.target).value)"
       ></textarea>
-      @if (field().help) {
-        <mat-hint>{{ field().help }}</mat-hint>
-      }
       @if (problem() ?? error(); as message) {
-        <mat-error>{{ message }}</mat-error>
+        <mat-hint class="field-error" role="alert">{{ message }}</mat-hint>
+      } @else if (field().help) {
+        <mat-hint>{{ field().help }}</mat-hint>
       }
     </mat-form-field>
   `,

@@ -228,4 +228,4 @@ async def test_over_http_tables_need_a_second_factor_and_lists_can_be_trimmed(
     assert built.json()["code"] == "verify_again"  # a token gives no second factor
     assert described.json()["table"] == f"u.{world.table}"
     (record,) = trimmed.json()["records"]
-    assert set(record) == {"sys_id", "name", "_etag", "_display", "_access"}
+    assert set(record) == {"sys_id", "name", "_etag", "_display", "_access", "_actions"}

@@ -10,7 +10,7 @@ import { FieldEditor } from '../unit';
   selector: 'app-secret-editor',
   imports: [MatFormFieldModule, MatInputModule],
   template: `
-    <mat-form-field appearance="outline" class="field">
+    <mat-form-field appearance="outline" class="field" [class.mat-form-field-invalid]="!!error()">
       <mat-label>{{ field().label }}</mat-label>
       <input
         matInput
@@ -21,7 +21,7 @@ import { FieldEditor } from '../unit';
         (input)="value.set($any($event.target).value || null)"
       />
       @if (error()) {
-        <mat-error>{{ error() }}</mat-error>
+        <mat-hint class="field-error" role="alert">{{ error() }}</mat-hint>
       }
     </mat-form-field>
   `,

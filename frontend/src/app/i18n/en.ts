@@ -272,6 +272,10 @@ export const EN = {
   'form.is_deleted': 'This {item} is deleted.',
   'form.restore': 'Restore',
   'form.empty': '—',
+  'action.done': '{label}: done',
+  'action.more': 'More actions',
+  'action.partly': '{n} done, {m} not',
+  'action.run': 'Go ahead',
 } as const;
 
 export type TextKey = keyof typeof EN;

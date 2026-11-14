@@ -1,6 +1,6 @@
 import { Locator, Page, TestInfo, expect, test } from '@playwright/test';
 
-import { api, cardsShown, freshList, noSidewaysScroll, opened, storage } from './helpers';
+import { api, choose, cardsShown, freshList, noSidewaysScroll, opened, storage } from './helpers';
 
 test.use({ storageState: storage('admin') });
 
@@ -41,10 +41,8 @@ test('filters become chips, and each chip removes its condition', async ({ page 
   await page.goto(NARROW);
   await page.getByRole('button', { name: 'Add filter' }).click();
   const dialog = await opened(page);
-  await dialog.getByRole('combobox', { name: 'Field' }).click();
-  await page.getByRole('option', { name: 'Kind' }).click();
-  await dialog.getByRole('combobox', { name: 'Value' }).click();
-  await page.getByRole('option', { name: 'Service account' }).click();
+  await choose(page, dialog.getByRole('combobox', { name: 'Field' }), 'Kind');
+  await choose(page, dialog.getByRole('combobox', { name: 'Value' }), 'Service account');
   await page.keyboard.press('Escape');
   await dialog.getByRole('button', { name: 'Add' }).click();
 
@@ -111,10 +109,8 @@ test('update selected changes each chosen record', async ({ page }, info) => {
   await expect(page.getByText('2 selected')).toBeVisible();
   await page.getByRole('button', { name: 'Update selected' }).click();
   const dialog = await opened(page);
-  await dialog.getByRole('combobox', { name: 'Field' }).click();
-  await page.getByRole('option', { name: 'Active' }).click();
-  await dialog.getByRole('combobox', { name: 'New value' }).click();
-  await page.getByRole('option', { name: 'No' }).click();
+  await choose(page, dialog.getByRole('combobox', { name: 'Field' }), 'Active');
+  await choose(page, dialog.getByRole('combobox', { name: 'New value' }), 'No');
   await dialog.getByRole('button', { name: 'Update' }).click();
   await expect(page.getByText('2 changed')).toBeVisible();
   await expect(page.getByRole('cell', { name: 'No', exact: true })).toHaveCount(2);

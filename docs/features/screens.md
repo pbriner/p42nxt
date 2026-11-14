@@ -68,6 +68,54 @@ Every table gets one: a table whose module declares none gets one section with a
 in two columns. Related lists are the declared ones, then (unless `related_auto=False`) every
 other table pointing to the record through a field the person may read.
 
+## UI actions
+
+A UI action is a button or menu entry that does something with a record. It is a record of
+`sys.ui_action`.
+
+```python
+UIAction("pin", "hello.greeting", "Pin",
+         places=("form_button", "list_bulk", "list_row"), icon="push_pin",
+         condition={"field": "pinned", "op": "eq", "value": False},
+         set={"pinned": True}, message="Pinned.")
+```
+
+| Part | Meaning |
+|---|---|
+| `places` | `form_button`, `form_menu` (the form's ⋮), `list_bulk` (on chosen records), `list_row` (a record's right-click menu) |
+| `operation` | What the person must be allowed to do with the record: `write` (default), `delete` or `read` |
+| `condition` | When it's offered, in the filter language (`status = draft`, `assigned_to = @me`) |
+| `confirm` | A question asked first |
+| `inputs` | What it asks for (`ActionInput`: text, choices, yes/no, dates, numbers) |
+| `second_factor` | The person enters a code again first |
+| `set` | Fields it sets, without code; `"@input.<name>"` takes what was entered |
+| `handler` | Or the module's code: `async def handler(run: ActionRun) -> ActionResult` |
+| `message`, `go` | What it says when done; `stay` or go to the `list` |
+
+Records carry `_actions`: the actions the person may run on each now (allowed and the condition
+holds). Running one is `POST /api/v1/<module>/<table>/<id>/action/<name>` (with `If-Match`
+optionally), or `POST /api/v1/<module>/<table>/action/<name>` with `ids` for several, each on
+its own with a result per record. The server checks everything again; the work and its audit
+entry happen together. Modules run actions with the SDK client's `action()`.
+
+## Form rules
+
+A form rule hides fields, makes them required or read-only while a condition holds. It is a
+record of `sys.form_rule`.
+
+```python
+FormRule("team_needed", "hello.greeting",
+         condition={"field": "audience", "op": "eq", "value": "team"},
+         required=("team",))
+```
+
+The form applies rules while the person types. The server applies them again on every save,
+whatever the browser did: a field a rule locks (on the record as it was) may not change, and a
+field a rule requires (on the record as saved) may not be empty. Rules only hide or lock more;
+what a person may read or change is still decided by their roles. Conditions use the table's
+own fields with these operators: `eq`, `ne`, `in`, `not_in`, `empty`, `not_empty`, `contains`,
+`not_contains`, `starts_with`, `ends_with`, `lt`, `lte`, `gt`, `gte`, `between`, and `@me`.
+
 ## Each person's own
 
 These are personal tables: only their owner sees their records, administrators included. They
