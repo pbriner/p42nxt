@@ -10,7 +10,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Request, Response
+from fastapi import APIRouter, FastAPI, Request, Response
 
 from p42cloud.data.catalog import MetadataCache
 from p42cloud.kernel.config import Settings
@@ -24,7 +24,7 @@ from p42cloud.modules.install import compose, install_modules
 from p42cloud.modules.registry import discover
 from p42cloud.security.providers.service import Providers
 from p42cloud.security.sign_in.sessions import SignIn
-from p42cloud.web import frontend
+from p42cloud.web import frontend, module_routes
 from p42cloud.web import problems as problem_answers
 from p42cloud.web.caller import Rates
 from p42cloud.web.routes import (
@@ -95,6 +95,7 @@ def create_app(
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         services = await _start(settings, sealer=sealer, http=http, upgrade=upgrade)
         app.state.services = services
+        module_routes.mount(modules_router)  # the modules are composed by now
         try:
             yield
         finally:
@@ -137,6 +138,9 @@ def create_app(
     app.include_router(tables.router)
     app.include_router(screens.router)
     app.include_router(mcp.router)
+    # The modules' own routes, filled at start: before the generic ones they'd otherwise match.
+    modules_router = APIRouter()
+    app.include_router(modules_router)
     app.include_router(actions.router)
     # Before the record routes: `aggregate` would otherwise be taken for a record's ID.
     app.include_router(aggregates.router)

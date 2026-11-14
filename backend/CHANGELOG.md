@@ -2,6 +2,15 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.18.0
+
+- Module routes (`Route`, `RouteRequest`, `sys.module_route`): a module's own HTTP routes under
+  `/api/v1/<module>/…`, for signed-in callers, mounted before the generic record routes they
+  may never hide; the handler works as the caller through `Client.of(request)`. A switched-off
+  module's routes answer 404. The test plugin's `call_route` calls one as a person.
+- Source widgets: a figure or chart takes its data from a GET route of its module
+  (`Widget(source=...)`), for what a list can't count or sum.
+
 ## 0.17.0
 
 - Telegram as a notification channel: the installation's bot as a shared connection

@@ -19,6 +19,7 @@ from p42cloud.kernel.errors import Problem
 from p42cloud.services.calls.service import record
 from p42cloud.services.connections.service import connect
 from p42cloud.services.notifications.service import send
+from p42cloud.services.routes.models import RouteRequest
 from p42cloud.ui.actions.service import run
 
 type Json = dict[str, Any]
@@ -29,9 +30,10 @@ class Client:
         self._records = records
 
     @classmethod
-    def of(cls, change: Change) -> Client:
-        """The client for the request a hook runs in: same person, same transaction."""
-        return cls(change.records)
+    def of(cls, call: Change | RouteRequest) -> Client:
+        """The client for the request a hook or a module route runs in: same person, same
+        transaction."""
+        return cls(call.records)
 
     def _table(self, key: str) -> TableDef:
         table = self._records.catalog.table(key)

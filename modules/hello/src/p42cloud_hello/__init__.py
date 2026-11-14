@@ -26,6 +26,8 @@ from p42cloud.sdk import (
     Problem,
     Reference,
     Role,
+    Route,
+    RouteRequest,
     Schedule,
     Section,
     String,
@@ -114,11 +116,51 @@ async def _sign(run: ActionRun) -> ActionResult:
     return ActionResult(message=f"Signed by {run.inputs['signature']}.")
 
 
+LANGUAGES = {"en": "English", "de": "German", "fr": "French"}
+
+
+async def _greetings(request: RouteRequest) -> list[dict[str, object]]:
+    found = await Client.of(request).list("hello.greeting", limit=500)
+    return found["records"]
+
+
+async def _languages(request: RouteRequest) -> dict[str, object]:
+    """A source widget's figure: how many languages people greet in (a list can't count that)."""
+    counts: dict[str, int] = {}
+    for greeting in await _greetings(request):
+        language = str(greeting.get("language") or "en")
+        counts[language] = counts.get(language, 0) + 1
+    if not counts:
+        return {"value": 0, "detail": "No greetings yet."}
+    top = max(counts, key=lambda k: counts[k])
+    return {
+        "value": len(counts),
+        "unit": "languages" if len(counts) != 1 else "language",
+        "detail": f"Most greetings in {LANGUAGES.get(top, top)}.",
+        "link": "/list/hello.greeting",
+    }
+
+
+async def _words(request: RouteRequest) -> dict[str, object]:
+    """A source widget's chart: the average words per greeting in each language."""
+    words: dict[str, list[int]] = {}
+    for greeting in await _greetings(request):
+        language = str(greeting.get("language") or "en")
+        words.setdefault(language, []).append(len(str(greeting.get("text") or "").split()))
+    return {
+        "subtitle": "Average words per greeting",
+        "points": [
+            {"key": k, "label": LANGUAGES.get(k, k), "value": round(sum(v) / len(v), 1)}
+            for k, v in sorted(words.items())
+        ],
+    }
+
+
 module = Module(
     id="hello",
     name="Hello",
-    version="0.5.0",
-    depends_on={"sys": ">=0.13,<1"},
+    version="0.6.0",
+    depends_on={"sys": ">=0.18,<1"},
     tables=(GREETING,),
     roles=(USER, KEEPER),
     hooks=(TableHook("hello.greeting", before=_before_saving),),
@@ -227,6 +269,27 @@ module = Module(
             size="wide",
         ),
         Widget(
+            "languages",
+            "Languages",
+            "figure",
+            list="hello.greeting",
+            source="/widget/languages",
+            dashboard="hello",
+            icon="translate",
+            accent=3,
+        ),
+        Widget(
+            "words",
+            "Words per greeting",
+            "chart",
+            list="hello.greeting",
+            source="/widget/words",
+            chart="bar",
+            dashboard="hello",
+            sizes=("s", "wide", "large"),
+            accent=5,
+        ),
+        Widget(
             "about",
             "About greetings",
             "text",
@@ -236,6 +299,10 @@ module = Module(
             accent=1,
             shown="available",
         ),
+    ),
+    routes=(
+        Route("GET", "/widget/languages", _languages, "How many languages people greet in."),
+        Route("GET", "/widget/words", _words, "Average words per greeting, by language."),
     ),
     jobs=(Job("unpin_old", "Unpin old greetings", _unpin_old, timeout=60),),
     schedules=(Schedule("unpin_old", "Old pins, nightly", "unpin_old", "41 4 * * *"),),

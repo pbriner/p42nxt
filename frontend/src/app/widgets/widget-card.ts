@@ -26,6 +26,18 @@ const LIMITS = { bar: 8, donut: 6, column: 50, line: 50 } as const;
 const RANGES = { '3m': '@today-3m', '1y': '@today-1y', all: null } as const;
 type Range = keyof typeof RANGES;
 
+/** What a source route answers: a figure, or a chart's points. */
+interface SourceAnswer {
+  value?: number | null;
+  unit?: string;
+  text?: string;
+  detail?: string;
+  tone?: 'good' | 'bad' | null;
+  subtitle?: string;
+  link?: string;
+  points?: { key?: unknown; label: string; value: number }[];
+}
+
 interface Line {
   id: string;
   title: string;
@@ -63,17 +75,24 @@ export class WidgetCard {
   protected readonly table = signal<TableInfo | null>(null);
   protected readonly asTable = signal(false);
   protected readonly range = signal<Range>('all');
+  protected readonly answer = signal<SourceAnswer | null>(null);
   private viewFilter: unknown = null;
   private viewSort: string | null = null;
 
   protected readonly accent = computed(() => `var(--chart-${this.widget().accent ?? 1})`);
   protected readonly dated = computed(() => {
+    if (this.widget().source) {
+      return false;
+    }
     const f = this.table()?.fields.find((x) => x.name === this.widget().group);
     return f?.kind === 'date' || f?.kind === 'datetime';
   });
   protected readonly subtitle = computed(() => {
     const w = this.widget();
     const info = this.table();
+    if (w.source) {
+      return this.answer()?.subtitle ?? info?.label_plural ?? '';
+    }
     if (!info || w.kind === 'text') {
       return '';
     }
@@ -126,7 +145,9 @@ export class WidgetCard {
       this.table.set(info);
       this.viewFilter = view?.filter ?? null;
       this.viewSort = view?.sort?.join(',') ?? null;
-      if (w.kind === 'figure') {
+      if (w.source) {
+        await this.fromSource(w);
+      } else if (w.kind === 'figure') {
         await this.figure(w);
       } else if (w.kind === 'chart') {
         await this.chart(w, info);
@@ -143,6 +164,28 @@ export class WidgetCard {
   private where(w: WidgetDef, ...more: unknown[]): string | null {
     const all = and(this.viewFilter, w.filter, ...more);
     return all ? JSON.stringify(all) : null;
+  }
+
+  /** A source widget: the module's route works out the figure or the points. */
+  private async fromSource(w: WidgetDef): Promise<void> {
+    const { data } = await this.api.get<SourceAnswer>(w.source!);
+    this.answer.set(data);
+    if (w.kind === 'figure') {
+      this.value.set(typeof data.value === 'number' ? data.value : null);
+      return;
+    }
+    const donut = w.chart === 'donut';
+    this.points.set(
+      (data.points ?? []).map((p, i) => ({
+        key: p.key ?? p.label,
+        label: p.label,
+        value: Number(p.value ?? 0),
+        // One series in the widget's accent; a donut's slices each their own colour.
+        color: donut ? `var(--chart-${(i % 8) + 1})` : this.accent(),
+        link: false,
+      })),
+    );
+    this.value.set(null);
   }
 
   private async figure(w: WidgetDef): Promise<void> {
@@ -260,6 +303,11 @@ export class WidgetCard {
   /** The list of what the widget counts. */
   protected listLink(): { commands: string[]; query: Record<string, string> } {
     const w = this.widget();
+    const link = this.answer()?.link;
+    if (w.source && link?.startsWith('/') && !link.startsWith('//')) {
+      const [where, search] = link.split('?');
+      return { commands: [where!], query: Object.fromEntries(new URLSearchParams(search ?? '')) };
+    }
     return { commands: ['/list', w.list ?? ''], query: filterQuery(w.filter) };
   }
 

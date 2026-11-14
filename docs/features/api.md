@@ -33,6 +33,7 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `POST /api/v1/undo` | Undo what a request did (`{"request": …}`) or one audit entry (`{"entry": …}`) |
 | `/api/v1/sign-in/…` | Signing in and out (below) |
 | `GET /api/v1/openapi.json` | The API's description |
+| `/api/v1/<module>/<path>` | A module's own routes (`module-routes.md`) |
 
 Every other address is the browser app (`browser-app.md`); unknown addresses under `/api/`
 answer `404` as a problem.

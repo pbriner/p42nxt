@@ -135,6 +135,7 @@ Widget("by_language", "By language", "chart", list="hello.greeting",
 | `icon`, `accent`, `filled` | An icon tile, its chart colour (1 to 8), the whole card in that colour |
 | `sizes`, `size`, `refresh` | Allowed sizes (`s`, `wide`, `large`), the starting one; reload every so many seconds |
 | `shown` | For everyone who may read it: `available` (in the picker), `default` (placed), `mandatory` (always there) |
+| `source` | For what a list can't count or sum: a GET route of the module (below) |
 
 Administrators set how a widget is shown per group with `sys.widget_audience`; the strongest
 for a person counts. `GET /api/v1/dashboards/<name>` returns the widgets a person may see and
@@ -142,6 +143,24 @@ their arrangement: their own (`sys.dashboard_layout`, a personal record), else t
 mandatory widgets are always in it, and widgets they haven't seen offered yet are `new`.
 
 Totals come from `GET /api/v1/<module>/<table>/aggregate` (`api.md`).
+
+### Source widgets
+
+A figure or a chart can take its data from one of its module's GET routes (`module-routes.md`)
+instead of counting a list: running totals, averages, profit over time.
+
+```python
+Widget("languages", "Languages", "figure", list="hello.greeting",
+       source="/widget/languages", dashboard="hello")
+```
+
+The list still decides who may see the widget; the route reads through the client, so it counts
+only what the caller may read. A figure's route answers
+`{"value": 3, "unit": "languages", "detail": "Most greetings in German.", "tone": "good",
+"link": "/list/hello.greeting"}` (`text` instead of `value` for a word, `tone` `good` or `bad`
+for the detail, `link` a page of the app); a chart's
+`{"subtitle": "…", "points": [{"key": "de", "label": "German", "value": 3.5}]}`. A chart of one
+series is drawn in the widget's accent; a donut gives each slice its colour.
 
 ## Each person's own
 

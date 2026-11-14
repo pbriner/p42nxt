@@ -71,10 +71,20 @@ def _shape_problems(where: str, module: str, widget: Widget) -> list[FieldError]
 
 
 def _problems(
-    catalog: Catalog, views: dict[str, str], module: str, widget: Widget
+    catalog: Catalog, views: dict[str, str], module: str, widget: Widget, sources: set[str]
 ) -> list[FieldError]:
     where = f"widgets.{widget.name}"
     found = _shape_problems(where, module, widget)
+    if widget.source is not None:
+        if widget.kind not in ("figure", "chart"):
+            found.append(FieldError(where, "bad_source", "Only figures and charts have a source."))
+        elif widget.source not in sources:
+            found.append(
+                FieldError(where, "unknown_source", f"{module} has no GET route {widget.source}.")
+            )
+        if widget.list is None or widget.list not in views:
+            found.append(FieldError(where, "unknown_view", "It needs a list: who may see it."))
+        return found
     if widget.kind == "text":
         if widget.text is None:
             found.append(FieldError(where, "no_text", "A text widget has its text."))
@@ -101,7 +111,17 @@ async def write_widgets(
             text('SELECT name, "table" FROM sys.list_view WHERE deleted IS NULL')
         )
     }
-    found = [p for w in widgets for p in _problems(catalog, views, module, w)]
+    sources = {
+        str(r.path)
+        for r in await conn.execute(
+            text(
+                "SELECT path FROM sys.module_route WHERE module = :m AND method = 'get'"
+                " AND deleted IS NULL"
+            ),
+            {"m": module},
+        )
+    }
+    found = [p for w in widgets for p in _problems(catalog, views, module, w, sources)]
     if len({w.name for w in widgets}) != len(widgets):
         found.append(FieldError("widgets", "duplicate", "A widget's name is used twice."))
     if found:
@@ -113,6 +133,7 @@ async def write_widgets(
             "kind": w.kind,
             "dashboard": w.dashboard,
             "list": w.list,
+            "source_route": w.source,
             "filter": w.filter,
             "measure": w.measure,
             "field": w.field,
@@ -146,6 +167,7 @@ def _definition(row: Any, table: str | None, language: str, shown: str) -> dict[
         "title": translated(row.title, language),
         "kind": row.kind,
         "list": row.list,
+        "source": f"/api/v1/{row.module}{row.source_route}" if row.source_route else None,
         "table": table,
         "filter": row.filter,
         "measure": row.measure,

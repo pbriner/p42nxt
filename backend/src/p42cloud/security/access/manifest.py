@@ -84,6 +84,7 @@ ROLES = [
             Grant("sys.notification_kind", ("write",), fields=("channels",)),
             Grant("sys.notification_delivery", ("read",)),
             Grant("sys.channel_state", ("read",)),
+            Grant("sys.module_route", ("read",)),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",

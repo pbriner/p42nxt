@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 from p42cloud.sdk import Client, Problem
-from p42cloud.sdk.testing import RunJob
+from p42cloud.sdk.testing import CallRoute, RunJob
 
 from p42cloud_hello import module
 
@@ -166,6 +166,8 @@ async def test_its_dashboard_offers_its_widgets(as_system: Acting) -> None:
         "hello.pinned",
         "hello.by_language",
         "hello.per_month",
+        "hello.languages",
+        "hello.words",
         "hello.about",
     }
 
@@ -181,3 +183,26 @@ async def test_old_pins_are_tidied_up_by_its_job(
         seen = await client.get("hello.greeting", made["sys_id"])
     assert (state, said) == ("succeeded", "0 unpinned."), said  # as hello's own account
     assert seen["pinned"] is True  # pinned today: stays
+
+
+async def test_the_source_widgets_count_what_a_list_cannot(
+    as_system: Acting, as_person: Acting, call_route: CallRoute
+) -> None:
+    (anna,) = await _greeters(as_system, "Anna")
+    async with as_person(anna) as client:
+        await client.create("hello.greeting", {"text": "Hello there", "language": "en"})
+        await client.create("hello.greeting", {"text": "Grüezi mitenand zäme", "language": "de"})
+    languages = await call_route(anna, "GET", "/hello/widget/languages")
+    words = await call_route(anna, "GET", "/hello/widget/words")
+    assert languages["value"] >= 2 and languages["unit"] == "languages"
+    by_language = {p["key"]: p["value"] for p in words["points"]}
+    assert by_language["de"] >= 1 and set(by_language) >= {"en", "de"}
+
+
+async def test_someone_without_access_gets_nothing_from_a_source(
+    as_system: Acting, call_route: CallRoute
+) -> None:
+    async with as_system() as client:
+        stranger = (await client.create("sys.person", {"name": "Stranger"}))["sys_id"]
+    with pytest.raises(Problem):
+        await call_route(stranger, "GET", "/hello/widget/languages")

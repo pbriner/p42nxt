@@ -31,6 +31,8 @@ WIDGET = Table(
         # "home", or a module's ID: its dashboard.
         "dashboard": String("Dashboard", max_length=16, required=True),
         "list": String("List view", max_length=120),
+        # A GET route of the module answering the figure or the chart's points.
+        "source_route": String("Source route", max_length=160),
         "filter": Json("Filter"),
         "measure": Choice(
             "Measure",
@@ -105,6 +107,9 @@ class Widget:
     kind: Literal["list", "figure", "chart", "text"]
     dashboard: str = HOME  # or the module's own ID
     list: str | None = None
+    # For what a list can't count or sum: a GET route of the module (/widget/profit) answers
+    # the figure or the points. The list still decides who may see the widget.
+    source: str | None = None
     filter: Any = None
     measure: Literal["count", "sum", "avg", "min", "max"] = "count"
     field: str | None = None
