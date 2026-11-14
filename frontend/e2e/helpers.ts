@@ -107,3 +107,12 @@ export async function opened(page: Page): Promise<Locator> {
   await expect(page.locator('.mat-mdc-dialog-container.mdc-dialog--open')).toBeVisible();
   return page.getByRole('dialog');
 }
+
+/** Picks an option of a select; a click while a dialog settles may not open it, so retry. */
+export async function choose(page: Page, select: Locator, option: string): Promise<void> {
+  await expect(async () => {
+    await select.click();
+    await expect(page.getByRole('listbox')).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 10_000 });
+  await page.getByRole('option', { name: option, exact: true }).click();
+}

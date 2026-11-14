@@ -11,6 +11,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -18,13 +19,17 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { ActionDef, Actions } from '../core/actions';
 import { Api, Problem, describe } from '../core/api';
 import { FieldInfo, TableInfo, shown, textIn } from '../core/format';
 import { I18n } from '../core/i18n';
+import { FormRule, Rules, effects } from '../core/rules';
+import { Session } from '../core/session';
 import { Tables, path } from '../core/tables';
 import { FieldHost } from '../field-types/field-host';
 import { unitOf } from '../field-types/registry';
 import { ProblemState } from '../pages/problem-state';
+import { ActionRunner } from './action-runner';
 import { ConfirmDialog } from './confirm-dialog';
 import { FieldDisplay } from './field-display';
 import { Related, RelatedTabs } from './related-tabs';
@@ -62,6 +67,7 @@ function same(a: unknown, b: unknown): boolean {
     FieldDisplay,
     MatButtonModule,
     MatCardModule,
+    MatMenuModule,
     MatProgressBarModule,
     MatRadioModule,
     MatTooltipModule,
@@ -80,6 +86,10 @@ export class FormPage {
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
+  private readonly actionsApi = inject(Actions);
+  private readonly rulesApi = inject(Rules);
+  private readonly runner = inject(ActionRunner);
+  private readonly session = inject(Session);
   private readonly params = toSignal(this.route.paramMap);
 
   protected readonly table = signal<string>('');
@@ -93,6 +103,23 @@ export class FormPage {
   protected readonly failed = signal<Problem | null>(null);
   protected readonly conflict = signal<Conflict | null>(null);
   protected readonly draft = signal<Values | null>(null);
+  protected readonly actionDefs = signal<ActionDef[]>([]);
+  private readonly rules = signal<FormRule[]>([]);
+  /** What the form rules say now, for the values as typed. */
+  protected readonly effects = computed(() =>
+    effects(this.rules(), this.values(), this.session.me()?.person.sys_id ?? ''),
+  );
+  /** The record's actions for the person now (the server said which apply). */
+  private readonly offered = computed(() => {
+    const names = (this.original()['_actions'] as string[] | undefined) ?? [];
+    return this.actionDefs().filter((a) => names.includes(a.name));
+  });
+  protected readonly buttons = computed(() =>
+    this.offered().filter((a) => a.places.includes('form_button')),
+  );
+  protected readonly menu = computed(() =>
+    this.offered().filter((a) => a.places.includes('form_menu')),
+  );
 
   protected readonly creating = computed(() => this.id() === 'new');
   protected readonly fields = computed(
@@ -119,7 +146,10 @@ export class FormPage {
         columns: Math.max(1, Math.min(4, s.columns)),
         fields: s.fields
           .map((n) => this.fields().get(n))
-          .filter((f): f is FieldInfo => !!f && this.visible(f)),
+          .filter((f): f is FieldInfo => !!f && this.visible(f))
+          .map((f) =>
+            this.effects().required.has(f.name) && !f.required ? { ...f, required: true } : f,
+          ),
       }))
       .filter((s) => s.fields.length),
   );
@@ -202,7 +232,13 @@ export class FormPage {
     this.id.set(id);
     try {
       const info = await this.tables.describe(table);
-      const form = await this.formOf(info);
+      const [form, actions, rules] = await Promise.all([
+        this.formOf(info),
+        this.actionsApi.of(table),
+        this.rulesApi.of(table),
+      ]);
+      this.actionDefs.set(actions);
+      this.rules.set(rules);
       let record: Values = {};
       if (id !== 'new') {
         record = (await this.api.get<Values>(path(table, id))).data;
@@ -265,6 +301,9 @@ export class FormPage {
   }
 
   protected visible(field: FieldInfo): boolean {
+    if (this.effects().hidden.has(field.name)) {
+      return false;
+    }
     if (this.creating()) {
       return !field.system && field.create;
     }
@@ -272,7 +311,7 @@ export class FormPage {
   }
 
   protected editable(field: FieldInfo): boolean {
-    if (field.system || !this.writable()) {
+    if (field.system || !this.writable() || this.effects().readOnly.has(field.name)) {
       return false;
     }
     return this.creating() ? field.create : field.write;
@@ -493,6 +532,24 @@ export class FormPage {
 
   protected discardDraft(): void {
     this.clearDraft();
+  }
+
+  // ---- actions ----
+
+  protected actionLabel(action: ActionDef): string {
+    return this.runner.label(action);
+  }
+
+  protected async act(action: ActionDef): Promise<void> {
+    const answer = await this.runner.one(action, this.id(), String(this.original()['_etag']));
+    if (!answer) {
+      return;
+    }
+    if (answer.go === 'list') {
+      await this.router.navigate(['/list', this.table()]);
+    } else {
+      await this.open(this.table(), this.id());
+    }
   }
 
   // ---- deleting ----

@@ -10,7 +10,7 @@ import { FieldEditor } from '../unit';
   selector: 'app-choice-editor',
   imports: [MatFormFieldModule, MatSelectModule],
   template: `
-    <mat-form-field appearance="outline" class="field">
+    <mat-form-field appearance="outline" class="field" [class.mat-form-field-invalid]="!!error()">
       <mat-label>{{ field().label }}</mat-label>
       <mat-select
         [required]="field().required"
@@ -24,11 +24,10 @@ import { FieldEditor } from '../unit';
           <mat-option [value]="v.value">{{ v.label }}</mat-option>
         }
       </mat-select>
-      @if (field().help) {
-        <mat-hint>{{ field().help }}</mat-hint>
-      }
       @if (error()) {
-        <mat-error>{{ error() }}</mat-error>
+        <mat-hint class="field-error" role="alert">{{ error() }}</mat-hint>
+      } @else if (field().help) {
+        <mat-hint>{{ field().help }}</mat-hint>
       }
     </mat-form-field>
   `,

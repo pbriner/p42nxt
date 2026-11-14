@@ -2,6 +2,19 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.10.0
+
+- UI actions (`sys.ui_action`): buttons and menu entries modules declare, offered per record
+  (`_actions`) where the person may do the action's operation and its condition holds; they
+  may ask first, ask for inputs or for the second factor again, and either set fields or run
+  the module's code. Run one on a record or several, checked again and audited.
+- Form rules (`sys.form_rule`): fields hidden, required or read-only while a condition holds,
+  applied by the app while typing and enforced by the server on every save.
+- The SDK: `UIAction`, `ActionInput`, `ActionRun`, `ActionResult`, `FormRule`, and
+  `Client.action()`. Only the core may hook every table.
+- The app shows field errors at their fields again (the browser's own checks no longer stop a
+  form before ours).
+
 ## 0.9.0
 
 - Form views are records (`sys.form_view`): modules declare sections and related lists

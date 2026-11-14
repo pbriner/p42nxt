@@ -19,6 +19,8 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `GET /api/v1/meta/<module>/<table>` | The table described for the caller (below) |
 | `POST /api/v1/tables` | Make or change one of the administrators' own tables (`tables.md`) |
 | `DELETE /api/v1/tables/<name>` | Retire one of them |
+| `POST /api/v1/<module>/<table>/<id>/action/<name>` | Run a UI action on a record (`screens.md`) |
+| `POST /api/v1/<module>/<table>/action/<name>` | Run it on several (`ids`), a result per record |
 | `GET /api/v1/navigation` | The navigator: what the caller may open (`screens.md`) |
 | `GET /api/v1/theme` | A theme's colours and look (anyone) |
 | `GET /api/v1/search` | Every list the caller may read, searched at once |
@@ -36,7 +38,8 @@ the caller may not read left out. Lists and single records also carry:
 
 - `_display`: the display value of each reference (the referenced record's display field, if
   the caller may read it) and the label of each choice, in the caller's language;
-- `_access`: whether the caller may `write`, `delete` and `restore` this record.
+- `_access`: whether the caller may `write`, `delete` and `restore` this record;
+- `_actions`: the UI actions the caller may run on it now.
 
 `fields=a,b` keeps only those fields (and `sys_id`, `_etag`, `_display`, `_access`).
 

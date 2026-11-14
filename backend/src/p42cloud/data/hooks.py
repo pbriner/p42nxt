@@ -37,6 +37,9 @@ class Change:
 
 
 Hook = Callable[[Change], Awaitable[None]]
+# A hook registered for this runs on every table's changes (rules that records hold, like form
+# rules, apply to any table).
+EVERY_TABLE = "*"
 
 
 @dataclass(frozen=True)
@@ -60,7 +63,9 @@ class Hooks:
                 registry[table].append(hook)
 
     async def run(self, when: str, change: Change) -> None:
-        hooks = (self.before if when == "before" else self.after).get(change.table.key, [])
+        registry = self.before if when == "before" else self.after
+        # A table's own hooks first, then those for every table (EVERY_TABLE).
+        hooks = [*registry.get(change.table.key, []), *registry.get(EVERY_TABLE, [])]
         for hook in hooks:
             await hook(change)
         if hooks:  # hooks may work as another module; the change goes on as the table's

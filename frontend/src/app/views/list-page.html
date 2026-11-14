@@ -99,6 +99,14 @@
     @if (selected().size) {
       <div class="bulk" role="region" [attr.aria-label]="i18n.t('list.selected', { n: selected().size })">
         <span>{{ i18n.t('list.selected', { n: selected().size }) }}</span>
+        @for (a of bulk(); track a.name) {
+          <button mat-stroked-button type="button" (click)="actOnSelected(a)">
+            @if (a.icon) {
+              <span class="material-symbols-outlined" aria-hidden="true">{{ a.icon }}</span>
+            }
+            {{ actionLabel(a) }}
+          </button>
+        }
         <button mat-stroked-button type="button" (click)="updateSelected()">
           {{ i18n.t('list.update_selected') }}
         </button>
@@ -325,6 +333,14 @@
             </button>
           }
         }
+        <hr class="divider" />
+      }
+      @for (a of rowActions(menu.row); track a.name) {
+        <button mat-menu-item type="button" (click)="actOn(menu.row, a)">
+          <span class="material-symbols-outlined" aria-hidden="true">{{ a.icon ?? 'bolt' }}</span>{{ actionLabel(a) }}
+        </button>
+      }
+      @if (rowActions(menu.row).length) {
         <hr class="divider" />
       }
       @if (referenced(menu); as ref) {

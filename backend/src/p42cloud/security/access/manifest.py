@@ -31,7 +31,14 @@ SESSION_FIELDS = ("person", "stage", "expires", "last_seen", "verified", "addres
 TOKENS = "sys.api_token"
 # What people see of API tokens: never the token's hash.
 TOKEN_FIELDS = ("person", "name", "prefix", "roles", "expires", "last_used")
-SCREENS = ("sys.nav_item", "sys.list_view", "sys.form_view", "sys.theme")
+SCREENS = (
+    "sys.nav_item",
+    "sys.list_view",
+    "sys.form_view",
+    "sys.ui_action",
+    "sys.form_rule",
+    "sys.theme",
+)
 PERSONAL = ("sys.preference", "sys.favorite", "sys.saved_view", "sys.view_state")
 MINE = {"field": "owner", "op": "eq", "value": "@me"}
 # Sessions and tokens are the person's own.

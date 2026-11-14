@@ -258,3 +258,8 @@ html[data-cards='raised'] .mat-mdc-card {
     color: var(--mat-sys-primary);
   }
 }
+
+// A field's error, shown in place of its hint.
+.field-error {
+  color: var(--mat-sys-error);
+}

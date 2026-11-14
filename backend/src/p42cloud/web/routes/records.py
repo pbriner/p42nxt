@@ -9,8 +9,9 @@
 
 Filters come as `filter[field][op]=value` (all ANDed; lists comma-separated) and as
 `where=<JSON>` for anything with OR or NOT; both together are ANDed. Lists and single records
-carry `_display` (references and choices named) and `_access` (what the caller may do with the
-record); `fields=a,b` keeps only those fields.
+carry `_display` (references and choices named), `_access` (what the caller may do with the
+record) and `_actions` (the UI actions they may run on it); `fields=a,b` keeps only those
+fields.
 """
 
 import json
@@ -22,6 +23,7 @@ from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
 
 from p42cloud.data.presenting import annotate
 from p42cloud.kernel.errors import Problem
+from p42cloud.ui.actions.service import available
 from p42cloud.web.caller import Caller, language, who
 from p42cloud.web.permissions import SIGNED_IN, requires
 from p42cloud.web.services import Services
@@ -57,7 +59,7 @@ def _condition(request: Request, where: str | None) -> Any:
     return parts[0] if len(parts) == 1 else {"and": parts}
 
 
-_ALWAYS = frozenset({"sys_id", "_etag", "_display", "_access"})
+_ALWAYS = frozenset({"sys_id", "_etag", "_display", "_access", "_actions"})
 
 
 def _only(body: dict[str, Any], fields: str | None) -> dict[str, Any]:
@@ -106,6 +108,7 @@ async def list_records(
             deleted=deleted,
         )
         found = await annotate(records, records.catalog.tables[key], page.records)
+        await available(records, records.catalog.tables[key], found)
     return {
         "records": [_only(r, fields) for r in found],
         "next": page.next,
@@ -149,6 +152,7 @@ async def read_record(
     async with services.records(caller.context(language(request))) as records:
         record = await records.read(key, sys_id)
         (found,) = await annotate(records, records.catalog.tables[key], [record])
+        await available(records, records.catalog.tables[key], [found])
     return _one(response, _only(found, fields))
 
 

@@ -12,6 +12,7 @@ from p42cloud.data.catalog import TableDef
 from p42cloud.data.hooks import Change
 from p42cloud.data.records import Record, Records
 from p42cloud.kernel.errors import Problem
+from p42cloud.ui.actions.service import run
 
 type Json = dict[str, Any]
 
@@ -73,3 +74,9 @@ class Client:
 
     async def restore(self, table: str, sys_id: UUID | str) -> Json:
         return self._json(table, await self._records.restore(table, self._id(sys_id)))
+
+    async def action(
+        self, table: str, sys_id: UUID | str, name: str, inputs: Json | None = None
+    ) -> Json:
+        """Runs a UI action on a record, checked as over HTTP: a message, where to go next."""
+        return await run(self._records, table, name, self._id(sys_id), given=inputs or {})

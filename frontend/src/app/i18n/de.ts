@@ -276,4 +276,8 @@ export const DE: Record<TextKey, string> = {
   'form.is_deleted': 'Dieser Eintrag ({item}) ist gelöscht.',
   'form.restore': 'Wiederherstellen',
   'form.empty': '—',
+  'action.done': '{label}: erledigt',
+  'action.more': 'Weitere Aktionen',
+  'action.partly': '{n} erledigt, {m} nicht',
+  'action.run': 'Ausführen',
 };

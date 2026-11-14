@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
 
+import { ActionDef, Actions } from '../core/actions';
 import { Api, Problem, describe } from '../core/api';
 import {
   Condition,
@@ -28,6 +29,7 @@ import { ListView, ListViews, Remembered, SavedView, conditionsOf } from '../cor
 import { Preferences } from '../core/preferences';
 import { Tables, path } from '../core/tables';
 import { ProblemState } from '../pages/problem-state';
+import { ActionRunner } from './action-runner';
 import { ColumnsDialog, ColumnsRequest } from './columns-dialog';
 import { ConfirmDialog } from './confirm-dialog';
 import { FilterDialog, FilterRequest } from './filter-dialog';
@@ -79,6 +81,8 @@ export class ListPage {
   private readonly tables = inject(Tables);
   private readonly views = inject(ListViews);
   private readonly preferences = inject(Preferences);
+  private readonly actionsApi = inject(Actions);
+  private readonly runner = inject(ActionRunner);
   private readonly params = toSignal(this.route.paramMap);
   private readonly query = toSignal(this.route.queryParamMap);
   protected readonly cards = toSignal(
@@ -101,6 +105,14 @@ export class ListPage {
   protected readonly failed = signal<Problem | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly selected = signal(new Set<string>());
+  protected readonly actionDefs = signal<ActionDef[]>([]);
+  /** Actions for the chosen records: those at least one of them offers. */
+  protected readonly bulk = computed(() => {
+    const rows = (this.page()?.records ?? []).filter((r) => this.selected().has(r.sys_id));
+    return this.actionDefs().filter(
+      (a) => a.places.includes('list_bulk') && rows.some((r) => this.offers(r, a)),
+    );
+  });
   protected readonly names = signal(new Map<string, string>());
   protected readonly menuAt = signal({ x: 0, y: 0 });
   protected readonly cell = signal<CellMenu | null>(null);
@@ -197,11 +209,13 @@ export class ListPage {
       if (!view) {
         throw new Problem(404, 'not_found', 'Not found');
       }
-      const [table, saved, remembered] = await Promise.all([
+      const [table, saved, remembered, actions] = await Promise.all([
         this.tables.describe(view.table),
         this.views.saved(view.name),
         this.views.remembered(view.name),
+        this.actionsApi.of(view.table),
       ]);
+      this.actionDefs.set(actions);
       this.table.set(table);
       this.saved.set(saved);
       this.rememberedState.set(remembered);
@@ -621,6 +635,36 @@ export class ListPage {
           this.snack.open(this.i18n.t('update.done', { n: done }), undefined, { duration: 3000 });
         }
       });
+  }
+
+  // ---- actions ----
+
+  private offers(row: Row, action: ActionDef): boolean {
+    return ((row['_actions'] as string[] | undefined) ?? []).includes(action.name);
+  }
+
+  protected rowActions(row: Row): ActionDef[] {
+    return this.actionDefs().filter((a) => a.places.includes('list_row') && this.offers(row, a));
+  }
+
+  protected actionLabel(action: ActionDef): string {
+    return this.runner.label(action);
+  }
+
+  protected async actOn(row: Row, action: ActionDef): Promise<void> {
+    if (await this.runner.one(action, row.sys_id, row._etag)) {
+      await this.load();
+    }
+  }
+
+  /** On each chosen record that offers it; the others are left out, not refused. */
+  protected async actOnSelected(action: ActionDef): Promise<void> {
+    const ids = (this.page()?.records ?? [])
+      .filter((r) => this.selected().has(r.sys_id) && this.offers(r, action))
+      .map((r) => r.sys_id);
+    if (await this.runner.many(action, ids)) {
+      await this.load();
+    }
   }
 
   // ---- showing values ----

@@ -101,4 +101,51 @@ async def test_greetings_are_in_the_navigator(as_system: Acting) -> None:
             "sys.list_view", where={"field": "name", "op": "eq", "value": "hello.greeting"}
         )
     assert {r["name"] for r in items["records"]} == {"hello.greetings", "hello.greet"}
-    assert views["records"][0]["columns"] == ["text", "language", "author", "created"]
+    assert views["records"][0]["columns"] == ["text", "language", "author", "pinned", "created"]
+
+
+async def test_pin_and_unpin_are_offered_by_state(as_system: Acting, as_person: Acting) -> None:
+    anna, bob = await _greeters(as_system, "Anna", "Bob")
+    async with as_person(anna) as client:
+        made = await client.create("hello.greeting", {"text": "Pin me"})
+        pinned = await client.action("hello.greeting", made["sys_id"], "hello.pin")
+        with pytest.raises(Problem) as again:
+            await client.action("hello.greeting", made["sys_id"], "hello.pin")
+        seen = await client.get("hello.greeting", made["sys_id"])
+    async with as_person(bob) as client:
+        with pytest.raises(Problem) as not_his:
+            await client.action("hello.greeting", made["sys_id"], "hello.unpin")
+    assert pinned["message"] == "Pinned." and seen["pinned"] is True
+    assert again.value.code == "not_available"  # pinned already
+    assert not_his.value.code == "not_available"  # not his to change
+
+
+async def test_signing_runs_the_modules_code_with_its_input(
+    as_system: Acting, as_person: Acting
+) -> None:
+    (anna,) = await _greeters(as_system, "Anna")
+    async with as_person(anna) as client:
+        made = await client.create("hello.greeting", {"text": "Hi"})
+        with pytest.raises(Problem) as missing:
+            await client.action("hello.greeting", made["sys_id"], "hello.sign")
+        done = await client.action(
+            "hello.greeting", made["sys_id"], "hello.sign", {"signature": "Anna"}
+        )
+        seen = await client.get("hello.greeting", made["sys_id"])
+    assert missing.value.code == "validation"
+    assert done["message"] == "Signed by Anna." and seen["text"] == "Hi — Anna"
+
+
+async def test_a_team_greeting_needs_its_team(as_system: Acting, as_person: Acting) -> None:
+    (anna,) = await _greeters(as_system, "Anna")
+    async with as_system() as client:
+        team = await client.create("sys.group", {"name": "Hello team"})
+    with pytest.raises(Problem) as refused:
+        async with as_person(anna) as client:
+            await client.create("hello.greeting", {"text": "Team only", "audience": "team"})
+    async with as_person(anna) as client:
+        made = await client.create(
+            "hello.greeting", {"text": "Team only", "audience": "team", "team": team["sys_id"]}
+        )
+    assert [e.field for e in refused.value.errors] == ["team"]
+    assert made["team"] == team["sys_id"]
