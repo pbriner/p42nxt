@@ -1,7 +1,9 @@
 """What the screens add to the core: their tables, hooks, settings, views, navigation, themes."""
 
-from p42cloud.ui.actions.models import UI_ACTION
+from p42cloud.services.jobs.service import queue
+from p42cloud.ui.actions.models import UI_ACTION, ActionResult, ActionRun, UIAction
 from p42cloud.ui.favorites import models as favorites
+from p42cloud.ui.forms import layouts
 from p42cloud.ui.forms.models import FORM_VIEW
 from p42cloud.ui.navigation.models import NAV_ITEM, Item, Section
 from p42cloud.ui.preferences import models as preferences
@@ -22,6 +24,7 @@ TABLES = (
     NAV_ITEM,
     *views.TABLES,
     FORM_VIEW,
+    layouts.RELATED_LAYOUT,
     UI_ACTION,
     FORM_RULE,
     *widgets.TABLES,
@@ -36,6 +39,7 @@ HOOKS = (
     *favorites.TABLE_HOOKS,
     *rules.TABLE_HOOKS,
     *widget_service.TABLE_HOOKS,
+    *layouts.TABLE_HOOKS,
 )
 SETTINGS = (STAGE, APP_NAME, LANGUAGE, themes.DEFAULT_THEME)
 THEMES = builtin.THEMES
@@ -46,6 +50,18 @@ VIEWS = (
     ListView("sys.group", ("name", "description", "assignable")),
     ListView("sys.role", ("label", "name", "module", "powerful"), search=("label", "name")),
     ListView("sys.module", ("label", "name", "version", "enabled"), sort=("label",)),
+    ListView(
+        "sys.schedule",
+        ("label", "cron", "time_zone", "active", "next_run", "last_state"),
+        sort=("label",),
+        searchable=False,
+    ),
+    ListView(
+        "sys.job_run",
+        ("job", "state", "trigger", "attempt", "started", "finished", "message"),
+        sort=("-created",),
+        searchable=False,
+    ),
 )
 
 NAVIGATION = (
@@ -69,6 +85,13 @@ NAVIGATION = (
         ),
     ),
     Section(
+        "Automation",
+        (
+            Item("schedules", "Schedules", "sys.schedule", icon="schedule", keywords=("cron",)),
+            Item("job_runs", "Job runs", "sys.job_run", icon="history", keywords=("jobs",)),
+        ),
+    ),
+    Section(
         "Appearance",
         (Item("themes", "Themes", "sys.theme", icon="palette", keywords=("colours", "colors")),),
     ),
@@ -86,5 +109,43 @@ WIDGETS = (
         accent=1,
         trend="created",
         shown="available",
+    ),
+)
+
+
+async def _run_now(run: ActionRun) -> ActionResult:
+    """Queues a run of the schedule's job, for the next free worker."""
+    await queue(run.records.conn, str(run.record["job"]), str(run.record["name"]), "manual")
+    return ActionResult(message="Queued: it starts as soon as a worker is free.")
+
+
+ACTIONS = (
+    UIAction(
+        "run_now",
+        "sys.schedule",
+        "Run now",
+        places=("form_button", "list_row"),
+        icon="play_arrow",
+        handler=_run_now,
+    ),
+    UIAction(
+        "pause",
+        "sys.schedule",
+        "Pause",
+        places=("form_menu", "list_bulk", "list_row"),
+        icon="pause",
+        condition={"field": "active", "op": "eq", "value": True},
+        set={"active": False},
+        message="Paused.",
+    ),
+    UIAction(
+        "resume",
+        "sys.schedule",
+        "Resume",
+        places=("form_button", "list_bulk", "list_row"),
+        icon="resume",
+        condition={"field": "active", "op": "eq", "value": False},
+        set={"active": True},
+        message="Resumed.",
     ),
 )

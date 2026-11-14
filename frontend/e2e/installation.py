@@ -16,6 +16,7 @@ import base64
 import json
 import os
 import signal
+import threading
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -37,6 +38,7 @@ from p42cloud.modules.registry import discover
 from p42cloud.security.access.manifest import ADMINISTRATORS
 from p42cloud.security.sign_in import credentials, totp
 from p42cloud.web.app import create_app
+from p42cloud.worker.main import work
 
 ADMIN_URL = os.environ.get(
     "P42_TEST_ADMIN_URL", "postgresql+asyncpg://p42_admin:p42-admin-dev-only@localhost:5435/p42"
@@ -165,6 +167,22 @@ async def _drop(database: str) -> None:
     await admin.dispose()
 
 
+def _worker(settings: Settings, stopping: threading.Event) -> None:
+    async def run() -> None:
+        stop = asyncio.Event()
+
+        async def watch() -> None:
+            while not stopping.is_set():
+                await asyncio.sleep(0.5)
+            stop.set()
+
+        watcher = asyncio.create_task(watch())
+        await work(stop, settings)
+        watcher.cancel()
+
+    asyncio.run(run())
+
+
 def _stop(_signal: int, _frame: object) -> None:
     raise SystemExit(0)
 
@@ -197,10 +215,15 @@ def main() -> None:
         setup_code=SETUP_CODE if args.fresh else None,
     )
     sealer = Sealer(os.urandom(32))
+    stopping = threading.Event()
+    worker: threading.Thread | None = None
     asyncio.run(_drop_leftovers())
     try:
         state = asyncio.run(_prepare(database, settings, sealer, demo=args.demo, fresh=args.fresh))
         args.state.write_text(json.dumps({"url": url, **state}, indent=2))
+        # The worker beside the app, as in an installation (its own thread and loop).
+        worker = threading.Thread(target=_worker, args=(settings, stopping), daemon=True)
+        worker.start()
         uvicorn.run(
             create_app(settings, sealer=sealer, upgrade=False),
             host="127.0.0.1",
@@ -208,6 +231,9 @@ def main() -> None:
             log_level="warning",
         )
     finally:
+        stopping.set()
+        if worker is not None:
+            worker.join(timeout=10)
         asyncio.run(_drop(database))
         args.state.unlink(missing_ok=True)
 

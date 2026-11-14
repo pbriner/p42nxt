@@ -1,17 +1,9 @@
 <section class="related" [attr.aria-label]="i18n.t('form.related')">
   <div class="head">
     <h2>{{ i18n.t('form.related') }}</h2>
-    @if (more().length) {
-      <button mat-button type="button" [matMenuTriggerFor]="moreMenu">
-        <span class="material-symbols-outlined" aria-hidden="true">add</span
-        >{{ i18n.t('form.more', { n: more().length }) }}
-      </button>
-      <mat-menu #moreMenu="matMenu">
-        @for (r of more(); track key(r)) {
-          <button mat-menu-item type="button" (click)="addTab(r)">{{ r.label }}</button>
-        }
-      </mat-menu>
-    }
+    <button mat-stroked-button type="button" (click)="arrange()">
+      <span class="material-symbols-outlined" aria-hidden="true">view_list</span>{{ i18n.t('related.choose') }}
+    </button>
   </div>
   @if (tabs().length) {
     <mat-tab-group

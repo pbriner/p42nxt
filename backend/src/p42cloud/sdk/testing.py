@@ -10,14 +10,15 @@ In the module's `tests/conftest.py`:
 
 Each test session gets its own database, set up the way the installer does it, with the core
 and these modules installed. `as_system()` and `as_person(id)` give a `Client` for one request
-(committed at the end). Needs the development PostgreSQL (`docker compose up -d`);
+(committed at the end); `run_job(name)` runs a job as the worker would and returns its state and
+what it said. Needs the development PostgreSQL (`docker compose up -d`);
 `P42_TEST_ADMIN_URL` points elsewhere. The modules' database roles are kept between sessions:
 they belong to the whole server and own nothing.
 """
 
 import os
 import uuid
-from collections.abc import AsyncGenerator, AsyncIterator, Callable
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from datetime import UTC, datetime
 
@@ -36,6 +37,7 @@ from p42cloud.modules.install import install_modules
 from p42cloud.modules.manifest import Module
 from p42cloud.sdk.client import Client
 from p42cloud.security.access.service import access_for
+from p42cloud.services.jobs.service import run_job as run_now
 
 ADMIN_URL = os.environ.get(
     "P42_TEST_ADMIN_URL", "postgresql+asyncpg://p42_admin:p42-admin-dev-only@localhost:5435/p42"
@@ -122,3 +124,17 @@ def as_person(p42_engine: AsyncEngine) -> Acting:
             yield client
 
     return acting
+
+
+type RunJob = Callable[[str], Awaitable[tuple[str, str | None]]]
+
+
+@pytest.fixture
+def run_job(p42_engine: AsyncEngine) -> RunJob:
+    """Runs a job (`<module>.<name>`) at once, as its module's service account, like the worker:
+    returns its state (succeeded, failed, skipped) and what it said."""
+
+    async def running(name: str) -> tuple[str, str | None]:
+        return await run_now(p42_engine, name)
+
+    return running

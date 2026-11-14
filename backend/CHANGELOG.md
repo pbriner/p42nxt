@@ -2,6 +2,21 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.13.0
+
+- Jobs and schedules (`sys.job`, `sys.schedule`, `sys.job_run`) that modules declare (`Job`,
+  `Schedule`); cron in a time zone; administrators change or pause schedules, and upgrades keep
+  what they set.
+- The worker (`p42cloud-worker`, the installation's `worker` service): queues due runs, runs
+  each in one transaction with a time limit, tries failed runs again with growing waits, never
+  overlaps a schedule's runs, ends runs a stopped worker left behind. Several workers may run.
+- A module's jobs act as its own service account (its roles); every change carries the run.
+- In the app: Automation → Schedules (Run now, Pause, Resume) and Job runs.
+- The core's first job: the nightly check of dynamic groups' members.
+- The SDK's test plugin can run a job (`run_job`).
+- Forms: each person chooses and orders the related lists in a slushbucket, kept for them per
+  form (`sys.related_layout`), with the tab open last; Reset to default.
+
 ## 0.12.0
 
 - The web installer (`/setup`): with the setup code, a new installation gets its name and

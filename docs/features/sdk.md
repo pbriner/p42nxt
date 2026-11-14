@@ -12,6 +12,7 @@ platform, any import of another module, and loading code by name (`importlib`, `
 | `Table` and the field types (`String`, `Decimal`, `Reference` …) | Declaring tables (`tables.md`) |
 | `Role`, `Grant` | Declaring roles (`access.md`) |
 | `Section`, `Item`, `ListView`, `FormView`, `FormSection`, `RelatedList` | Declaring navigation, list views and forms (`screens.md`) |
+| `Job`, `Schedule`, `JobRun` | Declaring jobs and when they run (`jobs.md`) |
 | `UIAction`, `ActionInput`, `ActionRun`, `ActionResult`, `FormRule`, `Widget` | Declaring buttons, form rules and widgets (`screens.md`); `Client.action()` runs an action |
 | `TableHook`, `Change` | Code to run when the module's own records change (`records.md`). `change.person` is who makes the change |
 | `Client` | Reading and changing any module's records (below) |
@@ -61,3 +62,6 @@ cd modules/hello && uv run pytest
 The repository is one uv workspace: the platform (`backend/`) and every module
 (`modules/<id>/`), one lock file at the root, every package editable. `uv sync --all-packages`
 at the root gives an environment for all of them. The app image holds the platform only.
+
+`run_job("<module>.<job>")` runs one of the module's jobs at once, as its service account,
+like the worker (`jobs.md`).

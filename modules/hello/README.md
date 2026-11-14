@@ -1,6 +1,6 @@
 # Hello (`hello`)
 
-Version: 0.4.0 · Last updated: 2026-11-13
+Version: 0.5.0 · Last updated: 2026-11-13
 
 ## Purpose
 
@@ -11,7 +11,7 @@ hook, documentation and its own tests. People leave greetings for everyone to re
 
 | Module | Versions | What for |
 |---|---|---|
-| `sys` | `>=0.11,<1` | Always; 0.11 brings widgets and dashboards |
+| `sys` | `>=0.13,<1` | Always; 0.13 brings jobs and schedules |
 
 Core dependency: no
 
@@ -26,6 +26,7 @@ Core dependency: no
 | Role | Can | Record conditions / personal data |
 |---|---|---|
 | `hello.user` (Greeter) | Read all greetings, leave new ones, change and delete their own | Change and delete: `author = @me` |
+| `hello.keeper` (Greetings keeper) | Read and change every greeting | Only for hello's jobs (their service account) |
 
 ## Views, navigation and dashboards
 
@@ -39,6 +40,10 @@ target of 50 and a 12-month trend.
 Actions: Pin (a button; also on several at once), Unpin (in the form's menu), Sign (asks for a
 signature, runs the module's code). Form rules: the team shows and is required only for a team
 greeting; the author can't be changed.
+
+## Jobs
+
+`hello.unpin_old` (nightly, 04:41 UTC): unpins greetings pinned more than 30 days ago.
 
 ## Hooks
 

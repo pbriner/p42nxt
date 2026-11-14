@@ -1,15 +1,16 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatDialog } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { Api } from '../core/api';
 import { FieldInfo, TableInfo, shown } from '../core/format';
 import { I18n } from '../core/i18n';
 import { ListViews } from '../core/list-views';
-import { remember, remembered } from '../core/storage';
 import { Tables, path } from '../core/tables';
+import { RelatedListsDialog } from './related-lists-dialog';
 
 export interface Related {
   table: string;
@@ -27,11 +28,20 @@ interface Opened {
 }
 
 const MAX_ROWS = 20;
+const LAYOUTS = '/api/v1/sys/related_layout';
+
+/** The person's own choice for a form (a personal record). */
+interface Layout {
+  sys_id: string;
+  _etag: string;
+  shown: { table: string; field: string }[] | null;
+  last: string | null;
+}
 
 /** The records pointing to this one, a tab per kind, each with its count. */
 @Component({
   selector: 'app-related-tabs',
-  imports: [MatButtonModule, MatMenuModule, MatTabsModule, RouterLink],
+  imports: [MatButtonModule, MatTabsModule, RouterLink],
   templateUrl: './related-tabs.html',
   styleUrl: './related-tabs.scss',
 })
@@ -41,22 +51,26 @@ export class RelatedTabs {
   private readonly tables = inject(Tables);
   private readonly views = inject(ListViews);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
   readonly table = input.required<string>();
   readonly id = input.required<string>();
   readonly lists = input.required<Related[]>();
 
   protected readonly counts = signal(new Map<string, number | null>());
-  protected readonly added = signal(new Set<string>());
+  private readonly layout = signal<Layout | null>(null);
   protected readonly selected = signal(0);
   protected readonly opened = signal<Opened | null>(null);
 
-  protected readonly tabs = computed(() =>
-    this.lists().filter(
-      (r) =>
-        r.declared || (this.counts().get(this.key(r)) ?? 0) > 0 || this.added().has(this.key(r)),
-    ),
-  );
-  protected readonly more = computed(() => this.lists().filter((r) => !this.tabs().includes(r)));
+  /** The person's chosen lists in their order; else the default: declared ones, then those with
+   * records. Lists they may not read aren't in `lists`, so they never show. */
+  protected readonly tabs = computed(() => {
+    const chosen = this.layout()?.shown;
+    if (chosen) {
+      const byKey = new Map(this.lists().map((r) => [this.key(r), r]));
+      return chosen.map((c) => byKey.get(`${c.table}.${c.field}`)).filter((r): r is Related => !!r);
+    }
+    return this.lists().filter((r) => r.declared || (this.counts().get(this.key(r)) ?? 0) > 0);
+  });
 
   constructor() {
     effect(() => {
@@ -85,26 +99,83 @@ export class RelatedTabs {
       }),
     );
     this.counts.set(counts);
-    const last = remembered(`p42.related.${this.table()}`)[0];
-    const at = Math.max(
-      0,
-      this.tabs().findIndex((r) => this.key(r) === last),
+    await this.loadLayout();
+    const last = this.layout()?.last;
+    this.choose(
+      Math.max(
+        0,
+        this.tabs().findIndex((r) => this.key(r) === last),
+      ),
+      false,
     );
-    this.choose(at);
   }
 
-  protected choose(index: number): void {
-    this.selected.set(index);
-    const related = this.tabs()[index];
-    if (related) {
-      remember(`p42.related.${this.table()}`, [this.key(related)]);
-      void this.open(related);
+  private async loadLayout(): Promise<void> {
+    try {
+      const { data } = await this.api.get<{ records: Layout[] }>(LAYOUTS, {
+        query: { 'filter[form]': this.table(), limit: 1, count: false },
+      });
+      this.layout.set(data.records[0] ?? null);
+    } catch {
+      this.layout.set(null);
     }
   }
 
-  protected addTab(related: Related): void {
-    this.added.update((all) => new Set([...all, this.key(related)]));
-    this.choose(this.tabs().findIndex((r) => this.key(r) === this.key(related)));
+  /** Keeps the person's layout: changes theirs, or makes it. */
+  private async keep(values: Partial<Layout>): Promise<void> {
+    const found = this.layout();
+    try {
+      const answer = found
+        ? await this.api.patch<Layout>(`${LAYOUTS}/${found.sys_id}`, values, found._etag)
+        : await this.api.post<Layout>(LAYOUTS, { form: this.table(), ...values });
+      this.layout.set(answer.data);
+    } catch {
+      // Not kept this time; the screen shows it all the same.
+    }
+  }
+
+  protected choose(index: number, keepIt = true): void {
+    this.selected.set(index);
+    const related = this.tabs()[index];
+    if (!related) {
+      this.opened.set(null);
+      return;
+    }
+    if (keepIt && this.layout()?.last !== this.key(related)) {
+      void this.keep({ last: this.key(related) });
+    }
+    void this.open(related);
+  }
+
+  /** The slushbucket: which lists, in what order, for this person. */
+  protected async arrange(): Promise<void> {
+    const items = this.lists().map((r) => ({
+      key: this.key(r),
+      label: r.label,
+      detail: this.count(r),
+    }));
+    const ref = this.dialog.open(RelatedListsDialog, {
+      data: { items, shown: this.tabs().map((r) => this.key(r)) },
+      maxWidth: '96vw',
+    });
+    const answer = await firstValueFrom(ref.afterClosed());
+    if (answer === 'reset') {
+      const found = this.layout();
+      if (found) {
+        await this.api.delete(`${LAYOUTS}/${found.sys_id}`, found._etag).catch(() => undefined);
+      }
+      this.layout.set(null);
+    } else if (Array.isArray(answer)) {
+      const byKey = new Map(this.lists().map((r) => [this.key(r), r]));
+      const shown = answer
+        .map((k) => byKey.get(k))
+        .filter((r): r is Related => !!r)
+        .map((r) => ({ table: r.table, field: r.field }));
+      await this.keep({ shown });
+    } else {
+      return;
+    }
+    this.choose(0, false);
   }
 
   private async open(related: Related): Promise<void> {

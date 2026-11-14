@@ -1,0 +1,62 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test } from '@playwright/test';
+
+import { api, opened, storage } from './helpers';
+
+test.use({ storageState: storage('admin') });
+
+test('a person chooses and orders a form’s related lists, and they stay', async ({
+  page,
+}, info) => {
+  await page.goto('/');
+  const client = await api(page);
+  const group = await client.post('/api/v1/sys/group', {
+    name: `Lists ${info.project.name} ${Date.now() % 100000}`,
+  });
+  const person = await client.post('/api/v1/sys/person', { name: `Member ${info.project.name}` });
+  await client.post('/api/v1/sys/membership', { group: group.sys_id, person: person.sys_id });
+  // Start from the default for this form.
+  const kept = await client.get('/api/v1/sys/related_layout?filter[form]=sys.group');
+  for (const layout of kept.records ?? []) {
+    await client.remove(`/api/v1/sys/related_layout/${layout.sys_id}`, layout._etag);
+  }
+
+  await page.goto(`/form/sys.group/${group.sys_id}`);
+  await expect(page.getByRole('tab', { name: /Memberships/ })).toBeVisible(); // it has records
+  await expect(page.getByRole('tab', { name: /Roles of groups/ })).toBeHidden(); // none yet
+
+  await page.getByRole('button', { name: 'Related lists…' }).click();
+  let dialog = await opened(page);
+  // Checked once the fade-in is over: mid-fade every text has too little contrast.
+  await expect.poll(() => page.evaluate(() => document.getAnimations().length)).toBe(0);
+  const axe = await new AxeBuilder({ page })
+    .include('mat-dialog-container')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag22aa'])
+    .analyze();
+  expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(' ')}`)).toEqual(
+    [],
+  );
+  await dialog.getByRole('option', { name: /Roles of groups/ }).click();
+  await dialog.getByRole('button', { name: 'Add the chosen' }).click();
+  await dialog.getByRole('option', { name: /Roles of groups/ }).click();
+  await dialog.getByRole('button', { name: 'Move up' }).click();
+  await dialog.getByRole('button', { name: 'Apply' }).click();
+  const tabs = page.getByRole('tab');
+  await expect(tabs.first()).toContainText('Roles of groups'); // first, as ordered
+
+  await page.reload();
+  await expect(page.getByRole('tab').first()).toContainText('Roles of groups'); // kept for them
+
+  await page.getByRole('button', { name: 'Related lists…' }).click();
+  dialog = await opened(page);
+  await dialog.getByRole('option', { name: /Memberships/ }).click();
+  await dialog.getByRole('button', { name: 'Remove the chosen' }).click();
+  await dialog.getByRole('button', { name: 'Apply' }).click();
+  await expect(page.getByRole('tab', { name: /Memberships/ })).toBeHidden();
+
+  await page.getByRole('button', { name: 'Related lists…' }).click();
+  dialog = await opened(page);
+  await dialog.getByRole('button', { name: 'Reset to default' }).click();
+  await expect(page.getByRole('tab', { name: /Memberships/ })).toBeVisible();
+  await expect(page.getByRole('tab', { name: /Roles of groups/ })).toBeHidden();
+});

@@ -1,0 +1,154 @@
+<div class="bucket" cdkDropListGroup>
+  <section class="side">
+    <h3 [id]="'available-label'">{{ i18n.t('slush.available') }}</h3>
+    <input
+      type="search"
+      class="filter"
+      [placeholder]="i18n.t('slush.filter', { side: i18n.t('slush.available') })"
+      [attr.aria-label]="i18n.t('slush.filter', { side: i18n.t('slush.available') })"
+      [value]="leftFilter()"
+      (input)="leftFilter.set($any($event.target).value)"
+    />
+    <ul
+      class="list"
+      role="listbox"
+      aria-multiselectable="true"
+      aria-labelledby="available-label"
+      cdkDropList
+      [cdkDropListData]="available()"
+      (cdkDropListDropped)="dropped($event, 'left')"
+    >
+      @for (item of available(); track item.key) {
+        <li
+          role="option"
+          tabindex="0"
+          cdkDrag
+          [cdkDragData]="item"
+          [attr.aria-selected]="leftChosen().has(item.key)"
+          [class.chosen]="leftChosen().has(item.key)"
+          (click)="toggle('left', item.key, $event)"
+          (keydown.space)="$event.preventDefault(); toggle('left', item.key, $event)"
+          (keydown.enter)="add([item.key])"
+          (dblclick)="add([item.key])"
+        >
+          <span class="label">{{ item.label }}</span>
+          @if (item.detail) {
+            <span class="detail">{{ item.detail }}</span>
+          }
+        </li>
+      } @empty {
+        <li class="empty" aria-disabled="true">{{ i18n.t('slush.empty') }}</li>
+      }
+    </ul>
+  </section>
+
+  <div class="moves">
+    <button
+      mat-icon-button
+      type="button"
+      [disabled]="!leftChosen().size"
+      [attr.aria-label]="i18n.t('slush.add')"
+      [matTooltip]="i18n.t('slush.add')"
+      (click)="add()"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+    </button>
+    <button
+      mat-icon-button
+      type="button"
+      [disabled]="!available().length"
+      [attr.aria-label]="i18n.t('slush.add_all')"
+      [matTooltip]="i18n.t('slush.add_all')"
+      (click)="addAll()"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">keyboard_double_arrow_right</span>
+    </button>
+    <button
+      mat-icon-button
+      type="button"
+      [disabled]="!rightChosen().size"
+      [attr.aria-label]="i18n.t('slush.remove')"
+      [matTooltip]="i18n.t('slush.remove')"
+      (click)="remove()"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+    </button>
+    <button
+      mat-icon-button
+      type="button"
+      [disabled]="!right().length"
+      [attr.aria-label]="i18n.t('slush.remove_all')"
+      [matTooltip]="i18n.t('slush.remove_all')"
+      (click)="removeAll()"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">keyboard_double_arrow_left</span>
+    </button>
+  </div>
+
+  <section class="side">
+    <h3 [id]="'shown-label'">{{ i18n.t('slush.shown') }}</h3>
+    <input
+      type="search"
+      class="filter"
+      [placeholder]="i18n.t('slush.filter', { side: i18n.t('slush.shown') })"
+      [attr.aria-label]="i18n.t('slush.filter', { side: i18n.t('slush.shown') })"
+      [value]="rightFilter()"
+      (input)="rightFilter.set($any($event.target).value)"
+    />
+    <ul
+      class="list"
+      role="listbox"
+      aria-multiselectable="true"
+      aria-labelledby="shown-label"
+      cdkDropList
+      [cdkDropListData]="right()"
+      (cdkDropListDropped)="dropped($event, 'right')"
+    >
+      @for (item of right(); track item.key) {
+        <li
+          role="option"
+          tabindex="0"
+          cdkDrag
+          [cdkDragData]="item"
+          [attr.aria-selected]="rightChosen().has(item.key)"
+          [class.chosen]="rightChosen().has(item.key)"
+          (click)="toggle('right', item.key, $event)"
+          (keydown.space)="$event.preventDefault(); toggle('right', item.key, $event)"
+          (keydown.delete)="remove([item.key])"
+          (dblclick)="remove([item.key])"
+        >
+          <span class="label">{{ item.label }}</span>
+          @if (item.detail) {
+            <span class="detail">{{ item.detail }}</span>
+          }
+        </li>
+      } @empty {
+        <li class="empty" aria-disabled="true">{{ i18n.t('slush.empty') }}</li>
+      }
+    </ul>
+  </section>
+
+  <div class="moves">
+    <button
+      mat-icon-button
+      type="button"
+      [disabled]="!canMove(-1)"
+      [attr.aria-label]="i18n.t('slush.up')"
+      [matTooltip]="i18n.t('slush.up')"
+      (click)="move(-1)"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
+    </button>
+    <button
+      mat-icon-button
+      type="button"
+      [disabled]="!canMove(1)"
+      [attr.aria-label]="i18n.t('slush.down')"
+      [matTooltip]="i18n.t('slush.down')"
+      (click)="move(1)"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span>
+    </button>
+  </div>
+</div>
+<p class="cdk-visually-hidden" aria-live="polite">{{ said() }}</p>

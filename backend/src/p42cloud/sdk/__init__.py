@@ -3,8 +3,9 @@
 A module declares itself with `Module`, its tables with `Table` and the field types, its roles
 with `Role` and `Grant`, its navigation with `Section` and `Item`, its lists with `ListView`,
 its forms with `FormView`, its buttons with `UIAction`, its form rules with `FormRule`, its
-widgets with `Widget`, reacts to its own records' changes with `TableHook`, moves data with
-`Migration`, and reads and changes any module's records with `Client`. Refusals are `Problem`s.
+widgets with `Widget`, its jobs with `Job` and `Schedule`, reacts to its own records' changes
+with `TableHook`, moves data with `Migration`, and reads and changes any module's records with
+`Client`. Refusals are `Problem`s.
 """
 
 from p42cloud.data.declarations import Table
@@ -35,6 +36,7 @@ from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.modules.manifest import Migration, Module
 from p42cloud.sdk.client import Client
 from p42cloud.security.access.roles import Grant, Role
+from p42cloud.services.jobs.models import Job, JobRun, Schedule
 from p42cloud.ui.actions.models import ActionInput, ActionResult, ActionRun, UIAction
 from p42cloud.ui.forms.models import FormSection, FormView, RelatedList
 from p42cloud.ui.navigation.models import Item, Section
@@ -66,6 +68,8 @@ __all__ = [
     "Icon",
     "Integer",
     "Item",
+    "Job",
+    "JobRun",
     "Json",
     "ListView",
     "Markdown",
@@ -77,6 +81,7 @@ __all__ = [
     "Reference",
     "RelatedList",
     "Role",
+    "Schedule",
     "Secret",
     "Section",
     "String",

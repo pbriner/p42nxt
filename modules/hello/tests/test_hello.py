@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 from p42cloud.sdk import Client, Problem
+from p42cloud.sdk.testing import RunJob
 
 from p42cloud_hello import module
 
@@ -167,3 +168,16 @@ async def test_its_dashboard_offers_its_widgets(as_system: Acting) -> None:
         "hello.per_month",
         "hello.about",
     }
+
+
+async def test_old_pins_are_tidied_up_by_its_job(
+    as_system: Acting, as_person: Acting, run_job: RunJob
+) -> None:
+    (anna,) = await _greeters(as_system, "Anna")
+    async with as_person(anna) as client:
+        made = await client.create("hello.greeting", {"text": "Fresh pin", "pinned": True})
+    state, said = await run_job("hello.unpin_old")
+    async with as_system() as client:
+        seen = await client.get("hello.greeting", made["sys_id"])
+    assert (state, said) == ("succeeded", "0 unpinned."), said  # as hello's own account
+    assert seen["pinned"] is True  # pinned today: stays

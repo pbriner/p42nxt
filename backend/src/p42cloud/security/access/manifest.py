@@ -46,6 +46,7 @@ PERSONAL = (
     "sys.saved_view",
     "sys.view_state",
     "sys.dashboard_layout",
+    "sys.related_layout",
 )
 MINE = {"field": "owner", "op": "eq", "value": "@me"}
 # Sessions and tokens are the person's own.
@@ -70,6 +71,10 @@ ROLES = [
             Grant("sys.invitation", ("read",), fields=("person", "kind", "expires", "used")),
             Grant("sys.theme", ALL),
             Grant("sys.widget_audience", ALL),
+            Grant("sys.job", ("read",)),
+            Grant("sys.schedule", ("read",)),
+            Grant("sys.schedule", ("write",), fields=("cron", "time_zone", "active", "missed")),
+            Grant("sys.job_run", ("read",)),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",

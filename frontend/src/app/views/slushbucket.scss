@@ -1,0 +1,117 @@
+.bucket {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  h3 {
+    font: var(--mat-sys-title-small);
+    margin: 0 0 6px;
+  }
+}
+
+.filter {
+  height: 36px;
+  padding: 0 10px;
+  margin-bottom: 6px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius-small);
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  &:focus {
+    outline: 2px solid var(--mat-sys-primary);
+  }
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  height: 280px;
+  overflow: auto;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius);
+  background: var(--app-card);
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: var(--app-radius-small);
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      background: var(--mat-sys-surface-container-high);
+    }
+
+    &.chosen {
+      background: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--mat-sys-primary);
+      outline-offset: -2px;
+    }
+
+    &.empty {
+      cursor: default;
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail {
+  color: var(--mat-sys-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+.moves {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.cdk-drag-preview {
+  box-shadow: var(--mat-sys-level3);
+  background: var(--app-card);
+  padding: 8px 10px;
+  border-radius: var(--app-radius-small);
+  list-style: none;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+@media (max-width: 599px) {
+  .bucket {
+    grid-template-columns: 1fr;
+  }
+
+  .moves {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .list {
+    height: 200px;
+  }
+}
