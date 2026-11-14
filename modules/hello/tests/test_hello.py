@@ -100,7 +100,11 @@ async def test_greetings_are_in_the_navigator(as_system: Acting) -> None:
         views = await client.list(
             "sys.list_view", where={"field": "name", "op": "eq", "value": "hello.greeting"}
         )
-    assert {r["name"] for r in items["records"]} == {"hello.greetings", "hello.greet"}
+    assert {r["name"] for r in items["records"]} == {
+        "hello.dashboard",
+        "hello.greetings",
+        "hello.greet",
+    }
     assert views["records"][0]["columns"] == ["text", "language", "author", "pinned", "created"]
 
 
@@ -149,3 +153,17 @@ async def test_a_team_greeting_needs_its_team(as_system: Acting, as_person: Acti
         )
     assert [e.field for e in refused.value.errors] == ["team"]
     assert made["team"] == team["sys_id"]
+
+
+async def test_its_dashboard_offers_its_widgets(as_system: Acting) -> None:
+    async with as_system() as client:
+        widgets = await client.list(
+            "sys.widget", where={"field": "module", "op": "eq", "value": "hello"}
+        )
+    assert {r["name"] for r in widgets["records"]} == {
+        "hello.greetings",
+        "hello.pinned",
+        "hello.by_language",
+        "hello.per_month",
+        "hello.about",
+    }

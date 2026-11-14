@@ -1,0 +1,152 @@
+@switch (kind()) {
+  @case ('bar') {
+    <ul class="bars" [class.compact]="compact()">
+      @for (p of points(); track $index) {
+        <li>
+          <button type="button" class="bar-row" [disabled]="!p.link" (click)="picked.emit(p)">
+            <span class="bar-head">
+              <span class="bar-label">{{ p.label }}</span>
+              <span class="bar-value">{{ format(p.value) }}</span>
+            </span>
+            <span class="track"><span class="bar" [style.width]="width(p)" [style.background]="accent()"></span></span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+  @case ('donut') {
+    <div class="donut">
+      <svg [attr.width]="size" [attr.height]="size" [attr.viewBox]="'0 0 ' + size + ' ' + size" aria-hidden="true">
+        <g [attr.transform]="'rotate(-90 ' + size / 2 + ' ' + size / 2 + ')'">
+          @for (s of slices(); track $index) {
+            <circle
+              class="slice"
+              [class.dim]="hover() !== null && hover() !== $index"
+              [attr.cx]="size / 2"
+              [attr.cy]="size / 2"
+              [attr.r]="radius"
+              fill="none"
+              [attr.stroke]="s.point.color"
+              [attr.stroke-width]="ring"
+              [attr.stroke-dasharray]="s.dash"
+              [attr.stroke-dashoffset]="s.offset"
+              (pointerenter)="hover.set($index)"
+              (pointerleave)="hover.set(null)"
+              (click)="s.point.link && picked.emit(s.point)"
+            />
+          }
+        </g>
+        <text [attr.x]="size / 2" [attr.y]="size / 2 - 2" text-anchor="middle" class="centre">
+          {{ compactNumber(sum()) }}
+        </text>
+        <text [attr.x]="size / 2" [attr.y]="size / 2 + 16" text-anchor="middle" class="caption">
+          {{ i18n.t('widget.total') }}
+        </text>
+      </svg>
+      <ul class="legend">
+        @for (p of points(); track $index) {
+          <li>
+            <button
+              type="button"
+              class="legend-row"
+              [disabled]="!p.link"
+              (pointerenter)="hover.set($index)"
+              (pointerleave)="hover.set(null)"
+              (click)="picked.emit(p)"
+            >
+              <span class="swatch" [style.background]="p.color"></span>
+              <span class="legend-label">{{ p.label }}</span>
+              <span class="muted">{{ format(p.value) }} · {{ share(p) }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+  @case ('column') {
+    <div class="columns">
+      <div class="column-area">
+        @for (p of points(); track $index; let last = $last) {
+          <button
+            type="button"
+            class="column"
+            [class.latest]="last"
+            [disabled]="!p.link"
+            [attr.aria-label]="p.label + ': ' + format(p.value)"
+            (pointerenter)="hover.set($index)"
+            (pointerleave)="hover.set(null)"
+            (click)="picked.emit(p)"
+          >
+            <span class="column-bar" [style.height]="height(p)" [style.background]="accent()"></span>
+          </button>
+        }
+      </div>
+      <div class="column-labels" aria-hidden="true">
+        @for (p of points(); track $index) {
+          <span>{{ labelled($index) ? p.label : '' }}</span>
+        }
+      </div>
+      @if (hover() !== null) {
+        <div class="tip" role="status">
+          {{ points()[hover()!]?.label }}: {{ format(points()[hover()!]?.value ?? 0) }}
+        </div>
+      }
+    </div>
+  }
+  @case ('line') {
+    <div
+      class="line"
+      #box
+      (pointermove)="track($event, box)"
+      (pointerleave)="hover.set(null)"
+      [style.height.px]="lineHeight"
+    >
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        @for (g of grid(); track $index) {
+          <line class="grid" x1="0" x2="100" [attr.y1]="g.y" [attr.y2]="g.y" vector-effect="non-scaling-stroke" />
+        }
+        @if (zero() !== null) {
+          <line class="zero" x1="0" x2="100" [attr.y1]="zero()" [attr.y2]="zero()" vector-effect="non-scaling-stroke" />
+        }
+        <polygon [attr.points]="area()" [attr.fill]="accent()" class="area" />
+        <polyline
+          [attr.points]="line()"
+          fill="none"
+          [attr.stroke]="accent()"
+          stroke-width="2"
+          vector-effect="non-scaling-stroke"
+        />
+        @if (hover() !== null) {
+          <line
+            class="cross"
+            [attr.x1]="at(hover()!).x"
+            [attr.x2]="at(hover()!).x"
+            y1="0"
+            y2="100"
+            vector-effect="non-scaling-stroke"
+          />
+        }
+      </svg>
+      @for (g of grid(); track $index) {
+        <span class="y-label" [style.top.%]="g.y">{{ compactNumber(g.value) }}</span>
+      }
+      @if (hover() !== null) {
+        <span
+          class="dot"
+          [style.left.%]="at(hover()!).x"
+          [style.top.%]="at(hover()!).y"
+          [style.background]="accent()"
+        ></span>
+        <div class="tip" role="status">
+          {{ points()[hover()!]?.label }}: {{ format(points()[hover()!]?.value ?? 0) }}
+        </div>
+      }
+    </div>
+    @if (points().length) {
+      <div class="x-labels" aria-hidden="true">
+        <span>{{ points()[0]!.label }}</span>
+        <span>{{ points()[points().length - 1]!.label }}</span>
+      </div>
+    }
+  }
+}

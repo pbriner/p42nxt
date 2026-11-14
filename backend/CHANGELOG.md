@@ -2,6 +2,16 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.11.0
+
+- Totals over a table (`GET …/aggregate`): count, sum, average, smallest or largest, overall or
+  per group (dates per day, week, month or year), with the person's access applied.
+- Widgets (`sys.widget`) that modules declare (`Widget`): figures with target and trend,
+  charts, lists, text; shown per group (`sys.widget_audience`). Dashboards for home and each
+  module (`GET /api/v1/dashboards/<name>`), arranged by each person (`sys.dashboard_layout`).
+- In the app: dashboards with customizing, a widget picker, and plain SVG charts (bars, donut,
+  columns, line) that also show as tables.
+
 ## 0.10.0
 
 - UI actions (`sys.ui_action`): buttons and menu entries modules declare, offered per record

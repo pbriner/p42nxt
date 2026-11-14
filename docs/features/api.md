@@ -21,6 +21,8 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `DELETE /api/v1/tables/<name>` | Retire one of them |
 | `POST /api/v1/<module>/<table>/<id>/action/<name>` | Run a UI action on a record (`screens.md`) |
 | `POST /api/v1/<module>/<table>/action/<name>` | Run it on several (`ids`), a result per record |
+| `GET /api/v1/<module>/<table>/aggregate` | Totals (below) |
+| `GET /api/v1/dashboards/<name>` | A dashboard for the caller (`screens.md`) |
 | `GET /api/v1/navigation` | The navigator: what the caller may open (`screens.md`) |
 | `GET /api/v1/theme` | A theme's colours and look (anyone) |
 | `GET /api/v1/search` | Every list the caller may read, searched at once |
@@ -49,6 +51,13 @@ may use (on some records), and every field (system fields too) with its type, la
 options (choices with their labels), whether it's required or unique, its default, whether it
 can be filtered (and its kind: which conditions apply), and whether the caller may read, set or
 change it; and `referenced_by`, the tables pointing to it through fields the caller may read.
+
+**Totals** (`/aggregate`) take the same filters as lists, a `measure` (`count`, or `sum`, `avg`,
+`min`, `max` of a number `field`), and optionally a `group` (a choice, reference, yes/no, text
+or date field; dates per `period`: `day`, `week`, `month`, `year`) with a `limit` of groups (1
+to 50). They answer the `total`, the `groups` (key, label, value) and `other` (what the groups
+past the limit add up to). Only records the caller may read count, and a field they may not read
+counts as empty.
 
 **Lists** take `limit` (1 to 500, default 50), `after` (the `next` of the previous page), `sort`
 (`-price,name`), `count`, `deleted`, and filters in two forms, both ANDed:

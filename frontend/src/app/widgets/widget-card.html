@@ -1,0 +1,131 @@
+<mat-card class="card" appearance="outlined" [class.filled]="widget().filled" [style.--accent]="accent()">
+  @if (busy()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+  <div class="head">
+    <div class="titles">
+      <h3 class="title">{{ widget().title }}</h3>
+      @if (subtitle()) {
+        <p class="subtitle">{{ subtitle() }}</p>
+      }
+    </div>
+    @if (widget().icon) {
+      <span class="tile" aria-hidden="true"
+        ><span class="material-symbols-outlined">{{ widget().icon }}</span></span
+      >
+    }
+  </div>
+
+  <div class="body">
+    @if (failed()) {
+      <p class="muted">{{ i18n.t('widget.failed') }}</p>
+    } @else {
+      @switch (widget().kind) {
+        @case ('text') {
+          <p class="text">{{ widget().text }}</p>
+        }
+        @case ('figure') {
+          <a class="figure" [routerLink]="listLink().commands" [queryParams]="listLink().query">{{
+            format(value())
+          }}</a>
+          @if (reached() !== null) {
+            <div
+              class="meter"
+              role="meter"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              [attr.aria-valuenow]="reached()"
+              [attr.aria-label]="i18n.t('widget.reached', { p: reached()!, target: format(target()) })"
+            >
+              <span [style.width.%]="reached()! > 100 ? 100 : reached()"></span>
+            </div>
+            <p class="muted small">{{ i18n.t('widget.reached', { p: reached()!, target: format(target()) }) }}</p>
+          }
+          @if (trend().length > 1) {
+            <svg class="spark" width="120" height="48" viewBox="0 0 120 48" role="img" [attr.aria-label]="trendLabel()">
+              <polygon [attr.points]="spark().area" class="spark-area" />
+              <polyline [attr.points]="spark().line" fill="none" stroke-width="2" class="spark-line" />
+            </svg>
+          }
+        }
+        @case ('chart') {
+          @if (dated()) {
+            <div class="ranges" role="group" [attr.aria-label]="i18n.t('widget.range')">
+              @for (r of ['3m', '1y', 'all']; track r) {
+                <button
+                  type="button"
+                  class="range"
+                  [class.on]="range() === r"
+                  [attr.aria-pressed]="range() === r"
+                  (click)="range.set($any(r))"
+                >
+                  {{ i18n.t($any('widget.range_' + r)) }}
+                </button>
+              }
+            </div>
+          }
+          @if (!points().length && !busy()) {
+            <p class="muted">{{ i18n.t('widget.nothing') }}</p>
+          } @else if (asTable()) {
+            <table class="values">
+              <thead>
+                <tr>
+                  <th scope="col">{{ subtitle() }}</th>
+                  <th scope="col">{{ i18n.t('widget.value') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of points(); track $index) {
+                  <tr>
+                    <th scope="row">{{ p.label }}</th>
+                    <td>{{ format(p.value) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <app-chart
+              [kind]="widget().chart ?? 'bar'"
+              [points]="points()"
+              [accent]="widget().filled ? '#ffffff' : accent()"
+              [total]="value()"
+              [compact]="compact()"
+              (picked)="open($event)"
+            />
+          }
+        }
+        @case ('list') {
+          @if (!lines().length && !busy()) {
+            <p class="muted">{{ i18n.t('widget.nothing') }}</p>
+          }
+          <ul class="lines">
+            @for (line of lines(); track line.id) {
+              <li>
+                <a [routerLink]="['/form', widget().table, line.id]">
+                  <span class="line-title">{{ line.title }}</span>
+                  @if (line.detail) {
+                    <span class="line-detail">{{ line.detail }}</span>
+                  }
+                </a>
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+  </div>
+
+  @if (widget().kind !== 'text') {
+    <div class="foot">
+      @if (widget().kind === 'chart' && points().length) {
+        <button mat-button type="button" (click)="asTable.set(!asTable())">
+          {{ asTable() ? i18n.t('widget.chart') : i18n.t('widget.table') }}
+        </button>
+      }
+      <span class="spacer"></span>
+      <a mat-button [routerLink]="listLink().commands" [queryParams]="listLink().query">{{
+        i18n.t('widget.show_all')
+      }}</a>
+    </div>
+  }
+</mat-card>

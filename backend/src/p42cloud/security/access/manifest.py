@@ -38,8 +38,15 @@ SCREENS = (
     "sys.ui_action",
     "sys.form_rule",
     "sys.theme",
+    "sys.widget",
 )
-PERSONAL = ("sys.preference", "sys.favorite", "sys.saved_view", "sys.view_state")
+PERSONAL = (
+    "sys.preference",
+    "sys.favorite",
+    "sys.saved_view",
+    "sys.view_state",
+    "sys.dashboard_layout",
+)
 MINE = {"field": "owner", "op": "eq", "value": "@me"}
 # Sessions and tokens are the person's own.
 YOURS = {"field": "person", "op": "eq", "value": "@me"}
@@ -62,6 +69,7 @@ ROLES = [
             Grant("sys.setting", ("read", "write")),
             Grant("sys.invitation", ("read",), fields=("person", "kind", "expires", "used")),
             Grant("sys.theme", ALL),
+            Grant("sys.widget_audience", ALL),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",

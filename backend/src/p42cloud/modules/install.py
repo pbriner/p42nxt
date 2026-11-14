@@ -31,6 +31,7 @@ from p42cloud.ui.navigation.service import write_navigation
 from p42cloud.ui.rules.service import write_rules
 from p42cloud.ui.themes.service import write_themes
 from p42cloud.ui.views.service import write_views
+from p42cloud.ui.widgets.service import write_widgets
 
 MAX_PAGE_BYTES = 1_000_000
 MAX_PAGES = 500
@@ -254,6 +255,7 @@ async def install_modules(
             await write_forms(conn, catalog, module.id, module.forms)
             await write_actions(conn, catalog, module.id, module.actions)
             await write_rules(conn, catalog, module.id, module.rules)
+            await write_widgets(conn, catalog, module.id, module.widgets)
             await write_navigation(conn, catalog, module.id, module.navigation)
             await write_themes(conn, module.id, module.themes)
             await settings.write(conn, module.id, module.settings)

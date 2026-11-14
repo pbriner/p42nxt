@@ -28,6 +28,11 @@ export const routes: Routes = [
         title: TITLE,
       },
       {
+        path: 'dashboard/:module',
+        loadComponent: () => import('./pages/module-dashboard').then((m) => m.ModuleDashboard),
+        title: TITLE,
+      },
+      {
         path: 'form/:table/:id',
         loadComponent: () => import('./views/form-page').then((m) => m.FormPage),
         title: TITLE,

@@ -1,0 +1,123 @@
+<div class="page">
+  <header class="page-header">
+    <h1>{{ title() }}</h1>
+    <span class="spacer"></span>
+    @if (editing()) {
+      <button mat-stroked-button type="button" (click)="add()">
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>{{ i18n.t('dash.add') }}
+      </button>
+      <button mat-button type="button" (click)="reset()">{{ i18n.t('dash.reset') }}</button>
+      <button mat-button type="button" (click)="editing.set(false)">{{ i18n.t('common.cancel') }}</button>
+      <button mat-flat-button type="button" (click)="save()">{{ i18n.t('dash.save') }}</button>
+    } @else if (board()) {
+      <button mat-stroked-button type="button" (click)="customize()">
+        <span class="material-symbols-outlined" aria-hidden="true">dashboard_customize</span
+        >{{ i18n.t('dash.customize') }}
+      </button>
+    }
+  </header>
+  @if (busy()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (fresh().length && !editing()) {
+    <div class="notice" role="status">
+      <span>{{ fresh().length === 1 ? i18n.t('dash.new_one') : i18n.t('dash.new_many', { n: fresh().length }) }}</span>
+      <button mat-button type="button" (click)="add()">{{ i18n.t('dash.add_link') }}</button>
+    </div>
+  }
+
+  @if (board() && !items().length) {
+    <p class="muted empty">
+      {{ i18n.t('dash.empty') }}
+      <button mat-button type="button" (click)="add()">{{ i18n.t('dash.add') }}</button>
+    </p>
+  }
+
+  <div
+    class="grid"
+    cdkDropList
+    cdkDropListOrientation="mixed"
+    [cdkDropListDisabled]="!editing()"
+    (cdkDropListDropped)="dropped($event)"
+  >
+    @for (item of items(); track item.widget; let i = $index, last = $last) {
+      @if (def(item.widget); as w) {
+        <div
+          class="cell"
+          [attr.data-size]="narrow() ? 's' : item.size"
+          [class.editing]="editing()"
+          cdkDrag
+          [cdkDragDisabled]="!editing()"
+        >
+          @if (editing()) {
+            <div class="edit-bar">
+              <span
+                class="material-symbols-outlined handle"
+                cdkDragHandle
+                role="img"
+                [attr.aria-label]="i18n.t('dash.drag')"
+                [matTooltip]="i18n.t('dash.drag')"
+                >drag_indicator</span
+              >
+              <button
+                mat-icon-button
+                type="button"
+                [disabled]="i === 0"
+                [attr.aria-label]="i18n.t('dash.earlier', { title: w.title })"
+                (click)="move(i, -1)"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+              </button>
+              <button
+                mat-icon-button
+                type="button"
+                [disabled]="last"
+                [attr.aria-label]="i18n.t('dash.later', { title: w.title })"
+                (click)="move(i, 1)"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+              </button>
+              @if (w.sizes.length > 1) {
+                <div class="sizes" role="group" [attr.aria-label]="i18n.t('dash.size', { title: w.title })">
+                  @for (s of w.sizes; track s) {
+                    <button
+                      type="button"
+                      class="size"
+                      [class.on]="item.size === s"
+                      [attr.aria-pressed]="item.size === s"
+                      (click)="resize(i, s)"
+                    >
+                      {{ sizeLabel(s) }}
+                    </button>
+                  }
+                </div>
+              }
+              <span class="spacer"></span>
+              @if (w.shown === 'mandatory') {
+                <span
+                  class="material-symbols-outlined lock"
+                  role="img"
+                  [attr.aria-label]="i18n.t('dash.required')"
+                  [matTooltip]="i18n.t('dash.required')"
+                  >lock</span
+                >
+              } @else {
+                <button
+                  mat-icon-button
+                  type="button"
+                  [attr.aria-label]="i18n.t('dash.remove', { title: w.title })"
+                  (click)="remove(i)"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                </button>
+              }
+            </div>
+          }
+          <app-widget-card [widget]="w" [compact]="item.size === 's'" />
+          <div class="placeholder" *cdkDragPlaceholder></div>
+        </div>
+      }
+    }
+  </div>
+</div>

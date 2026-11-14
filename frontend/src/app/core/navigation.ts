@@ -90,7 +90,7 @@ export function target(item: NavItem): { commands: string[]; query: Record<strin
 }
 
 /** A filter as list parameters: plain conditions as chips, anything else as a fixed filter. */
-function filterQuery(filter: unknown): Record<string, string> {
+export function filterQuery(filter: unknown): Record<string, string> {
   if (!filter || typeof filter !== 'object') {
     return {};
   }
