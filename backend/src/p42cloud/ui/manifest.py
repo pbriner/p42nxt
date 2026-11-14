@@ -75,7 +75,17 @@ VIEWS = (
         sort=("-created",),
         search=("title", "message"),
     ),
-    ListView("sys.notification_kind", ("label", "name", "module"), sort=("label",)),
+    ListView("sys.notification_kind", ("label", "name", "module", "channels"), sort=("label",)),
+    ListView(
+        "sys.notification_delivery",
+        ("person", "channel", "state", "attempts", "sent", "message"),
+        sort=("-created",),
+        searchable=False,
+    ),
+    ListView("sys.person_channel", ("channel", "state", "name", "full_text"), searchable=False),
+    ListView(
+        "sys.notification_subscription", ("kind", "channel", "on"), sort=("kind",), searchable=False
+    ),
     ListView("sys.connection_secret", ("name", "connection", "updated"), searchable=False),
     ListView(
         "sys.job_run",
@@ -131,6 +141,13 @@ NAVIGATION = (
             ),
             Item(
                 "notification_kinds", "Notification kinds", "sys.notification_kind", icon="campaign"
+            ),
+            Item(
+                "notification_deliveries",
+                "Notification deliveries",
+                "sys.notification_delivery",
+                icon="outgoing_mail",
+                keywords=("telegram",),
             ),
         ),
     ),

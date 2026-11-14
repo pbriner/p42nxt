@@ -106,3 +106,6 @@ class ConnectionType:
     api_key_header: str = "X-Api-Key"
     sign: Sign | None = None  # signed: adds headers to each request from the secrets
     check: Check | None = None  # whether a connection works; says what it found
+    # One connection for the whole installation (a bot, a company system), set up by
+    # administrators and used by the type's module only; not one per person.
+    shared: bool = False

@@ -5,6 +5,7 @@ plus everyone holding the roles named (through their groups, and roles that incl
 active people only, never service accounts.
 """
 
+import json
 import re
 import uuid
 from collections.abc import Iterable
@@ -16,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from p42cloud.data.declared import label_of, sync
 from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import FieldError, Problem
-from p42cloud.services.notifications.models import SEVERITIES, NotificationKind
+from p42cloud.services.notifications.models import CHANNELS, SEVERITIES, NotificationKind
 
 KIND_NAME = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 MAX_TITLE = 200
@@ -43,19 +44,53 @@ async def write_kinds(
         for k in kinds
         if not KIND_NAME.match(k.name)
     ]
+    found += [
+        FieldError(
+            f"notification_kinds.{k.name}", "bad_channel", f"Channels: {', '.join(CHANNELS)}."
+        )
+        for k in kinds
+        if not set(k.channels) <= set(CHANNELS)
+    ]
     if len({k.name for k in kinds}) != len(kinds):
         found.append(FieldError("notification_kinds", "duplicate", "A kind's name is used twice."))
     if found:
         raise Problem(422, "invalid_kinds", "The notification kinds can't be used.", errors=found)
+    before = {
+        row.name: (row.channels, row.declared_channels)
+        for row in await conn.execute(
+            text(
+                "SELECT name, channels, declared_channels FROM sys.notification_kind"
+                " WHERE module = :m"
+            ),
+            {"m": module},
+        )
+    }
     rows = [
         {
             "name": f"{module}.{k.name}",
             "label": label_of(k.label),
             "description": label_of(k.description) if k.description is not None else None,
+            "declared_channels": list(k.channels),
         }
         for k in kinds
     ]
-    await sync(conn, "sys.notification_kind", module, rows, frozenset({"label", "description"}))
+    await sync(
+        conn,
+        "sys.notification_kind",
+        module,
+        rows,
+        frozenset({"label", "description", "declared_channels"}),
+    )
+    for row in rows:
+        chosen, suggested = before.get(row["name"], (None, None))
+        # A new kind, or one whose channels nobody changed, takes the module's suggestion.
+        if chosen is None or chosen == suggested:
+            await conn.execute(
+                text(
+                    "UPDATE sys.notification_kind SET channels = CAST(:c AS jsonb) WHERE name = :n"
+                ),
+                {"c": json.dumps(row["declared_channels"]), "n": row["name"]},
+            )
 
 
 # Holders of any of the roles: through a group holding it, or a role that includes it.
@@ -136,22 +171,49 @@ async def send(  # noqa: PLR0913 - what a notification says, all by keyword
         raise Problem(422, "too_many", f"At most {MAX_RECIPIENTS} people at once.")
     if not found:
         return 0
+    made = list(
+        await conn.execute(
+            text(
+                "INSERT INTO sys.notification (person, kind, title, message, link, severity, read)"
+                " SELECT p, :kind, :title, :message, :link, :severity, false"
+                " FROM unnest(CAST(:people AS uuid[])) p RETURNING sys_id, person"
+            ),
+            {
+                "people": found,
+                "kind": kind,
+                "title": title.strip(),
+                "message": message,
+                "link": target,
+                "severity": severity,
+            },
+        )
+    )
+    await _queue_deliveries(conn, kind, [r.sys_id for r in made], [r.person for r in made])
+    return len(found)
+
+
+async def _queue_deliveries(
+    conn: AsyncConnection, kind: str, notifications: list[uuid.UUID], people: list[uuid.UUID]
+) -> None:
+    """A delivery per linked channel the person gets this kind on: their choice, else the
+    kind's channels by default."""
     await conn.execute(
         text(
-            "INSERT INTO sys.notification (person, kind, title, message, link, severity, read)"
-            " SELECT p, :kind, :title, :message, :link, :severity, false"
-            " FROM unnest(CAST(:people AS uuid[])) p"
+            """
+INSERT INTO sys.notification_delivery (notification, person, channel, state, attempts, not_before)
+SELECT n.id, n.person, pc.channel, 'pending', 0, now()
+FROM unnest(CAST(:ids AS uuid[]), CAST(:people AS uuid[])) AS n(id, person)
+JOIN sys.person_channel pc ON pc.person = n.person AND pc.state = 'linked'
+    AND pc.deleted IS NULL
+LEFT JOIN sys.notification_subscription s ON s.person = n.person AND s.kind = :kind
+    AND s.channel = pc.channel AND s.deleted IS NULL
+WHERE COALESCE(s."on", EXISTS (
+    SELECT 1 FROM sys.notification_kind k WHERE k.name = :kind AND k.deleted IS NULL
+    AND k.channels ? pc.channel))
+"""
         ),
-        {
-            "people": found,
-            "kind": kind,
-            "title": title.strip(),
-            "message": message,
-            "link": target,
-            "severity": severity,
-        },
+        {"ids": notifications, "people": people, "kind": kind},
     )
-    return len(found)
 
 
 async def clean_up(conn: AsyncConnection, now: datetime | None = None) -> int:

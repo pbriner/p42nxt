@@ -1,16 +1,19 @@
 """What notifications add to the core: their tables, the core's own kinds and the cleanup job."""
 
 from p42cloud.services.jobs.models import Job, JobRun, Schedule
-from p42cloud.services.notifications import models
+from p42cloud.services.notifications import models, telegram
 from p42cloud.services.notifications.models import NotificationKind
 from p42cloud.services.notifications.service import clean_up
 
 TABLES = models.TABLES
+HOOKS = telegram.TABLE_HOOKS
+CONNECTION_TYPES = (telegram.BOT,)
 KINDS = (
     NotificationKind(
         "job_failed",
         "A scheduled job fails",
         "A schedule's job failed after its last try, having worked before.",
+        channels=("telegram",),
     ),
 )
 

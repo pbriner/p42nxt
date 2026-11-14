@@ -9,6 +9,7 @@ import { Api, describe } from '../core/api';
 import { textIn } from '../core/format';
 import { I18n } from '../core/i18n';
 import { PAGE_SIZES, Preference, Preferences } from '../core/preferences';
+import { ProfileNotifications } from './profile-notifications';
 
 interface ThemeChoice {
   name: string;
@@ -19,7 +20,13 @@ interface ThemeChoice {
 /** The person's own settings, saved as soon as they change one. */
 @Component({
   selector: 'app-profile',
-  imports: [MatButtonToggleModule, MatCardModule, MatFormFieldModule, MatSelectModule],
+  imports: [
+    MatButtonToggleModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    ProfileNotifications,
+  ],
   template: `
     <div class="page">
       <header class="page-header">
@@ -103,6 +110,8 @@ interface ThemeChoice {
             </mat-form-field>
           </mat-card-content>
         </mat-card>
+
+        <app-profile-notifications />
       </div>
     </div>
   `,

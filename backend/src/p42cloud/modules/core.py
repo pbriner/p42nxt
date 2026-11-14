@@ -68,6 +68,7 @@ CORE = Module(
         *ui.HOOKS,
         *jobs.HOOKS,
         *connection_service.TABLE_HOOKS,
+        *notifications.HOOKS,
     ),
     docs=DOCS if DOCS.is_dir() else None,
     description="People, access, sign-in and the platform itself.",
@@ -81,6 +82,7 @@ CORE = Module(
     widgets=ui.WIDGETS,
     actions=ui.ACTIONS,
     notification_kinds=notifications.KINDS,
+    connection_types=notifications.CONNECTION_TYPES,
     jobs=(
         *jobs.JOBS,
         *notifications.JOBS,

@@ -2,6 +2,19 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.17.0
+
+- Telegram as a notification channel: the installation's bot as a shared connection
+  (`sys.telegram`); people link their chat from the profile with a one-time link (only its
+  hash is kept, for 15 minutes); `/stop` or Disconnect unlinks, and so does a blocked bot.
+- Notification kinds have default channels (`NotificationKind(channels=...)`, administrators may
+  change them; upgrades keep their change); each person chooses per kind in the profile.
+- Deliveries are queued with the notification and sent by the worker, tried again with growing
+  waits or as Telegram asks; only the title unless the person wants the whole message.
+- Shared connection types (`ConnectionType(shared=True)`): one per installation, set up by
+  administrators.
+- Failed schedules are on Telegram by default.
+
 ## 0.16.0
 
 - Notifications (`NotificationKind`, `sys.notification_kind`, `sys.notification`): a module

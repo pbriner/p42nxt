@@ -142,6 +142,8 @@ async def _check_connection(change: Change) -> None:
         _, kind = _type(change.values.get("type"))
         change.values.setdefault("base_url", kind.base_url or None)
         change.values["health"] = "unknown"
+        if kind.shared:
+            await _check_shared(change, str(change.values.get("type")))
     elif "type" in change.values:
         raise _invalid("type", "A connection stays of its type.")
     else:
@@ -156,6 +158,19 @@ async def _check_connection(change: Change) -> None:
         change.values
     ) and change.operation != "create":
         raise _invalid("health", "A connection's health comes from its check.")
+
+
+async def _check_shared(change: Change, type_name: str) -> None:
+    """The installation's one connection of a type: only administrators (who may change
+    settings) set it up, and there's only one."""
+    if not change.records.access.of("sys.setting", "write"):
+        raise Problem(403, "forbidden", "Only administrators set up this connection.")
+    taken = await change.records.conn.scalar(
+        text("SELECT count(*) FROM sys.connection WHERE type = :t AND deleted IS NULL"),
+        {"t": type_name},
+    )
+    if taken:
+        raise _invalid("type", "The installation has this connection already.")
 
 
 def purpose(connection: uuid.UUID, name: str) -> str:
@@ -270,7 +285,21 @@ async def connect(
     """A ready client for someone's connection of a type (the person's own by default)."""
     module, kind = _type(type_name)
     who = owner or records.situation.person
-    if not _may_use(records, module, who):
+    if kind.shared:
+        # Whoever set it up: it's the installation's, used by the type's module only.
+        await switch_role(records.conn, "sys")
+        who = (
+            await records.conn.scalar(
+                text(
+                    "SELECT owner FROM sys.connection WHERE type = :t AND deleted IS NULL"
+                    " ORDER BY created LIMIT 1"
+                ),
+                {"t": type_name},
+            )
+        ) or who
+        if not _may_use(records, module, who):
+            raise Problem(403, "forbidden", "Only the platform uses this connection.")
+    elif not _may_use(records, module, who):
         raise Problem(403, "forbidden", "You may not use this connection.")
     conn = records.conn
     await switch_role(conn, "sys")
