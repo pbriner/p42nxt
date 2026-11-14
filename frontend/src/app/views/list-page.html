@@ -1,0 +1,366 @@
+@if (failed(); as problem) {
+  <app-problem-state [status]="problem.status" [detail]="problem.detail ?? problem.title" />
+} @else {
+  <div class="page list">
+    <header class="page-header">
+      <h1>{{ title() }}</h1>
+      @if (table()?.operations?.['create']) {
+        <button mat-flat-button type="button" (click)="create()">
+          <span class="material-symbols-outlined" aria-hidden="true">add</span>{{ i18n.t('list.new') }}
+        </button>
+      }
+    </header>
+
+    <div class="toolbar">
+      <!-- Named by the view it shows (WCAG 2.5.3); the tooltip says what it does. -->
+      <button
+        mat-stroked-button
+        type="button"
+        class="view-button"
+        [matMenuTriggerFor]="viewMenu"
+        [matTooltip]="i18n.t('list.choose_view')"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">view_list</span>
+        <span class="view-name">{{ active()?.name ?? i18n.t('list.default_view') }}</span>
+        @if (changed()) {
+          <span aria-hidden="true">•</span>
+        }
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_drop_down</span>
+      </button>
+      <button mat-stroked-button type="button" (click)="addFilter()">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>{{ i18n.t('list.add_filter') }}
+      </button>
+      @if (!cards()) {
+        <button mat-stroked-button type="button" (click)="chooseColumns()">
+          <span class="material-symbols-outlined" aria-hidden="true">view_column</span>{{ i18n.t('list.columns') }}
+        </button>
+      }
+    </div>
+
+    <mat-menu #viewMenu="matMenu">
+      <button mat-menu-item type="button" (click)="apply(null)">
+        <span class="material-symbols-outlined" aria-hidden="true">{{
+          active() ? 'radio_button_unchecked' : 'radio_button_checked'
+        }}</span>
+        {{ i18n.t('list.default_view') }}
+      </button>
+      @for (s of saved(); track s.sys_id) {
+        <button mat-menu-item type="button" (click)="apply(s)">
+          <span class="material-symbols-outlined" aria-hidden="true">{{
+            active()?.sys_id === s.sys_id ? 'radio_button_checked' : 'radio_button_unchecked'
+          }}</span>
+          {{ s.name }}
+          @if (s.is_default) {
+            <span class="muted">· {{ i18n.t('list.my_default') }}</span>
+          }
+        </button>
+      }
+      <hr class="divider" />
+      @if (active() && changed()) {
+        <button mat-menu-item type="button" (click)="saveChanges()">
+          {{ i18n.t('list.save_changes', { name: active()!.name }) }}
+        </button>
+      }
+      <button mat-menu-item type="button" (click)="saveAs()">{{ i18n.t('list.save_as') }}</button>
+      @if (active(); as view) {
+        <button mat-menu-item type="button" (click)="toggleDefault()">
+          {{ view.is_default ? i18n.t('list.not_default') : i18n.t('list.open_default') }}
+        </button>
+        <button mat-menu-item type="button" (click)="deleteView()">{{ i18n.t('list.delete_view') }}</button>
+      }
+      <button mat-menu-item type="button" (click)="reset()">{{ i18n.t('list.reset') }}</button>
+    </mat-menu>
+
+    @if (conditions().length || search()) {
+      <mat-chip-set class="chips" [attr.aria-label]="i18n.t('list.filter_label')">
+        @if (search()) {
+          <mat-chip (removed)="clearSearch()">
+            <span class="material-symbols-outlined chip-icon" aria-hidden="true">search</span>
+            {{ i18n.t('list.contains', { q: search() }) }}
+            <button
+              matChipRemove
+              [attr.aria-label]="i18n.t('list.remove_condition', { text: i18n.t('list.contains', { q: search() }) })"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">cancel</span>
+            </button>
+          </mat-chip>
+        }
+        @for (c of conditions(); track $index) {
+          <mat-chip (removed)="removeCondition($index)">
+            {{ chip(c) }}
+            <button matChipRemove [attr.aria-label]="i18n.t('list.remove_condition', { text: chip(c) })">
+              <span class="material-symbols-outlined" aria-hidden="true">cancel</span>
+            </button>
+          </mat-chip>
+        }
+      </mat-chip-set>
+    }
+
+    @if (selected().size) {
+      <div class="bulk" role="region" [attr.aria-label]="i18n.t('list.selected', { n: selected().size })">
+        <span>{{ i18n.t('list.selected', { n: selected().size }) }}</span>
+        <button mat-stroked-button type="button" (click)="updateSelected()">
+          {{ i18n.t('list.update_selected') }}
+        </button>
+        <button mat-button type="button" (click)="selectAll(false)">{{ i18n.t('list.clear_selection') }}</button>
+      </div>
+    }
+
+    <div class="box" [class.card-box]="cards()">
+      @if (busy()) {
+        <mat-progress-bar mode="indeterminate" class="progress" />
+      }
+      <div class="scroll">
+        @if (cards()) {
+          <ul class="cards">
+            @for (row of page()?.records ?? []; track row.sys_id) {
+              <li
+                class="card"
+                tabindex="0"
+                [attr.aria-label]="rowName(row)"
+                (click)="openRecord(row)"
+                (keydown.enter)="openRecord(row)"
+              >
+                @if (columns()[0]; as name) {
+                  <div class="card-title" (contextmenu)="cellMenu($event, row, name)">{{ value(row, name) }}</div>
+                }
+                @if (columns()[1]; as name) {
+                  <div class="card-main" [attr.data-tone]="tone(row, name)" (contextmenu)="cellMenu($event, row, name)">
+                    {{ value(row, name) }}
+                  </div>
+                }
+                <div class="card-meta">
+                  @for (name of cardMeta(); track name) {
+                    @if (tone(row, name) !== null || fields().get(name)?.kind === 'choice') {
+                      <span [attr.data-tone]="tone(row, name)" (contextmenu)="cellMenu($event, row, name)">{{
+                        value(row, name)
+                      }}</span>
+                    } @else {
+                      <span (contextmenu)="cellMenu($event, row, name)">{{ label(name) }}: {{ value(row, name) }}</span>
+                    }
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <table>
+            <thead>
+              <tr>
+                @if (selectable()) {
+                  <th class="select" scope="col">
+                    <mat-checkbox
+                      [checked]="allSelected()"
+                      [indeterminate]="selected().size > 0 && !allSelected()"
+                      [aria-label]="i18n.t('list.select_all')"
+                      (change)="selectAll($event.checked)"
+                    />
+                  </th>
+                }
+                @for (name of columns(); track name) {
+                  <th
+                    scope="col"
+                    [attr.aria-sort]="sortable(name) ? direction(name) : null"
+                    [class.number]="numeric(name)"
+                    (contextmenu)="headerMenu($event, name)"
+                  >
+                    @if (sortable(name)) {
+                      <button type="button" class="sort" (click)="sortBy(name)">
+                        <span
+                          class="material-symbols-outlined sort-icon"
+                          [class.on]="direction(name) !== 'none'"
+                          aria-hidden="true"
+                          >{{
+                            direction(name) === 'ascending'
+                              ? 'arrow_upward'
+                              : direction(name) === 'descending'
+                                ? 'arrow_downward'
+                                : 'unfold_more'
+                          }}</span
+                        >
+                        {{ label(name) }}
+                      </button>
+                    } @else {
+                      <span class="sort">{{ label(name) }}</span>
+                    }
+                  </th>
+                }
+                <th class="actions" scope="col">
+                  <span class="cdk-visually-hidden">{{ i18n.t('list.open') }}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of page()?.records ?? []; track row.sys_id) {
+                <tr [class.chosen]="selected().has(row.sys_id)" (click)="openRecord(row)">
+                  @if (selectable()) {
+                    <td class="select" (click)="$event.stopPropagation()">
+                      <mat-checkbox
+                        [checked]="selected().has(row.sys_id)"
+                        [aria-label]="i18n.t('list.select_row', { name: rowName(row) })"
+                        (change)="toggle(row, $event.checked)"
+                      />
+                    </td>
+                  }
+                  @for (name of columns(); track name) {
+                    <td
+                      [class.number]="numeric(name)"
+                      [attr.data-tone]="tone(row, name)"
+                      (contextmenu)="cellMenu($event, row, name)"
+                    >
+                      {{ value(row, name) }}
+                    </td>
+                  }
+                  <td class="actions" (click)="$event.stopPropagation()">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      [attr.aria-label]="
+                        (can(row, 'write') ? i18n.t('list.edit') : i18n.t('list.open')) + ': ' + rowName(row)
+                      "
+                      [matTooltip]="can(row, 'write') ? i18n.t('list.edit') : i18n.t('list.open')"
+                      (click)="openRecord(row)"
+                    >
+                      <span class="material-symbols-outlined filled" aria-hidden="true">{{
+                        can(row, 'write') ? 'edit' : 'visibility'
+                      }}</span>
+                    </button>
+                    @if (can(row, 'delete')) {
+                      <button
+                        mat-icon-button
+                        type="button"
+                        class="danger"
+                        [attr.aria-label]="i18n.t('list.delete') + ': ' + rowName(row)"
+                        [matTooltip]="i18n.t('list.delete')"
+                        (click)="remove(row)"
+                      >
+                        <span class="material-symbols-outlined filled" aria-hidden="true">delete</span>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+        @if (page() && !page()!.records.length) {
+          <p class="empty muted">{{ none() }}</p>
+        }
+        @if (error(); as message) {
+          <p class="empty error-text" role="alert">{{ message }}</p>
+        }
+      </div>
+      <footer class="pager">
+        <span>{{ range() }}</span>
+        <button
+          mat-icon-button
+          type="button"
+          [attr.aria-label]="i18n.t('list.previous')"
+          [disabled]="!first()"
+          (click)="previous()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+        </button>
+        <button
+          mat-icon-button
+          type="button"
+          [attr.aria-label]="i18n.t('list.next')"
+          [disabled]="!page()?.next"
+          (click)="next()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- The right-click menus open exactly at the pointer. -->
+  <button
+    type="button"
+    class="menu-anchor"
+    tabindex="-1"
+    aria-hidden="true"
+    [style.left.px]="menuAt().x"
+    [style.top.px]="menuAt().y"
+    [matMenuTriggerFor]="cellMenuPanel"
+    #cellTrigger="matMenuTrigger"
+  ></button>
+  <button
+    type="button"
+    class="menu-anchor"
+    tabindex="-1"
+    aria-hidden="true"
+    [style.left.px]="menuAt().x"
+    [style.top.px]="menuAt().y"
+    [matMenuTriggerFor]="headerMenuPanel"
+    #headerTrigger="matMenuTrigger"
+  ></button>
+
+  <mat-menu #cellMenuPanel="matMenu">
+    @if (cell(); as menu) {
+      @if (filterable(menu)) {
+        @if (menu.empty) {
+          <button mat-menu-item type="button" (click)="filterBy(menu, 'empty')">
+            <span class="material-symbols-outlined" aria-hidden="true">filter_alt</span>{{ i18n.t('menu.where_empty') }}
+          </button>
+          <button mat-menu-item type="button" (click)="filterBy(menu, 'not_empty')">
+            <span class="material-symbols-outlined" aria-hidden="true">filter_alt_off</span
+            >{{ i18n.t('menu.out_empty') }}
+          </button>
+        } @else {
+          <button mat-menu-item type="button" (click)="filterBy(menu, 'eq')">
+            <span class="material-symbols-outlined" aria-hidden="true">filter_alt</span
+            >{{ i18n.t('menu.show_matching') }}
+          </button>
+          <button mat-menu-item type="button" (click)="filterBy(menu, 'ne')">
+            <span class="material-symbols-outlined" aria-hidden="true">filter_alt_off</span
+            >{{ i18n.t('menu.filter_out') }}
+          </button>
+          @if (ordered(menu); as kind) {
+            <button mat-menu-item type="button" (click)="filterBy(menu, 'gte')">
+              {{ kind === 'date' ? i18n.t('menu.on_or_after') : i18n.t('menu.more') }}
+            </button>
+            <button mat-menu-item type="button" (click)="filterBy(menu, 'lte')">
+              {{ kind === 'date' ? i18n.t('menu.on_or_before') : i18n.t('menu.less') }}
+            </button>
+          }
+        }
+        <hr class="divider" />
+      }
+      @if (referenced(menu); as ref) {
+        <button mat-menu-item type="button" (click)="openReferenced(menu)">
+          <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span
+          >{{ i18n.t('menu.open_ref', { name: ref.name }) }}
+        </button>
+      }
+      <button mat-menu-item type="button" (click)="copy(value(menu.row, menu.field.name))">
+        <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>{{ i18n.t('menu.copy_value') }}
+      </button>
+      <button mat-menu-item type="button" (click)="copy(link(menu.row))">
+        <span class="material-symbols-outlined" aria-hidden="true">link</span>{{ i18n.t('menu.copy_link') }}
+      </button>
+    }
+  </mat-menu>
+
+  <mat-menu #headerMenuPanel="matMenu">
+    @if (header(); as field) {
+      @if (field.kind) {
+        <button mat-menu-item type="button" (click)="sortBy(field.name, 'asc')">
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>{{ i18n.t('menu.sort_asc') }}
+        </button>
+        <button mat-menu-item type="button" (click)="sortBy(field.name, 'desc')">
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span>{{ i18n.t('menu.sort_desc') }}
+        </button>
+        <button mat-menu-item type="button" (click)="addFilter(field.name)">
+          <span class="material-symbols-outlined" aria-hidden="true">filter_list</span
+          >{{ i18n.t('menu.filter_on', { label: field.label }) }}
+        </button>
+      }
+      @if (columns().length > 1) {
+        <button mat-menu-item type="button" (click)="hide(field.name)">
+          <span class="material-symbols-outlined" aria-hidden="true">visibility_off</span>{{ i18n.t('menu.hide') }}
+        </button>
+      }
+    }
+  </mat-menu>
+}

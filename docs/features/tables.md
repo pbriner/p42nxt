@@ -40,7 +40,7 @@ the database makes, how a value is checked and stored, and which changes keep ev
 | `Percent` | `numeric(12,6)` | Stored as a fraction (0.05 is 5 %) |
 | `Boolean` | `boolean` | |
 | `Date`, `DateTime`, `Duration` | `date`, `timestamptz`, `interval` | A date and time needs a time zone and is stored in UTC. Durations are ISO 8601 without years or months (`P1DT2H30M`) |
-| `Choice(values)` | `text` | One of the declared values (`a-z`, `0-9`, `_`), each with a label |
+| `Choice(values, tones=)` | `text` | One of the declared values (`a-z`, `0-9`, `_`), each with a label. `tones` makes some stand out in lists: `primary`, `tertiary`, `error` or `muted` (struck through), in the theme's colours |
 | `Reference(table)` | `uuid` | The record exists (foreign key, indexed) |
 | `Json` | `jsonb` | Valid JSON |
 

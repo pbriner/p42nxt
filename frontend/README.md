@@ -40,10 +40,11 @@ To try the app by hand, start the same installation on port 8899 and open
 `http://localhost:8899`:
 
 ```bash
-uv run --directory ../backend python ../frontend/e2e/installation.py --port 8899
+uv run --directory ../backend python ../frontend/e2e/installation.py --port 8899 --demo
 ```
 
-Its people and their authenticator keys are in `e2e/.state-8899.json`.
+Sign in as `admin@e2e.test` (password `correct horse battery staple`) and set up your own
+authenticator app; the other people and their keys are in `e2e/.state-8899.json`.
 
 ## Rules
 

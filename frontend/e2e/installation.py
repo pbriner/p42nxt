@@ -68,7 +68,35 @@ async def _person(
     return {"name": name, "email": email, "password": PASSWORD, "key": made.key}
 
 
-async def _prepare(database: str, settings: Settings, sealer: Sealer) -> dict[str, object]:
+async def _demo(records: Records, admin: dict[str, str]) -> None:
+    """For trying by hand: the admin sets up their own authenticator, and there's something
+    to look at."""
+    await records.conn.execute(
+        text(
+            "UPDATE sys.credential SET deleted = now() WHERE kind <> 'password'"
+            " AND person = (SELECT sys_id FROM sys.person WHERE email = :e)"
+        ),
+        {"e": admin["email"]},
+    )
+    admin["key"] = ""
+    plain = await records.conn.scalar(
+        text("SELECT sys_id FROM sys.person WHERE email = 'plain@e2e.test'")
+    )
+    for words, language in (
+        ("Hello from Zurich!", "en"),
+        ("Grüezi mitenand", "de"),
+        ("Bonjour à tous", "fr"),
+        ("Good morning, team", "en"),
+        ("Schönes Wochenende", "de"),
+    ):
+        await records.create(
+            "hello.greeting", {"text": words, "language": language, "author": plain}
+        )
+
+
+async def _prepare(
+    database: str, settings: Settings, sealer: Sealer, *, demo: bool
+) -> dict[str, object]:
     admin = create_async_engine(ADMIN_URL, isolation_level="AUTOCOMMIT")
     async with admin.connect() as conn:
         await conn.execute(text(f'CREATE DATABASE "{database}"'))
@@ -106,6 +134,8 @@ async def _prepare(database: str, settings: Settings, sealer: Sealer) -> dict[st
                     "password": PASSWORD,
                     "key": "",
                 }
+            if demo:
+                await _demo(records, people["admin"])
     await engine.dispose()
     return {"people": people}
 
@@ -140,6 +170,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8899)
     parser.add_argument("--state", type=Path, default=None)
+    parser.add_argument(
+        "--demo",
+        action="store_true",
+        help="for trying by hand: the admin sets up their own authenticator; some greetings",
+    )
     args = parser.parse_args()
     args.state = args.state or HERE / f".state-{args.port}.json"
     # Stopping (Ctrl-C, or the test runner's SIGTERM) ends the server, so the database is
@@ -157,7 +192,7 @@ def main() -> None:
     sealer = Sealer(os.urandom(32))
     asyncio.run(_drop_leftovers())
     try:
-        state = asyncio.run(_prepare(database, settings, sealer))
+        state = asyncio.run(_prepare(database, settings, sealer, demo=args.demo))
         args.state.write_text(json.dumps({"url": url, **state}, indent=2))
         uvicorn.run(
             create_app(settings, sealer=sealer, upgrade=False),

@@ -119,6 +119,12 @@ def test_options_are_checked() -> None:
     assert FIELD_TYPES["choice"].option_problems(
         {"values": [{"value": "a"}, {"value": "a"}, {"value": "B!"}]}
     )
+    assert FIELD_TYPES["choice"].option_problems(
+        {"values": [{"value": "done", "label": {"en": "Done"}, "tone": "red"}]}
+    )
+    toned = Choice("State", {"open": "Open", "done": "Done"}, tones={"done": "primary"})
+    assert FIELD_TYPES["choice"].option_problems(toned.options) == []
+    assert [v.get("tone") for v in toned.options["values"]] == [None, "primary"]
     assert FIELD_TYPES["reference"].option_problems({"table": "no dots"})
     assert FIELD_TYPES["text"].option_problems({}) == []
 
