@@ -34,7 +34,12 @@ In the navigator under Examples → Hello → Greetings: the list of greetings (
 author, pinned, when) and leaving a new one. The form has two sections.
 
 Dashboard (Examples → Hello → Dashboard): pinned greetings, greetings by language (donut) and
-per month (columns), a note (available, not placed). On home: the number of greetings, with a
+per month (columns), how many languages people greet in and the average words per greeting by
+language (both from hello's own routes: source widgets), a note (available, not placed).
+
+Routes: `GET /api/v1/hello/widget/languages` (a figure) and `GET /api/v1/hello/widget/words`
+(chart points), the sources of those two widgets. They read greetings through the client, so
+each caller counts only what they may read. On home: the number of greetings, with a
 target of 50 and a 12-month trend.
 
 Actions: Pin (a button; also on several at once), Unpin (in the form's menu), Sign (asks for a

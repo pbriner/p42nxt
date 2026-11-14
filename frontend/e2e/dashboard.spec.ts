@@ -78,3 +78,15 @@ test('a module’s dashboard: lists, charts that become tables, keyboard order',
   await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(titles.first()).toHaveText(before[0]!);
 });
+
+test('source widgets: a module’s route works out the figure and the points', async ({ page }) => {
+  await greetings(page);
+  await page.goto('/dashboard/hello');
+  const languages = page.locator('app-widget-card').filter({ hasText: 'Languages' });
+  await expect(languages.locator('.figure')).toContainText(/\d+\s*languages/);
+  await expect(languages.getByText(/^Most greetings in (English|German|French)\.$/)).toBeVisible();
+  const words = page.locator('app-widget-card').filter({ hasText: 'Words per greeting' });
+  await expect(words.getByText('Average words per greeting')).toBeVisible();
+  await words.getByRole('button', { name: 'Show as a table' }).click();
+  await expect(words.getByRole('rowheader', { name: 'French' })).toBeVisible();
+});

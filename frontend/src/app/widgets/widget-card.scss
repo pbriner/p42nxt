@@ -216,3 +216,23 @@
     color: #ffffff;
   }
 }
+
+.unit {
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface-variant);
+  margin-left: 4px;
+}
+
+.detail {
+  margin: 4px 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+
+  &[data-tone='good'] {
+    color: var(--mat-sys-primary);
+  }
+
+  &[data-tone='bad'] {
+    color: var(--mat-sys-error);
+  }
+}

@@ -9,6 +9,8 @@ export interface WidgetDef {
   title: string;
   kind: 'list' | 'figure' | 'chart' | 'text';
   list: string | null;
+  /** A module route answering the figure or the points (source widgets). */
+  source: string | null;
   table: string | null;
   filter: unknown;
   measure: string;

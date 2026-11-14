@@ -25,9 +25,15 @@
           <p class="text">{{ widget().text }}</p>
         }
         @case ('figure') {
-          <a class="figure" [routerLink]="listLink().commands" [queryParams]="listLink().query">{{
-            format(value())
-          }}</a>
+          <a class="figure" [routerLink]="listLink().commands" [queryParams]="listLink().query"
+            >{{ answer()?.text ?? format(value()) }}
+            @if (answer()?.unit) {
+              <span class="unit">{{ answer()?.unit }}</span>
+            }
+          </a>
+          @if (answer()?.detail) {
+            <p class="detail" [attr.data-tone]="answer()?.tone ?? null">{{ answer()?.detail }}</p>
+          }
           @if (reached() !== null) {
             <div
               class="meter"

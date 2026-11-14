@@ -5,9 +5,10 @@ with `Role` and `Grant`, its navigation with `Section` and `Item`, its lists wit
 its forms with `FormView`, its buttons with `UIAction`, its form rules with `FormRule`, its
 widgets with `Widget`, its jobs with `Job` and `Schedule`, the outside systems it talks to with
 `ConnectionType` and the changes it makes there with `OutsideCall`, what it tells people about
-with `NotificationKind`, reacts to its own records' changes with `TableHook`, moves data with
-`Migration`, and reads and changes any module's records with `Client` (and uses connections,
-records outside calls and notifies people through it). Refusals are `Problem`s.
+with `NotificationKind`, its own HTTP routes with `Route`, reacts to its own records' changes
+with `TableHook`, moves data with `Migration`, and reads and changes any module's records with
+`Client` (and uses connections, records outside calls and notifies people through it).
+Refusals are `Problem`s.
 """
 
 from p42cloud.data.declarations import Table
@@ -43,6 +44,7 @@ from p42cloud.services.calls.models import Refused as CallRefused
 from p42cloud.services.connections.models import ConnectionType
 from p42cloud.services.jobs.models import Job, JobRun, Schedule
 from p42cloud.services.notifications.models import NotificationKind
+from p42cloud.services.routes.models import Route, RouteRequest
 from p42cloud.ui.actions.models import ActionInput, ActionResult, ActionRun, UIAction
 from p42cloud.ui.forms.models import FormSection, FormView, RelatedList
 from p42cloud.ui.navigation.models import Item, Section
@@ -92,6 +94,8 @@ __all__ = [
     "Reference",
     "RelatedList",
     "Role",
+    "Route",
+    "RouteRequest",
     "Schedule",
     "Secret",
     "Section",

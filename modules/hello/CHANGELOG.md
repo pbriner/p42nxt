@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0
+
+- Two widgets with their own source on the dashboard: how many languages people greet in, and
+  the average words per greeting in each language (module routes
+  `GET /api/v1/hello/widget/languages` and `/widget/words`).
+- Needs the core 0.18 or later.
+
 ## 0.5.0
 
 - A nightly job unpins greetings pinned more than 30 days ago; it acts with the new
