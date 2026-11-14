@@ -2,6 +2,15 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.20.0
+
+- Outside calls tell their module when they end without an answer (`OutsideCall(gave_up=...)`,
+  `GaveUp`): refused for good, not sent (failed), or unclear after the last try (it stays
+  unknown and isn't tried again).
+- The SDK: `Setting` and `Invalid` for a module's settings, `Client.setting(name)` reads public
+  settings (or any the caller may read), `Records` for type hints; the test plugin's
+  `deliver_calls()` sends the outside calls that are due.
+
 ## 0.19.0
 
 - A module's own jobs (its service account) see and change the personal records of the module's

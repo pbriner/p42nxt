@@ -1,19 +1,19 @@
 # Kraken DCA (`dca`)
 
-Version: 0.1.0 · Last updated: 2026-11-14
+Version: 0.2.0 · Last updated: 2026-11-14
 
 
 ## Purpose
 
 Dollar cost averaging on each person's own Kraken account: a plan buys a little at a time,
-spread evenly until the next deposit (or an end date). In 0.1.0 every buy is a dry run:
-recorded and notified, never sent to Kraken.
+spread evenly until the next deposit (or an end date). Dry runs until the owner switches on
+real orders, which the installation must allow too.
 
 ## Depends on
 
 | Module | Versions | What for |
 |---|---|---|
-| `sys` | `>=0.19,<1` | Always; connections, jobs, notifications, personal tables |
+| `sys` | `>=0.20,<1` | Always; connections, jobs, notifications, personal tables |
 
 Core dependency: no
 
@@ -23,7 +23,7 @@ Core dependency: no
 |---|---|---|---|
 | `dca.plan` | A plan | name, pair, amount, mode, deposit day, buy hour, end date, max price, monthly limit, price tiers, active; what the cycle found (next buy, buys left, last price, free balance, last said) | Personal (owner) |
 | `dca.tier` | A price tier of a plan | plan, price change %, amount (0: skip), on | Personal |
-| `dca.order` | A buy (a dry run in 0.1.0) | plan, why, state, amount, price, cost, fee, currency, when | Personal; written by the cycle only |
+| `dca.order` | A buy: a dry run or a real order (sending, bought, answer lost, failed) | plan, why, state, amount, price, cost, fee, currency, when | Personal; written by the cycle only |
 
 ## Roles and access
 
@@ -47,6 +47,17 @@ kept until it's due; one missed by more than 48 hours is planned again instead. 
 can't be checked says "Problem: …" and notifies its owner once. Saving a plan never buys; the
 next check plans again.
 
+Real orders (the plan's **Real orders**, its owner's **My Kraken key can't withdraw**, a
+connection whose check passed, the setting `dca.live_allowed`, and the stage `production`): the
+cycle records the order (state "sending", a random reference) and the outside call
+`dca.place_order` in one transaction. The worker sends a market buy with that reference; a lost
+answer is reconciled by the reference (Open and Closed orders) before anything is sent again;
+the fill takes Kraken's volume, price, cost and fee. Kraken's refusal, an order still unclear
+after the last try, or an order open for more than 30 minutes puts the plan on hold (`dca.hold`)
+until its owner presses **Resume**. While an order is unclear the plan doesn't buy.
+
+Setting: `dca.live_allowed` ("Real DCA orders allowed"), off by default, public.
+
 ## API
 
 None.
@@ -56,4 +67,6 @@ None.
 Kraken (`dca.kraken`, `api.kraken.com` only): the owner's own connection, secrets `api_key` and
 `api_secret`, requests signed the Kraken way (HMAC-SHA512, a growing nonce). Read: Ticker,
 AssetPairs (minimum volume and cost, volume decimals), BalanceEx (free = balance − held by
-orders). Nothing is changed on Kraken in 0.1.0.
+orders). Changed: AddOrder (market buys, with a reference of ours); read about orders: QueryOrders,
+OpenOrders and ClosedOrders (by our reference). The key needs Query Funds and Create & Modify
+Orders, never Withdraw.

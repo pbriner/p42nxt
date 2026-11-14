@@ -15,6 +15,9 @@ import httpx
 from p42cloud.data.catalog import TableDef
 from p42cloud.data.hooks import Change
 from p42cloud.data.records import Record, Records
+from p42cloud.data.settings import DECLARED
+from p42cloud.data.settings import value as settings_value
+from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import Problem
 from p42cloud.services.calls.service import record
 from p42cloud.services.connections.service import connect
@@ -89,6 +92,17 @@ class Client:
     ) -> Json:
         """Runs a UI action on a record, checked as over HTTP: a message, where to go next."""
         return await run(self._records, table, name, self._id(sys_id), given=inputs or {})
+
+    async def setting(self, name: str) -> Any:
+        """A setting's value (its default if never changed): public settings, or any the caller
+        may read."""
+        found = DECLARED.get(name)
+        if found is None:
+            raise Problem(404, "no_setting", "There's no such setting.", detail=name)
+        if not (found.public or self._records.access.of("sys.setting", "read")):
+            raise Problem(403, "forbidden", "You may not read this setting.")
+        await switch_role(self._records.conn, "sys")
+        return await settings_value(self._records.conn, name)
 
     async def notify(  # noqa: PLR0913 - what a notification says, all by keyword
         self,

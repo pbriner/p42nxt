@@ -12,9 +12,10 @@ Each test session gets its own database, set up the way the installer does it, w
 and these modules installed. `as_system()` and `as_person(id)` give a `Client` for one request
 (committed at the end); `run_job(name)` runs a job as the worker would and returns its state and
 what it said; `call_route(person, method, address)` calls a module route as that person;
-`stand_in(type, answer)` answers for an outside system. Needs the development PostgreSQL
-(`docker compose up -d`); `P42_TEST_ADMIN_URL` points elsewhere. The modules' database roles are
-kept between sessions: they belong to the whole server and own nothing.
+`stand_in(type, answer)` answers for an outside system; `deliver_calls()` sends the outside
+calls that are due. Needs the development PostgreSQL (`docker compose up -d`);
+`P42_TEST_ADMIN_URL` points elsewhere. The modules' database roles are kept between sessions:
+they belong to the whole server and own nothing.
 """
 
 import os
@@ -22,7 +23,7 @@ import re
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -42,6 +43,7 @@ from p42cloud.modules.install import install_modules
 from p42cloud.modules.manifest import Module
 from p42cloud.sdk.client import Client
 from p42cloud.security.access.service import access_for
+from p42cloud.services.calls.service import deliver
 from p42cloud.services.connections.service import TEST_TRANSPORTS
 from p42cloud.services.jobs.service import run_job as run_now
 from p42cloud.services.routes.models import RouteRequest
@@ -205,3 +207,21 @@ def stand_in() -> Iterator[StandIn]:
     yield standing_in
     for type_name in named:
         TEST_TRANSPORTS.pop(type_name, None)
+
+
+type DeliverCalls = Callable[..., Awaitable[list[str]]]
+
+
+@pytest.fixture
+def deliver_calls(p42_engine: AsyncEngine) -> DeliverCalls:
+    """Delivers the outside calls that are due, as the worker would: their states in turn.
+    `later=True` acts as if their waits were over."""
+
+    async def delivering(*, later: bool = False) -> list[str]:
+        moment = datetime.now(UTC) + (timedelta(days=1) if later else timedelta(0))
+        states: list[str] = []
+        while (state := await deliver(p42_engine, moment)) is not None:
+            states.append(state)
+        return states
+
+    return delivering

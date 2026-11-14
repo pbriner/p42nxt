@@ -134,3 +134,69 @@ class Pair:
     @property
     def currency(self) -> str:
         return self.name[3:]
+
+
+@dataclass(frozen=True)
+class Fill:
+    """What Kraken says about an order."""
+
+    txid: str
+    status: str  # pending, open, closed, canceled, expired
+    volume: Decimal  # executed
+    cost: Decimal
+    fee: Decimal
+    price: Decimal
+
+    def answer(self) -> dict[str, str]:
+        return {
+            "txid": self.txid,
+            "status": self.status,
+            "volume": str(self.volume),
+            "cost": str(self.cost),
+            "fee": str(self.fee),
+            "price": str(self.price),
+        }
+
+
+def _fill(txid: str, info: dict[str, Any]) -> Fill:
+    return Fill(
+        txid=txid,
+        status=str(info.get("status", "")),
+        volume=Decimal(str(info.get("vol_exec") or "0")),
+        cost=Decimal(str(info.get("cost") or "0")),
+        fee=Decimal(str(info.get("fee") or "0")),
+        price=Decimal(str(info.get("price") or "0")),
+    )
+
+
+async def add_order(http: httpx.AsyncClient, pair: str, volume: Decimal, userref: int) -> str:
+    """A market buy, carrying our reference so it can be found again; Kraken's order ID."""
+    result = await private(
+        http,
+        "AddOrder",
+        pair=pair,
+        type="buy",
+        ordertype="market",
+        volume=format(volume, "f"),
+        userref=str(userref),
+    )
+    answer = cast(dict[str, Any], result or {})
+    txids = cast(list[str], answer.get("txid") or [])
+    if not txids:
+        raise KrakenError("EGeneral:No order ID in Kraken's answer")
+    return txids[0]
+
+
+async def order(http: httpx.AsyncClient, txid: str) -> Fill | None:
+    result = cast(dict[str, Any], await private(http, "QueryOrders", txid=txid) or {})
+    info: Any = result.get(txid)
+    return _fill(txid, cast(dict[str, Any], info)) if isinstance(info, dict) else None
+
+
+async def find(http: httpx.AsyncClient, userref: int) -> Fill | None:
+    """An order placed with our reference, open or closed; None if Kraken has none."""
+    for path, key in (("OpenOrders", "open"), ("ClosedOrders", "closed")):
+        result = cast(dict[str, Any], await private(http, path, userref=str(userref)) or {})
+        for txid, info in cast(dict[str, Any], result.get(key) or {}).items():
+            return _fill(txid, cast(dict[str, Any], info))
+    return None

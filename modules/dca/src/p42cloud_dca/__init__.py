@@ -21,6 +21,7 @@ from p42cloud.sdk import (
     FormView,
     Grant,
     Integer,
+    Invalid,
     Item,
     Job,
     ListView,
@@ -32,15 +33,35 @@ from p42cloud.sdk import (
     Role,
     Schedule,
     Section,
+    Setting,
     String,
     Table,
     TableHook,
     Text,
+    UIAction,
 )
 from p42cloud.sdk import Decimal as Number
 
 from p42cloud_dca import cycle
 from p42cloud_dca.kraken import KRAKEN
+from p42cloud_dca.orders import PLACE_ORDER
+
+
+def _yes_or_no(value: Any) -> bool:
+    if not isinstance(value, bool):
+        raise Invalid("Yes or no.")
+    return value
+
+
+# Off until an administrator allows real orders for the whole installation.
+LIVE_ALLOWED = Setting(
+    "dca.live_allowed",
+    "Real DCA orders allowed",
+    False,
+    check=_yes_or_no,
+    help="Off: no DCA plan sends real orders to Kraken, whatever its own switch says.",
+    public=True,
+)
 
 PAIRS = {
     "xbtchf": "BTC / CHF",
@@ -52,6 +73,8 @@ PAIRS = {
 }
 # What the cycle writes on a plan; people change the rest.
 BOOKKEEPING = (
+    "status",
+    "hold_reason",
     "next_buy",
     "planned_buys",
     "period_end",
@@ -89,6 +112,17 @@ PLAN = Table(
         ),
         "cooldown_hours": Number("Hours between extra buys", precision=8, scale=2),
         "active": Boolean("Active", required=True, default=True),
+        # Off: dry runs. Only the owner switches it, after checking their key.
+        "live": Boolean("Real orders", required=True, default=False),
+        "keys_checked": Boolean("My Kraken key can't withdraw", required=True, default=False),
+        "status": Choice(
+            "Status",
+            {"ok": "Running", "hold": "On hold"},
+            required=True,
+            default="ok",
+            tones={"hold": "error"},
+        ),
+        "hold_reason": Text("Why on hold"),
         "next_buy": DateTime("Next buy"),
         "planned_buys": Integer("Buys left in the period"),
         "period_end": DateTime("Period ends"),
@@ -150,6 +184,7 @@ ORDER = Table(
         "userref": Integer("Client reference"),
         "kraken_txid": String("Kraken order", max_length=64, unique=True),
         "placed_at": DateTime("When"),
+        "reconciled_at": DateTime("Checked with Kraken"),
         "error": Text("What went wrong"),
     },
     label_plural="DCA orders",
@@ -171,6 +206,9 @@ PEOPLE_WRITE = (
     "reference",
     "cooldown_hours",
     "active",
+    "live",
+    "keys_checked",
+    "status",  # only back to running, with Resume
 )
 
 USER = Role(
@@ -224,6 +262,10 @@ def _check_values(values: dict[str, Any], merged: dict[str, Any]) -> None:
     amount = _number(merged.get("amount"), "amount")
     if amount is not None and amount <= 0:
         raise _invalid("amount", "More than 0.")
+    if merged.get("live") and not merged.get("keys_checked"):
+        raise _invalid(
+            "keys_checked", "Check that your Kraken key can't withdraw money before real orders."
+        )
     for field in ("max_price", "monthly_limit", "cooldown_hours"):
         found = _number(values.get(field), field)
         if found is not None and found <= 0:
@@ -234,8 +276,57 @@ def _check_values(values: dict[str, Any], merged: dict[str, Any]) -> None:
 
 # Changing these plans the next buy again.
 TIMING = frozenset(
-    {"amount", "mode", "deposit_day", "buy_hour", "end_date", "pair", "active", "monthly_limit"}
+    {
+        "amount",
+        "mode",
+        "deposit_day",
+        "buy_hour",
+        "end_date",
+        "pair",
+        "active",
+        "monthly_limit",
+        "live",
+    }
 )
+
+
+def _by_cycle(change: Change) -> bool:
+    """The cycle (the module's service account) records orders; people never do."""
+    return bool(change.records.access.of("dca.order", "create"))
+
+
+async def _check_status(change: Change, current: dict[str, Any]) -> None:
+    """People only resume a plan on hold; holding is the cycle's."""
+    values = change.values
+    if _by_cycle(change):
+        return
+    if change.operation == "create":  # a new plan runs, whatever the form sent
+        values["status"] = "ok"
+        values.pop("hold_reason", None)
+        return
+    for field in ("status", "hold_reason"):  # the form sends unchanged fields too
+        if field in values and values[field] == current.get(field):
+            del values[field]
+    if not ({"status", "hold_reason"} & set(values)):
+        return
+    if "hold_reason" in values or values.get("status") != "ok" or current.get("status") != "hold":
+        raise _invalid("status", "Only a plan on hold can be resumed, with Resume.")
+    values |= {
+        "hold_reason": None,
+        "next_buy": None,
+        "last_message": "Resumed: the next check plans the next buy.",
+    }
+
+
+async def _check_live(change: Change) -> None:
+    """Real orders need a Kraken connection that answered its check."""
+    if not change.values.get("live") or _by_cycle(change):
+        return
+    found = await Client.of(change).list(
+        "sys.connection", where={"field": "type", "op": "eq", "value": "dca.kraken"}, limit=1
+    )
+    if not found["records"] or found["records"][0]["health"] != "ok":
+        raise _invalid("live", "Check your Kraken connection first (Connections → Check).")
 
 
 async def _check_plan(change: Change) -> None:
@@ -250,6 +341,8 @@ async def _check_plan(change: Change) -> None:
         current = await Client.of(change).get("dca.plan", change.sys_id)
     merged = current | values
     _check_values(values, merged)
+    await _check_status(change, current)
+    await _check_live(change)
     if set(values) & TIMING:
         values["next_buy"] = None
         values["last_message"] = (
@@ -274,8 +367,8 @@ async def _check_tier(change: Change) -> None:
 module = Module(
     id="dca",
     name="Kraken DCA",
-    version="0.1.0",
-    depends_on={"sys": ">=0.19,<1"},
+    version="0.2.0",
+    depends_on={"sys": ">=0.20,<1"},
     tables=(PLAN, TIER, ORDER),
     roles=(USER, KEEPER),
     hooks=(
@@ -287,8 +380,29 @@ module = Module(
     category="Finance",
     icon="currency_bitcoin",
     connection_types=(KRAKEN,),
+    settings=(LIVE_ALLOWED,),
+    calls=(PLACE_ORDER,),
+    actions=(
+        UIAction(
+            "resume",
+            "dca.plan",
+            "Resume",
+            places=("form_button", "list_row"),
+            icon="play_arrow",
+            condition={"field": "status", "op": "eq", "value": "hold"},
+            confirm="Resume this plan? Check its orders on Kraken first.",
+            set={"status": "ok"},
+            message="Resumed.",
+        ),
+    ),
     notification_kinds=(
         NotificationKind("buy", "A buy (or dry run)", "To the plan's owner, at each buy."),
+        NotificationKind(
+            "hold",
+            "A DCA plan is on hold",
+            "To the plan's owner: Kraken refused an order, or one is unclear.",
+            channels=("telegram",),
+        ),
         NotificationKind(
             "problem",
             "A DCA plan has a problem",
@@ -301,7 +415,7 @@ module = Module(
     views=(
         ListView(
             "dca.plan",
-            ("name", "pair", "mode", "amount", "active", "next_buy", "last_message"),
+            ("name", "pair", "amount", "active", "live", "status", "next_buy", "last_message"),
             sort=("name",),
             search=("name",),
         ),
@@ -322,6 +436,7 @@ module = Module(
             "dca.plan",
             (
                 FormSection("Plan", ("name", "pair", "amount", "active")),
+                FormSection("Real orders", ("live", "keys_checked", "status", "hold_reason")),
                 FormSection("When", ("mode", "deposit_day", "buy_hour", "end_date")),
                 FormSection("Limits", ("max_price", "monthly_limit")),
                 FormSection("Price tiers", ("dynamic", "reference", "cooldown_hours")),

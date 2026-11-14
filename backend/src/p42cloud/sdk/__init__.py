@@ -13,6 +13,9 @@ Refusals are `Problem`s.
 
 from p42cloud.data.declarations import Table
 from p42cloud.data.hooks import Change, TableHook
+from p42cloud.data.records import Records
+from p42cloud.data.settings import Setting
+from p42cloud.data.types import Invalid
 from p42cloud.data.types.any_record import AnyRecord
 from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.choice import Choice
@@ -39,7 +42,7 @@ from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.modules.manifest import Migration, Module
 from p42cloud.sdk.client import Client
 from p42cloud.security.access.roles import Grant, Role
-from p42cloud.services.calls.models import CallRun, OutsideCall
+from p42cloud.services.calls.models import CallRun, GaveUp, OutsideCall
 from p42cloud.services.calls.models import Refused as CallRefused
 from p42cloud.services.connections.models import ConnectionType
 from p42cloud.services.jobs.models import Job, JobRun, Schedule
@@ -74,10 +77,12 @@ __all__ = [
     "FormRule",
     "FormSection",
     "FormView",
+    "GaveUp",
     "Grant",
     "Hostname",
     "Icon",
     "Integer",
+    "Invalid",
     "Item",
     "Job",
     "JobRun",
@@ -91,6 +96,7 @@ __all__ = [
     "Percent",
     "Phone",
     "Problem",
+    "Records",
     "Reference",
     "RelatedList",
     "Role",
@@ -99,6 +105,7 @@ __all__ = [
     "Schedule",
     "Secret",
     "Section",
+    "Setting",
     "String",
     "Table",
     "TableHook",

@@ -1,8 +1,7 @@
 # Kraken DCA
 
 Buy a little bitcoin or ether at a time, spread evenly until your next deposit, on your own
-Kraken account. In this version every buy is a dry run: it's recorded and you're notified, but
-nothing is sent to Kraken yet.
+Kraken account. A plan makes dry runs until you switch on real orders.
 
 ## Connect your Kraken account
 
@@ -40,3 +39,22 @@ at most once per cooldown (24 hours unless you set it).
 
 Every buy is an order under Kraken DCA → **Orders**, and a notification. Dry runs use your real
 balance and real prices, so you see what the plan would do.
+
+## Real orders
+
+1. Make sure your Kraken key can't withdraw money, and tick **My Kraken key can't withdraw**.
+2. Check your Kraken connection (Connections → **Check**).
+3. Switch on **Real orders** on the plan.
+
+An administrator must also allow real orders for the whole installation (Settings → **Real DCA
+orders allowed**); until then the plan says so instead of buying.
+
+Each order is recorded before it goes to Kraken, with a reference of its own. If Kraken's answer
+is lost, the app asks Kraken about that reference before sending anything again, so an order is
+never placed twice. The order then shows Kraken's own price, cost and fee.
+
+## A plan is on hold
+
+When Kraken refuses an order (for example, not enough money) or an order stays unclear, the plan
+goes **on hold** and you're notified. It doesn't buy until you've looked: read **Why on hold**,
+check the order on Kraken, then press **Resume**.

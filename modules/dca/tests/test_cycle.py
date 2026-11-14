@@ -1,8 +1,5 @@
 """The cycle against a stand-in Kraken: plans checked, dry runs recorded, problems told once."""
 
-import uuid
-from collections.abc import Callable
-from contextlib import AbstractAsyncContextManager
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
@@ -10,12 +7,11 @@ from urllib.parse import parse_qs
 
 import httpx
 import pytest
-from p42cloud.sdk import Client, Problem
+from p42cloud.sdk import Problem
 from p42cloud.sdk.testing import RunJob, StandIn
 
 from p42cloud_dca.kraken import TYPE, sign
-
-Acting = Callable[..., AbstractAsyncContextManager[Client]]
+from tests.helpers import Acting, connect, investor, new_plan, read
 
 
 class Kraken:
@@ -50,61 +46,16 @@ def kraken(stand_in: StandIn) -> Kraken:
     return made
 
 
-async def _investor(as_system: Acting) -> str:
-    """Someone holding the DCA investor role, with a Kraken connection."""
-    async with as_system() as client:
-        role = await client.list(
-            "sys.role", where={"field": "name", "op": "eq", "value": "dca.user"}
-        )
-        group = await client.create("sys.group", {"name": f"Investors {uuid.uuid4().hex[:6]}"})
-        await client.create(
-            "sys.group_role", {"group": group["sys_id"], "role": role["records"][0]["sys_id"]}
-        )
-        person = await client.create("sys.person", {"name": f"Ivy {uuid.uuid4().hex[:4]}"})
-        await client.create(
-            "sys.membership", {"group": group["sys_id"], "person": person["sys_id"]}
-        )
-    return person["sys_id"]
-
-
-async def _connect(as_person: Acting, person: str) -> None:
-    async with as_person(person) as client:
-        made = await client.create("sys.connection", {"type": TYPE, "label": "Kraken"})
-        for name, value in (("api_key", "key"), ("api_secret", "c2VjcmV0")):
-            await client.create(
-                "sys.connection_secret",
-                {"connection": made["sys_id"], "name": name, "value": value},
-            )
-
-
-async def _plan(as_person: Acting, person: str, **values: Any) -> dict[str, Any]:
-    async with as_person(person) as client:
-        return await client.create(
-            "dca.plan", {"name": "Bitcoin", "pair": "xbtchf", "amount": "0.001"} | values
-        )
-
-
-async def _read(as_person: Acting, person: str, table: str, **where: Any) -> list[dict[str, Any]]:
-    async with as_person(person) as client:
-        found = await client.list(
-            table,
-            where={"and": [{"field": k, "op": "eq", "value": v} for k, v in where.items()]}
-            if where
-            else None,
-        )
-    return found["records"]
-
-
 async def test_a_plan_is_planned_then_buys_a_dry_run_when_due(
     as_system: Acting, as_person: Acting, run_job: RunJob, kraken: Kraken
 ) -> None:
-    ivy = await _investor(as_system)
-    await _connect(as_person, ivy)
-    plan = await _plan(as_person, ivy)
+    ivy = await investor(as_system)
+    await connect(as_person, ivy)
+    plan = await new_plan(as_person, ivy)
     assert plan["owner"] == ivy and "next check" in plan["last_message"]
 
     state, said = await run_job("dca.cycle")
-    (planned,) = await _read(as_person, ivy, "dca.plan", sys_id=plan["sys_id"])
+    (planned,) = await read(as_person, ivy, "dca.plan", sys_id=plan["sys_id"])
     assert state == "succeeded" and said is not None and "checked" in said
     assert planned["next_buy"] is not None and planned["planned_buys"] == 12
     assert Decimal(planned["last_price"]) == 80000 and planned["last_message"].startswith(
@@ -119,8 +70,8 @@ async def test_a_plan_is_planned_then_buys_a_dry_run_when_due(
             planned["_etag"],
         )
     await run_job("dca.cycle")
-    orders = await _read(as_person, ivy, "dca.order", plan=plan["sys_id"])
-    (after,) = await _read(as_person, ivy, "dca.plan", sys_id=plan["sys_id"])
+    orders = await read(as_person, ivy, "dca.order", plan=plan["sys_id"])
+    (after,) = await read(as_person, ivy, "dca.plan", sys_id=plan["sys_id"])
     assert len(orders) == 1
     assert (orders[0]["state"], orders[0]["strategy"]) == ("dry_run", "scheduled")
     assert Decimal(orders[0]["cost"]) == Decimal("80.00") and orders[0]["owner"] == ivy
@@ -130,9 +81,9 @@ async def test_a_plan_is_planned_then_buys_a_dry_run_when_due(
 async def test_private_calls_are_signed_the_kraken_way(
     as_system: Acting, as_person: Acting, run_job: RunJob, kraken: Kraken
 ) -> None:
-    ivy = await _investor(as_system)
-    await _connect(as_person, ivy)
-    await _plan(as_person, ivy)
+    ivy = await investor(as_system)
+    await connect(as_person, ivy)
+    await new_plan(as_person, ivy)
     await run_job("dca.cycle")
     private = [r for r in kraken.asked if r.url.path.startswith("/0/private/")]
     assert private and private[-1].headers["API-Key"] == "key"
@@ -145,13 +96,13 @@ async def test_private_calls_are_signed_the_kraken_way(
 async def test_a_problem_is_told_once(
     as_system: Acting, as_person: Acting, run_job: RunJob, kraken: Kraken
 ) -> None:
-    ivy = await _investor(as_system)
-    await _connect(as_person, ivy)
-    plan = await _plan(as_person, ivy)
+    ivy = await investor(as_system)
+    await connect(as_person, ivy)
+    plan = await new_plan(as_person, ivy)
     kraken.down = True
     await run_job("dca.cycle")
     await run_job("dca.cycle")
-    (found,) = await _read(as_person, ivy, "dca.plan", sys_id=plan["sys_id"])
+    (found,) = await read(as_person, ivy, "dca.plan", sys_id=plan["sys_id"])
     async with as_system() as client:
         told = (
             await client.list(
@@ -171,9 +122,9 @@ async def test_a_problem_is_told_once(
 async def test_plans_are_their_owners_alone(
     as_system: Acting, as_person: Acting, kraken: Kraken
 ) -> None:
-    ivy, max_ = await _investor(as_system), await _investor(as_system)
-    plan = await _plan(as_person, ivy)
-    assert await _read(as_person, max_, "dca.plan", sys_id=plan["sys_id"]) == []
+    ivy, max_ = await investor(as_system), await investor(as_system)
+    plan = await new_plan(as_person, ivy)
+    assert await read(as_person, max_, "dca.plan", sys_id=plan["sys_id"]) == []
     async with as_person(max_) as client:
         with pytest.raises(Problem):
             await client.create(
@@ -209,7 +160,19 @@ async def test_plans_are_their_owners_alone(
 async def test_plans_are_checked_when_saved(
     as_system: Acting, as_person: Acting, values: dict[str, Any], field: str
 ) -> None:
-    ivy = await _investor(as_system)
+    ivy = await investor(as_system)
     with pytest.raises(Problem) as refused:
-        await _plan(as_person, ivy, **values)
+        await new_plan(as_person, ivy, **values)
     assert [e.field for e in refused.value.errors] == [field]
+
+
+async def test_a_new_plan_runs_whatever_the_form_sends(
+    as_system: Acting, as_person: Acting
+) -> None:
+    ivy = await investor(as_system)
+    made = await new_plan(as_person, ivy, status="hold", hold_reason="sneaky")
+    async with as_person(ivy) as client:
+        same = await client.update(
+            "dca.plan", made["sys_id"], {"status": "ok", "name": "Renamed"}, made["_etag"]
+        )
+    assert (made["status"], made["hold_reason"], same["name"]) == ("ok", None, "Renamed")
