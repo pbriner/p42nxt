@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0
+
+- Taking over plans, their tiers and every order from a previous installation: add the export
+  under Kraken DCA → **Take over**; within a minute the job `dca.take_over` imports it for you.
+  Plans arrive inactive and making dry runs, so nothing buys next to the old installation; orders
+  keep their time, figures and Kraken order. Taking over the same export again adds only what's
+  new. The export isn't kept.
+- Plans, the dashboard and the cycle read every order, however many (before: the first 500).
+
 ## 0.3.0
 
 - A dashboard (Kraken DCA → Dashboard) for one plan at a time, chosen above the widgets: running

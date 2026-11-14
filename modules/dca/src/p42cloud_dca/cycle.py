@@ -13,6 +13,7 @@ from p42cloud.sdk import Client, JobRun, Problem
 from p42cloud_dca import kraken, stats, strategy
 from p42cloud_dca.kraken import KrakenError, Pair
 from p42cloud_dca.orders import apply_fill, hold, tell_bought
+from p42cloud_dca.paging import every
 
 FEE = Decimal("0.0026")  # Kraken's taker fee, for dry runs
 MAX_MESSAGE = 500
@@ -36,13 +37,12 @@ def _cents(value: Decimal) -> Decimal:
 
 
 async def _orders(client: Client, plan: dict[str, Any]) -> list[dict[str, Any]]:
-    found = await client.list(
+    return await every(
+        client,
         "dca.order",
         where={"field": "plan", "op": "eq", "value": plan["sys_id"]},
         sort=["placed_at"],
-        limit=500,
     )
-    return found["records"]
 
 
 def _counted(plan: dict[str, Any]) -> tuple[str, ...]:
@@ -280,11 +280,11 @@ def _short(error: Exception) -> str:
 
 async def run(job: JobRun) -> str:
     client = Client(job.records)
-    found = await client.list(
-        "dca.plan", where={"field": "active", "op": "eq", "value": True}, sort=["created"]
+    active = await every(
+        client, "dca.plan", where={"field": "active", "op": "eq", "value": True}, sort=["created"]
     )
     checked = bought = 0
-    for plan in found["records"]:
+    for plan in active:
         checked += 1
         try:
             _, did = await check_plan(client, plan, job.now)
@@ -316,7 +316,7 @@ async def _value_price(client: Client, plan: dict[str, Any], pair: Pair, now: da
 async def check_targets(client: Client, now: datetime) -> int:
     """Each plan with targets (inactive ones too): its owner hears once each time one is
     reached; one no longer reached can be reached, and told, again."""
-    plans = (await client.list("dca.plan", limit=500))["records"]
+    plans = await every(client, "dca.plan")
     told = 0
     for plan in plans:
         targets = stats.Targets(*(_decimal(plan[NAMES[k][1]]) for k in NAMES))
