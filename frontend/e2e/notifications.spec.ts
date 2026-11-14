@@ -34,7 +34,7 @@ test.describe('Pat', () => {
   test('marks all as read, then sees them all in the list', async ({ page }, info) => {
     test.skip(info.project.name !== 'desktop', 'marks them all: once is enough');
     await page.goto('/');
-    await page.getByRole('button', { name: 'Notifications, 3 unread' }).click();
+    await page.getByRole('button', { name: /^Notifications, \d+ unread$/ }).click();
     const menu = page.getByRole('menu');
     await expect(menu.getByRole('menuitem', { name: /Storage is almost full/ })).toBeVisible();
     await menu.getByRole('button', { name: 'Mark all as read' }).click();

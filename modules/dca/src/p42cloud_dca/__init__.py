@@ -43,7 +43,7 @@ from p42cloud.sdk import (
 )
 from p42cloud.sdk import Decimal as Number
 
-from p42cloud_dca import cycle
+from p42cloud_dca import cycle, takeover
 from p42cloud_dca.kraken import KRAKEN
 from p42cloud_dca.orders import PLACE_ORDER
 from p42cloud_dca.widgets import ROUTES, WIDGETS
@@ -140,6 +140,8 @@ PLAN = Table(
         "last_balance": Number("Free on Kraken", scale=8),
         "last_check": DateTime("Last checked"),
         "last_message": Text("Last said"),
+        # Taken over from a previous installation: where from, so it's taken over once.
+        "source_ref": String("Taken over from", max_length=100, unique=True),
     },
     label_plural="DCA plans",
     owner="owner",
@@ -196,10 +198,32 @@ ORDER = Table(
         "placed_at": DateTime("When"),
         "reconciled_at": DateTime("Checked with Kraken"),
         "error": Text("What went wrong"),
+        "source_ref": String("Taken over from", max_length=100, unique=True),
     },
     label_plural="DCA orders",
     owner="owner",
     display="placed_at",
+)
+
+TAKEOVER = Table(
+    "takeover",
+    "DCA takeover",
+    {
+        "owner": Reference("Owner", "sys.person", required=True),
+        # The previous installation's export: {"plans": [...], "tiers": [...], "orders": [...]}.
+        "data": Json("Export"),
+        "state": Choice(
+            "State",
+            {"waiting": "Waiting", "done": "Done", "failed": "Failed"},
+            required=True,
+            default="waiting",
+            tones={"done": "primary", "failed": "error"},
+        ),
+        "message": Text("What it did"),
+    },
+    label_plural="DCA takeovers",
+    owner="owner",
+    display="state",
 )
 
 PEOPLE_WRITE = (
@@ -230,6 +254,7 @@ USER = Role(
         Grant("dca.plan", ("write",), fields=PEOPLE_WRITE),
         Grant("dca.tier", ("read", "create", "write", "delete", "restore")),
         Grant("dca.order", ("read",)),
+        Grant("dca.takeover", ("read", "create")),
     ),
     description="Makes their own DCA plans; sees only their own plans and orders.",
 )
@@ -239,10 +264,11 @@ KEEPER = Role(
     "dca.keeper",
     "DCA cycle",
     grants=(
-        Grant("dca.plan", ("read",)),
+        Grant("dca.plan", ("read", "create")),  # create: taking plans over
         Grant("dca.plan", ("write",), fields=BOOKKEEPING),
-        Grant("dca.tier", ("read",)),
+        Grant("dca.tier", ("read", "create")),
         Grant("dca.order", ("read", "create", "write")),
+        Grant("dca.takeover", ("read", "write")),
     ),
     description="Checks the plans and records their orders: for the DCA cycle.",
 )
@@ -345,8 +371,9 @@ async def _check_plan(change: Change) -> None:
     if change.operation in ("delete", "restore"):
         return
     values = change.values
-    if change.operation == "create":
+    if change.operation == "create" and not _by_cycle(change):
         values["owner"] = change.person
+        values.pop("source_ref", None)
     current: dict[str, Any] = {}
     if change.operation == "write" and change.sys_id is not None:
         current = await Client.of(change).get("dca.plan", change.sys_id)
@@ -365,13 +392,23 @@ async def _check_plan(change: Change) -> None:
         )
 
 
+async def _check_takeover(change: Change) -> None:
+    """A takeover is its maker's, and starts waiting with its export."""
+    if change.operation != "create":
+        return
+    change.values |= {"owner": change.person, "state": "waiting", "message": None}
+    if not isinstance(change.values.get("data"), dict):
+        raise _invalid("data", 'The export: {"plans": [...], "tiers": [...], "orders": [...]}.')
+
+
 async def _check_tier(change: Change) -> None:
     """A tier belongs to one of its maker's own plans."""
     if change.operation in ("delete", "restore"):
         return
     if change.operation == "create":
-        change.values["owner"] = change.person
-        # Reading the plan as the person: someone else's plan isn't there for them.
+        if not _by_cycle(change):  # the cycle takes tiers over for their plan's owner
+            change.values["owner"] = change.person
+        # Reading the plan: someone else's plan isn't there for a person.
         await Client.of(change).get("dca.plan", str(change.values.get("plan")))
     elif "plan" in change.values:
         raise _invalid("plan", "A tier stays with its plan.")
@@ -380,13 +417,14 @@ async def _check_tier(change: Change) -> None:
 module = Module(
     id="dca",
     name="Kraken DCA",
-    version="0.3.0",
+    version="0.4.0",
     depends_on={"sys": ">=0.21,<1"},
-    tables=(PLAN, TIER, ORDER),
+    tables=(PLAN, TIER, ORDER, TAKEOVER),
     roles=(USER, KEEPER),
     hooks=(
         TableHook("dca.plan", before=_check_plan),
         TableHook("dca.tier", before=_check_tier),
+        TableHook("dca.takeover", before=_check_takeover),
     ),
     docs=Path(__file__).parent / "docs",
     description="Dollar cost averaging on your own Kraken account.",
@@ -431,8 +469,14 @@ module = Module(
             channels=("telegram",),
         ),
     ),
-    jobs=(Job("cycle", "Check the DCA plans", cycle.run, timeout=240, retries=0),),
-    schedules=(Schedule("cycle", "DCA cycle", "cycle", "*/5 * * * *"),),
+    jobs=(
+        Job("cycle", "Check the DCA plans", cycle.run, timeout=240, retries=0),
+        Job("take_over", "Take over DCA plans and orders", takeover.run, timeout=600, retries=0),
+    ),
+    schedules=(
+        Schedule("cycle", "DCA cycle", "cycle", "*/5 * * * *"),
+        Schedule("take_over", "DCA takeovers", "take_over", "* * * * *"),
+    ),
     views=(
         ListView(
             "dca.plan",
@@ -444,6 +488,9 @@ module = Module(
             "dca.tier",
             ("plan", "threshold_percent", "amount", "enabled"),
             sort=("-threshold_percent",),
+        ),
+        ListView(
+            "dca.takeover", ("created", "state", "message"), sort=("-created",), searchable=False
         ),
         ListView(
             "dca.order",
@@ -500,6 +547,13 @@ module = Module(
                     keywords=("buys", "bitcoin"),
                 ),
                 Item("new_plan", "New plan", "dca.plan", kind="create", icon="add"),
+                Item(
+                    "takeovers",
+                    "Take over",
+                    "dca.takeover",
+                    icon="move_down",
+                    keywords=("import", "migrate"),
+                ),
             ),
         ),
     ),

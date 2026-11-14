@@ -12,6 +12,7 @@ from p42cloud.sdk import Client, Problem, Route, RouteRequest, Widget
 
 from p42cloud_dca import kraken, stats
 from p42cloud_dca.kraken import KrakenError, Pair
+from p42cloud_dca.paging import every
 
 FRESH = timedelta(minutes=10)  # a plan's last price this recent is used as it is
 
@@ -79,14 +80,12 @@ async def view(request: RouteRequest) -> View:
         raise Problem(422, "validation", "Choose a plan.")
     client = Client.of(request)
     plan = await client.get("dca.plan", plan_id)  # someone else's plan isn't there for them
-    orders = (
-        await client.list(
-            "dca.order",
-            where={"field": "plan", "op": "eq", "value": plan["sys_id"]},
-            sort=["placed_at"],
-            limit=500,
-        )
-    )["records"]
+    orders = await every(
+        client,
+        "dca.order",
+        where={"field": "plan", "op": "eq", "value": plan["sys_id"]},
+        sort=["placed_at"],
+    )
     real = any(o["state"] == "filled" for o in orders)
     wanted = "filled" if real else "dry_run"
     buys = [
