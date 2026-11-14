@@ -81,3 +81,12 @@ tbody tr {
 .empty {
   padding: 8px;
 }
+
+td a {
+  color: var(--mat-sys-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
