@@ -2,6 +2,16 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.12.0
+
+- The web installer (`/setup`): with the setup code, a new installation gets its name and
+  language, its first administrator, its modules, and the two safety confirmations; the
+  administrator then sets up their second factor. Open only until there's an administrator;
+  wrong codes are recorded and slowed down. `install.sh` points to it; `create-admin` stays.
+- Settings for the installation's name (shown everywhere) and language.
+- The MCP server for AI agents (`POST /api/v1/mcp`): tools generated from the token's grants,
+  run with the API's rules, audited on the channel `mcp:token:<name>`.
+
 ## 0.11.0
 
 - Totals over a table (`GET …/aggregate`): count, sum, average, smallest or largest, overall or

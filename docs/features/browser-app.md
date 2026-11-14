@@ -4,6 +4,11 @@ The app people use in the browser. The web app serves it at the same address as 
 works on any installation without setup. It is a client of the public API like any other: it can
 do nothing a script with the same rights couldn't.
 
+## Setting up
+
+A new installation opens with the web installer (`setup.md`): setup code, company, first
+administrator, modules, safety; then the administrator sets up their second factor.
+
 ## Signing in
 
 - Email and password, then the second factor: a code from an authenticator app, a recovery

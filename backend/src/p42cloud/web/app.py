@@ -29,10 +29,12 @@ from p42cloud.web.caller import Rates
 from p42cloud.web.routes import (
     actions,
     aggregates,
+    mcp,
     meta,
     people,
     records,
     screens,
+    setup,
     sign_in,
     tables,
 )
@@ -119,9 +121,11 @@ def create_app(
 
     app.include_router(meta.router)
     app.include_router(sign_in.router)
+    app.include_router(setup.router)
     app.include_router(people.router)
     app.include_router(tables.router)
     app.include_router(screens.router)
+    app.include_router(mcp.router)
     app.include_router(actions.router)
     # Before the record routes: `aggregate` would otherwise be taken for a record's ID.
     app.include_router(aggregates.router)

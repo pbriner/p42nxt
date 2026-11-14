@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # Sessions end after this long without use, and after this long in any case.
     session_idle_minutes: int = Field(default=30, ge=5, le=24 * 60)
     session_max_hours: int = Field(default=12, ge=1, le=24 * 30)
+    # The one-time code for the web installer (install.sh writes it). Without it, the installer
+    # stays closed and the first administrator is made at the command line.
+    setup_code: str | None = None
 
     @model_validator(mode="after")
     def _refuse_unsafe(self) -> Self:

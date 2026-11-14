@@ -46,6 +46,7 @@ PASSWORD = "correct horse battery staple"  # noqa: S105 - test people in a throw
 # One person per browser size signs in through the screens; the others sign in once, by API.
 SIGNERS = ("desktop", "dark", "laptop", "tablet", "phone")
 HERE = Path(__file__).resolve().parent
+SETUP_CODE = "E2ESETUP"
 
 
 async def _person(
@@ -95,7 +96,7 @@ async def _demo(records: Records, admin: dict[str, str]) -> None:
 
 
 async def _prepare(
-    database: str, settings: Settings, sealer: Sealer, *, demo: bool
+    database: str, settings: Settings, sealer: Sealer, *, demo: bool, fresh: bool
 ) -> dict[str, object]:
     admin = create_async_engine(ADMIN_URL, isolation_level="AUTOCOMMIT")
     async with admin.connect() as conn:
@@ -106,6 +107,8 @@ async def _prepare(
     with working_as(Context(channel="upgrade")):
         await install_modules(owner, [CORE, *discover()])
     await owner.dispose()
+    if fresh:
+        return {"people": {}, "setup_code": settings.setup_code}
     engine = create_engine(settings.database_url)
     with working_as(Context(channel="ui", access=EVERYTHING)):
         async with transaction(engine, "sys") as conn:
@@ -175,6 +178,9 @@ def main() -> None:
         action="store_true",
         help="for trying by hand: the admin sets up their own authenticator; some greetings",
     )
+    parser.add_argument(
+        "--fresh", action="store_true", help="nobody set up yet: for the web installer's tests"
+    )
     args = parser.parse_args()
     args.state = args.state or HERE / f".state-{args.port}.json"
     # Stopping (Ctrl-C, or the test runner's SIGTERM) ends the server, so the database is
@@ -188,11 +194,12 @@ def main() -> None:
         owner_database_url=f"postgresql+asyncpg://p42_owner:p42-owner-dev-only@{HOST}/{database}",
         public_url=url,
         requests_per_minute=100_000,
+        setup_code=SETUP_CODE if args.fresh else None,
     )
     sealer = Sealer(os.urandom(32))
     asyncio.run(_drop_leftovers())
     try:
-        state = asyncio.run(_prepare(database, settings, sealer, demo=args.demo))
+        state = asyncio.run(_prepare(database, settings, sealer, demo=args.demo, fresh=args.fresh))
         args.state.write_text(json.dumps({"url": url, **state}, indent=2))
         uvicorn.run(
             create_app(settings, sealer=sealer, upgrade=False),

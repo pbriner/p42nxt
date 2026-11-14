@@ -7,7 +7,7 @@ from p42cloud.ui.navigation.models import NAV_ITEM, Item, Section
 from p42cloud.ui.preferences import models as preferences
 from p42cloud.ui.rules import service as rules
 from p42cloud.ui.rules.models import FORM_RULE
-from p42cloud.ui.shell import STAGE
+from p42cloud.ui.shell import APP_NAME, LANGUAGE, STAGE
 from p42cloud.ui.themes import builtin
 from p42cloud.ui.themes import service as themes
 from p42cloud.ui.themes.models import THEME
@@ -37,7 +37,7 @@ HOOKS = (
     *rules.TABLE_HOOKS,
     *widget_service.TABLE_HOOKS,
 )
-SETTINGS = (STAGE, themes.DEFAULT_THEME)
+SETTINGS = (STAGE, APP_NAME, LANGUAGE, themes.DEFAULT_THEME)
 THEMES = builtin.THEMES
 
 # The core's lists worth finding in the search; its other tables get made, unsearched views.

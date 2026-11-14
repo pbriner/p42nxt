@@ -9,6 +9,7 @@ import { filter, map } from 'rxjs';
 
 import { Api } from '../core/api';
 import { I18n } from '../core/i18n';
+import { Installation } from '../core/installation';
 import { Navigation, target } from '../core/navigation';
 import { Session, initials } from '../core/session';
 import { GlobalSearch } from './global-search';
@@ -35,6 +36,7 @@ const COMPACT_NAME = '(max-width: 599px)';
 export class Shell {
   protected readonly i18n = inject(I18n);
   protected readonly session = inject(Session);
+  protected readonly installation = inject(Installation);
   private readonly navigation = inject(Navigation);
   private readonly router = inject(Router);
   private readonly api = inject(Api);

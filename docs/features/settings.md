@@ -24,5 +24,6 @@ Setting("task.reminder_days", "Remind after", 3, check=whole_days,
 | Setting | Default | What |
 |---|---|---|
 | `sys.time_zone` | `UTC` | Where the installation's days begin: `@today`, `@start_of_week` and dates compared with times in filters. Any IANA time zone, like `Europe/Zurich`. Public |
+| `sys.app_name`, `sys.language` | `P42cloud`, `en` | The installation's name, and the language for browsers asking for one the app doesn't speak (set by the web installer). Public |
 | `sys.theme`, `sys.stage` | `violet`, `production` | The default theme, and what the installation is for (`screens.md`). Public |
 | `sys.passwords_off_for` | none | Kinds of person (`employee`, `external`) who may sign in only through a sign-in provider. People with emergency access keep their password |

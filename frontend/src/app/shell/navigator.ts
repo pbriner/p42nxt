@@ -11,6 +11,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { describe } from '../core/api';
 import { Favorite, Favorites } from '../core/favorites';
 import { I18n } from '../core/i18n';
+import { Installation } from '../core/installation';
 import { Found, NavItem, NavModule, Navigation, fold, target } from '../core/navigation';
 import { remember, remembered } from '../core/storage';
 import { FolderDialog } from './folder-dialog';
@@ -41,6 +42,7 @@ interface FavoriteRow {
 export class Navigator {
   protected readonly i18n = inject(I18n);
   protected readonly navigation = inject(Navigation);
+  protected readonly installation = inject(Installation);
   protected readonly favorites = inject(Favorites);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);

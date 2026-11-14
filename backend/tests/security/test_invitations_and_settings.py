@@ -76,7 +76,8 @@ async def test_everyone_reads_the_public_settings_only(engine: AsyncEngine) -> N
     async with acting(engine, person.sys_id) as records:
         page = await records.list("sys.setting", limit=500)
     names = {r.values["name"] for r in page.records}
-    assert names == {"sys.time_zone", "sys.stage", "sys.theme"}  # not sys.passwords_off_for
+    # Not sys.passwords_off_for.
+    assert names == {"sys.time_zone", "sys.stage", "sys.theme", "sys.app_name", "sys.language"}
 
 
 async def test_the_time_zone_reaches_the_filters(engine: AsyncEngine) -> None:
