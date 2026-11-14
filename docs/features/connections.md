@@ -58,6 +58,11 @@ a key. A person may use their own connections; a module's jobs may use connectio
 module's own types for the people they work for. Reading calls (`GET`, `HEAD`) are tried again
 when the other side is busy (429, 502, 503, 504), waiting as it asks, at most 30 seconds.
 
+## Changing things in an outside system
+
+To change something in an outside system (place an order, create a ticket), a module records an
+outside call instead of calling directly; see [Outside calls](calls.md).
+
 ## The module update check
 
 A daily core job (`sys.check_updates`, 05:37 UTC) reads the registry's signed index through the

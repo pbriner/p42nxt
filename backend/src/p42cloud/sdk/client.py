@@ -16,6 +16,7 @@ from p42cloud.data.catalog import TableDef
 from p42cloud.data.hooks import Change
 from p42cloud.data.records import Record, Records
 from p42cloud.kernel.errors import Problem
+from p42cloud.services.calls.service import record
 from p42cloud.services.connections.service import connect
 from p42cloud.ui.actions.service import run
 
@@ -85,6 +86,19 @@ class Client:
     ) -> Json:
         """Runs a UI action on a record, checked as over HTTP: a message, where to go next."""
         return await run(self._records, table, name, self._id(sys_id), given=inputs or {})
+
+    async def call(
+        self,
+        name: str,
+        payload: Json,
+        *,
+        owner: UUID | str | None = None,
+        about: tuple[str, UUID | str] | None = None,
+    ) -> UUID:
+        """Records an outside call with this request's change: the worker makes it later,
+        through the owner's connection, at most once (asking first if an answer was lost)."""
+        who = self._id(owner) if owner is not None else None
+        return await record(self._records, name, payload, owner=who, about=about)
 
     @asynccontextmanager
     async def connection(

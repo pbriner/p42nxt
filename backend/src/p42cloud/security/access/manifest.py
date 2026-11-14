@@ -78,6 +78,8 @@ ROLES = [
             Grant("sys.schedule", ("read",)),
             Grant("sys.schedule", ("write",), fields=("cron", "time_zone", "active", "missed")),
             Grant("sys.job_run", ("read",)),
+            Grant("sys.call_type", ("read",)),
+            Grant("sys.outside_call", ("read",)),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",
@@ -117,6 +119,12 @@ ROLES = [
                 "sys.module",
                 ("read",),
                 fields=("name", "label", "version", "description", "category", "icon", "enabled"),
+            ),
+            # The outside calls made for them.
+            Grant(
+                "sys.outside_call",
+                ("read",),
+                condition={"field": "owner", "op": "eq", "value": "@me"},
             ),
             # The screens: what there is to see, and each person's own choices (personal
             # tables: nobody else sees them).

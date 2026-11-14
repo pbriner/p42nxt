@@ -27,6 +27,7 @@ from p42cloud.data.hooks import EVERY_TABLE, TableHook
 from p42cloud.data.settings import Setting
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.security.access.roles import Role
+from p42cloud.services.calls.models import OutsideCall
 from p42cloud.services.connections.models import ConnectionType
 from p42cloud.services.jobs.models import Job, Schedule
 from p42cloud.ui.actions.models import UIAction
@@ -90,6 +91,7 @@ class Module:
     jobs: tuple[Job, ...] = ()
     schedules: tuple[Schedule, ...] = ()
     connection_types: tuple[ConnectionType, ...] = ()
+    calls: tuple[OutsideCall, ...] = ()
     themes: tuple[Theme, ...] = ()
 
     @property

@@ -1,8 +1,9 @@
 """Running the worker: `p42cloud-worker` (the installation's `worker` service).
 
-Every few seconds it queues the runs of due schedules, then works through the queue one run at
-a time; runs a stopped worker left behind are ended. Several workers may run side by side: each
-slot and run is claimed by exactly one. It stops cleanly on SIGTERM, after the current run.
+Every few seconds it queues the runs of due schedules, then delivers outside calls and works
+through the queue of runs, one at a time; runs a stopped worker left behind are ended. Several
+workers may run side by side: each slot, run and call is claimed by exactly one. It stops
+cleanly on SIGTERM, after the current run.
 """
 
 import argparse
@@ -19,6 +20,8 @@ from p42cloud.kernel.secrets import Sealer, use_sealer
 from p42cloud.modules.core import CORE
 from p42cloud.modules.install import compose
 from p42cloud.modules.registry import discover
+from p42cloud.services.calls.service import deliver
+from p42cloud.services.calls.service import recover as recover_calls
 from p42cloud.services.jobs.service import claim, execute, recover, tick
 
 log = logging.getLogger("p42cloud.worker")
@@ -41,17 +44,22 @@ async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
             if now - last_recover >= RECOVER:
                 if ended := await recover(engine, now):
                     log.warning("ended %d runs a stopped worker left behind", ended)
+                if lost := await recover_calls(engine, now):
+                    log.warning("%d outside calls lost their answer; asking first", lost)
                 last_recover = now
             if now - last_tick >= TICK:
                 await tick(engine, now)
                 last_tick = now
+            # One call, then one run, in turn: neither queue can starve the other.
+            if (state := await deliver(engine)) is not None:
+                log.info("outside call: %s", state)
             run = await claim(engine, name)
-            if run is None:
+            if run is not None:
+                state = await execute(engine, run)
+                log.info("%s (attempt %d): %s", run.job, run.attempt, state)
+            elif state is None:
                 with contextlib.suppress(TimeoutError):
                     await asyncio.wait_for(stop.wait(), IDLE)
-                continue
-            state = await execute(engine, run)
-            log.info("%s (attempt %d): %s", run.job, run.attempt, state)
     finally:
         await engine.dispose()
 

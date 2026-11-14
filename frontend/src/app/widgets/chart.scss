@@ -118,6 +118,7 @@ button {
   align-items: center;
   gap: 8px;
   width: 100%;
+  min-height: 24px; // WCAG 2.2 target size: the rows sit right below each other
   padding: 3px 0;
   font: var(--mat-sys-body-small);
 }

@@ -2,6 +2,18 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.15.0
+
+- Outside calls (`OutsideCall`, `sys.call_type`, `sys.outside_call`): a module records a change
+  in an outside system with its own change (`Client.call()`), and the worker makes it later
+  through the owner's connection. Made at most once: when an answer is lost, the other side is
+  asked by the call's key before anything is sent again. Definite refusals fail the call; the
+  module's `done` reacts to the answer as its service account.
+- The worker delivers calls in turn with job runs, and treats calls a stopped worker left
+  sending as lost.
+- In the app: Automation → Outside calls; everyone sees the calls made for them.
+- Chart legends: each row is at least 24 pixels high, so it's easy to hit.
+
 ## 0.14.0
 
 - One safe client for every outside call: https only, no redirects, hosts resolved first and
