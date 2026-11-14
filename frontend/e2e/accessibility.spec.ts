@@ -13,6 +13,7 @@ const PAGES = [
   '/dashboard/hello',
   '/list/sys.connection',
   '/list/sys.schedule',
+  '/list/sys.outside_call',
 ];
 
 test.describe('signed in', () => {

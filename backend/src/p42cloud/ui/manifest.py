@@ -63,6 +63,12 @@ VIEWS = (
         sort=("label",),
         searchable=False,
     ),
+    ListView(
+        "sys.outside_call",
+        ("call", "owner", "state", "attempts", "sent", "message"),
+        sort=("-created",),
+        searchable=False,
+    ),
     ListView("sys.connection_secret", ("name", "connection", "updated"), searchable=False),
     ListView(
         "sys.job_run",
@@ -97,6 +103,13 @@ NAVIGATION = (
         (
             Item("schedules", "Schedules", "sys.schedule", icon="schedule", keywords=("cron",)),
             Item("job_runs", "Job runs", "sys.job_run", icon="history", keywords=("jobs",)),
+            Item(
+                "outside_calls",
+                "Outside calls",
+                "sys.outside_call",
+                icon="send",
+                keywords=("orders", "api"),
+            ),
         ),
     ),
     Section(

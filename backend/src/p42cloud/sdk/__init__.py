@@ -4,9 +4,10 @@ A module declares itself with `Module`, its tables with `Table` and the field ty
 with `Role` and `Grant`, its navigation with `Section` and `Item`, its lists with `ListView`,
 its forms with `FormView`, its buttons with `UIAction`, its form rules with `FormRule`, its
 widgets with `Widget`, its jobs with `Job` and `Schedule`, the outside systems it talks to with
-`ConnectionType`, reacts to its own records' changes with `TableHook`, moves data with
-`Migration`, and reads and changes any module's records with `Client` (and uses connections
-through it). Refusals are `Problem`s.
+`ConnectionType` and the changes it makes there with `OutsideCall`, reacts to its own records'
+changes with `TableHook`, moves data with `Migration`, and reads and changes any module's
+records with `Client` (and uses connections and records outside calls through it). Refusals are
+`Problem`s.
 """
 
 from p42cloud.data.declarations import Table
@@ -37,6 +38,8 @@ from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.modules.manifest import Migration, Module
 from p42cloud.sdk.client import Client
 from p42cloud.security.access.roles import Grant, Role
+from p42cloud.services.calls.models import CallRun, OutsideCall
+from p42cloud.services.calls.models import Refused as CallRefused
 from p42cloud.services.connections.models import ConnectionType
 from p42cloud.services.jobs.models import Job, JobRun, Schedule
 from p42cloud.ui.actions.models import ActionInput, ActionResult, ActionRun, UIAction
@@ -52,6 +55,8 @@ __all__ = [
     "ActionRun",
     "AnyRecord",
     "Boolean",
+    "CallRefused",
+    "CallRun",
     "Change",
     "Choice",
     "Client",
@@ -78,6 +83,7 @@ __all__ = [
     "Markdown",
     "Migration",
     "Module",
+    "OutsideCall",
     "Percent",
     "Phone",
     "Problem",

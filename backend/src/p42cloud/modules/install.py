@@ -24,6 +24,8 @@ from p42cloud.kernel.db import ensure_module_role, owner_transaction
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.modules.manifest import CORE, Module
 from p42cloud.security.access.roles import write_roles
+from p42cloud.services.calls.service import register as register_calls
+from p42cloud.services.calls.service import write_calls
 from p42cloud.services.connections.service import register as register_types
 from p42cloud.services.connections.service import write_types
 from p42cloud.services.jobs.service import register as register_jobs
@@ -93,6 +95,7 @@ def compose(modules: list[Module]) -> None:
         register_actions(module.id, module.actions)
         register_jobs(module.id, module.jobs)
         register_types(module.id, module.connection_types)
+        register_calls(module.id, module.calls)
         settings.declare(*module.settings)
 
 
@@ -264,6 +267,9 @@ async def install_modules(
             await write_widgets(conn, catalog, module.id, module.widgets)
             await write_jobs(conn, module.id, module.jobs, module.schedules)
             await write_types(conn, module.id, module.connection_types)
+            await write_calls(
+                conn, module.id, module.calls, {t.name for t in module.connection_types}
+            )
             await write_navigation(conn, catalog, module.id, module.navigation)
             await write_themes(conn, module.id, module.themes)
             await settings.write(conn, module.id, module.settings)

@@ -25,6 +25,7 @@ from p42cloud.security.sign_in import invitations
 from p42cloud.security.sign_in import models as sign_in
 from p42cloud.security.tokens import hooks as token_hooks
 from p42cloud.security.tokens import models as tokens
+from p42cloud.services.calls import models as calls
 from p42cloud.services.connections import models as connections
 from p42cloud.services.connections import service as connection_service
 from p42cloud.services.jobs import manifest as jobs
@@ -53,6 +54,7 @@ CORE = Module(
         *ui.TABLES,
         *jobs.TABLES,
         *connections.TABLES,
+        *calls.TABLES,
     ),
     roles=tuple(access.ROLES),
     hooks=(
