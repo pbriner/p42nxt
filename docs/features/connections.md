@@ -35,6 +35,10 @@ connection_types=(ConnectionType(
 
 They become records of `sys.connection_type`.
 
+A **shared** type (`shared=True`) has one connection for the whole installation, not one per
+person: a bot, a company system. Only administrators (who may change settings) set it up, there
+can be only one, and only the type's module (and its owner, to check it) uses it.
+
 ## Connections
 
 A connection is a person's own record of `sys.connection` (a type, a name, an address on the

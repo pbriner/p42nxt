@@ -125,6 +125,21 @@ async def _notifications(records: Records, people: dict[str, dict[str, str]]) ->
         await send(records.conn, "sys.job_failed", title, people=[ids["plain"]], severity=severity)
 
 
+async def _telegram(records: Records) -> None:
+    """As if a bot were set up (its name known), and Pat had linked a chat: the profile's
+    Telegram card has something to show. Nothing is ever sent: there's no bot connection."""
+    await records.conn.execute(
+        text("INSERT INTO sys.channel_state (name, bot) VALUES ('telegram', 'p42_test_bot')")
+    )
+    await records.conn.execute(
+        text(
+            "INSERT INTO sys.person_channel (person, channel, state, address, name, full_text)"
+            " SELECT sys_id, 'telegram', 'linked', '0', 'pat_test', false FROM sys.person"
+            " WHERE email = 'plain@e2e.test'"
+        )
+    )
+
+
 async def _prepare(
     database: str, settings: Settings, sealer: Sealer, *, demo: bool, fresh: bool
 ) -> dict[str, object]:
@@ -170,6 +185,8 @@ async def _prepare(
             await _notifications(records, people)
             if demo:
                 await _demo(records, people["admin"])
+            else:
+                await _telegram(records)
     await engine.dispose()
     return {"people": people}
 

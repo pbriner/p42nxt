@@ -14,6 +14,8 @@ import signal
 import socket
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy.ext.asyncio import AsyncEngine
+
 from p42cloud.kernel.config import Settings, get_settings
 from p42cloud.kernel.db import create_engine
 from p42cloud.kernel.secrets import Sealer, use_sealer
@@ -23,6 +25,7 @@ from p42cloud.modules.registry import discover
 from p42cloud.services.calls.service import deliver
 from p42cloud.services.calls.service import recover as recover_calls
 from p42cloud.services.jobs.service import claim, execute, recover, tick
+from p42cloud.services.notifications import telegram
 
 log = logging.getLogger("p42cloud.worker")
 IDLE = 2.0  # seconds between looks when there's nothing to do
@@ -37,19 +40,23 @@ async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
     if settings.master_key_file is not None:  # without it, jobs can't open the vault
         use_sealer(Sealer.from_file(settings.master_key_file))
     name = f"{socket.gethostname()}:{id(stop)}"
-    last_tick = last_recover = datetime.min.replace(tzinfo=UTC)
+    last_tick = last_recover = last_poll = datetime.min.replace(tzinfo=UTC)
     try:
         while not stop.is_set():
             now = datetime.now(UTC)
             if now - last_recover >= RECOVER:
-                if ended := await recover(engine, now):
-                    log.warning("ended %d runs a stopped worker left behind", ended)
-                if lost := await recover_calls(engine, now):
-                    log.warning("%d outside calls lost their answer; asking first", lost)
+                await _recover(engine, now)
                 last_recover = now
             if now - last_tick >= TICK:
                 await tick(engine, now)
                 last_tick = now
+            # The bot is asked every few seconds while someone links a chat, else each minute.
+            if now - last_poll >= TICK and (
+                now - last_poll >= RECOVER or await telegram.waiting(engine)
+            ):
+                await telegram.poll(engine)
+                last_poll = now
+            sent = await telegram.deliver(engine, settings.public_url)
             # One call, then one run, in turn: neither queue can starve the other.
             if (state := await deliver(engine)) is not None:
                 log.info("outside call: %s", state)
@@ -57,11 +64,19 @@ async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
             if run is not None:
                 state = await execute(engine, run)
                 log.info("%s (attempt %d): %s", run.job, run.attempt, state)
-            elif state is None:
+            elif state is None and sent is None:
                 with contextlib.suppress(TimeoutError):
                     await asyncio.wait_for(stop.wait(), IDLE)
     finally:
         await engine.dispose()
+
+
+async def _recover(engine: AsyncEngine, now: datetime) -> None:
+    """What a stopped worker left behind: runs end, calls are asked about."""
+    if ended := await recover(engine, now):
+        log.warning("ended %d runs a stopped worker left behind", ended)
+    if lost := await recover_calls(engine, now):
+        log.warning("%d outside calls lost their answer; asking first", lost)
 
 
 def main(argv: list[str] | None = None) -> int:

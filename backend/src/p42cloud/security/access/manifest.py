@@ -81,6 +81,9 @@ ROLES = [
             Grant("sys.call_type", ("read",)),
             Grant("sys.outside_call", ("read",)),
             Grant("sys.notification_kind", ("read",)),
+            Grant("sys.notification_kind", ("write",), fields=("channels",)),
+            Grant("sys.notification_delivery", ("read",)),
+            Grant("sys.channel_state", ("read",)),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",
@@ -130,6 +133,16 @@ ROLES = [
             # Their notifications (personal: nobody else sees them): read, marked read, put away.
             Grant("sys.notification", ("read", "delete", "restore")),
             Grant("sys.notification", ("write",), fields=("read",)),
+            # Their linked chats and what they get where; which kinds there are, and the bot.
+            Grant("sys.person_channel", ("read", "create", "delete")),
+            Grant("sys.person_channel", ("write",), fields=("full_text",)),
+            Grant("sys.notification_subscription", ALL),
+            Grant(
+                "sys.notification_kind",
+                ("read",),
+                fields=("name", "label", "description", "channels"),
+            ),
+            Grant("sys.channel_state", ("read",), fields=("name", "bot")),
             # The screens: what there is to see, and each person's own choices (personal
             # tables: nobody else sees them).
             *(Grant(t, ("read",)) for t in SCREENS),
