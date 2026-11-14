@@ -110,3 +110,14 @@
     grid-row: auto;
   }
 }
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.choice {
+  width: min(100%, 320px);
+}

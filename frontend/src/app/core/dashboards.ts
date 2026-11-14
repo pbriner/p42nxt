@@ -11,6 +11,9 @@ export interface WidgetDef {
   list: string | null;
   /** A module route answering the figure or the points (source widgets). */
   source: string | null;
+  /** A source widget about one record the person picks: its name in the query, and the table. */
+  param: string | null;
+  param_table: string | null;
   table: string | null;
   filter: unknown;
   measure: string;

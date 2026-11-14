@@ -24,6 +24,7 @@ from p42cloud.sdk import (
     Invalid,
     Item,
     Job,
+    Json,
     ListView,
     Module,
     NotificationKind,
@@ -45,6 +46,7 @@ from p42cloud.sdk import Decimal as Number
 from p42cloud_dca import cycle
 from p42cloud_dca.kraken import KRAKEN
 from p42cloud_dca.orders import PLACE_ORDER
+from p42cloud_dca.widgets import ROUTES, WIDGETS
 
 
 def _yes_or_no(value: Any) -> bool:
@@ -82,7 +84,9 @@ BOOKKEEPING = (
     "last_balance",
     "last_check",
     "last_message",
+    "targets_hit",
 )
+TARGETS = ("target_profit_percent", "target_profit", "loss_limit_percent", "loss_limit")
 
 PLAN = Table(
     "plan",
@@ -112,6 +116,12 @@ PLAN = Table(
         ),
         "cooldown_hours": Number("Hours between extra buys", precision=8, scale=2),
         "active": Boolean("Active", required=True, default=True),
+        # Notify once each is reached: on profit or loss after fees, in % or the currency.
+        "target_profit_percent": Number("Profit target (%)", precision=8, scale=2),
+        "target_profit": Number("Profit target"),
+        "loss_limit_percent": Number("Loss limit (%)", precision=8, scale=2),
+        "loss_limit": Number("Loss limit"),
+        "targets_hit": Json("Reached now"),
         # Off: dry runs. Only the owner switches it, after checking their key.
         "live": Boolean("Real orders", required=True, default=False),
         "keys_checked": Boolean("My Kraken key can't withdraw", required=True, default=False),
@@ -209,6 +219,7 @@ PEOPLE_WRITE = (
     "live",
     "keys_checked",
     "status",  # only back to running, with Resume
+    *TARGETS,
 )
 
 USER = Role(
@@ -266,7 +277,7 @@ def _check_values(values: dict[str, Any], merged: dict[str, Any]) -> None:
         raise _invalid(
             "keys_checked", "Check that your Kraken key can't withdraw money before real orders."
         )
-    for field in ("max_price", "monthly_limit", "cooldown_hours"):
+    for field in ("max_price", "monthly_limit", "cooldown_hours", *TARGETS):
         found = _number(values.get(field), field)
         if found is not None and found <= 0:
             raise _invalid(field, "More than 0, or empty.")
@@ -343,6 +354,8 @@ async def _check_plan(change: Change) -> None:
     _check_values(values, merged)
     await _check_status(change, current)
     await _check_live(change)
+    if set(values) & set(TARGETS) and not _by_cycle(change):
+        values["targets_hit"] = None  # checked afresh
     if set(values) & TIMING:
         values["next_buy"] = None
         values["last_message"] = (
@@ -367,8 +380,8 @@ async def _check_tier(change: Change) -> None:
 module = Module(
     id="dca",
     name="Kraken DCA",
-    version="0.2.0",
-    depends_on={"sys": ">=0.20,<1"},
+    version="0.3.0",
+    depends_on={"sys": ">=0.21,<1"},
     tables=(PLAN, TIER, ORDER),
     roles=(USER, KEEPER),
     hooks=(
@@ -381,6 +394,8 @@ module = Module(
     icon="currency_bitcoin",
     connection_types=(KRAKEN,),
     settings=(LIVE_ALLOWED,),
+    routes=ROUTES,
+    widgets=WIDGETS,
     calls=(PLACE_ORDER,),
     actions=(
         UIAction(
@@ -401,6 +416,12 @@ module = Module(
             "hold",
             "A DCA plan is on hold",
             "To the plan's owner: Kraken refused an order, or one is unclear.",
+            channels=("telegram",),
+        ),
+        NotificationKind(
+            "target",
+            "A DCA target is reached",
+            "To the plan's owner: a profit target or a loss limit, once each time.",
             channels=("telegram",),
         ),
         NotificationKind(
@@ -439,6 +460,7 @@ module = Module(
                 FormSection("Real orders", ("live", "keys_checked", "status", "hold_reason")),
                 FormSection("When", ("mode", "deposit_day", "buy_hour", "end_date")),
                 FormSection("Limits", ("max_price", "monthly_limit")),
+                FormSection("Targets", (*TARGETS, "targets_hit")),
                 FormSection("Price tiers", ("dynamic", "reference", "cooldown_hours")),
                 FormSection(
                     "What it found",
@@ -460,6 +482,9 @@ module = Module(
         Section(
             "Kraken DCA",
             (
+                Item(
+                    "dashboard", "Dashboard", kind="page", path="/dashboard/dca", icon="monitoring"
+                ),
                 Item(
                     "plans",
                     "Plans",

@@ -321,6 +321,7 @@ export const EN = {
   'dash.size_wide': 'Wide',
   'dash.size_large': 'Large',
   'widget.show_all': 'Show all',
+  'widget.choose': 'Nothing to show until something is chosen above.',
   'widget.nothing': 'Nothing here.',
   'widget.reached': '{p}% of {target} reached',
   'widget.total': 'total',

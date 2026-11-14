@@ -33,6 +33,9 @@ WIDGET = Table(
         "list": String("List view", max_length=120),
         # A GET route of the module answering the figure or the chart's points.
         "source_route": String("Source route", max_length=160),
+        # A source widget about one record: the page offers a choice of the table's records.
+        "param": String("Chosen", max_length=40),
+        "param_table": String("Chosen from", max_length=120),
         "filter": Json("Filter"),
         "measure": Choice(
             "Measure",
@@ -110,6 +113,9 @@ class Widget:
     # For what a list can't count or sum: a GET route of the module (/widget/profit) answers
     # the figure or the points. The list still decides who may see the widget.
     source: str | None = None
+    # A source widget about one record the person picks (a plan): its name in the query and the
+    # table it's picked from, `("plan", "dca.plan")`. The page offers the choice.
+    param: tuple[str, str] | None = None
     filter: Any = None
     measure: Literal["count", "sum", "avg", "min", "max"] = "count"
     field: str | None = None

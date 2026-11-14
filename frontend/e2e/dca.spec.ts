@@ -19,3 +19,17 @@ test('a DCA plan is made in the form and says when it buys', async ({ page }, in
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.locator('mat-hint.field-error', { hasText: 'From 1 to 28.' })).toBeVisible();
 });
+
+test('the DCA dashboard shows one plan at a time', async ({ page }, info) => {
+  await page.goto('/dashboard/dca');
+  const choice = page.getByRole('combobox', { name: 'DCA plan' });
+  await expect(choice).toBeVisible();
+  await choice.click();
+  await page.getByRole('option', { name: `Bitcoin ${info.project.name}` }).click();
+  const invested = page.locator('app-widget-card').filter({ hasText: 'Invested' }).first();
+  await expect(invested.getByText(`Bitcoin ${info.project.name} · dry runs`)).toBeVisible();
+  await expect(page.locator('app-widget-card').filter({ hasText: 'Running mode' })).toContainText(
+    'Dry runs',
+  );
+  await noSidewaysScroll(page);
+});

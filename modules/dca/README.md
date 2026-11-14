@@ -1,6 +1,6 @@
 # Kraken DCA (`dca`)
 
-Version: 0.2.0 · Last updated: 2026-11-14
+Version: 0.3.0 · Last updated: 2026-11-14
 
 
 ## Purpose
@@ -13,7 +13,7 @@ real orders, which the installation must allow too.
 
 | Module | Versions | What for |
 |---|---|---|
-| `sys` | `>=0.20,<1` | Always; connections, jobs, notifications, personal tables |
+| `sys` | `>=0.21,<1` | Always; connections, jobs, notifications, personal tables |
 
 Core dependency: no
 
@@ -34,7 +34,10 @@ Core dependency: no
 
 ## Views, navigation and dashboards
 
-Finance → Kraken DCA: Plans, Orders, New plan. The plan's form: Plan, When, Limits, Price
+Finance → Kraken DCA: Dashboard, Plans, Orders, New plan. The dashboard (`/dashboard/dca`)
+shows one plan at a time, chosen above the widgets (kept in the address): 12 figures and 7
+charts, all source widgets of the module's routes, each also available for the home dashboard.
+They count real orders, or the dry runs while there are none. The plan's form: Plan, When, Limits, Price
 tiers, What it found; its tiers and orders as related lists.
 
 ## Workflows, approvals and jobs
@@ -56,11 +59,19 @@ the fill takes Kraken's volume, price, cost and fee. Kraken's refusal, an order 
 after the last try, or an order open for more than 30 minutes puts the plan on hold (`dca.hold`)
 until its owner presses **Resume**. While an order is unclear the plan doesn't buy.
 
+Targets: a plan's profit target and loss limit (in % or the currency, on profit after fees) are
+checked after each cycle, inactive plans too; each one reached notifies the owner once
+(`dca.target`) and is kept in `targets_hit` until it's no longer reached.
+
 Setting: `dca.live_allowed` ("Real DCA orders allowed"), off by default, public.
 
 ## API
 
-None.
+`GET /api/v1/dca/widget/<name>?plan=<id>`: the dashboard's figures and charts (source widgets).
+The plan is read as the caller, so only its owner gets an answer. Names: running_mode, balance,
+invested, bought, average_price, current_value, profit, fees, last_buy, next_buy, planned_buys,
+targets, profit_over_time, invested_per_month, buy_prices, average_price_over_time, holdings,
+invested_over_time, buys_by_type.
 
 ## Outside systems
 

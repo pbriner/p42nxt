@@ -70,21 +70,38 @@ def _shape_problems(where: str, module: str, widget: Widget) -> list[FieldError]
     return found
 
 
+def _source_problems(
+    catalog: Catalog, views: dict[str, str], module: str, widget: Widget, sources: set[str]
+) -> list[FieldError]:
+    """A source widget: a GET route of its module, a list (who may see it), maybe a choice."""
+    where = f"widgets.{widget.name}"
+    found: list[FieldError] = []
+    if widget.param is not None:
+        name, table = widget.param
+        if widget.source is None or not WIDGET_NAME.match(name) or catalog.table(table) is None:
+            found.append(
+                FieldError(where, "bad_param", "A source widget's choice: a name and a table.")
+            )
+    if widget.source is None:
+        return found
+    if widget.kind not in ("figure", "chart"):
+        found.append(FieldError(where, "bad_source", "Only figures and charts have a source."))
+    elif widget.source not in sources:
+        found.append(
+            FieldError(where, "unknown_source", f"{module} has no GET route {widget.source}.")
+        )
+    if widget.list is None or widget.list not in views:
+        found.append(FieldError(where, "unknown_view", "It needs a list: who may see it."))
+    return found
+
+
 def _problems(
     catalog: Catalog, views: dict[str, str], module: str, widget: Widget, sources: set[str]
 ) -> list[FieldError]:
     where = f"widgets.{widget.name}"
     found = _shape_problems(where, module, widget)
-    if widget.source is not None:
-        if widget.kind not in ("figure", "chart"):
-            found.append(FieldError(where, "bad_source", "Only figures and charts have a source."))
-        elif widget.source not in sources:
-            found.append(
-                FieldError(where, "unknown_source", f"{module} has no GET route {widget.source}.")
-            )
-        if widget.list is None or widget.list not in views:
-            found.append(FieldError(where, "unknown_view", "It needs a list: who may see it."))
-        return found
+    if widget.source is not None or widget.param is not None:
+        return found + _source_problems(catalog, views, module, widget, sources)
     if widget.kind == "text":
         if widget.text is None:
             found.append(FieldError(where, "no_text", "A text widget has its text."))
@@ -134,6 +151,8 @@ async def write_widgets(
             "dashboard": w.dashboard,
             "list": w.list,
             "source_route": w.source,
+            "param": w.param[0] if w.param else None,
+            "param_table": w.param[1] if w.param else None,
             "filter": w.filter,
             "measure": w.measure,
             "field": w.field,
@@ -168,6 +187,8 @@ def _definition(row: Any, table: str | None, language: str, shown: str) -> dict[
         "kind": row.kind,
         "list": row.list,
         "source": f"/api/v1/{row.module}{row.source_route}" if row.source_route else None,
+        "param": row.param,
+        "param_table": row.param_table,
         "table": table,
         "filter": row.filter,
         "measure": row.measure,
