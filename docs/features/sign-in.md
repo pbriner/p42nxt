@@ -49,7 +49,9 @@ Waiting sessions end after 10 minutes.
 
 - The browser holds a random token; only its hash is stored.
 - A session ends after `P42_SESSION_IDLE_MINUTES` without use (default 30) and after
-  `P42_SESSION_MAX_HOURS` in any case (default 12).
+  `P42_SESSION_MAX_HOURS` in any case (default 12). Requests the app makes by itself (the bell
+  asking for notifications) send `X-P42-Background: 1` and don't count as use, so an open tab
+  doesn't keep a session alive.
 - People see their own sessions and end them; administrators see and end anyone's. Nobody sees
   a session's token.
 - **Changes to access** (groups, memberships, roles, grants) need the second factor given in the

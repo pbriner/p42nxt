@@ -51,6 +51,11 @@ Platform → Automation: **Schedules** (with **Run now**, **Pause**, **Resume**)
 |---|---|---|
 | `sys.repair_groups` | Nightly, 02:23 UTC | Dynamic groups' members from their rules: for rules on time, and repairs |
 | `sys.check_updates` | Daily, 05:37 UTC | Module updates from the registry (`connections.md`) |
+| `sys.notification_cleanup` | Daily, 03:40 UTC | Puts away old notifications (`notifications.md`) |
+
+When a schedule starts failing (its last try failed, and its run before worked), administrators
+get a notification of the kind `sys.job_failed`, linking to the run. A schedule that keeps
+failing says so once.
 
 ## Testing a module's jobs
 

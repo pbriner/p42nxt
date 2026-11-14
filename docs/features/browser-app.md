@@ -21,7 +21,8 @@ administrator, modules, safety; then the administrator sets up their second fact
 
 ## The frame
 
-- **Top bar**: the navigator button, the search, the person (to their profile) and signing out.
+- **Top bar**: the navigator button, the search, the notification bell (`notifications.md`),
+  the person (to their profile) and signing out.
   An installation that isn't production shows its stage (QA, Test, Dev).
 - **Navigator**: categories, modules, sections and items (`screens.md`), only what the person
   may open. A filter field matches labels, modules and keywords. Favorites: a star on each

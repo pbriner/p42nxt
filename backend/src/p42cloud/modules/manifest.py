@@ -30,6 +30,7 @@ from p42cloud.security.access.roles import Role
 from p42cloud.services.calls.models import OutsideCall
 from p42cloud.services.connections.models import ConnectionType
 from p42cloud.services.jobs.models import Job, Schedule
+from p42cloud.services.notifications.models import NotificationKind
 from p42cloud.ui.actions.models import UIAction
 from p42cloud.ui.forms.models import FormView
 from p42cloud.ui.navigation.models import Entry
@@ -92,6 +93,7 @@ class Module:
     schedules: tuple[Schedule, ...] = ()
     connection_types: tuple[ConnectionType, ...] = ()
     calls: tuple[OutsideCall, ...] = ()
+    notification_kinds: tuple[NotificationKind, ...] = ()
     themes: tuple[Theme, ...] = ()
 
     @property

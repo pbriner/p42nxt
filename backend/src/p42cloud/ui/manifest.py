@@ -69,6 +69,13 @@ VIEWS = (
         sort=("-created",),
         searchable=False,
     ),
+    ListView(
+        "sys.notification",
+        ("title", "severity", "read", "created"),
+        sort=("-created",),
+        search=("title", "message"),
+    ),
+    ListView("sys.notification_kind", ("label", "name", "module"), sort=("label",)),
     ListView("sys.connection_secret", ("name", "connection", "updated"), searchable=False),
     ListView(
         "sys.job_run",
@@ -79,6 +86,18 @@ VIEWS = (
 )
 
 NAVIGATION = (
+    Section(
+        "My work",
+        (
+            Item(
+                "notifications",
+                "Notifications",
+                "sys.notification",
+                icon="notifications",
+                keywords=("inbox", "messages"),
+            ),
+        ),
+    ),
     Section(
         "People and access",
         (
@@ -109,6 +128,9 @@ NAVIGATION = (
                 "sys.outside_call",
                 icon="send",
                 keywords=("orders", "api"),
+            ),
+            Item(
+                "notification_kinds", "Notification kinds", "sys.notification_kind", icon="campaign"
             ),
         ),
     ),
@@ -158,6 +180,26 @@ async def _check(run: ActionRun) -> ActionResult:
 
 
 ACTIONS = (
+    UIAction(
+        "mark_read",
+        "sys.notification",
+        "Mark as read",
+        places=("form_button", "list_bulk", "list_row"),
+        icon="mark_email_read",
+        condition={"field": "read", "op": "eq", "value": False},
+        set={"read": True},
+        message="Marked as read.",
+    ),
+    UIAction(
+        "mark_unread",
+        "sys.notification",
+        "Mark as unread",
+        places=("form_menu", "list_bulk", "list_row"),
+        icon="mark_email_unread",
+        condition={"field": "read", "op": "eq", "value": True},
+        set={"read": False},
+        message="Marked as unread.",
+    ),
     UIAction(
         "check",
         "sys.connection",

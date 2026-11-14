@@ -263,3 +263,9 @@ html[data-cards='raised'] .mat-mdc-card {
 .field-error {
   color: var(--mat-sys-error);
 }
+
+// The bell's menu: 380px, never wider than the screen.
+.mat-mdc-menu-panel.bell-menu {
+  width: 380px;
+  max-width: calc(100vw - 32px);
+}

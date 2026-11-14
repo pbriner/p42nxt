@@ -5,7 +5,7 @@ as JSON (exact numbers and times as text), the person making the request is the 
 the request's transaction is shared. A module never writes another module's tables any other way.
 """
 
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
 from typing import Any
 from uuid import UUID
@@ -18,6 +18,7 @@ from p42cloud.data.records import Record, Records
 from p42cloud.kernel.errors import Problem
 from p42cloud.services.calls.service import record
 from p42cloud.services.connections.service import connect
+from p42cloud.services.notifications.service import send
 from p42cloud.ui.actions.service import run
 
 type Json = dict[str, Any]
@@ -86,6 +87,30 @@ class Client:
     ) -> Json:
         """Runs a UI action on a record, checked as over HTTP: a message, where to go next."""
         return await run(self._records, table, name, self._id(sys_id), given=inputs or {})
+
+    async def notify(  # noqa: PLR0913 - what a notification says, all by keyword
+        self,
+        kind: str,
+        title: str,
+        *,
+        people: Sequence[UUID | str] = (),
+        roles: Sequence[str] = (),
+        message: str | None = None,
+        link: str | None = None,
+        severity: str = "info",
+    ) -> int:
+        """Notifies the people and the roles' holders with this request's change (undone with
+        it); returns how many people were notified."""
+        return await send(
+            self._records.conn,
+            kind,
+            title,
+            people=[self._id(p) for p in people],
+            roles=roles,
+            message=message,
+            link=link,
+            severity=severity,
+        )
 
     async def call(
         self,

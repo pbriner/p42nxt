@@ -30,6 +30,7 @@ from p42cloud.services.connections import models as connections
 from p42cloud.services.connections import service as connection_service
 from p42cloud.services.jobs import manifest as jobs
 from p42cloud.services.jobs.models import Job, Schedule
+from p42cloud.services.notifications import manifest as notifications
 from p42cloud.ui import manifest as ui
 
 # The repository's docs/features, which is also where the image puts them: the same place
@@ -55,6 +56,7 @@ CORE = Module(
         *jobs.TABLES,
         *connections.TABLES,
         *calls.TABLES,
+        *notifications.TABLES,
     ),
     roles=tuple(access.ROLES),
     hooks=(
@@ -78,9 +80,15 @@ CORE = Module(
     themes=ui.THEMES,
     widgets=ui.WIDGETS,
     actions=ui.ACTIONS,
-    jobs=(*jobs.JOBS, Job("check_updates", "Check for module updates", check_updates, timeout=120)),
+    notification_kinds=notifications.KINDS,
+    jobs=(
+        *jobs.JOBS,
+        *notifications.JOBS,
+        Job("check_updates", "Check for module updates", check_updates, timeout=120),
+    ),
     schedules=(
         *jobs.SCHEDULES,
+        *notifications.SCHEDULES,
         Schedule("check_updates", "Module updates, daily", "check_updates", "37 5 * * *"),
     ),
 )

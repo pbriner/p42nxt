@@ -26,6 +26,7 @@ from p42cloud.web.services import Services
 SESSION_COOKIE = "p42_session"
 CSRF_COOKIE = "p42_csrf"
 CSRF_HEADER = "x-csrf-token"
+BACKGROUND_HEADER = "x-p42-background"
 SAFE = frozenset({"GET", "HEAD", "OPTIONS"})
 _MAX_COUNTERS = 100_000  # past this, counters of earlier minutes are dropped
 
@@ -109,7 +110,9 @@ async def who(request: Request) -> Caller:
         token = request.cookies.get(SESSION_COOKIE)
         if not token:
             raise Problem(401, "not_signed_in", "Please sign in.")
-        session = await services.sign_in.session(token)
+        # Requests the app makes by itself say so; they don't keep the session alive.
+        background = request.headers.get(BACKGROUND_HEADER) == "1"
+        session = await services.sign_in.session(token, active=not background)
         if request.method not in SAFE:
             check_origin(request, services.settings)
             given = request.headers.get(CSRF_HEADER)
