@@ -1,0 +1,238 @@
+"""Outside calls: the safe client, connection types, each person's connections and the vault."""
+
+import json
+import os
+import uuid
+from collections.abc import AsyncGenerator, Iterator
+
+import httpx
+import pytest
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+from p42cloud.data.catalog import load_catalog
+from p42cloud.data.records import Records
+from p42cloud.kernel.config import Settings
+from p42cloud.kernel.context import Context, working_as
+from p42cloud.kernel.db import create_engine, owner_transaction, transaction
+from p42cloud.kernel.errors import Problem
+from p42cloud.kernel.outgoing import Refused, host_allowed, safe_client
+from p42cloud.kernel.secrets import Sealer, use_sealer
+from p42cloud.services.connections.models import ConnectionType
+from p42cloud.services.connections.service import (
+    TEST_TRANSPORTS,
+    TYPES,
+    check,
+    connect,
+    write_types,
+)
+from tests.security.helpers import acting
+
+HOST = "1.1.1.1"  # a public address: no name to resolve in tests
+SEEN: list[httpx.Request] = []
+
+
+def _answer(request: httpx.Request) -> httpx.Response:
+    SEEN.append(request)
+    if request.url.path == "/moved":
+        return httpx.Response(302, headers={"Location": "https://127.0.0.1/"})
+    return httpx.Response(200, json={"ok": True})
+
+
+# ---- the safe client ----
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://1.1.1.1/",  # not https
+        "https://127.0.0.1/",
+        "https://10.0.0.8/",
+        "https://169.254.169.254/latest/meta-data",  # the cloud's metadata service
+        "https://[::1]/",
+        "https://[::ffff:127.0.0.1]/",
+        "https://localhost/",
+    ],
+)
+async def test_the_safe_client_refuses_addresses_inside(url: str) -> None:
+    async with safe_client(transport=httpx.MockTransport(_answer)) as http:
+        with pytest.raises(Refused):
+            await http.get(url)
+
+
+async def test_the_safe_client_keeps_to_its_hosts_and_follows_no_redirect() -> None:
+    async with safe_client(allowed_hosts=(HOST,), transport=httpx.MockTransport(_answer)) as http:
+        with pytest.raises(Refused):
+            await http.get("https://8.8.8.8/")
+        moved = await http.get(f"https://{HOST}/moved")
+    assert moved.status_code == 302  # handed back, not followed
+
+
+def test_hosts_match_as_written() -> None:
+    assert host_allowed("api.kraken.com", ["api.kraken.com"])
+    assert host_allowed("eu.api.example.com", ["*.example.com"])
+    assert not host_allowed("example.com", ["*.example.com"])
+    assert not host_allowed("api.kraken.com.evil.test", ["api.kraken.com"])
+
+
+# ---- types ----
+
+
+@pytest.mark.parametrize(
+    ("kind", "code"),
+    [
+        (ConnectionType("x", "X", ()), "no_hosts"),
+        (ConnectionType("x", "X", (HOST,), auth="signed"), "no_sign"),
+        (ConnectionType("x", "X", (HOST,), auth="bearer"), "missing_secret"),
+        (ConnectionType("x", "X", (HOST,), base_url="https://8.8.8.8"), "bad_url"),
+        (ConnectionType("x", "X", (HOST,), base_url=f"http://{HOST}"), "bad_url"),
+    ],
+)
+async def test_connection_types_are_checked(
+    owner_engine: AsyncEngine, kind: ConnectionType, code: str
+) -> None:
+    with working_as(Context(channel="upgrade")), pytest.raises(Problem) as refused:
+        async with owner_transaction(owner_engine) as conn:
+            await write_types(conn, "sys", (kind,))
+    assert code in [e.code for e in refused.value.errors]
+
+
+# ---- connections ----
+
+
+def _sign(request: httpx.Request, secrets: dict[str, str]) -> None:
+    request.headers["X-Signed"] = f"{secrets['key']}:{request.url.path}"
+
+
+async def _check(http: httpx.AsyncClient) -> str:
+    answer = await http.get("/status")
+    return "Answers." if answer.json()["ok"] else "Says no."
+
+
+@pytest.fixture
+def types() -> Iterator[None]:
+    """Two test types, as if a module declared them (the code is all hooks and the client need)."""
+    use_sealer(Sealer(os.urandom(32)))
+    TYPES["sys.bearer_test"] = (
+        "sys",
+        ConnectionType(
+            "bearer_test",
+            "T",
+            (HOST,),
+            auth="bearer",
+            secrets=("token",),
+            base_url=f"https://{HOST}",
+            check=_check,
+        ),
+    )
+    TYPES["sys.signed_test"] = (
+        "sys",
+        ConnectionType("signed_test", "S", (HOST,), auth="signed", secrets=("key",), sign=_sign),
+    )
+    for name in ("sys.bearer_test", "sys.signed_test"):
+        TEST_TRANSPORTS[name] = httpx.MockTransport(_answer)
+    yield
+    for name in ("sys.bearer_test", "sys.signed_test"):
+        TYPES.pop(name, None)
+        TEST_TRANSPORTS.pop(name, None)
+
+
+@pytest.fixture
+async def engine(upgraded: Settings) -> AsyncGenerator[AsyncEngine]:
+    made = create_engine(upgraded.database_url)
+    yield made
+    await made.dispose()
+
+
+async def _people(engine: AsyncEngine) -> tuple[uuid.UUID, uuid.UUID]:
+    tag = uuid.uuid4().hex[:6]
+    async with acting(engine, None) as records:
+        anna = (await records.create("sys.person", {"name": f"Anna {tag}"})).sys_id
+        bob = (await records.create("sys.person", {"name": f"Bob {tag}"})).sys_id
+    return anna, bob
+
+
+async def test_a_connection_signs_in_with_its_sealed_secret(
+    engine: AsyncEngine, types: None
+) -> None:
+    anna, bob = await _people(engine)
+    SEEN.clear()
+    async with acting(engine, anna) as records:
+        made = await records.create("sys.connection", {"type": "sys.bearer_test", "label": "Mine"})
+        with pytest.raises(Problem) as elsewhere:
+            await records.create(
+                "sys.connection",
+                {"type": "sys.bearer_test", "label": "Other", "base_url": "https://8.8.8.8"},
+            )
+        with pytest.raises(Problem) as unknown:
+            await records.create(
+                "sys.connection_secret",
+                {"connection": str(made.sys_id), "name": "password", "value": "x"},
+            )
+        secret = await records.create(
+            "sys.connection_secret",
+            {"connection": str(made.sys_id), "name": "token", "value": "s3cret"},
+        )
+        async with connect(records, "sys.bearer_test") as http:
+            await http.get("/orders")
+    async with acting(engine, bob) as records:
+        with pytest.raises(Problem) as not_his:
+            await records.create(
+                "sys.connection_secret",
+                {"connection": str(made.sys_id), "name": "token", "value": "mine now"},
+            )
+        with pytest.raises(Problem) as not_for_bob:
+            async with connect(records, "sys.bearer_test", owner=anna):
+                pass
+    async with acting(engine, None) as records:
+        stored = await records.conn.scalar(
+            text("SELECT value FROM sys.connection_secret WHERE sys_id = :i"), {"i": secret.sys_id}
+        )
+    assert made.values["base_url"] == f"https://{HOST}"  # the type's usual address
+    assert elsewhere.value.code == unknown.value.code == not_his.value.code == "validation"
+    assert "value" not in secret.values  # never read back
+    assert stored.startswith("v1:") and "s3cret" not in stored  # sealed
+    assert SEEN[-1].headers["Authorization"] == "Bearer s3cret"
+    assert not_for_bob.value.code == "forbidden"
+
+
+async def test_a_modules_job_uses_its_own_types_connections(
+    engine: AsyncEngine, types: None
+) -> None:
+    anna, _ = await _people(engine)
+    async with acting(engine, anna) as records:
+        made = await records.create(
+            "sys.connection",
+            {"type": "sys.signed_test", "label": "Signed", "base_url": f"https://{HOST}"},
+        )
+        await records.create(
+            "sys.connection_secret", {"connection": str(made.sys_id), "name": "key", "value": "k1"}
+        )
+    SEEN.clear()
+    # As a job of the module runs: its own account, on the job's channel.
+    with working_as(Context(channel="job:sys.cycle", person_id=uuid.uuid4())):
+        async with transaction(engine, "sys") as conn:
+            records = Records(conn, await load_catalog(conn))
+            async with connect(records, "sys.signed_test", owner=anna) as http:
+                await http.post("/0/private/Balance")
+    assert SEEN[-1].headers["X-Signed"] == "k1:/0/private/Balance"
+
+
+async def test_a_check_says_whether_a_connection_works(engine: AsyncEngine, types: None) -> None:
+    anna, _ = await _people(engine)
+    async with acting(engine, anna) as records:
+        made = await records.create(
+            "sys.connection", {"type": "sys.bearer_test", "label": "Check me"}
+        )
+        await records.create(
+            "sys.connection_secret", {"connection": str(made.sys_id), "name": "token", "value": "t"}
+        )
+        said = await check(records, made.sys_id)
+        seen = await records.read("sys.connection", made.sys_id)
+    TEST_TRANSPORTS["sys.bearer_test"] = httpx.MockTransport(
+        lambda r: httpx.Response(200, content=json.dumps({"ok": False}))
+    )
+    async with acting(engine, anna) as records:
+        said_now = await check(records, made.sys_id)
+    assert (said, seen.values["health"]) == ("Answers.", "ok")
+    assert said_now == "Says no."

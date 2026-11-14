@@ -50,6 +50,7 @@ Platform → Automation: **Schedules** (with **Run now**, **Pause**, **Resume**)
 | Job | When | What |
 |---|---|---|
 | `sys.repair_groups` | Nightly, 02:23 UTC | Dynamic groups' members from their rules: for rules on time, and repairs |
+| `sys.check_updates` | Daily, 05:37 UTC | Module updates from the registry (`connections.md`) |
 
 ## Testing a module's jobs
 

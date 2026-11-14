@@ -16,8 +16,9 @@ from p42cloud.data.catalog import MetadataCache
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine
+from p42cloud.kernel.outgoing import safe_client
 from p42cloud.kernel.safety import problems
-from p42cloud.kernel.secrets import Sealer
+from p42cloud.kernel.secrets import Sealer, use_sealer
 from p42cloud.modules.core import CORE
 from p42cloud.modules.install import compose, install_modules
 from p42cloud.modules.registry import discover
@@ -41,6 +42,47 @@ from p42cloud.web.routes import (
 from p42cloud.web.services import Services
 
 
+async def _start(
+    settings: Settings, *, sealer: Sealer | None, http: httpx.AsyncClient | None, upgrade: bool
+) -> Services:
+    """What the routes share: checked database, modules installed or composed, sign-in."""
+    engine = create_engine(settings.database_url)
+    found = await problems(engine)
+    if found:
+        await engine.dispose()
+        raise RuntimeError("The database isn't safe: " + " ".join(found))
+    modules = [CORE, *discover()]
+    owner = create_engine(settings.owner_database_url)
+    if upgrade:
+        with working_as(Context(channel="upgrade")):
+            await install_modules(owner, modules)
+    else:
+        compose(modules)
+    # Every outside call goes through the safe client (E-10).
+    client = http or safe_client()
+    seal = sealer or Sealer.from_file(settings.master_key_file)
+    use_sealer(seal)
+    signing_in = SignIn(engine, seal, settings)
+    providers = (
+        Providers(engine, seal, settings=settings, http=client, sign_in=signing_in)
+        if settings.public_url
+        else None
+    )
+    cache = MetadataCache(engine)
+    await cache.start()
+    return Services(
+        settings,
+        engine,
+        owner,
+        seal,
+        signing_in,
+        providers,
+        cache,
+        Rates(settings.requests_per_minute),
+        client,
+    )
+
+
 def create_app(
     settings: Settings,
     *,
@@ -51,47 +93,16 @@ def create_app(
 ) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-        engine = create_engine(settings.database_url)
-        found = await problems(engine)
-        if found:
-            await engine.dispose()
-            raise RuntimeError("The database isn't safe: " + " ".join(found))
-        modules = [CORE, *discover()]
-        owner = create_engine(settings.owner_database_url)
-        if upgrade:
-            with working_as(Context(channel="upgrade")):
-                await install_modules(owner, modules)
-        else:
-            compose(modules)
-        client = http or httpx.AsyncClient(timeout=15)
-        seal = sealer or Sealer.from_file(settings.master_key_file)
-        signing_in = SignIn(engine, seal, settings)
-        providers = (
-            Providers(engine, seal, settings=settings, http=client, sign_in=signing_in)
-            if settings.public_url
-            else None
-        )
-        cache = MetadataCache(engine)
-        await cache.start()
-        app.state.services = Services(
-            settings,
-            engine,
-            owner,
-            seal,
-            signing_in,
-            providers,
-            cache,
-            Rates(settings.requests_per_minute),
-            client,
-        )
+        services = await _start(settings, sealer=sealer, http=http, upgrade=upgrade)
+        app.state.services = services
         try:
             yield
         finally:
-            await cache.stop()
+            await services.cache.stop()
             if http is None:
-                await client.aclose()
-            await engine.dispose()
-            await owner.dispose()
+                await services.http.aclose()
+            await services.engine.dispose()
+            await services.owner.dispose()
 
     app = FastAPI(
         title="P42cloud",

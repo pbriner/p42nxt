@@ -39,6 +39,7 @@ SCREENS = (
     "sys.form_rule",
     "sys.theme",
     "sys.widget",
+    "sys.connection_type",
 )
 PERSONAL = (
     "sys.preference",
@@ -47,6 +48,8 @@ PERSONAL = (
     "sys.view_state",
     "sys.dashboard_layout",
     "sys.related_layout",
+    "sys.connection",
+    "sys.connection_secret",
 )
 MINE = {"field": "owner", "op": "eq", "value": "@me"}
 # Sessions and tokens are the person's own.

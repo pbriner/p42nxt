@@ -27,6 +27,7 @@ from p42cloud.data.hooks import EVERY_TABLE, TableHook
 from p42cloud.data.settings import Setting
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.security.access.roles import Role
+from p42cloud.services.connections.models import ConnectionType
 from p42cloud.services.jobs.models import Job, Schedule
 from p42cloud.ui.actions.models import UIAction
 from p42cloud.ui.forms.models import FormView
@@ -88,6 +89,7 @@ class Module:
     widgets: tuple[Widget, ...] = ()
     jobs: tuple[Job, ...] = ()
     schedules: tuple[Schedule, ...] = ()
+    connection_types: tuple[ConnectionType, ...] = ()
     themes: tuple[Theme, ...] = ()
 
     @property

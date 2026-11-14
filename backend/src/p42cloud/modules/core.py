@@ -13,6 +13,7 @@ from p42cloud.modules.install import compose as connect
 from p42cloud.modules.install import install_modules
 from p42cloud.modules.manifest import CORE as CORE_ID
 from p42cloud.modules.manifest import Module
+from p42cloud.modules.updates import check_updates
 from p42cloud.security.access import hooks as access_hooks
 from p42cloud.security.access import manifest as access
 from p42cloud.security.access import models as access_models
@@ -24,7 +25,10 @@ from p42cloud.security.sign_in import invitations
 from p42cloud.security.sign_in import models as sign_in
 from p42cloud.security.tokens import hooks as token_hooks
 from p42cloud.security.tokens import models as tokens
+from p42cloud.services.connections import models as connections
+from p42cloud.services.connections import service as connection_service
 from p42cloud.services.jobs import manifest as jobs
+from p42cloud.services.jobs.models import Job, Schedule
 from p42cloud.ui import manifest as ui
 
 # The repository's docs/features, which is also where the image puts them: the same place
@@ -48,6 +52,7 @@ CORE = Module(
         invitations.INVITATION,
         *ui.TABLES,
         *jobs.TABLES,
+        *connections.TABLES,
     ),
     roles=tuple(access.ROLES),
     hooks=(
@@ -58,6 +63,7 @@ CORE = Module(
         *settings.TABLE_HOOKS,
         *ui.HOOKS,
         *jobs.HOOKS,
+        *connection_service.TABLE_HOOKS,
     ),
     docs=DOCS if DOCS.is_dir() else None,
     description="People, access, sign-in and the platform itself.",
@@ -70,8 +76,11 @@ CORE = Module(
     themes=ui.THEMES,
     widgets=ui.WIDGETS,
     actions=ui.ACTIONS,
-    jobs=jobs.JOBS,
-    schedules=jobs.SCHEDULES,
+    jobs=(*jobs.JOBS, Job("check_updates", "Check for module updates", check_updates, timeout=120)),
+    schedules=(
+        *jobs.SCHEDULES,
+        Schedule("check_updates", "Module updates, daily", "check_updates", "37 5 * * *"),
+    ),
 )
 
 
