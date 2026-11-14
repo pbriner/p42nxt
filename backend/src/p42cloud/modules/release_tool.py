@@ -25,6 +25,10 @@ from p42cloud.modules.registry import discover
 
 ROOT = Path(__file__).resolve().parents[4]
 NOT_SHIPPED = ("tests/", "README.md")
+# The browser app ships in the core's image: changing it releases the core. Its browser tests
+# and their setup don't ship.
+FRONTEND = "frontend"
+FRONTEND_NOT_SHIPPED = ("e2e/", "README.md", "playwright.config.ts")
 
 
 def _git(*args: str) -> str:
@@ -44,16 +48,22 @@ def _version(text: str) -> Version:
     return Version(tomllib.loads(text)["project"]["version"])
 
 
+def _changed(base: str, where: str, not_shipped: tuple[str, ...]) -> list[str]:
+    return [
+        f
+        for f in _git("diff", "--name-only", f"{base}...HEAD", "--", where).splitlines()
+        if not f.removeprefix(f"{where}/").startswith(not_shipped)
+    ]
+
+
 def check(base: str) -> list[str]:
     """What's missing for the changed packages to be released; empty if nothing."""
     problems: list[str] = []
     for package in _packages():
         where = package.relative_to(ROOT).as_posix()
-        changed = [
-            f
-            for f in _git("diff", "--name-only", f"{base}...HEAD", "--", where).splitlines()
-            if not f.removeprefix(f"{where}/").startswith(NOT_SHIPPED)
-        ]
+        changed = _changed(base, where, NOT_SHIPPED)
+        if where == "backend":
+            changed += _changed(base, FRONTEND, FRONTEND_NOT_SHIPPED)
         if not changed:
             continue
         now = _version((package / "pyproject.toml").read_text())

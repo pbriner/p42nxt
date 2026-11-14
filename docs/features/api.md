@@ -27,6 +27,9 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `/api/v1/sign-in/…` | Signing in and out (below) |
 | `GET /api/v1/openapi.json` | The API's description |
 
+Every other address is the browser app (`browser-app.md`); unknown addresses under `/api/`
+answer `404` as a problem.
+
 The record routes are the records service (`records.md`): the same rules, access and errors for
 every table. Records are JSON: exact numbers and times as text, the version as `_etag`, fields
 the caller may not read left out. Lists and single records also carry:

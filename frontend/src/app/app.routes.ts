@@ -1,0 +1,47 @@
+import { Routes } from '@angular/router';
+
+import { signedIn } from './core/guards';
+import { Shell } from './shell/shell';
+
+const TITLE = 'P42cloud';
+
+export const routes: Routes = [
+  {
+    path: 'sign-in/invitation',
+    loadComponent: () => import('./pages/invitation-page').then((m) => m.InvitationPage),
+    title: TITLE,
+  },
+  {
+    path: 'sign-in',
+    loadComponent: () => import('./pages/sign-in-page').then((m) => m.SignInPage),
+    title: TITLE,
+  },
+  {
+    path: '',
+    component: Shell,
+    canActivate: [signedIn],
+    children: [
+      { path: '', loadComponent: () => import('./pages/home').then((m) => m.Home), title: TITLE },
+      {
+        path: 'list/:view',
+        loadComponent: () => import('./pages/list-page').then((m) => m.ListPage),
+        title: TITLE,
+      },
+      {
+        path: 'search',
+        loadComponent: () => import('./pages/search-page').then((m) => m.SearchPage),
+        title: TITLE,
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./pages/profile').then((m) => m.Profile),
+        title: TITLE,
+      },
+      {
+        path: '**',
+        loadComponent: () => import('./pages/problem-state').then((m) => m.NotFound),
+        title: TITLE,
+      },
+    ],
+  },
+];

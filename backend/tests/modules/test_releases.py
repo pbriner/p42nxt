@@ -172,6 +172,7 @@ def _repo(tmp_path: Path) -> Path:
 
 def _commit(repo: Path, changes: dict[str, str]) -> list[str]:
     for path, body in changes.items():
+        (repo / path).parent.mkdir(parents=True, exist_ok=True)
         (repo / path).write_text(body)
     for command in (
         ["git", "add", "-A"],
@@ -212,6 +213,13 @@ def test_tests_alone_need_no_release(repo: Path) -> None:
 def test_the_core_is_checked_too(repo: Path) -> None:
     problems = _commit(repo, {"backend/src/core.py": "x = 2\n"})
     assert any(p.startswith("backend: changed") for p in problems)
+
+
+def test_the_browser_app_belongs_to_the_core(repo: Path) -> None:
+    tests_only = _commit(repo, {"frontend/e2e/a.spec.ts": "x\n"})
+    shipped = _commit(repo, {"frontend/src/main.ts": "x\n"})
+    assert any(p.startswith("backend: changed") for p in shipped)
+    assert tests_only == []
 
 
 def test_publishing_signs_the_package_and_the_index(

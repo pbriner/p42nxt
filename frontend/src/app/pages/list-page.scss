@@ -1,0 +1,139 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--toolbar-height));
+  box-sizing: border-box;
+}
+
+.box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 160px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius);
+  background: var(--app-card);
+  overflow: hidden;
+}
+
+.progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+}
+
+.scroll {
+  flex: 1;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 44px;
+  padding: 0 8px;
+  text-align: left;
+  background: var(--mat-sys-surface-container-low);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  white-space: nowrap;
+
+  &:first-child {
+    padding-left: 16px;
+  }
+}
+
+.sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font: var(--mat-sys-label-small);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mat-sys-on-surface-variant);
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+  }
+}
+
+.sort-icon {
+  font-size: 18px;
+  opacity: 0.35;
+
+  &.on {
+    opacity: 1;
+    color: var(--mat-sys-primary);
+  }
+}
+
+.sort:hover .sort-icon {
+  opacity: 1;
+}
+
+th[aria-sort='ascending'] .sort,
+th[aria-sort='descending'] .sort {
+  color: var(--mat-sys-on-surface);
+}
+
+td {
+  height: 52px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  overflow-wrap: anywhere;
+
+  &:first-child {
+    padding-left: 16px;
+  }
+}
+
+.number {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+
+  .sort {
+    flex-direction: row;
+  }
+}
+
+tbody tr {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--mat-sys-surface-container-low);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: -2px;
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: 24px;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 4px 8px;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  font: var(--mat-sys-body-small);
+}

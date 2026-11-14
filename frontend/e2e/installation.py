@@ -1,0 +1,174 @@
+"""A real installation for the browser tests: a fresh database with the core and the modules,
+some people, and the app serving the built frontend. The database goes when it stops.
+
+    uv run --directory ../backend python ../frontend/e2e/installation.py --port 8899
+
+Writes what the tests need (addresses, people, their authenticator keys) to
+e2e/.state-<port>.json. Needs the development PostgreSQL (docker compose up -d).
+
+Its database is dropped when it stops. One that a killed run left behind is dropped by the next
+run, once nothing is connected to it any more.
+"""
+
+import argparse
+import asyncio
+import base64
+import json
+import os
+import signal
+import uuid
+from datetime import UTC, datetime
+from pathlib import Path
+
+import uvicorn
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
+
+from p42cloud.data.catalog import load_catalog
+from p42cloud.data.records import Records
+from p42cloud.kernel.config import Settings
+from p42cloud.kernel.context import EVERYTHING, Context, working_as
+from p42cloud.kernel.db import create_engine, transaction
+from p42cloud.kernel.secrets import Sealer
+from p42cloud.kernel.setup import set_up_database
+from p42cloud.modules.core import CORE
+from p42cloud.modules.install import install_modules
+from p42cloud.modules.registry import discover
+from p42cloud.security.access.manifest import ADMINISTRATORS
+from p42cloud.security.sign_in import credentials, totp
+from p42cloud.web.app import create_app
+
+ADMIN_URL = os.environ.get(
+    "P42_TEST_ADMIN_URL", "postgresql+asyncpg://p42_admin:p42-admin-dev-only@localhost:5435/p42"
+)
+HOST = ADMIN_URL.rsplit("@", 1)[1].rsplit("/", 1)[0]
+PASSWORD = "correct horse battery staple"  # noqa: S105 - test people in a throwaway database
+# One person per browser size signs in through the screens; the others sign in once, by API.
+SIGNERS = ("desktop", "dark", "laptop", "tablet", "phone")
+HERE = Path(__file__).resolve().parent
+
+
+async def _person(
+    records: Records, sealer: Sealer, name: str, email: str, groups: list[uuid.UUID]
+) -> dict[str, str]:
+    person = await records.create("sys.person", {"name": name, "email": email})
+    for group in groups:
+        await records.create("sys.membership", {"group": group, "person": person.sys_id})
+    await credentials.set_password(records.conn, person.sys_id, PASSWORD)
+    made = await credentials.start_totp(records.conn, sealer, person.sys_id, "Phone")
+    key = base64.b32decode(made.key + "=" * (-len(made.key) % 8))
+    # Confirmed with the step before now, so the tests' first code is still unused.
+    await credentials.confirm_totp(
+        records.conn,
+        sealer,
+        person.sys_id,
+        made.credential,
+        totp.code(key, totp.step_of(datetime.now(UTC)) - 1),
+    )
+    return {"name": name, "email": email, "password": PASSWORD, "key": made.key}
+
+
+async def _prepare(database: str, settings: Settings, sealer: Sealer) -> dict[str, object]:
+    admin = create_async_engine(ADMIN_URL, isolation_level="AUTOCOMMIT")
+    async with admin.connect() as conn:
+        await conn.execute(text(f'CREATE DATABASE "{database}"'))
+    await admin.dispose()
+    await set_up_database(ADMIN_URL.rsplit("/", 1)[0] + f"/{database}", settings)
+    owner = create_engine(settings.owner_database_url)
+    with working_as(Context(channel="upgrade")):
+        await install_modules(owner, [CORE, *discover()])
+    await owner.dispose()
+    engine = create_engine(settings.database_url)
+    with working_as(Context(channel="ui", access=EVERYTHING)):
+        async with transaction(engine, "sys") as conn:
+            records = Records(conn, await load_catalog(conn))
+            greeters = (await records.create("sys.group", {"name": "Greeters"})).sys_id
+            role = await conn.scalar(text("SELECT sys_id FROM sys.role WHERE name = 'hello.user'"))
+            await records.create("sys.group_role", {"group": greeters, "role": role})
+            people = {
+                "admin": await _person(
+                    records, sealer, "Ada Admin", "admin@e2e.test", [ADMINISTRATORS, greeters]
+                ),
+                "plain": await _person(records, sealer, "Pat Plain", "plain@e2e.test", [greeters]),
+            }
+            for size in SIGNERS:
+                people[f"signer-{size}"] = await _person(
+                    records, sealer, f"Sam {size.title()}", f"{size}@e2e.test", [greeters]
+                )
+                # A password only: sets up the second factor on the first sign-in.
+                new = await records.create(
+                    "sys.person", {"name": f"Noa {size.title()}", "email": f"new-{size}@e2e.test"}
+                )
+                await credentials.set_password(records.conn, new.sys_id, PASSWORD)
+                people[f"newcomer-{size}"] = {
+                    "name": f"Noa {size.title()}",
+                    "email": f"new-{size}@e2e.test",
+                    "password": PASSWORD,
+                    "key": "",
+                }
+    await engine.dispose()
+    return {"people": people}
+
+
+async def _drop_leftovers() -> None:
+    """Test databases of runs that were killed: nobody is connected to them any more."""
+    admin = create_async_engine(ADMIN_URL, isolation_level="AUTOCOMMIT")
+    async with admin.connect() as conn:
+        left = await conn.scalars(
+            text(
+                "SELECT datname FROM pg_database d WHERE datname LIKE 'p42\\_e2e\\_%'"
+                " AND NOT EXISTS (SELECT 1 FROM pg_stat_activity a WHERE a.datname = d.datname)"
+            )
+        )
+        for name in list(left):
+            await conn.execute(text(f'DROP DATABASE IF EXISTS "{name}"'))
+    await admin.dispose()
+
+
+async def _drop(database: str) -> None:
+    admin = create_async_engine(ADMIN_URL, isolation_level="AUTOCOMMIT")
+    async with admin.connect() as conn:
+        await conn.execute(text(f'DROP DATABASE IF EXISTS "{database}" WITH (FORCE)'))
+    await admin.dispose()
+
+
+def _stop(_signal: int, _frame: object) -> None:
+    raise SystemExit(0)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=8899)
+    parser.add_argument("--state", type=Path, default=None)
+    args = parser.parse_args()
+    args.state = args.state or HERE / f".state-{args.port}.json"
+    # Stopping (Ctrl-C, or the test runner's SIGTERM) ends the server, so the database is
+    # dropped below.
+    signal.signal(signal.SIGTERM, _stop)
+    database = f"p42_e2e_{uuid.uuid4().hex[:8]}"
+    url = f"http://localhost:{args.port}"
+    settings = Settings(
+        environment="test",
+        database_url=f"postgresql+asyncpg://p42_app:p42-app-dev-only@{HOST}/{database}",
+        owner_database_url=f"postgresql+asyncpg://p42_owner:p42-owner-dev-only@{HOST}/{database}",
+        public_url=url,
+        requests_per_minute=100_000,
+    )
+    sealer = Sealer(os.urandom(32))
+    asyncio.run(_drop_leftovers())
+    try:
+        state = asyncio.run(_prepare(database, settings, sealer))
+        args.state.write_text(json.dumps({"url": url, **state}, indent=2))
+        uvicorn.run(
+            create_app(settings, sealer=sealer, upgrade=False),
+            host="127.0.0.1",
+            port=args.port,
+            log_level="warning",
+        )
+    finally:
+        asyncio.run(_drop(database))
+        args.state.unlink(missing_ok=True)
+
+
+if __name__ == "__main__":
+    main()

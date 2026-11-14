@@ -1,0 +1,70 @@
+<a class="skip-link" href="#content" (click)="skip($event)">{{ i18n.t('app.skip') }}</a>
+<mat-sidenav-container class="container">
+  <mat-sidenav
+    class="sidenav"
+    [mode]="wide() ? 'side' : 'over'"
+    [opened]="navOpen()"
+    (openedChange)="navOpen.set($event)"
+  >
+    <app-navigator [currentModule]="currentModule()" (navigated)="navigated()" />
+  </mat-sidenav>
+  <mat-sidenav-content class="content-area">
+    <header class="toolbar">
+      <button
+        mat-icon-button
+        type="button"
+        [attr.aria-label]="i18n.t('nav.toggle')"
+        [attr.aria-expanded]="navOpen()"
+        (click)="toggle()"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+      </button>
+      @if (!navOpen() || !wide()) {
+        <a class="brand" routerLink="/">P42cloud</a>
+      }
+      @if (stage()) {
+        <span class="stage" [attr.data-stage]="stage()" [matTooltip]="i18n.t('stage.tip', { stage: stageLabel() })">{{
+          stageLabel()
+        }}</span>
+      }
+      <div class="search-slot">
+        @if (wide()) {
+          <app-global-search [pageList]="pageList()" />
+        } @else {
+          <a mat-icon-button routerLink="/search" [attr.aria-label]="i18n.t('search.title')">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          </a>
+        }
+      </div>
+      <div class="user">
+        @if (person(); as me) {
+          <!-- Named by the person's name it shows (WCAG 2.5.3); the initials are decoration. -->
+          <a
+            class="chip"
+            routerLink="/profile"
+            [matTooltip]="i18n.t('bar.profile')"
+            [attr.aria-label]="nameHidden() ? me.name : null"
+          >
+            <span class="avatar" aria-hidden="true" [attr.data-initials]="initials()"></span>
+            @if (!nameHidden()) {
+              <span class="name">{{ me.name }}</span>
+            }
+          </a>
+        }
+        <button
+          mat-icon-button
+          type="button"
+          class="sign-out"
+          [attr.aria-label]="i18n.t('bar.sign_out')"
+          [matTooltip]="i18n.t('bar.sign_out')"
+          (click)="signOut()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+        </button>
+      </div>
+    </header>
+    <main id="content" tabindex="-1">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>
