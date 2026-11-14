@@ -34,6 +34,13 @@ services:
   web:
     <<: *p42
     entrypoint: ["p42cloud-web"]
+    environment:
+      P42_ENVIRONMENT: ${P42_ENVIRONMENT}
+      P42_DATABASE_URL: postgresql+asyncpg://p42_app:${P42_APP_PASSWORD}@postgres/p42
+      P42_OWNER_DATABASE_URL: postgresql+asyncpg://p42_owner:${P42_OWNER_PASSWORD}@postgres/p42
+      P42_MASTER_KEY_FILE: /run/secrets/master_key
+      # The web installer's one-time code: it works only until the first administrator exists.
+      P42_SETUP_CODE: ${P42_SETUP_CODE}
     ports:
       - "127.0.0.1:${P42_PORT}:8000"
     restart: unless-stopped

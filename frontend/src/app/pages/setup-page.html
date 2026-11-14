@@ -1,0 +1,135 @@
+<main class="screen">
+  <mat-card class="card" appearance="outlined">
+    @if (busy()) {
+      <mat-progress-bar mode="indeterminate" class="progress" />
+    }
+    <div class="brand">
+      <span class="material-symbols-outlined brand-icon" aria-hidden="true">hub</span>
+      <h1>{{ i18n.t('setup.title', { name: name.trim() || installation.name() }) }}</h1>
+    </div>
+
+    @if (!installation.setupOpen()) {
+      <p>{{ i18n.t('setup.closed') }}</p>
+      <a mat-flat-button routerLink="/sign-in">{{ i18n.t('setup.sign_in') }}</a>
+    } @else {
+      <mat-stepper orientation="vertical" [linear]="true" #stepper>
+        <mat-step [label]="i18n.t('setup.code_step')" [completed]="!!code.trim()">
+          <p class="muted">{{ i18n.t('setup.code_hint') }}</p>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>{{ i18n.t('setup.code') }}</mat-label>
+            <input matInput name="code" autocomplete="off" [(ngModel)]="code" required />
+          </mat-form-field>
+          <div class="actions">
+            <button mat-flat-button type="button" matStepperNext [disabled]="!code.trim()">
+              {{ i18n.t('setup.next') }}
+            </button>
+          </div>
+        </mat-step>
+
+        <mat-step [label]="i18n.t('setup.company_step')" [completed]="!!name.trim()">
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>{{ i18n.t('setup.language') }}</mat-label>
+            <mat-select [value]="language" (selectionChange)="chooseLanguage($event.value)">
+              <mat-option value="en">English</mat-option>
+              <mat-option value="de">Deutsch</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>{{ i18n.t('setup.name') }}</mat-label>
+            <input matInput name="company" maxlength="40" [(ngModel)]="name" required />
+            <mat-hint>{{ i18n.t('setup.name_hint') }}</mat-hint>
+          </mat-form-field>
+          <div class="actions">
+            <button mat-button type="button" matStepperPrevious>{{ i18n.t('setup.back') }}</button>
+            <button mat-flat-button type="button" matStepperNext [disabled]="!name.trim()">
+              {{ i18n.t('setup.next') }}
+            </button>
+          </div>
+        </mat-step>
+
+        <mat-step [label]="i18n.t('setup.admin_step')" [completed]="adminReady()">
+          <p class="muted">{{ i18n.t('setup.admin_hint') }}</p>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>{{ i18n.t('setup.admin_name') }}</mat-label>
+            <input matInput name="adminName" autocomplete="name" [(ngModel)]="adminName" required />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>{{ i18n.t('setup.email') }}</mat-label>
+            <input matInput name="email" type="email" autocomplete="username" [(ngModel)]="email" required />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>{{ i18n.t('setup.password') }}</mat-label>
+            <input
+              matInput
+              name="password"
+              type="password"
+              autocomplete="new-password"
+              [(ngModel)]="password"
+              required
+            />
+            <mat-hint>{{ i18n.t('invite.hint') }}</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>{{ i18n.t('setup.repeat') }}</mat-label>
+            <input matInput name="repeat" type="password" autocomplete="new-password" [(ngModel)]="repeat" required />
+            @if (repeat && repeat !== password) {
+              <mat-hint class="field-error">{{ i18n.t('invite.mismatch') }}</mat-hint>
+            }
+          </mat-form-field>
+          <div class="actions">
+            <button mat-button type="button" matStepperPrevious>{{ i18n.t('setup.back') }}</button>
+            <button mat-flat-button type="button" matStepperNext [disabled]="!adminReady()">
+              {{ i18n.t('setup.next') }}
+            </button>
+          </div>
+        </mat-step>
+
+        <mat-step [label]="i18n.t('setup.modules_step')">
+          <p class="muted">{{ i18n.t('setup.modules_hint') }}</p>
+          <ul class="modules">
+            @for (m of modules(); track m.id) {
+              <li>
+                <mat-checkbox
+                  [checked]="kept().has(m.id)"
+                  [disabled]="!!locked(m)"
+                  (change)="toggle(m, $event.checked)"
+                >
+                  <strong>{{ m.name }}</strong>
+                  @if (locked(m); as why) {
+                    <span class="muted"> · {{ why }}</span>
+                  }
+                </mat-checkbox>
+                @if (m.description) {
+                  <p class="muted description">{{ m.description }}</p>
+                }
+              </li>
+            }
+          </ul>
+          <div class="actions">
+            <button mat-button type="button" matStepperPrevious>{{ i18n.t('setup.back') }}</button>
+            <button mat-flat-button type="button" matStepperNext>{{ i18n.t('setup.next') }}</button>
+          </div>
+        </mat-step>
+
+        <mat-step [label]="i18n.t('setup.safety_step')">
+          <mat-radio-group class="choices" [(ngModel)]="backups" name="backups">
+            <mat-radio-button value="done">{{ i18n.t('setup.backups_done') }}</mat-radio-button>
+            <mat-radio-button value="later">{{ i18n.t('setup.backups_later') }}</mat-radio-button>
+          </mat-radio-group>
+          <mat-checkbox name="masterKey" [(ngModel)]="masterKey">{{ i18n.t('setup.master_key') }}</mat-checkbox>
+          @if (error(); as message) {
+            <p class="error-line" role="alert">
+              <span class="material-symbols-outlined" aria-hidden="true">error</span>{{ message }}
+            </p>
+          }
+          <div class="actions">
+            <button mat-button type="button" matStepperPrevious>{{ i18n.t('setup.back') }}</button>
+            <button mat-flat-button type="button" [disabled]="!backups || !masterKey || busy()" (click)="finish()">
+              {{ i18n.t('setup.finish') }}
+            </button>
+          </div>
+        </mat-step>
+      </mat-stepper>
+    }
+  </mat-card>
+</main>

@@ -20,7 +20,7 @@
         <span class="material-symbols-outlined" aria-hidden="true">menu</span>
       </button>
       @if (!navOpen() || !wide()) {
-        <a class="brand" routerLink="/">P42cloud</a>
+        <a class="brand" routerLink="/">{{ installation.name() }}</a>
       }
       @if (stage()) {
         <span class="stage" [attr.data-stage]="stage()" [matTooltip]="i18n.t('stage.tip', { stage: stageLabel() })">{{

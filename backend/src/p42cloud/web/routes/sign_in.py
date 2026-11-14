@@ -44,7 +44,7 @@ def _secure(services: Services) -> bool:
     return url.startswith("https://") or services.settings.environment == "production"
 
 
-def _set(response: Response, services: Services, started: Started) -> dict[str, Any]:
+def set_session(response: Response, services: Services, started: Started) -> dict[str, Any]:
     """The session cookie, and with a signed-in session the CSRF cookie."""
     secure = _secure(services)
     response.set_cookie(
@@ -106,7 +106,7 @@ async def start(body: Password, request: Request, response: Response) -> dict[st
         started = await services.sign_in.start(
             body.email, body.password, address(request), request.headers.get("user-agent")
         )
-    return _set(response, services, started)
+    return set_session(response, services, started)
 
 
 @router.post("/invitation")
@@ -118,7 +118,7 @@ async def accept_invitation(body: Accept, request: Request, response: Response) 
         started = await services.sign_in.accept_invitation(
             body.token, body.password, address(request), request.headers.get("user-agent")
         )
-    return _set(response, services, started)
+    return set_session(response, services, started)
 
 
 @router.post("/code")
@@ -130,7 +130,7 @@ async def with_code(body: Code, request: Request, response: Response) -> dict[st
         started = await services.sign_in.finish(
             _token(request), body.code, address(request), request.headers.get("user-agent")
         )
-    return _set(response, services, started)
+    return set_session(response, services, started)
 
 
 @router.post("/passkey/challenge")
@@ -150,7 +150,7 @@ async def with_passkey(body: Passkey, request: Request, response: Response) -> d
         started = await services.sign_in.finish(
             _token(request), body.answer, address(request), request.headers.get("user-agent")
         )
-    return _set(response, services, started)
+    return set_session(response, services, started)
 
 
 @router.post("/setup/app")
@@ -172,7 +172,7 @@ async def confirm_app(body: ConfirmApp, request: Request, response: Response) ->
         started, codes = await services.sign_in.finish_enrolling(
             _token(request), body.credential, body.code, address(request)
         )
-    return _set(response, services, started) | {"recovery_codes": codes}
+    return set_session(response, services, started) | {"recovery_codes": codes}
 
 
 @router.post("/setup/passkey/options")
@@ -192,7 +192,7 @@ async def setup_passkey(body: Passkey, request: Request, response: Response) -> 
         started, codes = await services.sign_in.enroll_with_passkey(
             _token(request), body.answer, body.label, address(request)
         )
-    return _set(response, services, started) | {"recovery_codes": codes}
+    return set_session(response, services, started) | {"recovery_codes": codes}
 
 
 @router.post("/verify")
@@ -255,5 +255,5 @@ async def provider_callback(state: str, code: str, request: Request) -> Redirect
             state, code, address(request), request.headers.get("user-agent")
         )
     answer = RedirectResponse("/", status_code=302)
-    _set(answer, services, started)
+    set_session(answer, services, started)
     return answer

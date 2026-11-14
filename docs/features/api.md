@@ -23,6 +23,9 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `POST /api/v1/<module>/<table>/action/<name>` | Run it on several (`ids`), a result per record |
 | `GET /api/v1/<module>/<table>/aggregate` | Totals (below) |
 | `GET /api/v1/dashboards/<name>` | A dashboard for the caller (`screens.md`) |
+| `POST /api/v1/mcp` | The MCP server for AI agents, with an API token (`mcp.md`) |
+| `GET /api/v1/installation` | The installation's name and language, and whether setup is open (`setup.md`) |
+| `POST /api/v1/setup` | The web installer, while open |
 | `GET /api/v1/navigation` | The navigator: what the caller may open (`screens.md`) |
 | `GET /api/v1/theme` | A theme's colours and look (anyone) |
 | `GET /api/v1/search` | Every list the caller may read, searched at once |

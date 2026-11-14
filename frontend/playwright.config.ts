@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 // The tests' own installation; 8899 is left for trying the app by hand (installation.py).
 const PORT = Number(process.env['P42_E2E_PORT'] ?? 8898);
 process.env['P42_E2E_PORT'] = String(PORT);
+const FRESH = PORT - 1;
 const URL = `http://localhost:${PORT}`;
 
 /** The browser tests at four sizes, against a real installation serving the built app. */
@@ -20,15 +21,25 @@ export default defineConfig({
     extraHTTPHeaders: { Origin: URL },
     trace: 'retain-on-failure',
   },
-  webServer: {
-    command: `uv run --directory ../backend python ../frontend/e2e/installation.py --port ${PORT}`,
-    url: `${URL}/api/v1/health`,
-    reuseExistingServer: !process.env['CI'],
-    timeout: 120_000,
-    // Stopped politely, so the installation drops its database (a kill leaves it for the next
-    // run to clear).
-    gracefulShutdown: { signal: 'SIGTERM', timeout: 15_000 },
-  },
+  webServer: [
+    {
+      command: `uv run --directory ../backend python ../frontend/e2e/installation.py --port ${PORT}`,
+      url: `${URL}/api/v1/health`,
+      reuseExistingServer: !process.env['CI'],
+      timeout: 120_000,
+      // Stopped politely, so the installation drops its database (a kill leaves it for the
+      // next run to clear).
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 15_000 },
+    },
+    {
+      // Nobody has set this one up: the web installer's test.
+      command: `uv run --directory ../backend python ../frontend/e2e/installation.py --port ${FRESH} --fresh`,
+      url: `http://localhost:${FRESH}/api/v1/health`,
+      reuseExistingServer: !process.env['CI'],
+      timeout: 120_000,
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 15_000 },
+    },
+  ],
   projects: [
     { name: 'setup', testMatch: /.*\.setup\.ts/ },
     {

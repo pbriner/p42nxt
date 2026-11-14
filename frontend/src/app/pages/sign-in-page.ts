@@ -14,6 +14,7 @@ import qrcode from 'qrcode-generator';
 
 import { describe } from '../core/api';
 import { I18n } from '../core/i18n';
+import { Installation } from '../core/installation';
 import { NewApp, Provider, SignIn, Stage, Started } from '../core/sign-in';
 
 type Step = 'password' | Exclude<Stage, 'active'> | 'app' | 'codes';
@@ -53,6 +54,7 @@ export class SignInPage {
   private readonly signIn = inject(SignIn);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  protected readonly installation = inject(Installation);
 
   protected readonly step = signal<Step>((history.state?.stage as Step) ?? 'password');
   protected readonly busy = signal(false);
@@ -73,6 +75,10 @@ export class SignInPage {
 
   constructor() {
     void this.signIn.providers().then((p) => this.providers.set(p));
+    // A new installation is set up first.
+    if (this.installation.setupOpen() && this.step() === 'password') {
+      void this.router.navigate(['/setup']);
+    }
   }
 
   private async run(work: () => Promise<Started | void>): Promise<void> {

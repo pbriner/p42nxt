@@ -9,6 +9,8 @@ import { MatIconRegistry } from '@angular/material/icon';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { routes } from './app.routes';
+import { I18n } from './core/i18n';
+import { Installation } from './core/installation';
 import { Preferences } from './core/preferences';
 import { Session } from './core/session';
 import { SignIn } from './core/sign-in';
@@ -19,6 +21,10 @@ async function start(): Promise<void> {
   const session = inject(Session);
   const signIn = inject(SignIn);
   const preferences = inject(Preferences);
+  const installation = inject(Installation);
+  const i18n = inject(I18n);
+  await installation.load();
+  i18n.useFallback(installation.language());
   try {
     const me = await session.ensure();
     await (me ? signIn.signedIn() : preferences.loadSignedOut());

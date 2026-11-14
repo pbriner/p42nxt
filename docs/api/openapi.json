@@ -158,6 +158,71 @@
         "title": "RunMany",
         "type": "object"
       },
+      "SetupBody": {
+        "properties": {
+          "admin_name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Admin Name",
+            "type": "string"
+          },
+          "backups": {
+            "title": "Backups",
+            "type": "boolean"
+          },
+          "code": {
+            "maxLength": 40,
+            "title": "Code",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 254,
+            "title": "Email",
+            "type": "string"
+          },
+          "language": {
+            "pattern": "^(en|de)$",
+            "title": "Language",
+            "type": "string"
+          },
+          "master_key": {
+            "title": "Master Key",
+            "type": "boolean"
+          },
+          "modules": {
+            "items": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Modules",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 200,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "language",
+          "name",
+          "admin_name",
+          "email",
+          "password",
+          "backups",
+          "master_key"
+        ],
+        "title": "SetupBody",
+        "type": "object"
+      },
       "UndoRequest": {
         "properties": {
           "entry": {
@@ -232,7 +297,7 @@
   },
   "info": {
     "title": "P42cloud",
-    "version": "0.11.0"
+    "version": "0.12.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -305,6 +370,68 @@
         "summary": "Health",
         "tags": [
           "platform"
+        ]
+      }
+    },
+    "/api/v1/installation": {
+      "get": {
+        "description": "The installation's name and language, and whether the web installer is still open.",
+        "operationId": "installation_api_v1_installation_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Installation Api V1 Installation Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Installation",
+        "tags": [
+          "setup"
+        ]
+      }
+    },
+    "/api/v1/mcp": {
+      "get": {
+        "description": "No event stream: every answer comes with its request.",
+        "operationId": "mcp_stream_api_v1_mcp_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Mcp Stream",
+        "tags": [
+          "mcp"
+        ]
+      },
+      "post": {
+        "description": "One JSON-RPC message from an agent: initialize, tools/list, tools/call or ping.",
+        "operationId": "mcp_api_v1_mcp_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Mcp",
+        "tags": [
+          "mcp"
         ]
       }
     },
@@ -562,6 +689,74 @@
         "summary": "Get Search Scopes",
         "tags": [
           "screens"
+        ]
+      }
+    },
+    "/api/v1/setup": {
+      "post": {
+        "description": "Sets the installation up: its first administrator, name, language and modules.",
+        "operationId": "setup_api_v1_setup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Setup Api V1 Setup Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Setup",
+        "tags": [
+          "setup"
+        ]
+      }
+    },
+    "/api/v1/setup/modules": {
+      "get": {
+        "description": "While the installer is open: the installed modules, and which are part of the core.",
+        "operationId": "setup_modules_api_v1_setup_modules_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Setup Modules Api V1 Setup Modules Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Setup Modules",
+        "tags": [
+          "setup"
         ]
       }
     },

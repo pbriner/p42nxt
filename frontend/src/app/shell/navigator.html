@@ -1,7 +1,7 @@
 <nav class="nav" [attr.aria-label]="i18n.t('nav.label')">
   <a class="head" routerLink="/" (click)="navigated.emit()">
     <span class="material-symbols-outlined brand-icon" aria-hidden="true">hub</span>
-    <span class="brand">P42cloud</span>
+    <span class="brand">{{ installation.name() }}</span>
   </a>
 
   <div class="body">
