@@ -128,6 +128,9 @@ Table("budget", "Budget", {..., "owner": Reference("Owner", "sys.person", requir
   time. Only the owner shares, changes or ends a share. People see the shares they made and the
   ones made with them.
 - Someone a record is shared with, even to change it, can't change whose it is.
+- **A module's own jobs** (its service account) see and change the personal records of the
+  module's own tables, for everyone they work for (a buy for each plan's owner), within the
+  module's grants. No other module's jobs, and no person, get that.
 
 ## The core's roles
 

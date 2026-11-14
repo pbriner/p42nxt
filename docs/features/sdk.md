@@ -67,4 +67,7 @@ The repository is one uv workspace: the platform (`backend/`) and every module
 at the root gives an environment for all of them. The app image holds the platform only.
 
 `run_job("<module>.<job>")` runs one of the module's jobs at once, as its service account,
-like the worker (`jobs.md`).
+like the worker (`jobs.md`). `call_route(person, method, address)` calls a module route as a
+person (`module-routes.md`). `stand_in("<module>.<type>", answer)` answers a connection type's
+requests with the test's own function instead of the outside system (an `httpx` handler), with
+secrets sealed by a key made for the test.

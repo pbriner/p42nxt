@@ -9,6 +9,7 @@ resolution-markers = [
 [manifest]
 members = [
     "p42cloud",
+    "p42cloud-dca",
     "p42cloud-hello",
 ]
 
@@ -563,7 +564,7 @@ wheels = [
 
 [[package]]
 name = "p42cloud"
-version = "0.18.0"
+version = "0.19.0"
 source = { editable = "backend" }
 dependencies = [
     { name = "argon2-cffi" },
@@ -610,6 +611,29 @@ dev = [
     { name = "pytest", specifier = ">=8.3" },
     { name = "pytest-asyncio", specifier = ">=0.24" },
     { name = "ruff", specifier = ">=0.8" },
+]
+
+[[package]]
+name = "p42cloud-dca"
+version = "0.1.0"
+source = { editable = "modules/dca" }
+dependencies = [
+    { name = "p42cloud" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "p42cloud", editable = "backend" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
 ]
 
 [[package]]

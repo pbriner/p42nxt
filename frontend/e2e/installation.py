@@ -159,8 +159,11 @@ async def _prepare(
         async with transaction(engine, "sys") as conn:
             records = Records(conn, await load_catalog(conn))
             greeters = (await records.create("sys.group", {"name": "Greeters"})).sys_id
-            role = await conn.scalar(text("SELECT sys_id FROM sys.role WHERE name = 'hello.user'"))
-            await records.create("sys.group_role", {"group": greeters, "role": role})
+            for name in ("hello.user", "dca.user"):
+                role = await conn.scalar(
+                    text("SELECT sys_id FROM sys.role WHERE name = :n"), {"n": name}
+                )
+                await records.create("sys.group_role", {"group": greeters, "role": role})
             people = {
                 "admin": await _person(
                     records, sealer, "Ada Admin", "admin@e2e.test", [ADMINISTRATORS, greeters]

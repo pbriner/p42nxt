@@ -15,6 +15,8 @@ const PAGES = [
   '/list/sys.schedule',
   '/list/sys.outside_call',
   '/list/sys.notification',
+  '/list/dca.plan',
+  '/form/dca.plan/new',
 ];
 
 test.describe('signed in', () => {

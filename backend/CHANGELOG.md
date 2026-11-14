@@ -2,6 +2,13 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.19.0
+
+- A module's own jobs (its service account) see and change the personal records of the module's
+  own tables, for everyone they work for (a buy for each plan's owner); nobody else's tables,
+  and only within the module's grants.
+- The test plugin's `stand_in(type, answer)` answers for an outside system in a module's tests.
+
 ## 0.18.0
 
 - Module routes (`Route`, `RouteRequest`, `sys.module_route`): a module's own HTTP routes under
