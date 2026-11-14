@@ -36,6 +36,8 @@ interface Options {
   /** A 401 means "not signed in" and is the caller's to handle: no redirect. */
   quiet?: boolean;
   signal?: AbortSignal;
+  /** Made by the app itself (polling): doesn't count as the person being there. */
+  background?: boolean;
 }
 
 const CSRF_COOKIE = 'p42_csrf';
@@ -90,6 +92,9 @@ export class Api {
     }
     if (options.ifMatch) {
       headers['If-Match'] = options.ifMatch;
+    }
+    if (options.background) {
+      headers['X-P42-Background'] = '1';
     }
     const csrf = cookie(CSRF_COOKIE);
     if (CHANGES.has(method) && csrf) {

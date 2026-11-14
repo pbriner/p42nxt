@@ -7,6 +7,7 @@ time waiting twice as long. A schedule doesn't start while its previous run is s
 """
 
 import asyncio
+import contextlib
 import json
 import re
 import uuid
@@ -26,6 +27,7 @@ from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.security.access.service import access_for
 from p42cloud.services.jobs.cron import parse
 from p42cloud.services.jobs.models import Job, JobRun, Schedule
+from p42cloud.services.notifications.service import send as notify
 
 JOB_NAME = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 MAX_TIMEOUT = 3600
@@ -418,6 +420,11 @@ async def _finish(
                     text("UPDATE sys.schedule SET last_state = :state WHERE name = :s"),
                     {"state": state, "s": run.schedule},
                 )
+                if state == "failed" and run.attempt > retries:
+                    # Without the core's kinds (a process that composed nothing) it just says
+                    # nothing; the run's end must be recorded either way.
+                    with contextlib.suppress(Problem):
+                        await _tell_failing(conn, run, message, retries)
             if state == "failed" and run.attempt <= retries:
                 wait = FIRST_WAIT * (2 ** (run.attempt - 1))
                 await conn.execute(
@@ -433,6 +440,33 @@ async def _finish(
                         "wait": wait,
                     },
                 )
+
+
+async def _tell_failing(conn: AsyncConnection, run: Any, message: str | None, retries: int) -> None:
+    """Administrators hear when a schedule starts failing: its last try failed, and the run
+    before (its last try) didn't. A schedule that keeps failing says so once."""
+    before = await conn.scalar(
+        text(
+            "SELECT state FROM sys.job_run WHERE schedule = :s AND sys_id <> :id"
+            " AND (state = 'succeeded' OR (state = 'failed' AND attempt > :retries))"
+            " ORDER BY finished DESC NULLS LAST LIMIT 1"
+        ),
+        {"s": run.schedule, "id": run.sys_id, "retries": retries},
+    )
+    if before == "failed":
+        return
+    label = await conn.scalar(
+        text("SELECT label ->> 'en' FROM sys.schedule WHERE name = :s"), {"s": run.schedule}
+    )
+    await notify(
+        conn,
+        "sys.job_failed",
+        f"Failed: {label or run.schedule}",
+        roles=("sys.admin",),
+        message=(message or None) and message[:MAX_MESSAGE],
+        link=f"/form/sys.job_run/{run.sys_id}",
+        severity="error",
+    )
 
 
 async def recover(engine: AsyncEngine, now: datetime | None = None) -> int:

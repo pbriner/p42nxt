@@ -14,6 +14,7 @@ platform, any import of another module, and loading code by name (`importlib`, `
 | `Section`, `Item`, `ListView`, `FormView`, `FormSection`, `RelatedList` | Declaring navigation, list views and forms (`screens.md`) |
 | `Job`, `Schedule`, `JobRun` | Declaring jobs and when they run (`jobs.md`) |
 | `ConnectionType` | Declaring an outside system; `Client.connection()` gives a ready client (`connections.md`) |
+| `NotificationKind` | Declaring what a module tells people about; `Client.notify()` sends (`notifications.md`) |
 | `OutsideCall`, `CallRun`, `CallRefused` | Declaring a change in an outside system; `Client.call()` records one (`calls.md`) |
 | `UIAction`, `ActionInput`, `ActionRun`, `ActionResult`, `FormRule`, `Widget` | Declaring buttons, form rules and widgets (`screens.md`); `Client.action()` runs an action |
 | `TableHook`, `Change` | Code to run when the module's own records change (`records.md`). `change.person` is who makes the change |

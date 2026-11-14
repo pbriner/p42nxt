@@ -30,6 +30,8 @@ from p42cloud.services.connections.service import register as register_types
 from p42cloud.services.connections.service import write_types
 from p42cloud.services.jobs.service import register as register_jobs
 from p42cloud.services.jobs.service import write_jobs
+from p42cloud.services.notifications.service import register as register_kinds
+from p42cloud.services.notifications.service import write_kinds
 from p42cloud.ui.actions.service import register as register_actions
 from p42cloud.ui.actions.service import write_actions
 from p42cloud.ui.forms.service import write_forms
@@ -96,6 +98,7 @@ def compose(modules: list[Module]) -> None:
         register_jobs(module.id, module.jobs)
         register_types(module.id, module.connection_types)
         register_calls(module.id, module.calls)
+        register_kinds(module.id, module.notification_kinds)
         settings.declare(*module.settings)
 
 
@@ -267,6 +270,7 @@ async def install_modules(
             await write_widgets(conn, catalog, module.id, module.widgets)
             await write_jobs(conn, module.id, module.jobs, module.schedules)
             await write_types(conn, module.id, module.connection_types)
+            await write_kinds(conn, module.id, module.notification_kinds)
             await write_calls(
                 conn, module.id, module.calls, {t.name for t in module.connection_types}
             )

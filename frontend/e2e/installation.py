@@ -37,6 +37,7 @@ from p42cloud.modules.install import install_modules
 from p42cloud.modules.registry import discover
 from p42cloud.security.access.manifest import ADMINISTRATORS
 from p42cloud.security.sign_in import credentials, totp
+from p42cloud.services.notifications.service import send
 from p42cloud.web.app import create_app
 from p42cloud.worker.main import work
 
@@ -97,6 +98,33 @@ async def _demo(records: Records, admin: dict[str, str]) -> None:
         )
 
 
+async def _notifications(records: Records, people: dict[str, dict[str, str]]) -> None:
+    """Something in the bell: one for the admin per browser size, a few for Pat."""
+    ids = {
+        name: await records.conn.scalar(
+            text("SELECT sys_id FROM sys.person WHERE email = :e"), {"e": who["email"]}
+        )
+        for name, who in people.items()
+        if name in ("admin", "plain")
+    }
+    for size in ("phone", "tablet", "laptop", "dark", "desktop"):
+        await send(
+            records.conn,
+            "sys.job_failed",
+            f"Failed: Nightly import ({size})",
+            people=[ids["admin"]],
+            message="The outside system didn't answer in time.",
+            link="/list/sys.job_run",
+            severity="error",
+        )
+    for title, severity in (
+        ("Your export is ready", "success"),
+        ("Storage is almost full", "warning"),
+        ("Welcome to P42cloud", "info"),
+    ):
+        await send(records.conn, "sys.job_failed", title, people=[ids["plain"]], severity=severity)
+
+
 async def _prepare(
     database: str, settings: Settings, sealer: Sealer, *, demo: bool, fresh: bool
 ) -> dict[str, object]:
@@ -139,6 +167,7 @@ async def _prepare(
                     "password": PASSWORD,
                     "key": "",
                 }
+            await _notifications(records, people)
             if demo:
                 await _demo(records, people["admin"])
     await engine.dispose()

@@ -1,6 +1,7 @@
 """Signing in: passwords, the second factor, sessions, slowing guessing down, the first admin."""
 
 import base64
+import contextlib
 import os
 import uuid
 from collections.abc import AsyncGenerator, Generator
@@ -226,7 +227,12 @@ async def test_sessions_end_when_unused_and_at_their_latest(
         return (await sign_in.finish(waiting.token, clock.code(person.key))).token
 
     idle = await signed_in()
-    clock.moment += timedelta(minutes=upgraded.session_idle_minutes + 1)
+    # The app polling by itself (the bell) doesn't count as being there.
+    for _ in range(upgraded.session_idle_minutes // 10):
+        clock.moment += timedelta(minutes=10)
+        with contextlib.suppress(Problem):
+            await sign_in.session(idle, active=False)
+    clock.moment += timedelta(minutes=1)
     with pytest.raises(Problem):
         await sign_in.session(idle)
     busy = await signed_in()

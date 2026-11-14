@@ -2,6 +2,18 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.16.0
+
+- Notifications (`NotificationKind`, `sys.notification_kind`, `sys.notification`): a module
+  notifies people and the holders of roles with its change (`Client.notify()`), with a title,
+  a message, a link inside the app and a severity. Each person's notifications are theirs alone;
+  they mark them read or unread and put them away.
+- The bell in the top bar: unread count, the latest ten, mark all as read, show all. It asks
+  once a minute without keeping the session alive (`X-P42-Background`).
+- Administrators are notified when a schedule starts failing (`sys.job_failed`).
+- The daily job `sys.notification_cleanup` puts away old notifications.
+- My work → Notifications; Automation → Notification kinds.
+
 ## 0.15.0
 
 - Outside calls (`OutsideCall`, `sys.call_type`, `sys.outside_call`): a module records a change

@@ -80,6 +80,7 @@ ROLES = [
             Grant("sys.job_run", ("read",)),
             Grant("sys.call_type", ("read",)),
             Grant("sys.outside_call", ("read",)),
+            Grant("sys.notification_kind", ("read",)),
         ),
         powerful=True,
         description="Runs the platform: people, settings, modules.",
@@ -126,6 +127,9 @@ ROLES = [
                 ("read",),
                 condition={"field": "owner", "op": "eq", "value": "@me"},
             ),
+            # Their notifications (personal: nobody else sees them): read, marked read, put away.
+            Grant("sys.notification", ("read", "delete", "restore")),
+            Grant("sys.notification", ("write",), fields=("read",)),
             # The screens: what there is to see, and each person's own choices (personal
             # tables: nobody else sees them).
             *(Grant(t, ("read",)) for t in SCREENS),

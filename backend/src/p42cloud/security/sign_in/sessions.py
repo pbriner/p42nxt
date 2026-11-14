@@ -335,8 +335,11 @@ class SignIn:
             await event(conn, "sign_in", person=str(row.person), method="new_totp", address=address)
         return started, codes
 
-    async def session(self, token: str) -> Session:
-        """The signed-in session a request's token belongs to; 401 if there's none (any more)."""
+    async def session(self, token: str, *, active: bool = True) -> Session:
+        """The signed-in session a request's token belongs to; 401 if there's none (any more).
+
+        `active=False`: a request the app makes by itself (polling), which doesn't count as the
+        person being there, so an open tab doesn't keep an idle session alive."""
         now = self.now()
         async with self._work() as conn:
             row = (await conn.execute(_SESSION, {"token": _hash(token)})).first()
@@ -350,7 +353,7 @@ class SignIn:
                 await event(conn, "session_expired", person=str(row.person))
                 found = None
             else:
-                if now - row.last_seen >= TOUCH_EVERY:
+                if active and now - row.last_seen >= TOUCH_EVERY:
                     await conn.execute(
                         text("UPDATE sys.session SET last_seen = :now WHERE sys_id = :id"),
                         {"now": now, "id": row.sys_id},
