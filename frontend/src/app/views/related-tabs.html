@@ -52,7 +52,18 @@
                     (keydown.enter)="openRow(list.related.table, row)"
                   >
                     @for (c of list.columns; track c) {
-                      <td>{{ value(list.info, row, c) }}</td>
+                      <td>
+                        @if (linkOf(list.info, row, c); as link) {
+                          <a
+                            [routerLink]="link"
+                            (click)="$event.stopPropagation()"
+                            (keydown.enter)="$event.stopPropagation()"
+                            >{{ value(list.info, row, c) }}</a
+                          >
+                        } @else {
+                          {{ value(list.info, row, c) }}
+                        }
+                      </td>
                     }
                   </tr>
                 }

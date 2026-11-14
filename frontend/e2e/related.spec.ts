@@ -60,3 +60,20 @@ test('a person chooses and orders a form’s related lists, and they stay', asyn
   await expect(page.getByRole('tab', { name: /Memberships/ })).toBeVisible();
   await expect(page.getByRole('tab', { name: /Roles of groups/ })).toBeHidden();
 });
+
+test('records in a related list link to their own forms', async ({ page }, info) => {
+  await page.goto('/');
+  const client = await api(page);
+  const name = `Linked ${info.project.name} ${Date.now() % 100000}`;
+  const group = await client.post('/api/v1/sys/group', { name: `Team of ${name}` });
+  const person = await client.post('/api/v1/sys/person', { name });
+  await client.post('/api/v1/sys/membership', { group: group.sys_id, person: person.sys_id });
+
+  await page.goto(`/form/sys.group/${group.sys_id}`);
+  await page.getByRole('tab', { name: /Memberships/ }).click();
+  await page.getByRole('link', { name }).click(); // the person, from the group
+  await expect(page).toHaveURL(new RegExp(`/form/sys.person/${person.sys_id}$`));
+  await page.getByRole('tab', { name: /Memberships/ }).click();
+  await page.getByRole('link', { name: `Team of ${name}` }).click(); // and back to the group
+  await expect(page).toHaveURL(new RegExp(`/form/sys.group/${group.sys_id}$`));
+});

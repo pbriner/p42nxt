@@ -208,6 +208,19 @@ export class RelatedTabs {
     return shown(row, this.field(info, name), name, this.i18n.language(), (k) => this.i18n.t(k));
   }
 
+  /** Where a reference in a row leads: the referenced record's form, if the person may read it
+   * (then the row carries its name). */
+  protected linkOf(info: TableInfo, row: Record<string, unknown>, name: string): string[] | null {
+    const f = this.field(info, name);
+    const table = f?.options.table;
+    const id = row[name];
+    const named = (row['_display'] as Record<string, unknown> | undefined)?.[name];
+    if (f?.type !== 'reference' || !table || table === '-' || !id || named === undefined) {
+      return null;
+    }
+    return ['/form', table, String(id)];
+  }
+
   /** A new record that already points back here. */
   protected prefill(related: Related): Record<string, string> {
     return { [related.field]: this.id() };

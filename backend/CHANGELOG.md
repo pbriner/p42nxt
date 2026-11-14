@@ -2,6 +2,11 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.13.1
+
+- Forms: in related lists, references link to their records (the person on a group's
+  memberships, the group on a person's), if the person may read them.
+
 ## 0.13.0
 
 - Jobs and schedules (`sys.job`, `sys.schedule`, `sys.job_run`) that modules declare (`Job`,

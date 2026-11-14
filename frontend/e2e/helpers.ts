@@ -105,6 +105,7 @@ export async function freshList(page: Page, view: string): Promise<void> {
 /** The dialog once it has finished opening: taps during its animation are lost. */
 export async function opened(page: Page): Promise<Locator> {
   await expect(page.locator('.mat-mdc-dialog-container.mdc-dialog--open')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.getAnimations().length)).toBe(0);
   return page.getByRole('dialog');
 }
 
