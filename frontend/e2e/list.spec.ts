@@ -1,8 +1,18 @@
-import { expect, test } from '@playwright/test';
+import { Locator, Page, TestInfo, expect, test } from '@playwright/test';
 
 import { api, cardsShown, freshList, noSidewaysScroll, opened, storage } from './helpers';
 
 test.use({ storageState: storage('admin') });
+
+/** A record's row: a table row, or a card on small screens. */
+function row(page: Page, info: TestInfo, name: string): Locator {
+  return cardsShown(info)
+    ? page.getByRole('listitem', { name, exact: true })
+    : page.getByRole('cell', { name, exact: true });
+}
+
+// Only the records a test looks at: other tests add people, so the first page changes.
+const NARROW = '/list/sys.person?filter%5Bname%5D%5Bin%5D=System,Database,Pat%20Plain';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -11,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 
 test('a list sorts, and remembers the sort', async ({ page }, info) => {
   test.skip(cardsShown(info), 'cards have no headers');
-  await page.goto('/list/sys.person');
+  await page.goto(NARROW);
   await expect(page.getByRole('heading', { name: 'People' })).toBeVisible();
   const name = page.getByRole('columnheader', { name: 'Name' });
   await expect(page.getByRole('cell', { name: 'Pat Plain', exact: true })).toBeVisible();
@@ -20,15 +30,15 @@ test('a list sorts, and remembers the sort', async ({ page }, info) => {
   await name.getByRole('button').click();
   await expect(name).toHaveAttribute('aria-sort', 'descending');
   await noSidewaysScroll(page);
-  await page.goto('/list/sys.person');
+  await page.goto(NARROW);
   await expect(page.getByRole('columnheader', { name: 'Name' })).toHaveAttribute(
     'aria-sort',
     'descending',
   );
 });
 
-test('filters become chips, and each chip removes its condition', async ({ page }) => {
-  await page.goto('/list/sys.person');
+test('filters become chips, and each chip removes its condition', async ({ page }, info) => {
+  await page.goto(NARROW);
   await page.getByRole('button', { name: 'Add filter' }).click();
   const dialog = await opened(page);
   await dialog.getByRole('combobox', { name: 'Field' }).click();
@@ -41,21 +51,21 @@ test('filters become chips, and each chip removes its condition', async ({ page 
   const chip = page.getByText('Kind is one of Service account');
   await expect(chip).toBeVisible();
   await expect(page).toHaveURL(/filter%5Bkind%5D%5Bin%5D=service/);
-  await expect(page.getByText('Pat Plain')).toBeHidden();
-  await expect(page.getByText('System', { exact: true }).first()).toBeVisible();
+  await expect(row(page, info, 'Pat Plain')).toBeHidden();
+  await expect(row(page, info, 'System')).toBeVisible();
   await page.getByRole('button', { name: 'Remove: Kind is one of Service account' }).click();
   await expect(chip).toBeHidden();
-  await expect(page.getByText('Pat Plain').first()).toBeVisible();
+  await expect(row(page, info, 'Pat Plain')).toBeVisible();
 });
 
 test('right-click: show matching, and hide a column', async ({ page }, info) => {
   test.skip(cardsShown(info), 'the column menu belongs to the table');
   test.skip(!!info.project.use.hasTouch, 'a mouse menu');
-  await page.goto('/list/sys.person');
+  await page.goto(NARROW);
   await page.getByRole('cell', { name: 'Service account' }).first().click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Show matching' }).click();
   await expect(page.getByText('Kind is Service account')).toBeVisible();
-  await expect(page.getByText('Pat Plain')).toBeHidden();
+  await expect(row(page, info, 'Pat Plain')).toBeHidden();
 
   await page.getByRole('columnheader', { name: 'Email' }).click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Hide column' }).click();
@@ -126,7 +136,7 @@ test('deleting asks first, and can be undone', async ({ page }, info) => {
 
 test('small screens show cards', async ({ page }, info) => {
   test.skip(!cardsShown(info), 'cards are for small screens');
-  await page.goto('/list/sys.person');
+  await page.goto(NARROW);
   await expect(page.getByRole('table')).toBeHidden();
   await expect(page.getByRole('listitem', { name: 'Pat Plain' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Columns' })).toBeHidden();

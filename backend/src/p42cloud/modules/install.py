@@ -24,6 +24,7 @@ from p42cloud.kernel.db import ensure_module_role, owner_transaction
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.modules.manifest import CORE, Module
 from p42cloud.security.access.roles import write_roles
+from p42cloud.ui.forms.service import write_forms
 from p42cloud.ui.navigation.service import write_navigation
 from p42cloud.ui.themes.service import write_themes
 from p42cloud.ui.views.service import write_views
@@ -246,6 +247,7 @@ async def install_modules(
                 await module.seed(conn, catalog)
             await write_docs(conn, module.id, module.docs)
             await write_views(conn, catalog, module.id, module.views)
+            await write_forms(conn, catalog, module.id, module.forms)
             await write_navigation(conn, catalog, module.id, module.navigation)
             await write_themes(conn, module.id, module.themes)
             await settings.write(conn, module.id, module.settings)

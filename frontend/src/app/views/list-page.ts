@@ -108,6 +108,16 @@ export class ListPage {
   private readonly before = signal<(string | null)[]>([]);
   private readonly after = signal<string | null>(null);
   private opened: string | null = null;
+  /** What the shown page was loaded for. */
+  private loadedKey: string | null = null;
+  private readonly stateKey = computed(() =>
+    JSON.stringify([
+      this.conditions(),
+      this.sort(),
+      this.search(),
+      this.query()?.get('where') ?? null,
+    ]),
+  );
 
   protected readonly fields = computed(
     () => new Map((this.table()?.fields ?? []).map((f) => [f.name, f])),
@@ -162,12 +172,11 @@ export class ListPage {
         void untracked(() => this.open(name));
       }
     });
-    // Filters, sort or search changed in the address: from the first page again.
+    // Filters, sort or search changed: from the first page again (only if they really did, so
+    // a list opening doesn't load twice and lose what was chosen).
     effect(() => {
-      this.conditions();
-      this.sort();
-      this.search();
-      if (untracked(() => this.view())) {
+      const key = this.stateKey();
+      if (untracked(() => this.view()) && key !== this.loadedKey) {
         untracked(() => {
           this.before.set([]);
           this.after.set(null);
@@ -242,6 +251,7 @@ export class ListPage {
       parts.push({ or: searched.map((f) => ({ field: f, op: 'contains', value: q })) });
     }
     const where = parts.length === 0 ? null : parts.length === 1 ? parts[0] : { and: parts };
+    this.loadedKey = this.stateKey();
     this.busy.set(true);
     this.error.set(null);
     try {

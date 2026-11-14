@@ -1,6 +1,7 @@
 """What the screens add to the core: their tables, hooks, settings, views, navigation, themes."""
 
 from p42cloud.ui.favorites import models as favorites
+from p42cloud.ui.forms.models import FORM_VIEW
 from p42cloud.ui.navigation.models import NAV_ITEM, Item, Section
 from p42cloud.ui.preferences import models as preferences
 from p42cloud.ui.shell import STAGE
@@ -14,6 +15,7 @@ from p42cloud.ui.views.models import ListView
 TABLES = (
     NAV_ITEM,
     *views.TABLES,
+    FORM_VIEW,
     THEME,
     preferences.PREFERENCE,
     favorites.FAVORITE,

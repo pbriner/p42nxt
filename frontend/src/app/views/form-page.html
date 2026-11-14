@@ -1,0 +1,147 @@
+@if (failed(); as problem) {
+  <app-problem-state [status]="problem.status" [detail]="problem.detail ?? problem.title" />
+} @else if (info(); as table) {
+  <form class="page form" (submit)="$event.preventDefault(); save()">
+    <header class="page-header">
+      <button
+        mat-icon-button
+        type="button"
+        [attr.aria-label]="i18n.t('form.back')"
+        [matTooltip]="i18n.t('form.back')"
+        (click)="back()"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      </button>
+      <h1>{{ title() }}</h1>
+      <span class="spacer"></span>
+      @if (!creating() && access()['delete'] && !deleted()) {
+        <button
+          mat-icon-button
+          type="button"
+          [attr.aria-label]="i18n.t('form.delete')"
+          [matTooltip]="i18n.t('form.delete')"
+          (click)="remove()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+        </button>
+      }
+      @if (writable()) {
+        <button mat-flat-button type="submit" [disabled]="!changed().length || busy()">
+          {{ creating() ? i18n.t('form.create') : i18n.t('form.save') }}
+        </button>
+      }
+    </header>
+    @if (busy()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    @if (draft()) {
+      <div class="note" role="status">
+        <span class="material-symbols-outlined" aria-hidden="true">history</span>
+        <span>{{ i18n.t('form.draft') }}</span>
+        <span class="spacer"></span>
+        <button mat-button type="button" (click)="discardDraft()">{{ i18n.t('form.discard') }}</button>
+        <button mat-stroked-button type="button" (click)="restoreDraft()">{{ i18n.t('form.restore_draft') }}</button>
+      </div>
+    }
+
+    @if (conflict(); as c) {
+      <div class="conflict" role="alert">
+        <h2>{{ i18n.t('form.conflict_title') }}</h2>
+        <p>{{ i18n.t('form.conflict_text') }}</p>
+        @if (c.rows.length) {
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">{{ i18n.t('form.field') }}</th>
+                <th scope="col">{{ i18n.t('form.theirs') }}</th>
+                <th scope="col">{{ i18n.t('form.mine') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of c.rows; track row.field.name; let i = $index) {
+                <tr>
+                  <th scope="row">{{ row.field.label }}</th>
+                  <td>
+                    <mat-radio-button
+                      [name]="'keep-' + i"
+                      [checked]="row.keep === 'theirs'"
+                      (change)="choose(i, 'theirs')"
+                      >{{ row.theirs }}</mat-radio-button
+                    >
+                  </td>
+                  <td>
+                    <mat-radio-button
+                      [name]="'keep-' + i"
+                      [checked]="row.keep === 'mine'"
+                      (change)="choose(i, 'mine')"
+                      >{{ row.mine }}</mat-radio-button
+                    >
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+        <div class="actions">
+          <button mat-button type="button" (click)="reload()">{{ i18n.t('form.reload') }}</button>
+          <button mat-flat-button type="button" (click)="resolve()">{{ i18n.t('form.keep_choices') }}</button>
+        </div>
+      </div>
+    }
+
+    @if (deleted()) {
+      <div class="note" role="status">
+        <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+        <span>{{ i18n.t('form.is_deleted', { item: table.label.toLowerCase() }) }}</span>
+        <span class="spacer"></span>
+        @if (access()['restore']) {
+          <button mat-stroked-button type="button" (click)="restore()">{{ i18n.t('form.restore') }}</button>
+        }
+      </div>
+    } @else if (!writable()) {
+      <div class="note" role="status">
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        <span>{{ i18n.t('form.read_only', { item: table.label.toLowerCase() }) }}</span>
+      </div>
+    }
+
+    @for (section of sections(); track $index) {
+      <mat-card appearance="outlined" class="section">
+        <mat-card-header>
+          <mat-card-title>{{ section.title }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="grid" [style.--columns]="section.columns">
+            @for (f of section.fields; track f.name) {
+              <div class="cell" [class.wide]="wide(f)">
+                @if (editable(f)) {
+                  <app-field
+                    [field]="f"
+                    [value]="values()[f.name] ?? null"
+                    [error]="errors()[f.name] ?? null"
+                    [shown]="displayed(f)"
+                    (changed)="set(f.name, $event)"
+                  />
+                } @else {
+                  <app-field-display [field]="f" [record]="original()" />
+                }
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+    <button type="submit" hidden aria-hidden="true" tabindex="-1"></button>
+
+    @if (meta(); as line) {
+      <p class="meta muted">{{ line }}</p>
+    }
+
+    @if (!creating() && !deleted()) {
+      <app-related-tabs [table]="table.table" [id]="id()" [lists]="related()" />
+    }
+  </form>
+} @else {
+  <mat-progress-bar mode="indeterminate" />
+}

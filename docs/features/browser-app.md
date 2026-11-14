@@ -50,6 +50,19 @@ do nothing a script with the same rights couldn't.
     shows as "(no access)".
   - Below 720 pixels the list shows cards: the first column as the title, the second as the
     main line, the rest below.
+- **Forms** (`/form/<table>/<id>`, `/form/<table>/new`), the same for every table:
+  - The form view's sections, with an editor for each field type, or the value as text (and a
+    link where it leads) when the person may not change it. Below 600 pixels, one column.
+  - **Save** sends only what changed, with the record's version. If someone saved in between,
+    their changes are taken, and where both changed a field the person chooses whose value to
+    keep, field by field.
+  - **Unsaved changes** stay in the browser tab: leaving by accident and coming back offers them
+    again (secrets excepted). Closing the tab with changes asks first.
+  - **Required fields** and the API's refusals show at their fields.
+  - **Delete** asks first and can be undone; a deleted record says so and can be restored.
+  - **Related**: a tab per kind of record pointing here, with its count; empty ones wait under
+    "More". "New" in a tab makes a record that already points back.
+  - Who made and last changed the record, and when.
 - **Profile**: light, dark or like the system; the colour theme; the language (English, German,
   or like the browser); records per page. Each is saved as soon as it changes.
 - A page that doesn't exist says so; a list the person may not see says they have no access.

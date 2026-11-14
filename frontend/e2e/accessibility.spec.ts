@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 
 import { storage } from './helpers';
 
-const PAGES = ['/', '/profile', '/search?q=Ada', '/list/sys.person'];
+const PAGES = ['/', '/profile', '/search?q=Ada', '/list/sys.person', '/form/sys.group/new'];
 
 test.describe('signed in', () => {
   test.use({ storageState: storage('admin') });

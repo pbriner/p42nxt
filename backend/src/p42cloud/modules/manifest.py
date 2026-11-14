@@ -27,6 +27,7 @@ from p42cloud.data.hooks import TableHook
 from p42cloud.data.settings import Setting
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.security.access.roles import Role
+from p42cloud.ui.forms.models import FormView
 from p42cloud.ui.navigation.models import Entry
 from p42cloud.ui.themes.models import Theme
 from p42cloud.ui.views.models import ListView
@@ -77,6 +78,7 @@ class Module:
     icon: str = "extension"
     navigation: tuple[Entry, ...] = ()
     views: tuple[ListView, ...] = ()
+    forms: tuple[FormView, ...] = ()
     themes: tuple[Theme, ...] = ()
 
     @property

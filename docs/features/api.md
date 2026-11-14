@@ -44,7 +44,8 @@ the caller may not read left out. Lists and single records also carry:
 in the caller's language, its display field, whether it's personal, which operations the caller
 may use (on some records), and every field (system fields too) with its type, label, help,
 options (choices with their labels), whether it's required or unique, its default, whether it
-can be filtered, and whether the caller may read, set or change it.
+can be filtered (and its kind: which conditions apply), and whether the caller may read, set or
+change it; and `referenced_by`, the tables pointing to it through fields the caller may read.
 
 **Lists** take `limit` (1 to 500, default 50), `after` (the `next` of the previous page), `sort`
 (`-price,name`), `count`, `deleted`, and filters in two forms, both ANDed:
