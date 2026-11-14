@@ -19,11 +19,14 @@ from p42cloud.sdk import (
     FormView,
     Grant,
     Item,
+    Job,
+    JobRun,
     ListView,
     Module,
     Problem,
     Reference,
     Role,
+    Schedule,
     Section,
     String,
     Table,
@@ -65,6 +68,21 @@ USER = Role(
     description="Reads every greeting and leaves their own.",
 )
 
+# For hello's own jobs (their service account gets the module's roles): no person needs it.
+KEEPER = Role(
+    "hello.keeper",
+    "Greetings keeper",
+    grants=(Grant("hello.greeting", ("read", "write")),),
+    description="Tidies up greetings: for hello's jobs.",
+)
+
+OLD_PIN = {
+    "and": [
+        {"field": "pinned", "op": "eq", "value": True},
+        {"field": "created", "op": "lt", "value": "@today-30d"},
+    ]
+}
+
 
 async def _before_saving(change: Change) -> None:
     """A greeting says something, and its author is whoever leaves it."""
@@ -75,6 +93,17 @@ async def _before_saving(change: Change) -> None:
         change.values["text"] = text.strip()
     if change.operation == "create":
         change.values["author"] = change.person
+
+
+async def _unpin_old(run: JobRun) -> str:
+    """Greetings pinned more than 30 days ago are unpinned: a job running every night."""
+    client = Client(run.records)
+    found = await client.list("hello.greeting", where=OLD_PIN, limit=500)
+    for greeting in found["records"]:
+        await client.update(
+            "hello.greeting", greeting["sys_id"], {"pinned": False}, greeting["_etag"]
+        )
+    return f"{len(found['records'])} unpinned."
 
 
 async def _sign(run: ActionRun) -> ActionResult:
@@ -88,10 +117,10 @@ async def _sign(run: ActionRun) -> ActionResult:
 module = Module(
     id="hello",
     name="Hello",
-    version="0.4.0",
-    depends_on={"sys": ">=0.11,<1"},
+    version="0.5.0",
+    depends_on={"sys": ">=0.13,<1"},
     tables=(GREETING,),
-    roles=(USER,),
+    roles=(USER, KEEPER),
     hooks=(TableHook("hello.greeting", before=_before_saving),),
     docs=Path(__file__).parent / "docs",
     description="The reference module: greetings.",
@@ -208,6 +237,8 @@ module = Module(
             shown="available",
         ),
     ),
+    jobs=(Job("unpin_old", "Unpin old greetings", _unpin_old, timeout=60),),
+    schedules=(Schedule("unpin_old", "Old pins, nightly", "unpin_old", "41 4 * * *"),),
     navigation=(
         Section(
             "Greetings",

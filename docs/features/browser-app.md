@@ -72,8 +72,12 @@ administrator, modules, safety; then the administrator sets up their second fact
     again (secrets excepted). Closing the tab with changes asks first.
   - **Required fields** and the API's refusals show at their fields.
   - **Delete** asks first and can be undone; a deleted record says so and can be restored.
-  - **Related**: a tab per kind of record pointing here, with its count; empty ones wait under
-    "More". "New" in a tab makes a record that already points back.
+  - **Related**: a tab per kind of record pointing here, with its count. **Related lists…**
+    opens a slushbucket: the available lists on one side, the shown ones on the other, moved
+    across (buttons, double click, dragging) and put in order; a filter on each side. What a
+    person chooses, and the tab open last, is kept for them per form, on the server; **Reset to
+    default** shows the declared lists, then those with records, again. "New" in a tab makes a
+    record that already points back.
   - **Actions**: the record's buttons, and more under ⋮, shown only when the server offers
     them for this record; they may ask first or ask for something. Lists offer them on chosen
     records and in a record's right-click menu.

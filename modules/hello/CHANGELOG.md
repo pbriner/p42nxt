@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+- A nightly job unpins greetings pinned more than 30 days ago; it acts with the new
+  "Greetings keeper" role, which only hello's jobs get.
+- Needs the core 0.13 or later.
+
 ## 0.4.0
 
 - A dashboard: pinned greetings, greetings by language and per month, and a note about

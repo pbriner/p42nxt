@@ -70,3 +70,27 @@ async def test_related_lists_are_those_one_may_read(engine: AsyncEngine) -> None
         found[name] = {f"{r['table']}.{r['field']}" for r in described["referenced_by"]}
     assert "sys.membership.person" in found["admin"]
     assert "sys.membership.person" not in found["plain"]  # they may not read memberships
+
+
+async def test_related_lists_are_kept_per_person_and_form(engine: AsyncEngine) -> None:
+    tag = uuid.uuid4().hex[:6]
+    async with acting(engine, None) as records:
+        anna = (await records.create("sys.person", {"name": f"Anna {tag}"})).sys_id
+        bob = (await records.create("sys.person", {"name": f"Bob {tag}"})).sys_id
+    shown = [{"table": "sys.membership", "field": "group"}]
+    async with acting(engine, anna) as records:
+        made = await records.create("sys.related_layout", {"form": "sys.group", "shown": shown})
+        refused: list[str] = []
+        for bad in ([{"table": "x"}], [shown[0], shown[0]], "all"):
+            with pytest.raises(Problem) as wrong:
+                await records.create("sys.related_layout", {"form": "sys.person", "shown": bad})
+            refused.append(wrong.value.code)
+        with pytest.raises(Problem):
+            await records.create("sys.related_layout", {"form": "sys.group", "shown": []})
+    async with acting(engine, bob) as records:
+        bobs = await records.list(
+            "sys.related_layout", where={"field": "form", "op": "eq", "value": "sys.group"}
+        )
+    assert made.values["person"] == anna and made.values["shown"] == shown
+    assert refused == ["validation"] * 3
+    assert bobs.records == []  # each person's own

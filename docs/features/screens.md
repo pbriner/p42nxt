@@ -154,6 +154,7 @@ the record.
 | `sys.preference` | One per person: mode (like the system, light or dark), theme, records per page (10, 20, 30, 40, 50, 100, 500, or 5000 for all), language |
 | `sys.favorite` | Navigation items marked as favorites, and folders of them, ordered by `position`. Folders are one level deep; deleting a folder moves its favorites to the top level. At most 200 |
 | `sys.saved_view` | A list's columns, sort, filter and search under a name. One of a person's saved views of a list may open by default; marking another moves the mark. At most 100 per list |
+| `sys.related_layout` | One per form: the related lists a person chose, in order, and the tab open last |
 | `sys.view_state` | The columns and sort a person last used on a list, one per list |
 
 Columns, sort and filters are checked against the list's table when they're saved.

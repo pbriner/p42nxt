@@ -1,5 +1,6 @@
-# One P42cloud installation: its database and the p42cloud app image. Created by install.sh, which writes the
-# .env next to this file. The database isn't reachable from outside the installation.
+# One P42cloud installation: its database, and the p42cloud app image as web and worker.
+# Created by install.sh, which writes the .env next to this file. The database isn't reachable
+# from outside the installation.
 name: ${COMPOSE_PROJECT_NAME}
 
 x-p42: &p42
@@ -43,6 +44,12 @@ services:
       P42_SETUP_CODE: ${P42_SETUP_CODE}
     ports:
       - "127.0.0.1:${P42_PORT}:8000"
+    restart: unless-stopped
+
+  # The worker: runs jobs and schedules. Reachable from nowhere; it only talks to the database.
+  worker:
+    <<: *p42
+    entrypoint: ["p42cloud-worker"]
     restart: unless-stopped
 
   # One-off commands, run by install.sh.

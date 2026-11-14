@@ -95,8 +95,8 @@ echo "Bringing it to this version ..."
 docker compose run --rm upgrade
 echo "Checking that it's safe ..."
 docker compose run --rm check
-echo "Starting the app ..."
-docker compose up -d web
+echo "Starting the app and its worker ..."
+docker compose up -d web worker
 for _ in $(seq 1 60); do
     if curl -fsS "http://127.0.0.1:$port/api/v1/health" >/dev/null 2>&1; then
         break
