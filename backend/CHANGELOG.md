@@ -2,6 +2,17 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.9.0
+
+- Form views are records (`sys.form_view`): modules declare sections and related lists
+  (`FormView`, `FormSection`, `RelatedList`); every other table gets one made from its fields.
+- Table descriptions list `referenced_by`: the tables pointing to the table, through fields the
+  caller may read.
+- Forms in the browser app: an editor per field type, saving only what changed, choosing per
+  field when someone saved in between, unsaved changes kept in the tab, delete with undo,
+  related lists with counts.
+- Lists load once when they open (they loaded twice, which could clear a selection).
+
 ## 0.8.0
 
 - Lists in the browser app: filters as chips (with relative dates), right-click menus on values

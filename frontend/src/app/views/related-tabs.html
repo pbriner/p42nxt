@@ -1,0 +1,78 @@
+<section class="related" [attr.aria-label]="i18n.t('form.related')">
+  <div class="head">
+    <h2>{{ i18n.t('form.related') }}</h2>
+    @if (more().length) {
+      <button mat-button type="button" [matMenuTriggerFor]="moreMenu">
+        <span class="material-symbols-outlined" aria-hidden="true">add</span
+        >{{ i18n.t('form.more', { n: more().length }) }}
+      </button>
+      <mat-menu #moreMenu="matMenu">
+        @for (r of more(); track key(r)) {
+          <button mat-menu-item type="button" (click)="addTab(r)">{{ r.label }}</button>
+        }
+      </mat-menu>
+    }
+  </div>
+  @if (tabs().length) {
+    <mat-tab-group
+      mat-stretch-tabs="false"
+      mat-align-tabs="start"
+      animationDuration="0ms"
+      [selectedIndex]="selected()"
+      (selectedIndexChange)="choose($event)"
+    >
+      @for (r of tabs(); track key(r)) {
+        <mat-tab>
+          <ng-template mat-tab-label>
+            {{ r.label }} <span class="count">{{ count(r) }}</span>
+          </ng-template>
+        </mat-tab>
+      }
+    </mat-tab-group>
+    @if (opened(); as list) {
+      <div class="list">
+        <div class="list-head">
+          @if (list.info.operations['create']) {
+            <a
+              mat-stroked-button
+              [routerLink]="['/form', list.related.table, 'new']"
+              [queryParams]="prefill(list.related)"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">add</span>{{ i18n.t('list.new') }}
+            </a>
+          }
+        </div>
+        @if (list.rows.length) {
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  @for (c of list.columns; track c) {
+                    <th scope="col">{{ field(list.info, c)?.label ?? c }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of list.rows; track row['sys_id']) {
+                  <tr
+                    tabindex="0"
+                    (click)="openRow(list.related.table, row)"
+                    (keydown.enter)="openRow(list.related.table, row)"
+                  >
+                    @for (c of list.columns; track c) {
+                      <td>{{ value(list.info, row, c) }}</td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="muted empty">{{ i18n.t('form.related_none') }}</p>
+        }
+      </div>
+    }
+  } @else {
+    <p class="muted">{{ i18n.t('form.no_related') }}</p>
+  }
+</section>

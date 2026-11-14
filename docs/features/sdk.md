@@ -11,7 +11,7 @@ platform, any import of another module, and loading code by name (`importlib`, `
 | `Module`, `Migration` | The manifest and data migrations (`modules.md`) |
 | `Table` and the field types (`String`, `Decimal`, `Reference` …) | Declaring tables (`tables.md`) |
 | `Role`, `Grant` | Declaring roles (`access.md`) |
-| `Section`, `Item`, `ListView` | Declaring navigation and list views (`screens.md`) |
+| `Section`, `Item`, `ListView`, `FormView`, `FormSection`, `RelatedList` | Declaring navigation, list views and forms (`screens.md`) |
 | `TableHook`, `Change` | Code to run when the module's own records change (`records.md`). `change.person` is who makes the change |
 | `Client` | Reading and changing any module's records (below) |
 | `Problem`, `FieldError` | Refusing something, with what's wrong per field |

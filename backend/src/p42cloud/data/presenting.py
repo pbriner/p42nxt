@@ -65,8 +65,35 @@ def _field(table: TableDef, f: FieldDef, access: Access, language: str) -> dict[
     return described
 
 
-def describe(table: TableDef, access: Access, language: str) -> dict[str, Any]:
-    """The table as one person sees it: labels in their language, what they may do."""
+def _referenced_by(
+    catalog: Catalog, table: TableDef, access: Access, language: str
+) -> list[dict[str, Any]]:
+    """The tables pointing to this one, through fields the person may read: related lists."""
+    found: list[dict[str, Any]] = []
+    for other in catalog.tables.values():
+        if other.retired or other.switched_off or not access.of(other.key, "read"):
+            continue
+        for f in other.active_fields():
+            if f.field.type != "reference" or f.field.options.get("table") != table.key:
+                continue
+            if not _covers(access, other, "read", f.name):
+                continue
+            found.append(
+                {
+                    "table": other.key,
+                    "field": f.name,
+                    "label": translated(other.label_plural or other.label, language),
+                    "field_label": translated(f.field.label, language),
+                }
+            )
+    return found
+
+
+def describe(
+    table: TableDef, access: Access, language: str, catalog: Catalog | None = None
+) -> dict[str, Any]:
+    """The table as one person sees it: labels in their language, what they may do, and (with
+    the catalog) which tables point to it."""
     if not access.of(table.key, "read"):
         raise Problem(403, "forbidden", "You may not do this.", detail=table.key)
     system = [FieldDef(n, f, -1) for n, f in SYSTEM_FIELDS.items()]
@@ -78,6 +105,7 @@ def describe(table: TableDef, access: Access, language: str) -> dict[str, Any]:
         "personal": table.owner_field is not None,
         "operations": {op: bool(access.of(table.key, op)) for op in OPERATIONS},
         "fields": [_field(table, f, access, language) for f in [*table.active_fields(), *system]],
+        "referenced_by": _referenced_by(catalog, table, access, language) if catalog else [],
     }
 
 

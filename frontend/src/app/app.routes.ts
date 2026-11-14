@@ -28,6 +28,11 @@ export const routes: Routes = [
         title: TITLE,
       },
       {
+        path: 'form/:table/:id',
+        loadComponent: () => import('./views/form-page').then((m) => m.FormPage),
+        title: TITLE,
+      },
+      {
         path: 'search',
         loadComponent: () => import('./pages/search-page').then((m) => m.SearchPage),
         title: TITLE,

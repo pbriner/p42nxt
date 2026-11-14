@@ -28,7 +28,7 @@ async def describe_table(module: str, table: str, request: Request, caller: Who)
     found = catalog.table(f"{module}.{table}")
     if found is None or found.switched_off or found.retired:
         raise Problem(404, "no_table", "There's no such table.", detail=f"{module}.{table}")
-    return describe(found, caller.access, language(request))
+    return describe(found, caller.access, language(request), catalog)
 
 
 @router.post("/tables")

@@ -22,6 +22,7 @@ export interface FieldInfo {
   label: string;
   help: string | null;
   required: boolean;
+  default: unknown;
   system: boolean;
   read: boolean;
   create: boolean;
@@ -37,6 +38,8 @@ export interface TableInfo {
   personal: boolean;
   operations: Record<string, boolean>;
   fields: FieldInfo[];
+  /** Tables pointing to this one, through fields the person may read. */
+  referenced_by: { table: string; field: string; label: string; field_label: string }[];
 }
 
 export const NUMBER_TYPES = new Set(['integer', 'decimal', 'percent', 'duration']);

@@ -2,8 +2,8 @@
 
 A module declares itself with `Module`, its tables with `Table` and the field types, its roles
 with `Role` and `Grant`, its navigation with `Section` and `Item`, its lists with `ListView`,
-reacts to its own records' changes with `TableHook`, moves data with `Migration`, and reads and
-changes any module's records with `Client`. Refusals are `Problem`s.
+its forms with `FormView`, reacts to its own records' changes with `TableHook`, moves data with
+`Migration`, and reads and changes any module's records with `Client`. Refusals are `Problem`s.
 """
 
 from p42cloud.data.declarations import Table
@@ -34,6 +34,7 @@ from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.modules.manifest import Migration, Module
 from p42cloud.sdk.client import Client
 from p42cloud.security.access.roles import Grant, Role
+from p42cloud.ui.forms.models import FormSection, FormView, RelatedList
 from p42cloud.ui.navigation.models import Item, Section
 from p42cloud.ui.views.models import ListView
 
@@ -50,6 +51,8 @@ __all__ = [
     "Duration",
     "Email",
     "FieldError",
+    "FormSection",
+    "FormView",
     "Grant",
     "Hostname",
     "Icon",
@@ -64,6 +67,7 @@ __all__ = [
     "Phone",
     "Problem",
     "Reference",
+    "RelatedList",
     "Role",
     "Secret",
     "Section",

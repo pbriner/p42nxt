@@ -52,6 +52,22 @@ Every table gets a list view: a table whose module declares none gets one made f
 in its text columns. The core's made views stay out of the search; the core's people, groups,
 roles and modules are in it.
 
+## Form views
+
+A form view says how a record of a table is shown and edited: sections with their fields and
+columns (1 to 4), and the related lists to show first. Its name is the table's.
+
+```python
+forms=(FormView("task.task", (
+    FormSection("Task", ("title", "state", "assignee")),
+    FormSection("Details", ("description",), columns=1),
+), related=(RelatedList("task.note", "task"),)),),
+```
+
+Every table gets one: a table whose module declares none gets one section with all its fields
+in two columns. Related lists are the declared ones, then (unless `related_auto=False`) every
+other table pointing to the record through a field the person may read.
+
 ## Each person's own
 
 These are personal tables: only their owner sees their records, administrators included. They
