@@ -1,6 +1,8 @@
 """The cycle: every few minutes each active plan is checked with its owner's Kraken connection,
-and buys when it's due. In this version every buy is a dry run: recorded, never sent."""
+and buys when it's due: a dry run, or a real order when the plan, its owner's key check and the
+installation's switch all say so (on the production installation only)."""
 
+import secrets
 from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
@@ -10,9 +12,12 @@ from p42cloud.sdk import Client, JobRun, Problem
 
 from p42cloud_dca import kraken, strategy
 from p42cloud_dca.kraken import KrakenError, Pair
+from p42cloud_dca.orders import apply_fill, hold, tell_bought
 
 FEE = Decimal("0.0026")  # Kraken's taker fee, for dry runs
 MAX_MESSAGE = 500
+UNCLEAR = timedelta(minutes=30)  # an order still open or unclear this long holds its plan
+REAL = ("filled", "submitting", "unknown")  # what real orders spend
 
 
 def _decimal(value: Any) -> Decimal | None:
@@ -40,19 +45,26 @@ async def _orders(client: Client, plan: dict[str, Any]) -> list[dict[str, Any]]:
     return found["records"]
 
 
-def _spent(orders: list[dict[str, Any]], since: datetime) -> Decimal:
+def _counted(plan: dict[str, Any]) -> tuple[str, ...]:
+    """The orders that count for a plan: its real ones when live, else its dry runs."""
+    return REAL if plan["live"] else ("dry_run",)
+
+
+def _spent(plan: dict[str, Any], orders: list[dict[str, Any]], since: datetime) -> Decimal:
+    states = _counted(plan)
     return sum(
         (
             _decimal(o["cost"]) or Decimal(0)
             for o in orders
-            if o["state"] == "dry_run" and (_moment(o["placed_at"]) or since) >= since
+            if o["state"] in states and (_moment(o["placed_at"]) or since) >= since
         ),
         Decimal(0),
     )
 
 
 def _reference(plan: dict[str, Any], orders: list[dict[str, Any]]) -> Decimal | None:
-    done = [o for o in orders if o["state"] == "dry_run" and _decimal(o["amount"])]
+    states = ("filled",) if plan["live"] else ("dry_run",)
+    done = [o for o in orders if o["state"] in states and _decimal(o["amount"])]
     if not done:
         return None
     if plan["reference"] == "avg_buy":
@@ -80,16 +92,119 @@ async def _tiers(client: Client, plan: dict[str, Any]) -> list[strategy.Tier]:
     ]
 
 
+async def _buy(  # noqa: PLR0913 - what's bought, for whom, at what price, when
+    client: Client,
+    plan: dict[str, Any],
+    pair: Pair,
+    decision: strategy.Decision,
+    *,
+    price: Decimal,
+    now: datetime,
+) -> str:
+    """A dry run, or a real order recorded with the call that sends it (same transaction)."""
+    cost = _cents(decision.amount * price)
+    cur = pair.currency
+    said = f"{decision.amount} {pair.asset} at {price:.2f} {cur} ({cost} {cur})"
+    userref = secrets.randbelow(2**31 - 1) + 1
+    order = await client.create(
+        "dca.order",
+        {
+            "owner": plan["owner"],
+            "plan": plan["sys_id"],
+            "pair": pair.name,
+            "strategy": decision.strategy,
+            "state": "submitting" if plan["live"] else "dry_run",
+            "amount": str(decision.amount),
+            "price": str(price),
+            "cost": str(cost),
+            "fee": str((cost * FEE).quantize(Decimal("0.0001"))),
+            "currency": cur,
+            "userref": userref if plan["live"] else None,
+            "placed_at": now.isoformat(),
+        },
+    )
+    if plan["live"]:
+        await client.call(
+            "dca.place_order",
+            {"pair": pair.name, "volume": str(decision.amount), "userref": userref},
+            owner=plan["owner"],
+            about=("dca.order", order["sys_id"]),
+        )
+        return f"Sending to Kraken: {said}."
+    await client.notify(
+        "dca.buy",
+        f"Dry run: {plan['name']}",
+        people=[plan["owner"]],
+        message=f"Would have bought {said}.",
+        link=f"/form/dca.plan/{plan['sys_id']}",
+    )
+    return f"Dry run: would have bought {said}."
+
+
+async def _settle(
+    client: Client,
+    http: httpx.AsyncClient,
+    plan: dict[str, Any],
+    orders: list[dict[str, Any]],
+    now: datetime,
+) -> str | None:
+    """Real orders not yet clear: asked about at Kraken. What the plan waits for, if anything;
+    a plan never buys while one of its orders is unclear."""
+    waiting: str | None = None
+    for order in orders:
+        if order["state"] not in ("submitting", "unknown"):
+            continue
+        ref = order["userref"]
+        if order["state"] == "submitting" and order["kraken_txid"]:
+            fill = await kraken.order(http, order["kraken_txid"])
+            if fill is not None and await apply_fill(client, order, fill.answer()) == "filled":
+                await tell_bought(client, await client.get("dca.order", order["sys_id"]), plan)
+                continue
+            if fill is not None and fill.status in ("canceled", "expired"):
+                continue
+        waiting = f"Waiting for Kraken to confirm order {ref}."
+        placed = _moment(order["placed_at"]) or now
+        if order["state"] == "unknown" or now - placed > UNCLEAR:
+            if plan["status"] != "hold":
+                await hold(
+                    client,
+                    plan["sys_id"],
+                    f"Order {ref} is unclear after 30 minutes: check it on Kraken, then Resume.",
+                )
+            return f"On hold: order {ref} is unclear."
+    return waiting
+
+
+async def _real_orders_stopped(client: Client) -> str | None:
+    if not await client.setting("dca.live_allowed"):
+        return (
+            "Real orders are switched off for this installation"
+            " (Settings → Real DCA orders allowed)."
+        )
+    stage = await client.setting("sys.stage")
+    if stage != "production":
+        return f"Not the production installation ({stage}): real orders are blocked here."
+    return None
+
+
 async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tuple[str, bool]:
-    """One plan's check: what it says, and whether it bought (a dry run)."""
+    """One plan's check: what it says, and whether it bought."""
     pair = Pair(plan["pair"].upper())
     orders = await _orders(client, plan)
     async with client.connection(kraken.TYPE, owner=plan["owner"]) as http:
+        if plan["live"] or any(o["state"] in ("submitting", "unknown") for o in orders):
+            waiting = await _settle(client, http, plan, orders, now)
+            if waiting is not None:
+                return await _say(client, plan, waiting, now), False
+        if plan["status"] == "hold":
+            return await _say(client, plan, f"On hold: {plan['hold_reason']}", now), False
+        if plan["live"] and (stopped := await _real_orders_stopped(client)):
+            return await _say(client, plan, stopped, now), False
         price = await kraken.price(http, pair.name)
         market = await kraken.market(http, pair.name)
         free = await kraken.free_balance(http, pair.currency)
     since = strategy.period_start(now, plan["deposit_day"], plan["buy_hour"])
-    spent = _spent(orders, since)
+    spent = _spent(plan, orders, since)
     amount = Decimal(str(plan["amount"]))
     limit = _decimal(plan["monthly_limit"])
     plan_timing = strategy.timing(
@@ -98,7 +213,7 @@ async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tup
         deposit_day=plan["deposit_day"],
         buy_hour=plan["buy_hour"],
         end_date=date.fromisoformat(plan["end_date"]) if plan["end_date"] else None,
-        balance=free - spent,  # dry runs spend the real balance on paper
+        balance=free if plan["live"] else free - spent,  # dry runs spend it on paper
         price=price,
         amount=amount,
         monthly_limit=limit,
@@ -127,33 +242,7 @@ async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tup
     message = decision.message
     bought = False
     if decision.action == "buy":
-        cost = _cents(decision.amount * price)
-        await client.create(
-            "dca.order",
-            {
-                "owner": plan["owner"],
-                "plan": plan["sys_id"],
-                "pair": pair.name,
-                "strategy": decision.strategy,
-                "state": "dry_run",
-                "amount": str(decision.amount),
-                "price": str(price),
-                "cost": str(cost),
-                "fee": str((cost * FEE).quantize(Decimal("0.0001"))),
-                "currency": pair.currency,
-                "placed_at": now.isoformat(),
-            },
-        )
-        cur = pair.currency
-        said = f"{decision.amount} {pair.asset} at {price:.2f} {cur} ({cost} {cur})"
-        message = f"Dry run: would have bought {said}."
-        await client.notify(
-            "dca.buy",
-            f"Dry run: {plan['name']}",
-            people=[plan["owner"]],
-            message=f"Would have bought {said}.",
-            link=f"/form/dca.plan/{plan['sys_id']}",
-        )
+        message = await _buy(client, plan, pair, decision, price=price, now=now)
         bought = True
     await client.update(
         "dca.plan",
@@ -170,6 +259,17 @@ async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tup
         plan["_etag"],
     )
     return message, bought
+
+
+async def _say(client: Client, plan: dict[str, Any], message: str, now: datetime) -> str:
+    current = await client.get("dca.plan", plan["sys_id"])
+    await client.update(
+        "dca.plan",
+        plan["sys_id"],
+        {"last_message": message[:MAX_MESSAGE], "last_check": now.isoformat()},
+        current["_etag"],
+    )
+    return message
 
 
 def _short(error: Exception) -> str:
@@ -191,7 +291,7 @@ async def run(job: JobRun) -> str:
             bought += did
         except (KrakenError, Problem, httpx.HTTPError, OSError, ValueError, KeyError) as error:
             await _problem(client, plan, _short(error), job.now)
-    return f"{checked} plan(s) checked, {bought} dry run(s)."
+    return f"{checked} plan(s) checked, {bought} bought."
 
 
 async def _problem(client: Client, plan: dict[str, Any], said: str, now: datetime) -> None:

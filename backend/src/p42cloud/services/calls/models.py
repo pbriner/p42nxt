@@ -3,7 +3,7 @@
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 import httpx
@@ -105,6 +105,19 @@ type Done = Callable[[Records, CallRun, dict[str, Any]], Awaitable[None]]
 
 
 @dataclass(frozen=True)
+class GaveUp:
+    """Why a call ends without an answer: `refused` (the other side said no for good),
+    `unclear` (it may have happened: tried as often as allowed, answers lost), or `not_sent`
+    (it never reached the other side)."""
+
+    why: Literal["refused", "unclear", "not_sent"]
+    message: str
+
+
+type GiveUp = Callable[[Records, CallRun, GaveUp], Awaitable[None]]
+
+
+@dataclass(frozen=True)
 class OutsideCall:
     """A change in an outside system, made safely: recorded with the module's change, sent by
     the worker through a connection of the module's type, and reconciled if its answer was lost.
@@ -112,7 +125,8 @@ class OutsideCall:
     `send` makes the call and returns the answer; it raises `Refused` when the other side says
     no for good. `reconcile` asks the other side, by the call's key, whether it happened: the
     answer if it did, None if it didn't. `done` reacts to the answer in a transaction (as the
-    module's service account), for example by updating the record the call is about.
+    module's service account), for example by updating the record the call is about;
+    `gave_up` reacts when it ends without one (refused, or still unclear after the last try).
     """
 
     name: str  # unique in the module; the record is named <module>.<name>
@@ -122,3 +136,4 @@ class OutsideCall:
     reconcile: Reconcile
     done: Done | None = None
     retries: int = 3
+    gave_up: GiveUp | None = None  # reacts when the call ends without an answer

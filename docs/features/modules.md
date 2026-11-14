@@ -34,6 +34,7 @@ module = Module(
 | `calls` | The changes it makes in them (`calls.md`) |
 | `notification_kinds` | What it tells people about (`notifications.md`) |
 | `routes` | Its own HTTP routes, for what the generic ones can't express (`module-routes.md`) |
+| `settings` | Its settings, with defaults (`settings.md`) |
 | `navigation`, `views`, `forms`, `actions`, `rules`, `widgets`, `themes` | Its navigator items, list views, form views, UI actions, form rules, widgets and themes (`screens.md`) |
 
 The package names its manifest as an entry point, which is how the platform finds it:

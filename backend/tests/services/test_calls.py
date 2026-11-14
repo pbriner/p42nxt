@@ -17,7 +17,7 @@ from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.secrets import Sealer, use_sealer
-from p42cloud.services.calls.models import CallRun, OutsideCall, Refused
+from p42cloud.services.calls.models import CallRun, GaveUp, OutsideCall, Refused
 from p42cloud.services.calls.service import CALLS, deliver, record, recover, write_calls
 from p42cloud.services.connections.models import ConnectionType
 from p42cloud.services.connections.service import TEST_TRANSPORTS, TYPES
@@ -68,6 +68,13 @@ async def _done(records: Records, run: CallRun, answer: dict[str, Any]) -> None:
     DONE.append((run.key, answer))
 
 
+GAVE_UP: list[GaveUp] = []
+
+
+async def _gave_up(records: Records, run: CallRun, ending: GaveUp) -> None:
+    GAVE_UP.append(ending)
+
+
 @pytest.fixture
 def declared() -> Iterator[None]:
     """A connection type and a call, as if the core declared them."""
@@ -84,7 +91,11 @@ def declared() -> Iterator[None]:
         ),
     )
     TEST_TRANSPORTS[TYPE] = httpx.MockTransport(_exchange)
-    CALLS[CALL] = ("sys", OutsideCall("order_test", "Order", "call_test", _send, _reconcile, _done))
+    CALLS[CALL] = (
+        "sys",
+        OutsideCall("order_test", "Order", "call_test", _send, _reconcile, _done, gave_up=_gave_up),
+    )
+    GAVE_UP.clear()
     PLACED.clear()
     BEHAVIOUR.clear()
     DONE.clear()
@@ -217,3 +228,28 @@ async def test_a_call_left_sending_is_asked_about(engine: AsyncEngine, declared:
     assert (await _state(engine, ident))["state"] == "unknown"
     assert await deliver(engine) == "done"  # nothing found by its key, so sent
     assert len(PLACED) == 1
+
+
+async def test_the_module_hears_when_a_call_ends_without_an_answer(
+    engine: AsyncEngine, declared: None
+) -> None:
+    await _settle(engine, datetime.now(UTC) + LATER)
+    anna = await _person_with_connection(engine)
+    async with acting(engine, anna) as records:
+        refused = await record(records, CALL, {})
+    BEHAVIOUR["next"] = "refuse"
+    assert await deliver(engine) == "failed"
+    assert [g.why for g in GAVE_UP] == ["refused"]
+    async with acting(engine, anna) as records:
+        lost = await record(records, CALL, {})
+    # The other loses its answer every time: after the last try it stays unknown, for good.
+    later = datetime.now(UTC)
+    for _ in range(4):  # the first try and three more
+        BEHAVIOUR["next"] = "lose"
+        PLACED.clear()  # so asking finds nothing and it's sent again
+        later += LATER
+        await deliver(engine, later)
+    assert (await _state(engine, lost))["state"] == "unknown"
+    assert [g.why for g in GAVE_UP] == ["refused", "unclear"]
+    assert await deliver(engine, later + LATER) is None  # tried no more
+    assert (await _state(engine, refused))["state"] == "failed"

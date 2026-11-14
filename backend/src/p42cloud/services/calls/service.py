@@ -24,7 +24,7 @@ from p42cloud.kernel.context import EVERYTHING, Context, current, working_as
 from p42cloud.kernel.db import switch_role, transaction
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.security.access.service import access_for
-from p42cloud.services.calls.models import CallRun, OutsideCall, Refused
+from p42cloud.services.calls.models import CallRun, GaveUp, OutsideCall, Refused
 from p42cloud.services.connections.service import connect
 from p42cloud.services.jobs.service import account_of
 
@@ -141,7 +141,7 @@ async def _claim(engine: AsyncEngine, now: datetime) -> Any | None:
                         "UPDATE sys.outside_call c SET state = CASE WHEN c.state = 'answered'"
                         " THEN 'answered' ELSE 'sending' END, attempts = c.attempts + 1,"
                         " sent = :now"
-                        " FROM (SELECT o.sys_id, o.state AS was FROM sys.outside_call o"
+                        " FROM (SELECT o.sys_id, o.state AS was, t.retries FROM sys.outside_call o"
                         " JOIN sys.call_type t ON t.name = o.call"
                         " WHERE o.deleted IS NULL"
                         " AND o.state IN ('pending', 'unknown', 'answered')"
@@ -151,7 +151,7 @@ async def _claim(engine: AsyncEngine, now: datetime) -> Any | None:
                         " FOR UPDATE OF o SKIP LOCKED) due"
                         " WHERE c.sys_id = due.sys_id"
                         " RETURNING c.sys_id, c.call, c.module, c.owner, c.key, c.payload,"
-                        " c.record_table, c.record_id, c.attempts, c.answer, due.was"
+                        " c.record_table, c.record_id, c.attempts, c.answer, due.was, due.retries"
                     ),
                     {"now": now},
                 )
@@ -270,8 +270,37 @@ async def deliver(engine: AsyncEngine, now: datetime | None = None) -> str | Non
             except Exception as error:  # the answer is kept; the reaction is tried again
                 said = f"{type(error).__name__}: {error}"[:MAX_MESSAGE]
                 values |= {"not_before": _later(row.attempts), "message": said}
+        ending = _ending(row, state, str(values.get("message") or ""))
+        if ending is not None:
+            # Not sent at all: failed. Maybe sent: stays unknown, tried no more.
+            state = "failed" if ending.why != "unclear" else "unknown"
+            await _set(engine, row.sys_id, state=state, **values)
+            if call.gave_up is not None:
+                await _give_up(engine, row, call, run, ending)
+            return state
     await _set(engine, row.sys_id, state=state, **values)
     return state
+
+
+def _ending(row: Any, state: str, message: str) -> GaveUp | None:
+    """Whether this attempt ends the call without an answer."""
+    if state == "failed":
+        return GaveUp("refused", message)
+    if state in ("pending", "unknown") and row.attempts > row.retries:
+        return GaveUp("not_sent" if state == "pending" else "unclear", message)
+    return None
+
+
+async def _give_up(
+    engine: AsyncEngine, row: Any, call: OutsideCall, run: CallRun, ending: GaveUp
+) -> None:
+    """The module's `gave_up`, as its service account, in its own transaction."""
+    context = await _as_module(engine, row.module, call.name, row.sys_id)
+    with working_as(context):
+        async with transaction(engine, "sys") as conn:
+            records = Records(conn, await load_catalog(conn))
+            if call.gave_up is not None:
+                await call.gave_up(records, run, ending)
 
 
 async def recover(engine: AsyncEngine, now: datetime | None = None) -> int:

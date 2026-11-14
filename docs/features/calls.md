@@ -20,6 +20,7 @@ calls=(OutsideCall(
 | `reconcile` | Asks the other side, by the call's key, whether the call happened: the answer if it did, `None` if it didn't |
 | `done` | Optional; reacts to the answer in one transaction, as the module's service account |
 | `retries` | How often it's tried again after the first attempt (0 to 10) |
+| `gave_up` | Optional; reacts when the call ends without an answer (below) |
 
 They become records of `sys.call_type`. Each call carries a unique `key`; `send` passes it to
 the other side (a client reference, an idempotency key) so that `reconcile` can find it.
@@ -55,6 +56,10 @@ The worker delivers calls in turn with job runs:
   stopped worker for five minutes counts as lost.
 - When **`done` fails**, the answer is kept and only `done` is tried again.
 - Each try waits longer: 30 seconds, then 1, 2, 4 minutes and so on.
+- **Ending without an answer**: the module's `gave_up` hears why (`GaveUp`): `refused` (the
+  other side said no; failed), `not_sent` (no try reached the other side; failed) or `unclear`
+  (the last try's answer was lost: it may have happened; it stays *Answer lost* and isn't tried
+  again), for example to stop until a person has looked.
 
 Each try runs as the module's service account, with at most 60 seconds for the call.
 
