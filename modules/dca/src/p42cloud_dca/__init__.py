@@ -43,7 +43,7 @@ from p42cloud.sdk import (
 )
 from p42cloud.sdk import Decimal as Number
 
-from p42cloud_dca import cycle, takeover
+from p42cloud_dca import cycle
 from p42cloud_dca.kraken import KRAKEN
 from p42cloud_dca.orders import PLACE_ORDER
 from p42cloud_dca.widgets import ROUTES, WIDGETS
@@ -121,7 +121,7 @@ PLAN = Table(
         "target_profit": Number("Profit target"),
         "loss_limit_percent": Number("Loss limit (%)", precision=8, scale=2),
         "loss_limit": Number("Loss limit"),
-        "targets_hit": Json("Reached now"),
+        "targets_hit": Json("Reached now", read_only=True),
         # Off: dry runs. Only the owner switches it, after checking their key.
         "live": Boolean("Real orders", required=True, default=False),
         "keys_checked": Boolean("My Kraken key can't withdraw", required=True, default=False),
@@ -131,17 +131,18 @@ PLAN = Table(
             required=True,
             default="ok",
             tones={"hold": "error"},
+            read_only=True,  # held by the cycle, resumed with Resume
         ),
-        "hold_reason": Text("Why on hold"),
-        "next_buy": DateTime("Next buy"),
-        "planned_buys": Integer("Buys left in the period"),
-        "period_end": DateTime("Period ends"),
-        "last_price": Number("Last price", scale=8),
-        "last_balance": Number("Free on Kraken", scale=8),
-        "last_check": DateTime("Last checked"),
-        "last_message": Text("Last said"),
-        # Taken over from a previous installation: where from, so it's taken over once.
-        "source_ref": String("Taken over from", max_length=100, unique=True),
+        "hold_reason": Text("Why on hold", read_only=True),
+        "next_buy": DateTime("Next buy", read_only=True),
+        "planned_buys": Integer("Buys left in the period", read_only=True),
+        "period_end": DateTime("Period ends", read_only=True),
+        "last_price": Number("Last price", scale=8, read_only=True),
+        "last_balance": Number("Free on Kraken", scale=8, read_only=True),
+        "last_check": DateTime("Last checked", read_only=True),
+        "last_message": Text("Last said", read_only=True),
+        # Imported from a previous installation: where from, so it's imported once.
+        "source_ref": String("Imported from", max_length=100, unique=True, read_only=True),
     },
     label_plural="DCA plans",
     owner="owner",
@@ -198,32 +199,11 @@ ORDER = Table(
         "placed_at": DateTime("When"),
         "reconciled_at": DateTime("Checked with Kraken"),
         "error": Text("What went wrong"),
-        "source_ref": String("Taken over from", max_length=100, unique=True),
+        "source_ref": String("Imported from", max_length=100, unique=True, read_only=True),
     },
     label_plural="DCA orders",
     owner="owner",
     display="placed_at",
-)
-
-TAKEOVER = Table(
-    "takeover",
-    "DCA takeover",
-    {
-        "owner": Reference("Owner", "sys.person", required=True),
-        # The previous installation's export: {"plans": [...], "tiers": [...], "orders": [...]}.
-        "data": Json("Export"),
-        "state": Choice(
-            "State",
-            {"waiting": "Waiting", "done": "Done", "failed": "Failed"},
-            required=True,
-            default="waiting",
-            tones={"done": "primary", "failed": "error"},
-        ),
-        "message": Text("What it did"),
-    },
-    label_plural="DCA takeovers",
-    owner="owner",
-    display="state",
 )
 
 PEOPLE_WRITE = (
@@ -254,7 +234,6 @@ USER = Role(
         Grant("dca.plan", ("write",), fields=PEOPLE_WRITE),
         Grant("dca.tier", ("read", "create", "write", "delete", "restore")),
         Grant("dca.order", ("read",)),
-        Grant("dca.takeover", ("read", "create")),
     ),
     description="Makes their own DCA plans; sees only their own plans and orders.",
 )
@@ -264,11 +243,10 @@ KEEPER = Role(
     "dca.keeper",
     "DCA cycle",
     grants=(
-        Grant("dca.plan", ("read", "create")),  # create: taking plans over
+        Grant("dca.plan", ("read",)),
         Grant("dca.plan", ("write",), fields=BOOKKEEPING),
-        Grant("dca.tier", ("read", "create")),
+        Grant("dca.tier", ("read",)),
         Grant("dca.order", ("read", "create", "write")),
-        Grant("dca.takeover", ("read", "write")),
     ),
     description="Checks the plans and records their orders: for the DCA cycle.",
 )
@@ -392,22 +370,12 @@ async def _check_plan(change: Change) -> None:
         )
 
 
-async def _check_takeover(change: Change) -> None:
-    """A takeover is its maker's, and starts waiting with its export."""
-    if change.operation != "create":
-        return
-    change.values |= {"owner": change.person, "state": "waiting", "message": None}
-    if not isinstance(change.values.get("data"), dict):
-        raise _invalid("data", 'The export: {"plans": [...], "tiers": [...], "orders": [...]}.')
-
-
 async def _check_tier(change: Change) -> None:
     """A tier belongs to one of its maker's own plans."""
     if change.operation in ("delete", "restore"):
         return
     if change.operation == "create":
-        if not _by_cycle(change):  # the cycle takes tiers over for their plan's owner
-            change.values["owner"] = change.person
+        change.values["owner"] = change.person
         # Reading the plan: someone else's plan isn't there for a person.
         await Client.of(change).get("dca.plan", str(change.values.get("plan")))
     elif "plan" in change.values:
@@ -417,14 +385,13 @@ async def _check_tier(change: Change) -> None:
 module = Module(
     id="dca",
     name="Kraken DCA",
-    version="0.4.0",
-    depends_on={"sys": ">=0.21,<1"},
-    tables=(PLAN, TIER, ORDER, TAKEOVER),
+    version="0.5.0",
+    depends_on={"sys": ">=0.34,<1"},
+    tables=(PLAN, TIER, ORDER),
     roles=(USER, KEEPER),
     hooks=(
         TableHook("dca.plan", before=_check_plan),
         TableHook("dca.tier", before=_check_tier),
-        TableHook("dca.takeover", before=_check_takeover),
     ),
     docs=Path(__file__).parent / "docs",
     description="Dollar cost averaging on your own Kraken account.",
@@ -469,14 +436,8 @@ module = Module(
             channels=("telegram",),
         ),
     ),
-    jobs=(
-        Job("cycle", "Check the DCA plans", cycle.run, timeout=240, retries=0),
-        Job("take_over", "Take over DCA plans and orders", takeover.run, timeout=600, retries=0),
-    ),
-    schedules=(
-        Schedule("cycle", "DCA cycle", "cycle", "*/5 * * * *"),
-        Schedule("take_over", "DCA takeovers", "take_over", "* * * * *"),
-    ),
+    jobs=(Job("cycle", "Check the DCA plans", cycle.run, timeout=240, retries=0),),
+    schedules=(Schedule("cycle", "DCA cycle", "cycle", "*/5 * * * *"),),
     views=(
         ListView(
             "dca.plan",
@@ -488,9 +449,6 @@ module = Module(
             "dca.tier",
             ("plan", "threshold_percent", "amount", "enabled"),
             sort=("-threshold_percent",),
-        ),
-        ListView(
-            "dca.takeover", ("created", "state", "message"), sort=("-created",), searchable=False
         ),
         ListView(
             "dca.order",
@@ -547,13 +505,6 @@ module = Module(
                     keywords=("buys", "bitcoin"),
                 ),
                 Item("new_plan", "New plan", "dca.plan", kind="create", icon="add"),
-                Item(
-                    "takeovers",
-                    "Take over",
-                    "dca.takeover",
-                    icon="move_down",
-                    keywords=("import", "migrate"),
-                ),
             ),
         ),
     ),

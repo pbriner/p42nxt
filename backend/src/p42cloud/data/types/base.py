@@ -11,6 +11,8 @@ from typing import Any, ClassVar, TypedDict
 
 from p42cloud.data.sql import ident, literal
 
+READ_ONLY = "read_only"  # an option every field type may have
+
 
 class Invalid(ValueError):
     """A value or an option that doesn't fit the type; the message is for people."""
@@ -22,6 +24,9 @@ class Common(TypedDict, total=False):
     default: Any
     help: str
     personal: bool
+    # Set by the platform or the module (a check's result, a run's state), shown but not edited
+    # in forms. Kept in the options: `read_only`.
+    read_only: bool
 
 
 @dataclass(frozen=True)
@@ -40,6 +45,8 @@ class Field:
 
 def declare(type_name: str, label: str, options: dict[str, Any], common: Common) -> Field:
     help_text = common.get("help")
+    if common.get("read_only"):
+        options = options | {READ_ONLY: True}
     return Field(
         type=type_name,
         label={"en": label},

@@ -15,6 +15,7 @@ from p42cloud.data.catalog import Catalog, FieldDef, TableDef
 from p42cloud.data.engine_steps import SYSTEM_FIELDS
 from p42cloud.data.sql import NAME, SCHEMA
 from p42cloud.data.types import FIELD_TYPES, Field, Invalid
+from p42cloud.data.types.base import READ_ONLY
 from p42cloud.kernel.errors import FieldError, Problem
 
 
@@ -41,9 +42,10 @@ def _field_problems(table: str, name: str, declared: Field) -> list[FieldError]:
     field_type = FIELD_TYPES.get(declared.type)
     if field_type is None:
         return [FieldError(where, "unknown_type", f"No field type {declared.type!r}.")]
-    found = [
-        FieldError(where, "bad_option", m) for m in field_type.option_problems(declared.options)
-    ]
+    own = {k: v for k, v in declared.options.items() if k != READ_ONLY}
+    found = [FieldError(where, "bad_option", m) for m in field_type.option_problems(own)]
+    if not isinstance(declared.options.get(READ_ONLY, False), bool):
+        found.append(FieldError(where, "bad_option", "read_only is true or false."))
     if not found and declared.default is not None:
         try:
             field_type.check(declared.default, declared.options)

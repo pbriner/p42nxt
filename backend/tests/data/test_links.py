@@ -13,9 +13,11 @@ from p42cloud.data.types.string import String
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction
+from p42cloud.kernel.errors import Problem
 from p42cloud.modules.core import CORE
 from p42cloud.modules.install import install_modules
 from p42cloud.modules.manifest import Module
+from tests.security.helpers import acting
 
 ITEM = Table("item", "Item", {"name": String("Name", max_length=40, unique=True)})
 
@@ -98,3 +100,48 @@ def test_a_key_must_be_a_field() -> None:
     assert TYPE.option_problems({"table": "sys.job", "key": "Bad Name", "match": "name"})
     assert TYPE.option_problems({"table": "sys.job", "match": "name"})  # a match without a key
     assert not TYPE.option_problems({"table": "sys.table", "key": "t", "match": "schema.name"})
+
+
+async def test_a_picked_link_fills_in_its_name(
+    owner: AsyncEngine, upgraded: Settings, new_module: Callable[[], Awaitable[str]]
+) -> None:
+    module_id = await new_module()
+    linked = _note(module_id, linked=True)
+    with working_as(Context(channel="test")):
+        await install_modules(owner, [CORE, _module(module_id, "1.0.0", linked)])
+    items, notes = f"{module_id}.item", f"{module_id}.note"
+    await _sql(owner, f"INSERT INTO {items} (name) VALUES ('a'), ('b')")
+    ids = {r["name"]: r["sys_id"] for r in await _sql(owner, f"SELECT name, sys_id FROM {items}")}
+    # Only the link given, as a form sends it: the name comes from the record picked.
+    await _sql(owner, f"INSERT INTO {notes} (item_ref) VALUES (:a)", a=ids["a"])
+    assert await _sql(owner, f"SELECT item, item_ref FROM {notes}") == [
+        {"item": "a", "item_ref": ids["a"]}
+    ]
+    # Another record picked, the name left as it was: the name follows.
+    await _sql(owner, f"UPDATE {notes} SET item_ref = :b", b=ids["b"])
+    assert await _sql(owner, f"SELECT item FROM {notes}") == [{"item": "b"}]
+
+
+async def test_a_required_name_is_satisfied_by_its_picked_link(
+    upgraded: Settings, new_module: Callable[[], Awaitable[str]], owner: AsyncEngine
+) -> None:
+    module_id = await new_module()
+    note = Table(
+        "note",
+        "Note",
+        {
+            "item": String("Item name", max_length=40, required=True),
+            "item_ref": Reference("Item", f"{module_id}.item", key="item"),
+        },
+    )
+    with working_as(Context(channel="test")):
+        await install_modules(owner, [CORE, _module(module_id, "1.0.0", note)])
+    app = create_engine(upgraded.database_url)
+    async with acting(app, None) as records:
+        item = await records.create(f"{module_id}.item", {"name": "picked"})
+        made = await records.create(f"{module_id}.note", {"item_ref": item.sys_id})
+        with pytest.raises(Problem) as refused:  # neither: still required
+            await records.create(f"{module_id}.note", {})
+    await app.dispose()
+    assert made.values["item"] == "picked"
+    assert [e.field for e in refused.value.errors] == ["item"]

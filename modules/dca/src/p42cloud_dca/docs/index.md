@@ -54,14 +54,6 @@ Set a **profit target** or a **loss limit** on a plan, in % or in its currency, 
 after fees. You're notified once when one is reached, and again if it's reached after having been
 left. Inactive plans are checked too.
 
-## Taking over from a previous installation
-
-Kraken DCA → **Take over** → New, and paste the export your administrator made (a JSON file with
-your plans, their tiers and your orders). Within a minute it's taken over: the record says what
-it did. Your plans arrive **inactive and making dry runs**, so nothing buys twice while the old
-installation still runs; switch them on when you've switched the old ones off. Taking over the
-same export again adds only what's new.
-
 ## Real orders
 
 1. Make sure your Kraken key can't withdraw money, and tick **My Kraken key can't withdraw**.

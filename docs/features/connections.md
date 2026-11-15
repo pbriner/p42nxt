@@ -47,6 +47,11 @@ through the normal record routes, **sealed at once** with the master key (bound 
 connection and secret, so a sealed value can't be moved to another), never read back, masked in
 the audit log. Only the connection's owner sets its secrets, and only the ones its type names.
 
+In the app, a new connection asks for its type and a name; its address may stay empty for the
+type's usual one. Once it's made, its form shows the **keys** its type needs (Kraken: API key and
+API secret), each set or not; one typed in is saved as its secret record, sealed at once, and
+never shown again.
+
 **Check** (an action on the connection) runs the type's check and records whether it works,
 when, and what it said.
 

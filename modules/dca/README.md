@@ -23,8 +23,7 @@ Core dependency: no
 |---|---|---|---|
 | `dca.plan` | A plan | name, pair, amount, mode, deposit day, buy hour, end date, max price, monthly limit, price tiers, active; what the cycle found (next buy, buys left, last price, free balance, last said) | Personal (owner) |
 | `dca.tier` | A price tier of a plan | plan, price change %, amount (0: skip), on | Personal |
-| `dca.order` | A buy: a dry run or a real order (sending, bought, answer lost, failed) |
-| `dca.takeover` | An export from a previous installation, taken over by the job | Personal; the export is cleared once taken over | plan, why, state, amount, price, cost, fee, currency, when | Personal; written by the cycle only |
+| `dca.order` | A buy: a dry run or a real order (sending, bought, answer lost, failed) | plan, why, state, amount, price, cost, fee, currency, when | Personal; written by the cycle only |
 
 ## Roles and access
 
@@ -64,13 +63,8 @@ Targets: a plan's profit target and loss limit (in % or the currency, on profit 
 checked after each cycle, inactive plans too; each one reached notifies the owner once
 (`dca.target`) and is kept in `targets_hit` until it's no longer reached.
 
-Takeover: the job `dca.take_over` (every minute) imports each waiting takeover for its owner:
-plans (inactive, dry runs), their tiers, and orders (time, figures, Kraken order, reference),
-each with `source_ref` = `takeover:<its ID there>`, so a second takeover of the same export adds
-only what's new. Unknown pairs and order states are skipped and counted. The export:
-`{"plans": [...], "tiers": [...], "orders": [...]}` with each record's `sys_id` and the fields
-named as on this module's tables (`pair` as Kraken writes it, `XBTCHF`; tiers and orders name
-their `plan` by its `sys_id` there).
+Plans and orders imported from a previous installation keep where they came from (`source_ref`,
+read only).
 
 Setting: `dca.live_allowed` ("Real DCA orders allowed"), off by default, public.
 

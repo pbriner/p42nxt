@@ -30,6 +30,7 @@ import { FieldHost } from '../field-types/field-host';
 import { unitOf } from '../field-types/registry';
 import { ProblemState } from '../pages/problem-state';
 import { ActionRunner } from './action-runner';
+import { ConnectionSecrets } from './connection-secrets';
 import { ConfirmDialog } from './confirm-dialog';
 import { FieldDisplay } from './field-display';
 import { Related, RelatedTabs } from './related-tabs';
@@ -64,6 +65,7 @@ function same(a: unknown, b: unknown): boolean {
 @Component({
   selector: 'app-form-page',
   imports: [
+    ConnectionSecrets,
     FieldDisplay,
     MatButtonModule,
     MatCardModule,
@@ -125,6 +127,17 @@ export class FormPage {
   protected readonly fields = computed(
     () => new Map((this.info()?.fields ?? []).map((f) => [f.name, f])),
   );
+  /** Name fields a link fills in (`key` of a reference): the link is shown in their place. */
+  private readonly linkOf = computed(() => {
+    const found = new Map<string, FieldInfo>();
+    for (const f of this.info()?.fields ?? []) {
+      const key = f.type === 'reference' ? f.options['key'] : undefined;
+      if (typeof key === 'string') {
+        found.set(key, f);
+      }
+    }
+    return found;
+  });
   protected readonly access = computed(
     () => (this.original()['_access'] as Record<string, boolean> | undefined) ?? {},
   );
@@ -148,7 +161,9 @@ export class FormPage {
           .map((n) => this.fields().get(n))
           .filter((f): f is FieldInfo => !!f && this.visible(f))
           .map((f) =>
-            this.effects().required.has(f.name) && !f.required ? { ...f, required: true } : f,
+            (this.effects().required.has(f.name) || this.namesRequired(f)) && !f.required
+              ? { ...f, required: true }
+              : f,
           ),
       }))
       .filter((s) => s.fields.length),
@@ -301,17 +316,29 @@ export class FormPage {
   }
 
   protected visible(field: FieldInfo): boolean {
-    if (this.effects().hidden.has(field.name)) {
+    if (this.effects().hidden.has(field.name) || this.linkOf().has(field.name)) {
       return false;
     }
     if (this.creating()) {
-      return !field.system && field.create;
+      // What the platform sets later (a check's result) is empty on a new record.
+      return !field.system && field.create && !field.options['read_only'];
     }
     return field.read;
   }
 
+  /** A link whose name field is required: picking it is what's required. */
+  private namesRequired(field: FieldInfo): boolean {
+    const key = field.type === 'reference' ? field.options['key'] : undefined;
+    return typeof key === 'string' && !!this.fields().get(key)?.required;
+  }
+
   protected editable(field: FieldInfo): boolean {
-    if (field.system || !this.writable() || this.effects().readOnly.has(field.name)) {
+    if (
+      field.system ||
+      field.options['read_only'] ||
+      !this.writable() ||
+      this.effects().readOnly.has(field.name)
+    ) {
       return false;
     }
     return this.creating() ? field.create : field.write;
@@ -445,7 +472,12 @@ export class FormPage {
       return;
     }
     if (error instanceof Problem && error.errors.length) {
-      this.errors.set(Object.fromEntries(error.errors.map((e) => [e.field, e.message])));
+      // A hidden name field's problem is shown at the link that fills it in.
+      this.errors.set(
+        Object.fromEntries(
+          error.errors.map((e) => [this.linkOf().get(e.field)?.name ?? e.field, e.message]),
+        ),
+      );
     }
     this.snack.open(
       describe(error, (f) => this.fields().get(f)?.label ?? f),

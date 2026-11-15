@@ -77,5 +77,28 @@
     } @else {
       <p class="muted empty">{{ i18n.t('form.related_none') }}</p>
     }
+    @if (list.next || list.before.length) {
+      <div class="pages">
+        <span class="muted">{{ range(list) }}</span>
+        <button
+          mat-icon-button
+          type="button"
+          [disabled]="!list.before.length"
+          [attr.aria-label]="i18n.t('related.previous')"
+          (click)="turn(-1)"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+        </button>
+        <button
+          mat-icon-button
+          type="button"
+          [disabled]="!list.next"
+          [attr.aria-label]="i18n.t('related.next')"
+          (click)="turn(1)"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </button>
+      </div>
+    }
   </div>
 </ng-template>

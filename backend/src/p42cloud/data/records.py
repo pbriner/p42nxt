@@ -262,6 +262,30 @@ class Records:
                 errors.append(FieldError(name, "unknown_field", "There's no such field."))
         return errors
 
+    async def _names(self, table: TableDef, values: dict[str, Any]) -> dict[str, Any]:
+        """A link sent without its name field (reference.py `key=`): the name looked up, so the
+        table's checks see it as the database will write it. Where the person may not read the
+        target, the database's link trigger fills it in alone."""
+        for f in table.active_fields():
+            key = f.field.options.get("key") if f.type.name == "reference" else None
+            picked = values.get(f.name)
+            if key is None or picked is None or key in values:
+                continue
+            schema, name = str(f.field.options["table"]).split(".", 1)
+            parts = str(f.field.options["match"]).split(".")
+            matched = " || '.' || ".join(ident(p) for p in parts)
+            try:
+                async with self.conn.begin_nested():
+                    found = await self.conn.scalar(
+                        text(f"SELECT {matched} FROM {qualified(schema, name)} WHERE sys_id = :i"),  # noqa: S608 - checked names
+                        {"i": str(picked)},
+                    )
+            except DBAPIError:
+                continue
+            if found is not None:
+                values[str(key)] = found
+        return values
+
     def _checked(self, table: TableDef, given: dict[str, Any], *, creating: bool) -> dict[str, Any]:
         """The values to write, each checked by its type; every problem at once.
 
@@ -274,6 +298,12 @@ class Records:
                 if f.name not in wanted and f.field.default is not None:
                     wanted[f.name] = f.field.default
         checked: dict[str, Any] = {}
+        # A name field a picked link fills in (reference.py `key=`): the database writes it.
+        filled = {
+            str(f.field.options["key"])
+            for f in table.active_fields()
+            if f.type.name == "reference" and "key" in f.field.options and wanted.get(f.name)
+        }
         for f in table.active_fields():
             if f.name in wanted:
                 try:
@@ -282,7 +312,7 @@ class Records:
                     errors.append(FieldError(f.name, "invalid", str(error)))
                     continue
             missing = checked.get(f.name) is None and (creating or f.name in checked)
-            if f.field.required and missing:
+            if f.field.required and missing and f.name not in filled:
                 errors.append(FieldError(f.name, "required", "This field is required."))
         if errors:
             raise _invalid(errors)
@@ -331,7 +361,7 @@ class Records:
         table = await self._table(key, write=True)
         if not self.access.of(table.key, "create"):
             raise forbidden(table.key)
-        change = Change(self, table, "create", None, dict(values))
+        change = Change(self, table, "create", None, await self._names(table, dict(values)))
         await HOOKS.run("before", change)
         checked = self._checked(table, change.values, creating=True)
         query = Query()
@@ -364,7 +394,7 @@ class Records:
         self._fresh(table, record, if_match)
         if record.values["deleted"] is not None:
             raise Problem(409, "deleted", "The record is deleted; restore it first.")
-        change = Change(self, table, "write", sys_id, dict(values))
+        change = Change(self, table, "write", sys_id, await self._names(table, dict(values)))
         await HOOKS.run("before", change)
         checked = self._checked(table, change.values, creating=False)
         if not checked:

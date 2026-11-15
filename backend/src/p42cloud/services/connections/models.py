@@ -50,20 +50,23 @@ CONNECTION = Table(
     "connection",
     "Connection",
     {
-        "owner": Reference("Owner", "sys.person", required=True),
+        # Whoever makes it (the table's check sets it); never changed.
+        "owner": Reference("Owner", "sys.person", required=True, read_only=True),
         "type": String("Type name", max_length=120, required=True),
         "type_ref": Reference("Type", "sys.connection_type", key="type"),
         "label": String("Name", max_length=120, required=True),
-        "base_url": Url("Address", required=True),
+        # Empty: the type's usual address (the table's check fills it in, or refuses).
+        "base_url": Url("Address", help="Empty: the usual address of its type."),
         "health": Choice(
             "Works",
             {"unknown": "Not checked", "ok": "Yes", "failed": "No"},
             required=True,
             default="unknown",
             tones={"ok": "primary", "failed": "error", "unknown": "muted"},
+            read_only=True,  # the Check action's
         ),
-        "checked": DateTime("Checked"),
-        "health_message": Text("Last check said"),
+        "checked": DateTime("Checked", read_only=True),
+        "health_message": Text("Last check said", read_only=True),
     },
     label_plural="Connections",
     owner="owner",

@@ -54,11 +54,12 @@ SCHEDULE = Table(
             default="skip",
         ),
         "active": Boolean("Active", required=True, default=True),
-        "next_run": DateTime("Next run"),
+        "next_run": DateTime("Next run", read_only=True),
         "last_state": Choice(
             "Last run",
             {"succeeded": "Succeeded", "failed": "Failed", "skipped": "Skipped"},
             tones={"succeeded": "primary", "failed": "error", "skipped": "muted"},
+            read_only=True,
         ),
         "custom": Boolean("Made by an administrator", required=True, default=False),
     },
