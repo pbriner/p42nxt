@@ -2,6 +2,22 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.23.0
+
+- Modules from signed packages: `p42cloud module install <module>` (when the installation hasn't
+  got it) and `module update <module> [--version]` take the release from the registry,
+  `--file` a package downloaded by hand (next to its `.sig`). The package must match the signed
+  index and a trusted key's signature, fit what's installed, hold only its own module and need no
+  library the image hasn't got. It's unpacked into the modules folder (`P42_MODULES_DIR`), the
+  version before put back if the install fails; each install is a security event.
+- The app, the worker and `upgrade` find the modules in that folder. The deployment has a
+  `modules` volume (read-only except for the new `module` command) and passes `P42_REGISTRY_URL`
+  from `.env`.
+- Reading the registry follows its redirects (GitHub serves release files from its download
+  hosts), each one checked by the guarded client.
+- Settings left empty in `.env` count as not set.
+- A list's **Add filter** waits for the table's fields: opened earlier, it offered no field.
+
 ## 0.22.0
 
 - Backups as a core job: `sys.backup` (daily, 02:30 UTC; changeable like any schedule) dumps the

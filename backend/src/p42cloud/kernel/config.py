@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Literal, Self
 from urllib.parse import urlsplit
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     # Where the daily backup job writes the database's dumps (a folder outside the database's
     # volume). None: no backups; in production the job then fails, so administrators hear.
     backup_dir: Path | None = None
+    # Where module packages installed from the registry are unpacked, one folder per module
+    # (a persistent volume). None: only the modules in the image.
+    modules_dir: Path | None = None
     # The reverse proxy in front of the app (addresses, comma-separated): only its
     # X-Forwarded-For is believed, so throttling per address sees the real client. None: the
     # address the request comes from.
@@ -47,6 +50,20 @@ class Settings(BaseSettings):
     # The one-time code for the web installer (install.sh writes it). Without it, the installer
     # stays closed and the first administrator is made at the command line.
     setup_code: str | None = None
+
+    @field_validator(
+        "public_url",
+        "registry_url",
+        "backup_dir",
+        "modules_dir",
+        "trusted_proxies",
+        "setup_code",
+        mode="before",
+    )
+    @classmethod
+    def _empty_is_unset(cls, value: object) -> object:
+        # Compose passes a variable left empty in .env as "": that means not set.
+        return None if value == "" else value
 
     @model_validator(mode="after")
     def _refuse_unsafe(self) -> Self:

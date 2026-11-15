@@ -15,6 +15,12 @@ knows. At the end it prints the app's address and the setup code.
 Keep a copy of `master.key` somewhere safe: without it, encrypted secrets can't be recovered.
 The database is backed up every night into the backup folder (`backups.md`).
 
+Modules beyond the core are installed from signed packages into the volume `modules`
+(`releases.md`). To be told about new releases, and to install them by name, set
+`P42_REGISTRY_URL` in the installation's `.env` (for a registry on GitHub:
+`https://github.com/<owner>/<repo>/releases/download/registry`). It's empty by default: the
+installation then never asks.
+
 ## The web installer
 
 Open the app: while nobody administers the installation, the sign-in page leads to `/setup`.

@@ -10,21 +10,25 @@ import getpass
 import os
 import sys
 from collections.abc import Callable, Coroutine
+from pathlib import Path
 from typing import Any
 
-import httpx
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from p42cloud.data.audit import Anchor, missing_months, verify_chain
 from p42cloud.kernel.config import get_settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, transaction
 from p42cloud.kernel.errors import Problem
+from p42cloud.kernel.outgoing import safe_client
 from p42cloud.kernel.safety import problems
 from p42cloud.kernel.secrets import Sealer
 from p42cloud.kernel.setup import set_up_database
 from p42cloud.modules.core import CORE, compose
 from p42cloud.modules.install import install_modules, states
+from p42cloud.modules.install_package import Source, install_package
 from p42cloud.modules.lifecycle import remove, switch_off, switch_on
+from p42cloud.modules.packages import hosts_for
 from p42cloud.modules.registry import discover
 from p42cloud.modules.updates import refresh
 from p42cloud.security.sign_in.credentials import NewKey
@@ -42,10 +46,11 @@ async def _set_up() -> int:
 
 
 async def _upgrade() -> int:
-    engine = create_engine(get_settings().owner_database_url)
+    settings = get_settings()
+    engine = create_engine(settings.owner_database_url)
     try:
         with working_as(Context(channel="upgrade")):
-            applied = await install_modules(engine, [CORE, *discover()])
+            applied = await install_modules(engine, [CORE, *discover(settings.modules_dir)])
     finally:
         await engine.dispose()
     print(f"Upgraded: {', '.join(applied)}." if applied else "Already up to date.")
@@ -132,13 +137,23 @@ async def _create_admin(name: str, email: str) -> int:
     return 0
 
 
-async def _module(action: str, module: str | None) -> int:
-    engine = create_engine(get_settings().owner_database_url)
+async def _from_package(engine: AsyncEngine, module: str, source: Source) -> list[str]:
+    settings = get_settings()
+    hosts = hosts_for(settings.registry_url) if settings.registry_url else ()
+    async with safe_client(allowed_hosts=hosts) as http:
+        done = await install_package(engine, module, settings.modules_dir, source, http)
+    return [*done, "Restart the app and the worker to use it."]
+
+
+async def _module(action: str, module: str | None, source: Source) -> int:
+    settings = get_settings()
+    engine = create_engine(settings.owner_database_url)
     try:
         with working_as(Context(channel=f"cli:module:{action}")):
             if action == "updates":
-                async with httpx.AsyncClient(timeout=15) as http:
-                    found = await refresh(engine, http, get_settings().registry_url)
+                registry = settings.registry_url
+                async with safe_client(allowed_hosts=hosts_for(registry or "")) as http:
+                    found = await refresh(engine, http, registry)
                 for update in found:
                     kind = "security update" if update.security else "update"
                     state = "fits" if update.fits else update.needs
@@ -154,9 +169,12 @@ async def _module(action: str, module: str | None) -> int:
             if module is None:
                 print("Name the module.", file=sys.stderr)
                 return 2
-            if action == "install":
+            here = {m.id for m in discover(settings.modules_dir)}
+            if action == "update" or (action == "install" and (source.file or module not in here)):
+                print("\n".join(await _from_package(engine, module, source)))
+            elif action == "install":
                 done = await install_modules(
-                    engine, [CORE, *discover()], bring_back=frozenset({module})
+                    engine, [CORE, *discover(settings.modules_dir)], bring_back=frozenset({module})
                 )
                 print("\n".join(done) or "Already up to date.")
             else:
@@ -180,9 +198,17 @@ def main(argv: list[str] | None = None) -> int:
         "upgrade", help="bring the database, the core and every installed module to this version"
     )
     commands.add_parser("check", help="refuse a database that isn't set up safely")
-    modules = commands.add_parser("module", help="list, switch on or off, remove or bring back")
-    modules.add_argument("action", choices=["list", "updates", "on", "off", "remove", "install"])
+    modules = commands.add_parser(
+        "module", help="list, install or update, switch on or off, remove or bring back"
+    )
+    modules.add_argument(
+        "action", choices=["list", "updates", "install", "update", "on", "off", "remove"]
+    )
     modules.add_argument("module", nargs="?")
+    modules.add_argument("--version", help="install or update: this release, not the newest")
+    modules.add_argument(
+        "--file", type=Path, help="install or update: a package file, next to its .sig file"
+    )
     admin = commands.add_parser(
         "create-admin", help="the first administrator of a new installation (asks for a password)"
     )
@@ -201,7 +227,11 @@ def main(argv: list[str] | None = None) -> int:
     commands_run: dict[str, Callable[[], Coroutine[Any, Any, int]]] = {
         "setup-database": _set_up,
         "upgrade": _upgrade,
-        "module": lambda: _module(args.action, args.module),
+        "module": lambda: _module(
+            args.action,
+            args.module,
+            Source(get_settings().registry_url, args.version, args.file),
+        ),
         "create-admin": lambda: _create_admin(args.name, args.email),
         "audit": lambda: _verify(args.anchor),
         "check": _check,

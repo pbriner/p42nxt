@@ -10,7 +10,12 @@ x-p42: &p42
     P42_DATABASE_URL: postgresql+asyncpg://p42_app:${P42_APP_PASSWORD}@postgres/p42
     P42_OWNER_DATABASE_URL: postgresql+asyncpg://p42_owner:${P42_OWNER_PASSWORD}@postgres/p42
     P42_MASTER_KEY_FILE: /run/secrets/master_key
+    P42_MODULES_DIR: /data/modules
+    P42_REGISTRY_URL: ${P42_REGISTRY_URL:-}
   secrets: [master_key]
+  # Modules installed from signed packages. Only `module` writes here; the rest only read.
+  volumes:
+    - modules:/data/modules:ro
   depends_on:
     postgres:
       condition: service_healthy
@@ -40,6 +45,8 @@ services:
       P42_DATABASE_URL: postgresql+asyncpg://p42_app:${P42_APP_PASSWORD}@postgres/p42
       P42_OWNER_DATABASE_URL: postgresql+asyncpg://p42_owner:${P42_OWNER_PASSWORD}@postgres/p42
       P42_MASTER_KEY_FILE: /run/secrets/master_key
+      P42_MODULES_DIR: /data/modules
+      P42_REGISTRY_URL: ${P42_REGISTRY_URL:-}
       # The web installer's one-time code: it works only until the first administrator exists.
       P42_SETUP_CODE: ${P42_SETUP_CODE}
     ports:
@@ -56,8 +63,11 @@ services:
       P42_DATABASE_URL: postgresql+asyncpg://p42_app:${P42_APP_PASSWORD}@postgres/p42
       P42_OWNER_DATABASE_URL: postgresql+asyncpg://p42_owner:${P42_OWNER_PASSWORD}@postgres/p42
       P42_MASTER_KEY_FILE: /run/secrets/master_key
+      P42_MODULES_DIR: /data/modules
+      P42_REGISTRY_URL: ${P42_REGISTRY_URL:-}
       P42_BACKUP_DIR: /backups
     volumes:
+      - modules:/data/modules:ro
       - ${P42_BACKUPS}:/backups
     restart: unless-stopped
 
@@ -74,6 +84,14 @@ services:
   upgrade:
     <<: *p42
     command: ["upgrade"]
+    profiles: [tools]
+  # Installs or updates a module from its signed package (`docker compose run --rm module
+  # install dca`), then restart web and worker. The only service that writes the modules.
+  module:
+    <<: *p42
+    entrypoint: ["p42cloud", "module"]
+    volumes:
+      - modules:/data/modules
     profiles: [tools]
   check:
     <<: *p42
@@ -97,3 +115,4 @@ secrets:
 
 volumes:
   pgdata:
+  modules:

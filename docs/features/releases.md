@@ -67,3 +67,40 @@ updates come first. Only administrators see these records.
 
 The installation only downloads the index; it sends nothing about itself. `P42_REGISTRY_URL` is
 off by default, and must use https in production.
+
+## Installing a module from its package
+
+An installation runs the modules that come with its image, and those installed from signed
+packages into its modules folder (`P42_MODULES_DIR`; in the deployment, the volume `modules`
+at `/data/modules`). In the installation's folder:
+
+```bash
+docker compose run --rm module install dca           # the newest release
+docker compose run --rm module update dca            # to the newest release
+docker compose run --rm module update dca --version 0.5.0
+docker compose restart web worker                    # to use it
+```
+
+`--file <package>.whl` installs a package downloaded by hand instead; its signature must lie
+next to it (`<package>.whl.sig`). No registry is needed then.
+
+Before anything changes, the package must:
+
+- be the one the signed index lists (its SHA-256), and be signed by a trusted key;
+- fit what's installed (its `depends_on`), and never go back to a lower version;
+- hold only its own module: one Python package and its metadata, no paths leaving its folder,
+  no links, not more than 5000 files or 50 MB;
+- need no library the image hasn't got, in a version it accepts (nothing else is installed with
+  it).
+
+It's then unpacked beside the version before, the module installed or upgraded (only this one:
+other modules found but not installed stay out), and the version before removed. If the install
+fails, the version before is put back. Each install is a security event
+(`module_package_installed`, with the module, version, SHA-256 and where it came from).
+
+Only the `module` service can write to the modules folder; the app, the worker and the other
+commands only read it.
+
+Files are downloaded through the guarded client (https only, no address inside a network), from
+the registry's host only; for a registry on GitHub also from GitHub's download hosts
+(`*.githubusercontent.com`), where it redirects to.

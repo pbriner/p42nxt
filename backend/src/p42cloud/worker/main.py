@@ -36,7 +36,7 @@ RECOVER = timedelta(minutes=1)
 async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
     settings = settings or get_settings()
     engine = create_engine(settings.database_url)
-    compose([CORE, *discover()])
+    compose([CORE, *discover(settings.modules_dir)])
     if settings.master_key_file is not None:  # without it, jobs can't open the vault
         use_sealer(Sealer.from_file(settings.master_key_file))
     name = f"{socket.gethostname()}:{id(stop)}"

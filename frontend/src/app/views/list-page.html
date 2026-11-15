@@ -27,7 +27,8 @@
         }
         <span class="material-symbols-outlined" aria-hidden="true">arrow_drop_down</span>
       </button>
-      <button mat-stroked-button type="button" (click)="addFilter()">
+      <!-- Not before the fields are known: the dialog would have none to offer. -->
+      <button mat-stroked-button type="button" [disabled]="!table()" (click)="addFilter()">
         <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>{{ i18n.t('list.add_filter') }}
       </button>
       @if (!cards()) {
