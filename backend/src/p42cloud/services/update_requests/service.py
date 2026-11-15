@@ -19,14 +19,17 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from p42cloud.data.hooks import Change, TableHook
+from p42cloud.data.settings import value
 from p42cloud.kernel.errors import Problem
 from p42cloud.security.access.guards import recently_verified
+from p42cloud.services.announcements import service as announcements
 from p42cloud.services.notifications.service import send
 from p42cloud.services.update_requests.models import OPEN
 
 MAX_LOG = 20_000  # characters of the updater's log kept with a request
 NIGHT_HOUR = 3  # "tonight": 03:00 in the installation's time zone
 FINAL = ("succeeded", "put_back", "failed")
+PLANNED_AFTER = timedelta(minutes=5)  # sooner than this, the update itself is the message
 
 
 def tonight(zone: str, now: datetime | None = None) -> datetime:
@@ -86,7 +89,33 @@ async def _check_request(change: Change) -> None:
         raise Problem(409, "set_by_updater", "A requested update can only be cancelled.")
 
 
-HOOKS = (TableHook("sys.update_request", before=_check_request),)
+async def _announce(change: Change) -> None:
+    """A planned update tells everyone beforehand; a cancelled one takes its message back."""
+    conn = change.records.conn
+    if change.sys_id is None:
+        return
+    if change.operation == "write":
+        if change.values.get("state") == "cancelled":
+            await announcements.end(conn, change.sys_id)
+        return
+    if change.operation != "create":
+        return
+    when = change.values.get("not_before")
+    if not isinstance(when, datetime) or when <= datetime.now(UTC) + PLANNED_AFTER:
+        return
+    zone = str(await value(conn, "sys.time_zone") or "UTC")
+    local = when.astimezone(ZoneInfo(zone))
+    await announcements.post(
+        conn,
+        kind="information",
+        subject=f"Update planned for {local:%d %B at %H:%M} ({zone})",
+        message="The app will be unavailable for a few minutes then.",
+        until=when,
+        update=change.sys_id,
+    )
+
+
+HOOKS = (TableHook("sys.update_request", before=_check_request, after=_announce),)
 
 
 # ---- the updater's side (command line, as the owner) ----
@@ -117,7 +146,18 @@ async def start(conn: AsyncConnection, request_id: uuid.UUID) -> bool:
         ),
         {"i": request_id},
     )
-    return changed.rowcount == 1
+    if changed.rowcount != 1:
+        return False
+    await announcements.end(conn, request_id)  # the "planned" one, if any
+    await announcements.post(
+        conn,
+        kind="warning",
+        subject="Being updated",
+        message="The app may be unavailable for a few minutes.",
+        until=datetime.now(UTC) + announcements.UPDATING_FOR,
+        update=request_id,
+    )
+    return True
 
 
 async def finish(  # noqa: PLR0913 - how it went, in full
@@ -144,6 +184,7 @@ async def finish(  # noqa: PLR0913 - how it went, in full
     ).first()
     if found is None:
         raise Problem(409, "not_running", "That update isn't running.")
+    await announcements.end(conn, request_id)
     what = "The core" if found.target == "sys" else found.target
     title = {
         "succeeded": f"Updated: {what} {found.version}",

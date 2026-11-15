@@ -25,6 +25,8 @@ from p42cloud.security.sign_in import invitations
 from p42cloud.security.sign_in import models as sign_in
 from p42cloud.security.tokens import hooks as token_hooks
 from p42cloud.security.tokens import models as tokens
+from p42cloud.services.announcements import models as announcement_models
+from p42cloud.services.announcements import service as announcements
 from p42cloud.services.backups import manifest as backups
 from p42cloud.services.backups import models as backup_models
 from p42cloud.services.calls import models as calls
@@ -66,6 +68,7 @@ CORE = Module(
         *module_routes.TABLES,
         *backup_models.TABLES,
         *update_request_models.TABLES,
+        *announcement_models.TABLES,
     ),
     roles=tuple(access.ROLES),
     hooks=(
@@ -79,6 +82,7 @@ CORE = Module(
         *connection_service.TABLE_HOOKS,
         *notifications.HOOKS,
         *update_requests.HOOKS,
+        *announcements.HOOKS,
     ),
     docs=DOCS if DOCS.is_dir() else None,
     description="People, access, sign-in and the platform itself.",

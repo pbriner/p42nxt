@@ -31,6 +31,12 @@ const FRAME = new Set([
   'nav-accent',
   'nav-active',
   'on-nav-active',
+  'message-information',
+  'on-message-information',
+  'message-warning',
+  'on-message-warning',
+  'message-critical',
+  'on-message-critical',
 ]);
 const FONTS = {
   roboto: 'Roboto, system-ui, sans-serif',

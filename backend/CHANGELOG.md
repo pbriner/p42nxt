@@ -2,6 +2,21 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.36.0
+
+- Messages for everyone (`sys.announcement`, Communication → Messages): information, warning or
+  critical, with a subject, a text and when they're shown. Shown in a band under the top bar, the
+  most severe first; information can be closed, warnings and critical messages stay while valid.
+  Administrators write them.
+- A message has an audience (everyone, or one group: only its members may read it) and is shown
+  in the band, as a notification (`sys.message`, once, when it becomes valid), or both.
+- Notifications reach groups: `send(groups=…)` and `client.notify(groups=…)` add the groups'
+  active members.
+- The updater announces a planned update beforehand and says "Being updated" while it runs;
+  both end by themselves, and cancelling takes the announcement back.
+- Themes set the message band's colours: `message-information`, `message-warning`,
+  `message-critical` and their `on-` text colours.
+
 ## 0.35.0
 
 - Related lists from links to any record: `AnyRecord(table_field=)` names the field saying which

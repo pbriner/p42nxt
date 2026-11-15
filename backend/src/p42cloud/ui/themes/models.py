@@ -90,6 +90,13 @@ FRAME = frozenset(
         "nav-accent",
         "nav-active",
         "on-nav-active",
+        # The message band's kinds: background and text.
+        "message-information",
+        "on-message-information",
+        "message-warning",
+        "on-message-warning",
+        "message-critical",
+        "on-message-critical",
     }
 )
 CHARTS = frozenset({*(f"chart-{n}" for n in range(1, 9)), "chart-other"})

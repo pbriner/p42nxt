@@ -76,6 +76,7 @@ ROLES = [
             Grant("sys.invitation", ("read",), fields=("person", "kind", "expires", "used")),
             Grant("sys.theme", ALL),
             Grant("sys.widget_audience", ALL),
+            Grant("sys.announcement", ALL),
             Grant("sys.job", ("read",)),
             Grant("sys.schedule", ("read",)),
             Grant("sys.schedule", ("write",), fields=("cron", "time_zone", "active", "missed")),
@@ -113,6 +114,17 @@ ROLES = [
             Grant("sys.group", ("read",), fields=("name", "description", "assignable")),
             Grant(SHARES, ALL, condition=MINE),
             Grant(SHARES, ("read",), condition={"field": "person", "op": "eq", "value": "@me"}),
+            # Messages for everyone, or for a group they're in.
+            Grant(
+                "sys.announcement",
+                ("read",),
+                condition={
+                    "or": [
+                        {"field": "audience", "op": "empty"},
+                        {"field": "audience", "op": "in", "value": "@my_groups"},
+                    ]
+                },
+            ),
             Grant(SESSIONS, ("read",), condition=YOURS, fields=SESSION_FIELDS),
             Grant(SESSIONS, ("delete",), condition=YOURS),
             Grant(TOKENS, ("read",), condition=YOURS, fields=TOKEN_FIELDS),

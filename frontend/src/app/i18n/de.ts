@@ -57,6 +57,7 @@ export const DE: Record<TextKey, string> = {
   'notify.kinds': 'Was an Telegram geht',
   'notify.kinds_hint': 'Verbinden Sie Telegram, um zu wählen.',
   'notify.on_telegram': '{kind} über Telegram',
+  'messages.close': 'Meldung {subject} schliessen',
   'bell.label': 'Benachrichtigungen',
   'bell.label_unread': 'Benachrichtigungen, {n} ungelesen',
   'bell.title': 'Benachrichtigungen',

@@ -111,6 +111,13 @@ WHERE gr.deleted IS NULL
 """
 )
 
+_MEMBERS = text(
+    'SELECT DISTINCT m.person FROM sys.membership m JOIN sys."group" g ON g.sys_id = m."group"'
+    ' WHERE m."group" = ANY(:groups) AND m.deleted IS NULL AND g.deleted IS NULL'
+)
+_EVERYONE = text(
+    "SELECT sys_id FROM sys.person WHERE deleted IS NULL AND active AND kind <> 'service'"
+)
 _ACTIVE = text(
     "SELECT sys_id FROM sys.person WHERE sys_id = ANY(:people) AND deleted IS NULL AND active"
     " AND kind <> 'service'"
@@ -168,14 +175,25 @@ def _checked_link(link: str | None) -> str | None:
 
 
 async def recipients(
-    conn: AsyncConnection, people: Iterable[uuid.UUID], roles: Iterable[str]
+    conn: AsyncConnection,
+    people: Iterable[uuid.UUID],
+    roles: Iterable[str],
+    groups: Iterable[uuid.UUID] = (),
+    *,
+    everyone: bool = False,
 ) -> list[uuid.UUID]:
-    """The active, real people among those named and the roles' holders."""
+    """The active, real people among those named, the roles' holders and the groups' members;
+    or all of them."""
     await switch_role(conn, "sys")
+    if everyone:
+        return sorted((await conn.execute(_EVERYONE)).scalars())
     wanted = set(people)
     names = sorted(set(roles))
     if names:
         wanted |= set((await conn.execute(_HOLDERS, {"roles": names})).scalars())
+    teams = sorted(set(groups))
+    if teams:
+        wanted |= set((await conn.execute(_MEMBERS, {"groups": teams})).scalars())
     if not wanted:
         return []
     return sorted((await conn.execute(_ACTIVE, {"people": list(wanted)})).scalars())
@@ -188,6 +206,8 @@ async def send(  # noqa: PLR0913 - what a notification says, all by keyword
     *,
     people: Iterable[uuid.UUID] = (),
     roles: Iterable[str] = (),
+    groups: Iterable[uuid.UUID] = (),
+    everyone: bool = False,
     message: str | None = None,
     link: str | None = None,
     severity: str = "info",
@@ -202,7 +222,7 @@ async def send(  # noqa: PLR0913 - what a notification says, all by keyword
     if message is not None and len(message) > MAX_MESSAGE:
         raise Problem(422, "validation", f"A message of at most {MAX_MESSAGE} characters.")
     target = _checked_link(link)
-    found = await recipients(conn, people, roles)
+    found = await recipients(conn, people, roles, groups, everyone=everyone)
     if len(found) > MAX_RECIPIENTS:
         raise Problem(422, "too_many", f"At most {MAX_RECIPIENTS} people at once.")
     if not found:
