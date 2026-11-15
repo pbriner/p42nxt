@@ -13,6 +13,7 @@ from 8080. It refuses to touch an installation that exists already, or a name Do
 knows. At the end it prints the app's address and the setup code.
 
 Keep a copy of `master.key` somewhere safe: without it, encrypted secrets can't be recovered.
+The database is backed up every night into the backup folder (`backups.md`).
 
 ## The web installer
 

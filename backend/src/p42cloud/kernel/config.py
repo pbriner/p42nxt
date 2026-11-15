@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # Where module releases are published (the registry's index.json is read from there). Off by
     # default: without it the installation never asks for updates.
     registry_url: str | None = None
+    # Where the daily backup job writes the database's dumps (a folder outside the database's
+    # volume). None: no backups; in production the job then fails, so administrators hear.
+    backup_dir: Path | None = None
     # The reverse proxy in front of the app (addresses, comma-separated): only its
     # X-Forwarded-For is believed, so throttling per address sees the real client. None: the
     # address the request comes from.

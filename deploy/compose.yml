@@ -46,10 +46,19 @@ services:
       - "127.0.0.1:${P42_PORT}:8000"
     restart: unless-stopped
 
-  # The worker: runs jobs and schedules. Reachable from nowhere; it only talks to the database.
+  # The worker: runs jobs and schedules. Reachable from nowhere; it only talks to the database,
+  # and writes the daily backups into the installation's backup folder.
   worker:
     <<: *p42
     entrypoint: ["p42cloud-worker"]
+    environment:
+      P42_ENVIRONMENT: ${P42_ENVIRONMENT}
+      P42_DATABASE_URL: postgresql+asyncpg://p42_app:${P42_APP_PASSWORD}@postgres/p42
+      P42_OWNER_DATABASE_URL: postgresql+asyncpg://p42_owner:${P42_OWNER_PASSWORD}@postgres/p42
+      P42_MASTER_KEY_FILE: /run/secrets/master_key
+      P42_BACKUP_DIR: /backups
+    volumes:
+      - ${P42_BACKUPS}:/backups
     restart: unless-stopped
 
   # One-off commands, run by install.sh.

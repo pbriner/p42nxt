@@ -2,6 +2,16 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.22.0
+
+- Backups as a core job: `sys.backup` (daily, 02:30 UTC; changeable like any schedule) dumps the
+  whole database with `pg_dump` into the installation's backup folder (`P42_BACKUP_DIR`; the
+  worker's `/backups`, the host's `P42_BACKUPS`), named by its time, written whole or not at
+  all; backups older than the setting **Keep backups (days)** (30) are removed. In production a
+  missing folder fails the job, so administrators hear of it.
+- The app image has PostgreSQL 18's `pg_dump` and `pg_restore`.
+- A restore procedure, rehearsed: the database recreated whole from a backup.
+
 ## 0.21.0
 
 - Widgets about one record the person picks (`Widget(param=("plan", "dca.plan"))`, source
