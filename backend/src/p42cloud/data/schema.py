@@ -396,6 +396,10 @@ def _says(table: TableDef, name: str, definition: str) -> str:
     if "IS NOT NULL OR" in definition:
         return f"Make {where} required (no active record may leave it empty)"
     if definition.startswith("CREATE UNIQUE"):
+        columns = re.search(r"\(([^()]*)\)", definition)
+        names = [c.strip().strip('"') for c in columns[1].split(",")] if columns else [column]
+        if len(names) > 1:  # unique together
+            return f"Make {table.key}'s {' and '.join(names)} unique together among active records"
         return f"Make {where} unique among active records"
     if definition.startswith("FOREIGN KEY"):
         return f"Check that every {where} points to an existing record"

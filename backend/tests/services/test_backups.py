@@ -2,14 +2,20 @@
 
 import json
 import stat
+from collections.abc import AsyncGenerator, Iterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from p42cloud.kernel.config import Settings
-from p42cloud.kernel.db import create_engine
+from p42cloud.data.types import Invalid
+from p42cloud.kernel.config import Settings, get_settings
+from p42cloud.kernel.context import Context, working_as
+from p42cloud.kernel.db import create_engine, owner_transaction
+from p42cloud.services.backups import manifest
 from p42cloud.services.backups.service import BackupFailed, back_up, clean_up
 from p42cloud.services.jobs.service import run_job
 
@@ -73,19 +79,122 @@ def test_old_backups_go_and_other_files_stay(tmp_path: Path) -> None:
 
 
 @pytest.fixture
-async def engine(upgraded: Settings) -> AsyncEngine:
-    return create_engine(upgraded.database_url)
+async def engine(upgraded: Settings) -> AsyncGenerator[AsyncEngine]:
+    engine = create_engine(upgraded.database_url)
+    yield engine
+    await engine.dispose()
 
 
-async def test_without_a_folder_the_job_says_so(
-    engine: AsyncEngine, upgraded: Settings, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    # As the worker has them: from its environment.
-    monkeypatch.delenv("P42_BACKUP_DIR", raising=False)
+@pytest.fixture
+def worker(upgraded: Settings, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Path]:
+    """The worker's environment: its database, and a backup folder given to it (or not)."""
     monkeypatch.setenv("P42_ENVIRONMENT", "test")
     monkeypatch.setenv("P42_DATABASE_URL", upgraded.database_url)
     monkeypatch.setenv("P42_OWNER_DATABASE_URL", upgraded.owner_database_url)
+    monkeypatch.delenv("P42_BACKUPS_MOUNTED", raising=False)
+    mount = tmp_path / "mount"
+    monkeypatch.setattr(manifest, "MOUNT", mount)
+    fake = _fake_pg_dump(tmp_path)
+
+    async def with_fake(*args: Any, **kwargs: Any) -> Any:
+        return await back_up(*args, **kwargs, pg_dump=fake)
+
+    monkeypatch.setattr(manifest, "back_up", with_fake)
+    get_settings.cache_clear()  # read from this environment
+    yield mount
+    get_settings.cache_clear()
+
+
+async def _set_folder(upgraded: Settings, folder: str) -> None:
+    owner = create_engine(upgraded.owner_database_url)
+    with working_as(Context(channel="test")):
+        async with owner_transaction(owner) as conn:
+            await conn.execute(
+                text("UPDATE sys.setting SET value = CAST(:v AS jsonb) WHERE name = :n"),
+                {"v": json.dumps(folder), "n": "sys.backup_folder"},
+            )
+    await owner.dispose()
+
+
+async def _backups(upgraded: Settings) -> list[tuple[str, str, str]]:
+    owner = create_engine(upgraded.owner_database_url)
+    with working_as(Context(channel="test")):
+        async with owner_transaction(owner) as conn:
+            rows = (
+                await conn.execute(
+                    text(
+                        "SELECT file, folder, kind FROM sys.backup WHERE deleted IS NULL"
+                        " ORDER BY file"
+                    )
+                )
+            ).all()
+    await owner.dispose()
+    return [(r.file, r.folder, r.kind) for r in rows]
+
+
+async def test_without_a_folder_the_job_says_so(engine: AsyncEngine, worker: Path) -> None:
     state, said = await run_job(engine, "sys.backup")
-    await engine.dispose()
     assert state == "succeeded", said
     assert said is not None and said.startswith("No backup folder is set")
+
+
+async def test_the_backups_in_the_folder_become_records(
+    engine: AsyncEngine, worker: Path, upgraded: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    worker.mkdir()
+    (worker / "p42-before-update-20261101-120000.dump").write_text("x")
+    (worker / "notes.txt").write_text("not a backup")
+    await _set_folder(upgraded, "/srv/backups/p42")
+    monkeypatch.setenv("P42_BACKUPS_MOUNTED", "/srv/backups/p42")
+    get_settings.cache_clear()
+    state, said = await run_job(engine, "sys.backup")
+    assert state == "succeeded", said
+    assert said is not None and "in /srv/backups/p42." in said
+    found = await _backups(upgraded)
+    assert sorted(k for _, _, k in found) == ["before_update", "daily"]
+    assert {f for _, f, _ in found} == {"/srv/backups/p42"}
+
+    # Changed in the app, not applied on the machine yet: backed up where it can, and said.
+    await _set_folder(upgraded, "/srv/elsewhere")
+    (worker / "p42-before-update-20261101-120000.dump").unlink()
+    state, said = await run_job(engine, "sys.backup")
+    assert state == "succeeded", said
+    assert said is not None and "changed to /srv/elsewhere" in said
+    assert {k for _, _, k in await _backups(upgraded)} == {"daily"}  # the gone one retired
+    await _set_folder(upgraded, "")
+
+
+async def test_a_folder_set_but_not_given_to_the_worker_fails(
+    engine: AsyncEngine, worker: Path, upgraded: Settings
+) -> None:
+    await _set_folder(upgraded, "/srv/backups/p42")
+    state, said = await run_job(engine, "sys.backup")
+    await _set_folder(upgraded, "")
+    assert state == "failed"
+    assert said is not None and "isn't given to the worker" in said
+
+
+@pytest.mark.parametrize(
+    ("given", "problem"),
+    [
+        ("Backups", "starting with /"),
+        ("/Users/anna/../etc", "starting with /"),
+        ("/Users/anna/Back$ups", "starting with /"),
+        ("/srv/a:/b", "starting with /"),
+        ("/", "own folders"),
+        ("/Users", "own folders"),
+        ("/etc/p42", "own folders"),
+        ("/tmp/p42", "temporary"),  # noqa: S108 - refused, not used
+        ("/private/var/folders/x/p42", "temporary"),
+    ],
+)
+def test_the_backup_folder_must_be_a_folder_of_its_own(given: str, problem: str) -> None:
+    with pytest.raises(Invalid, match=problem):
+        manifest.FOLDER.check(given)
+
+
+def test_a_good_backup_folder_is_kept_as_written() -> None:
+    assert manifest.FOLDER.check("/Users/anna/Backups/p42cloud prod/") == (
+        "/Users/anna/Backups/p42cloud prod"
+    )
+    assert manifest.FOLDER.check("") == ""

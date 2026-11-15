@@ -132,6 +132,7 @@ NAVIGATION = (
         (
             Item("schedules", "Schedules", "sys.schedule", icon="schedule", keywords=("cron",)),
             Item("job_runs", "Job runs", "sys.job_run", icon="history", keywords=("jobs",)),
+            Item("backups", "Backups", "sys.backup", icon="backup", keywords=("restore", "dump")),
             Item(
                 "outside_calls",
                 "Outside calls",

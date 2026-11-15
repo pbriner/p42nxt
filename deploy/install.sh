@@ -82,6 +82,7 @@ P42_ADMIN_PASSWORD=$(openssl rand -hex 24)
 P42_OWNER_PASSWORD=$(openssl rand -hex 24)
 P42_APP_PASSWORD=$(openssl rand -hex 24)
 P42_SETUP_CODE=$setup_code
+# A copy of the setting Backup folder (change it in the app, then deploy/restart.sh).
 P42_BACKUPS=$backups
 P42_PORT=$port
 # Where module releases come from (signed), e.g. https://github.com/<owner>/<repo>/releases/download/registry
@@ -89,12 +90,16 @@ P42_REGISTRY_URL=${P42_REGISTRY_URL:-}
 EOF
 
 cd "$folder"
+. "$here/lib.sh"
+only_the_installation  # read above already; from here on only .env counts
 echo "Starting the database of $name ..."
 docker compose up -d --wait postgres
 echo "Setting up the database ..."
 docker compose run --rm setup
 echo "Bringing it to this version ..."
 docker compose run --rm upgrade
+echo "Recording the backup folder in the settings ..."
+docker compose run --rm -T --entrypoint p42cloud upgrade backup folder --set "$backups" >/dev/null
 echo "Checking that it's safe ..."
 docker compose run --rm check
 echo "Starting the app and its worker ..."

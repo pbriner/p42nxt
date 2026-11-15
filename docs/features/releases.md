@@ -66,7 +66,8 @@ Then the script:
 1. backs up the database (`p42-before-update-<time>.dump` in the backup folder, kept by the
    nightly clean-up);
 2. takes the new image's own `compose.yml` and sets the image in `.env`;
-3. stops the app and the worker, upgrades the database, checks that it's safe, and starts them;
+3. stops the app and the worker, upgrades the database, checks that it's safe, applies the
+   settings the machine needs (the backup folder, from the database), and starts them;
 4. if the upgrade or the check fails, starts the version before again and names the backup.
 
 Changing the core to a new image needs control over Docker on the machine, so the app never

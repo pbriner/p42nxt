@@ -51,7 +51,7 @@ Platform → Automation: **Schedules** (with **Run now**, **Pause**, **Resume**)
 |---|---|---|
 | `sys.repair_groups` | Nightly, 02:23 UTC | Dynamic groups' members from their rules: for rules on time, and repairs |
 | `sys.check_updates` | Daily, 05:37 UTC | Module updates from the registry (`connections.md`) |
-| `sys.backup` | Daily, 02:30 UTC | Dumps the database into the backup folder (`backups.md`) |
+| `sys.backup` | Daily, 02:30 UTC | Dumps the database into the backup folder, and lists the backups there as records (`backups.md`) |
 | `sys.notification_cleanup` | Daily, 03:40 UTC | Puts away old notifications (`notifications.md`) |
 
 When a schedule starts failing (its last try failed, and its run before worked), administrators

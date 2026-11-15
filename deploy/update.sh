@@ -7,7 +7,8 @@
 # A release's image is checked by the image running now: it must be in the registry's signed
 # index, signed by a release key that image trusts, and never a lower version. Then: a backup,
 # the app and the worker stopped, the new image's compose file and image set, the database
-# upgraded, and both started again. If the upgrade fails, the version before starts again.
+# upgraded, the settings the machine applies (the backup folder) applied, and both started
+# again. If the upgrade fails, the version before starts again.
 set -eu
 
 usage() {
@@ -32,17 +33,15 @@ case $name in
     *[!a-z0-9-]* | "" | -*) echo "The name may only contain a-z, 0-9 and -." >&2; exit 2 ;;
 esac
 
+here=$(cd "$(dirname "$0")" && pwd)
 folder=${P42_HOME:-$HOME/.p42cloud}/$name
 if [ ! -f "$folder/.env" ] || [ ! -f "$folder/compose.yml" ]; then
     echo "There's no installation named $name ($folder)." >&2
     exit 1
 fi
 cd "$folder"
-
-# A value from .env, read, not run.
-setting() {
-    sed -n "s/^$1=//p" .env | tail -n 1
-}
+. "$here/lib.sh"
+only_the_installation
 
 before=$(setting P42_IMAGE)
 if [ -n "$image" ]; then
@@ -80,9 +79,7 @@ else
 fi
 cp -p compose.yml compose.yml.before
 cp -p .env .env.before
-{ grep -v '^P42_IMAGE=' .env.before; echo "P42_IMAGE=$target"; } >.env.new
-chmod 600 .env.new
-mv .env.new .env
+set_env P42_IMAGE "$target"
 mv compose.yml.new compose.yml
 
 put_back() {
@@ -100,6 +97,8 @@ echo "Upgrading the database ..."
 docker compose run --rm upgrade || put_back
 echo "Checking that it's safe ..."
 docker compose run --rm check || put_back
+# Settings the machine applies (the backup folder), from the database.
+apply_backup_folder || put_back
 echo "Starting the app and its worker ..."
 docker compose up -d web worker
 port=$(setting P42_PORT)

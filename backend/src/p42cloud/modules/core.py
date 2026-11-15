@@ -26,6 +26,7 @@ from p42cloud.security.sign_in import models as sign_in
 from p42cloud.security.tokens import hooks as token_hooks
 from p42cloud.security.tokens import models as tokens
 from p42cloud.services.backups import manifest as backups
+from p42cloud.services.backups import models as backup_models
 from p42cloud.services.calls import models as calls
 from p42cloud.services.connections import models as connections
 from p42cloud.services.connections import service as connection_service
@@ -60,6 +61,7 @@ CORE = Module(
         *calls.TABLES,
         *notifications.TABLES,
         *module_routes.TABLES,
+        *backup_models.TABLES,
     ),
     roles=tuple(access.ROLES),
     hooks=(

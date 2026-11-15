@@ -37,3 +37,14 @@ test('an administrator runs a schedule now, sees the run, and pauses it', async 
   await page.getByRole('button', { name: 'Resume' }).click();
   await expect(page.getByText('Resumed.')).toBeVisible();
 });
+
+test('backups: the folder is a setting, and the backups have a page of their own', async ({
+  page,
+}) => {
+  await page.goto('/list/sys.setting');
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  await expect(page.getByText('Backup folder', { exact: true }).first()).toBeVisible();
+
+  await page.goto('/list/sys.backup');
+  await expect(page.getByRole('heading', { name: 'Backups' })).toBeVisible();
+});
