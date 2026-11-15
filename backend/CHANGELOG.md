@@ -2,6 +2,11 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.32.1
+
+- A reference filled in for a new record (New in a related list, or from the address) shows the
+  record's name, looked up, instead of its ID.
+
 ## 0.32.0
 
 - A module's jobs' own group (`<module> jobs`) is marked as such (`jobs_of`, set by the platform

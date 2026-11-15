@@ -55,6 +55,22 @@ export class Tables {
   }
 
   /** Records whose display field contains the text: for pickers. */
+  /** One record's name (its display field); null when it can't be read (gone, or not allowed). */
+  async nameOf(table: string, id: string): Promise<string | null> {
+    try {
+      const info = await this.describe(table);
+      const display = info.display ?? 'sys_id';
+      const { data } = await this.api.get<Record<string, unknown>>(`${path(table)}/${id}`, {
+        query: { fields: display },
+        quiet: true,
+      });
+      const name = data[display];
+      return name === null || name === undefined || name === '' ? null : String(name);
+    } catch {
+      return null;
+    }
+  }
+
   async find(table: string, text: string, limit = 10): Promise<Named[]> {
     const info = await this.describe(table);
     const display = info.display ?? 'sys_id';
