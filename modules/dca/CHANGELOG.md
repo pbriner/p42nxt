@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.1
+
+- The same as 0.7.0, published again: 0.6.0 and 0.7.0 were left out of the registry's list, so
+  installations didn't see them. 0.7.1 brings both (0.5.0 updates straight to it).
+
 ## 0.7.0
 
 - German translations of everything the module defines (tables, fields, choices, form

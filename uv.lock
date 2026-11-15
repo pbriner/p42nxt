@@ -615,7 +615,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-dca"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "modules/dca" }
 dependencies = [
     { name = "p42cloud" },
