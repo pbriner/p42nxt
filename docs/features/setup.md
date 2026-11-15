@@ -21,6 +21,16 @@ Modules beyond the core are installed from signed packages into the volume `modu
 `https://github.com/<owner>/<repo>/releases/download/registry`). It's empty by default: the
 installation then never asks.
 
+## Updating
+
+```bash
+deploy/update.sh <name> [--version <version> | --image <image>]
+```
+
+Backs up the database, moves the installation to the new core (checked against the signed
+registry), upgrades the database and starts it again; the version before comes back if the
+upgrade fails (`releases.md`).
+
 ## The web installer
 
 Open the app: while nobody administers the installation, the sign-in page leads to `/setup`.

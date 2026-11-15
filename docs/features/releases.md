@@ -31,7 +31,46 @@ Push a tag `<module>/v<version>`, like `hello/v0.1.0`. The release workflow:
 5. adds it to the **registry index** and signs the index again. The index and its signature are
    the files `index.json` and `index.json.sig` of the release named `registry`.
 
-The core is released as the app image, not this way.
+The core is released as the app image, not this way (next section).
+
+## Releasing the core
+
+Push a tag `v<version>`, like `v0.24.0`, the version in `backend/pyproject.toml`. The workflow
+(`.github/workflows/release-core.yml`):
+
+1. checks that the tag's version is the core's;
+2. builds the app image for Intel and ARM machines and pushes it to the repository's container
+   registry (`ghcr.io/<owner>/<repo>:<version>`);
+3. adds the release to the registry index as `sys`, naming the image by its digest
+   (`ghcr.io/<owner>/<repo>@sha256:…`), signed with the release key, and signs the index again;
+4. publishes a GitHub Release with the changelog entry and the image.
+
+A tag can be moved to another image; a digest can't, so installations only ever use the digest.
+The image must be public for installations to download it without signing in (GitHub: the
+package's settings, once).
+
+## Updating an installation
+
+```bash
+deploy/update.sh <name>                     # to the newest core release
+deploy/update.sh <name> --version 0.24.0    # to this one
+deploy/update.sh <name> --image p42cloud:0.24.0   # an image built on this machine
+```
+
+For a release, the image running now reads the signed index (`p42cloud core image`) and names
+the new image only if a key it trusts signed it and it's not a lower version. An image built on
+the machine isn't checked; the script says so.
+
+Then the script:
+
+1. backs up the database (`p42-before-update-<time>.dump` in the backup folder, kept by the
+   nightly clean-up);
+2. takes the new image's own `compose.yml` and sets the image in `.env`;
+3. stops the app and the worker, upgrades the database, checks that it's safe, and starts them;
+4. if the upgrade or the check fails, starts the version before again and names the backup.
+
+Changing the core to a new image needs control over Docker on the machine, so the app never
+does it itself: an update is always run by a person (or a timer they set up) on the machine.
 
 ## Signatures
 
