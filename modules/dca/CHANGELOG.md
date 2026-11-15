@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0
+
+- Real orders carry the order's own ID as Kraken's client order ID (`cl_ord_id`) and are found
+  again by it; calls queued before keep their number (`userref`).
+- Before each real buy: a buy on the pair by another system or by hand (open or done, within the
+  cooldown, since the last Resume) holds the plan; a gap of more than 2 % between buying and
+  selling, or a price more than 10 % from yesterday's close, makes the buy wait for the next
+  check (the owner is told once).
+- New field `others_from` ("Other orders checked from", set by Resume).
+- "At most per month" is called "Monthly limit".
+
 ## 0.5.0
 
 - The takeover from a previous installation is gone (its table `dca.takeover` is retired with its

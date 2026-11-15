@@ -17,11 +17,18 @@ from p42cloud_dca import kraken
 from p42cloud_dca.kraken import KrakenError, Pair
 
 
+def reference(payload: dict[str, Any]) -> int | str:
+    """The order's ID sent as Kraken's client order ID; calls queued before 0.6.0 carry a
+    number (`userref`) instead."""
+    found = payload.get("cl_ord_id")
+    return str(found) if found else int(payload["userref"])
+
+
 async def _send(http: httpx.AsyncClient, run: CallRun) -> dict[str, Any]:
     payload = run.payload
     try:
         txid = await kraken.add_order(
-            http, str(payload["pair"]), Decimal(str(payload["volume"])), int(payload["userref"])
+            http, str(payload["pair"]), Decimal(str(payload["volume"])), reference(payload)
         )
     except KrakenError as error:
         if error.temporary:
@@ -35,7 +42,7 @@ async def _send(http: httpx.AsyncClient, run: CallRun) -> dict[str, Any]:
 
 
 async def _reconcile(http: httpx.AsyncClient, run: CallRun) -> dict[str, Any] | None:
-    found = await kraken.find(http, int(run.payload["userref"]))
+    found = await kraken.find(http, reference(run.payload))
     return found.answer() if found else None
 
 
@@ -109,7 +116,7 @@ async def hold(client: Client, plan_id: str, reason: str) -> None:
 async def _gave_up(records: Records, run: CallRun, ending: GaveUp) -> None:
     client = Client(records)
     order = await client.get("dca.order", str(run.record_id))
-    ref = run.payload["userref"]
+    ref = reference(run.payload)
     if ending.why == "unclear":
         await client.update(
             "dca.order",

@@ -52,12 +52,22 @@ next check plans again.
 
 Real orders (the plan's **Real orders**, its owner's **My Kraken key can't withdraw**, a
 connection whose check passed, the setting `dca.live_allowed`, and the stage `production`): the
-cycle records the order (state "sending", a random reference) and the outside call
-`dca.place_order` in one transaction. The worker sends a market buy with that reference; a lost
-answer is reconciled by the reference (Open and Closed orders) before anything is sent again;
+cycle records the order (state "sending") and the outside call `dca.place_order` in one
+transaction. The worker sends a market buy with the order's ID as Kraken's client order ID
+(`cl_ord_id`; calls queued before 0.6.0 carry a number, `userref`); a lost answer is reconciled
+by that reference (Open and Closed orders) before anything is sent again;
 the fill takes Kraken's volume, price, cost and fee. Kraken's refusal, an order still unclear
 after the last try, or an order open for more than 30 minutes puts the plan on hold (`dca.hold`)
 until its owner presses **Resume**. While an order is unclear the plan doesn't buy.
+
+Right before each real buy:
+
+- **Another system:** a buy on the pair, open or done, that isn't one of the owner's orders (by
+  Kraken's order ID or client order ID), within the cooldown (24 hours by default) and since the
+  last **Resume** (`others_from`), puts the plan on hold. Sells don't count.
+- **Market:** if buying and selling prices are more than 2 % apart, or the last price is more
+  than 10 % from yesterday's close (daily candles), the buy waits for the next check ("Waiting:
+  …"; the owner is told once, `dca.problem`).
 
 Targets: a plan's profit target and loss limit (in % or the currency, on profit after fees) are
 checked after each cycle, inactive plans too; each one reached notifies the owner once
