@@ -23,7 +23,7 @@
   @if (choices().length) {
     <div class="choices">
       @for (choice of choices(); track choice.param) {
-        @if (options()[choice.param]; as offered) {
+        @if (options()[choice.table]; as offered) {
           <mat-form-field appearance="outline" class="choice">
             <mat-label>{{ offered.label }}</mat-label>
             <mat-select [value]="params()[choice.param]" (selectionChange)="choose(choice.param, $event.value)">
@@ -58,7 +58,7 @@
     [cdkDropListDisabled]="!editing()"
     (cdkDropListDropped)="dropped($event)"
   >
-    @for (item of items(); track item.widget; let i = $index, last = $last) {
+    @for (item of items(); track $index; let i = $index, last = $last) {
       @if (def(item.widget); as w) {
         <div
           class="cell"
@@ -131,7 +131,21 @@
               }
             </div>
           }
-          <app-widget-card [widget]="w" [compact]="item.size === 's'" [params]="params()" />
+          @if (perItem(w) && options()[w.param_table!]; as offered) {
+            <mat-form-field appearance="outline" class="own-choice" subscriptSizing="dynamic">
+              <mat-label>{{ offered.label }}</mat-label>
+              <mat-select
+                [value]="item.params?.[w.param!]"
+                [aria-label]="i18n.t('dash.choice_for', { what: offered.label, title: w.title })"
+                (selectionChange)="pickFor(i, w, $event.value)"
+              >
+                @for (record of offered.records; track record.sys_id) {
+                  <mat-option [value]="record.sys_id">{{ record.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+          <app-widget-card [widget]="w" [compact]="item.size === 's'" [params]="paramsFor(item, w)" />
           <div class="placeholder" *cdkDragPlaceholder></div>
         </div>
       }

@@ -131,11 +131,17 @@ Widget("by_language", "By language", "chart", list="hello.greeting",
 | `kind` | `figure` (a number, with an optional `target` and a 12-month `trend` by a date field), `chart` (`bar`, `donut`, `column`, `line`, grouped by a field; dates per `period`), `list` (the first records), `text` |
 | `list`, `filter` | The list view it reads, and a filter on top |
 | `measure`, `field` | `count` (default), or `sum`, `avg`, `min`, `max` of a number field |
-| `dashboard` | `home`, or the module's own |
+| `dashboard` | Where it's placed by default: `home`, or the module's own. Every dashboard offers it |
 | `icon`, `accent`, `filled` | An icon tile, its chart colour (1 to 8), the whole card in that colour |
 | `sizes`, `size`, `refresh` | Allowed sizes (`s`, `wide`, `large`), the starting one; reload every so many seconds |
 | `shown` | For everyone who may read it: `available` (in the picker), `default` (placed), `mandatory` (always there) |
 | `source` | For what a list can't count or sum: a GET route of the module (below) |
+
+All widgets form one catalog: every dashboard offers every widget the person may read (its own
+dashboard's first, grouped by module), so a module's widgets can be placed on the home dashboard
+too. `shown` and the audiences apply on the widget's own dashboard; elsewhere it's available.
+Administrators find the catalog under Appearance → **Widgets** (`sys.widget`), each widget with
+its module and, on its form, its audiences.
 
 Administrators set how a widget is shown per group with `sys.widget_audience`; the strongest
 for a person counts. `GET /api/v1/dashboards/<name>` returns the widgets a person may see and
@@ -166,7 +172,10 @@ A source widget can be about one record the person picks:
 `Widget(..., source="/widget/profit", param=("plan", "dca.plan"))`. The dashboard offers that
 table's records (those the person may read) above the widgets, keeps the choice in the address
 (`?plan=<id>`; the first record by default) and passes it to the route (`?plan=<id>`); with
-nothing to choose, the card says so.
+nothing to choose, the card says so. That's on the module's own dashboard. Elsewhere (the home dashboard,
+another module's) each placement keeps its own choice: the card offers the records, and the
+choice is saved with the placement (`{"widget": …, "size": …, "params": {"plan": <id>}}` in
+`sys.dashboard_layout.items`). Such a widget can be placed more than once, one per record.
 
 ## Each person's own
 

@@ -115,3 +115,64 @@ async def test_a_dashboard_starts_with_the_defaults_and_keeps_mandatory_widgets(
                     {"i": made.sys_id},
                 )
     assert ADMINISTRATORS  # the group that may set audiences
+
+
+async def _sql(owner: AsyncEngine, statement: str, **params: object) -> None:
+    with working_as(Context(channel="upgrade")):
+        async with owner_transaction(owner) as conn:
+            await conn.execute(text(statement), params)
+
+
+async def test_every_dashboard_offers_every_widget_its_own_placed(
+    world: World, owner_engine: AsyncEngine
+) -> None:
+    name = f"sys.elsewhere_{world.tag}"
+    await _sql(
+        owner_engine,
+        "INSERT INTO sys.widget (name, module, title, kind, dashboard, text, sizes, size, shown,"
+        " position, custom, filled, measure) VALUES (:n, 'sys', '{\"en\": \"Elsewhere\"}',"
+        " 'text', 'sys', '{\"en\": \"Hi\"}', '[\"s\"]', 's', 'default', 0, false, false,"
+        " 'count')",
+        n=name,
+    )
+    try:
+        async with acting(world.engine, world.plain) as records:
+            home = await dashboard(records, "home")
+            own = await dashboard(records, "sys")
+        offered = {w["name"]: w for w in home["widgets"]}
+        assert offered[name]["shown"] == "available"  # offered on home, not placed there
+        assert name not in [i["widget"] for i in home["items"]]
+        assert own["widgets"][0]["name"] == name  # its own dashboard's first
+        assert {"widget": name, "size": "s"} in own["items"]  # and placed there by default
+    finally:
+        await _sql(owner_engine, "UPDATE sys.widget SET deleted = now() WHERE name = :n", n=name)
+
+
+async def test_a_placement_keeps_its_own_choice(world: World) -> None:
+    plan = str(uuid.uuid4())
+    async with acting(world.engine, world.plain) as records:
+        found = await records.list(
+            "sys.dashboard_layout", where={"field": "dashboard", "op": "eq", "value": "home"}
+        )
+        for old in found.records:
+            await records.delete("sys.dashboard_layout", old.sys_id, old.etag)
+        twice = [
+            {"widget": "sys.people", "size": "s", "params": {"plan": plan}},
+            {"widget": "sys.people", "size": "wide"},
+        ]
+        await records.create("sys.dashboard_layout", {"dashboard": "home", "items": twice})
+        shown = await dashboard(records, "home")
+        assert shown["items"] == twice  # the same widget twice, one with its own choice
+        for bad in (
+            {"plan": "not an id"},
+            {"Bad Name": plan},
+            {"a": plan, "b": plan, "c": plan, "d": plan},
+        ):
+            with pytest.raises(Problem):
+                await records.create(
+                    "sys.dashboard_layout",
+                    {
+                        "dashboard": "sys",
+                        "items": [{"widget": "sys.people", "size": "s", "params": bad}],
+                    },
+                )

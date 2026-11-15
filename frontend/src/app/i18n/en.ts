@@ -322,6 +322,7 @@ export const EN = {
   'dash.size_s': 'S',
   'dash.size_wide': 'Wide',
   'dash.size_large': 'Large',
+  'dash.choice_for': '{what} for {title}',
   'widget.show_all': 'Show all',
   'widget.choose': 'Nothing to show until something is chosen above.',
   'widget.nothing': 'Nothing here.',

@@ -20,6 +20,9 @@ from p42cloud.ui.widgets.models import HOME, SIZES, Widget
 WIDGET_NAME = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 MIN_REFRESH = 30
 MAX_ITEMS = 60
+MAX_PARAMS = 3
+PARAM = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
+ID = re.compile(r"^[0-9a-fA-F-]{36}$")
 STRENGTH = {"available": 0, "default": 1, "mandatory": 2}
 
 
@@ -183,6 +186,7 @@ def _definition(row: Any, table: str | None, language: str, shown: str) -> dict[
     return {
         "name": row.name,
         "module": row.module,
+        "dashboard": row.dashboard,  # where it's placed by default
         "title": translated(row.title, language),
         "kind": row.kind,
         "list": row.list,
@@ -210,7 +214,8 @@ def _definition(row: Any, table: str | None, language: str, shown: str) -> dict[
 
 
 async def _offered(records: Records, dashboard: str) -> list[dict[str, Any]]:
-    """The widgets of a dashboard the person may see, each with how strongly it's shown."""
+    """Every widget the person may see, for this dashboard: its own first. A widget is placed by
+    default (or always) only on its own dashboard; on the others it's available."""
     conn = records.conn
     await switch_role(conn, "sys")
     rows = list(
@@ -219,8 +224,8 @@ async def _offered(records: Records, dashboard: str) -> list[dict[str, Any]]:
                 'SELECT w.*, v."table" AS view_table FROM sys.widget w'
                 " JOIN sys.module m ON m.name = w.module"
                 " LEFT JOIN sys.list_view v ON v.name = w.list AND v.deleted IS NULL"
-                " WHERE w.dashboard = :d AND w.deleted IS NULL AND m.enabled AND m.deleted IS NULL"
-                " ORDER BY w.module, w.position, w.name"
+                " WHERE w.deleted IS NULL AND m.enabled AND m.deleted IS NULL"
+                " ORDER BY w.dashboard = :d DESC, w.module, w.position, w.name"
             ),
             {"d": dashboard},
         )
@@ -243,7 +248,8 @@ async def _offered(records: Records, dashboard: str) -> list[dict[str, Any]]:
             known = records.catalog.table(table) if table else None
             if known is None or known.switched_off or not records.access.of(known.key, "read"):
                 continue
-        shown: str = audiences.get(row.name) or str(row.shown)
+        own = row.dashboard == dashboard
+        shown: str = (audiences.get(row.name) or str(row.shown)) if own else "available"
         found.append(_definition(row, table, records.situation.language, shown))
     return found
 
@@ -278,6 +284,7 @@ async def dashboard(records: Records, name: str) -> dict[str, Any]:
                 if i["size"] in by_name[i["widget"]]["sizes"]
                 else by_name[i["widget"]]["size"],
             }
+            | ({"params": i["params"]} if i.get("params") else {})
             for i in cast(list[dict[str, Any]], layout.items)
             if i.get("widget") in by_name
         ]
@@ -304,6 +311,18 @@ def _invalid(name: str, message: str) -> Problem:
     )
 
 
+def _params_fit(params: Any) -> bool:
+    """A placement's own choices: none, or a few names, each a record's ID."""
+    if params is None:
+        return True
+    if not isinstance(params, dict) or len(cast(dict[Any, Any], params)) > MAX_PARAMS:
+        return False
+    return all(
+        isinstance(k, str) and PARAM.match(k) and isinstance(v, str) and ID.match(v)
+        for k, v in cast(dict[Any, Any], params).items()
+    )
+
+
 async def _check_layout(change: Change) -> None:
     if change.operation in ("delete", "restore"):
         return
@@ -319,8 +338,13 @@ async def _check_layout(change: Change) -> None:
             not isinstance(item, dict)
             or not isinstance(cast(dict[str, Any], item).get("widget"), str)
             or cast(dict[str, Any], item).get("size") not in SIZES
+            or set(cast(dict[str, Any], item)) - {"widget", "size", "params"}
         ):
-            raise _invalid("items", 'Each is {"widget": name, "size": "s", "wide" or "large"}.')
+            raise _invalid(
+                "items", 'Each is {"widget": name, "size": "s", "wide" or "large", "params": {…}}.'
+            )
+        if not _params_fit(cast(dict[str, Any], item).get("params")):
+            raise _invalid("items", 'A widget\'s choices name a record each: {"plan": its ID}.')
 
 
 TABLE_HOOKS = (TableHook("sys.dashboard_layout", before=_check_layout),)

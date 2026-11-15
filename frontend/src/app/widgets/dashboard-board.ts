@@ -77,23 +77,35 @@ export class DashboardBoard {
   );
   protected readonly fresh = computed(() => this.board()?.new ?? []);
 
-  /** What the placed widgets need chosen (a plan): offered above them, kept in the address. */
+  /** What this module's own widgets need chosen (a plan): offered above them, kept in the
+   * address. Other widgets about a record keep their own choice (`perItem`). */
   protected readonly choices = computed(() => {
     const found = new Map<string, string>();
     for (const item of this.items()) {
       const w = this.def(item.widget);
-      if (w?.param && w.param_table) {
+      if (w?.param && w.param_table && this.onPage(w)) {
         found.set(w.param, w.param_table);
       }
     }
     return [...found].map(([param, table]) => ({ param, table }));
   });
+  /** The records offered per table: for the choices above, and for each card's own. */
   protected readonly options = signal<Record<string, { label: string; records: Named[] }>>({});
+  private readonly tablesOffered = computed(() => {
+    const found = new Set<string>();
+    for (const item of this.items()) {
+      const w = this.def(item.widget);
+      if (w?.param && w.param_table) {
+        found.add(w.param_table);
+      }
+    }
+    return [...found].sort();
+  });
   /** The chosen records: from the address, else the first one offered. */
   protected readonly params = computed(() => {
     const chosen: Record<string, string> = {};
-    for (const { param } of this.choices()) {
-      const value = this.query()?.get(param) ?? this.options()[param]?.records[0]?.sys_id;
+    for (const { param, table } of this.choices()) {
+      const value = this.query()?.get(param) ?? this.options()[table]?.records[0]?.sys_id;
       if (value) {
         chosen[param] = value;
       }
@@ -107,21 +119,62 @@ export class DashboardBoard {
       untracked(() => void this.load(name));
     });
     effect(() => {
-      const wanted = this.choices();
+      const wanted = this.tablesOffered();
       untracked(() => void this.offer(wanted));
     });
   }
 
-  private async offer(wanted: { param: string; table: string }[]): Promise<void> {
+  private async offer(wanted: string[]): Promise<void> {
     const found: Record<string, { label: string; records: Named[] }> = {};
-    for (const { param, table } of wanted) {
+    for (const table of wanted) {
       const [info, records] = await Promise.all([
         this.tables.describe(table),
         this.tables.find(table, '', 100),
       ]);
-      found[param] = { label: info.label, records };
+      found[table] = { label: info.label, records };
     }
     this.options.set(found);
+  }
+
+  /** A widget whose choice the page offers: about a record, on its own module's dashboard. */
+  protected onPage(w: WidgetDef): boolean {
+    return w.dashboard === this.name() && this.name() !== 'home';
+  }
+
+  /** A card about a record that keeps its own choice. */
+  protected perItem(w: WidgetDef): boolean {
+    return !!w.param && !!w.param_table && !this.onPage(w);
+  }
+
+  protected paramsFor(item: Placed, w: WidgetDef): Record<string, string> {
+    return this.perItem(w) ? (item.params ?? {}) : this.params();
+  }
+
+  /** A card's own choice: kept with its placement (saved at once outside Customize). */
+  protected async pickFor(index: number, w: WidgetDef, value: string): Promise<void> {
+    const update = (all: Placed[]): Placed[] =>
+      all.map((item, i) =>
+        i === index ? { ...item, params: { ...item.params, [w.param!]: value } } : item,
+      );
+    if (this.editing()) {
+      this.draft.update(update);
+      return;
+    }
+    const board = this.board();
+    if (!board) {
+      return;
+    }
+    const items = update(board.items);
+    this.board.set({ ...board, items });
+    try {
+      await this.dashboards.save(
+        this.name(),
+        items,
+        board.widgets.map((x) => x.name),
+      );
+    } catch (error) {
+      this.snack.open(describe(error), this.i18n.t('common.close'));
+    }
   }
 
   protected choose(param: string, value: string): void {
@@ -182,7 +235,15 @@ export class DashboardBoard {
     if (!this.editing()) {
       this.customize();
     }
-    const placed = new Set(this.draft().map((i) => i.widget));
+    // One about a record may be placed again, for another record.
+    const placed = new Set(
+      this.draft()
+        .filter((i) => {
+          const w = this.def(i.widget);
+          return !w || !this.perItem(w);
+        })
+        .map((i) => i.widget),
+    );
     const modules: Record<string, string> = { sys: 'Core' };
     for (const c of this.navigation.categories()) {
       for (const m of c.modules) {

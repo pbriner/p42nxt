@@ -6,6 +6,8 @@ import { path } from './tables';
 export interface WidgetDef {
   name: string;
   module: string;
+  /** The dashboard it's placed on by default (`home`, or a module's): offered on every one. */
+  dashboard: string;
   title: string;
   kind: 'list' | 'figure' | 'chart' | 'text';
   list: string | null;
@@ -38,6 +40,8 @@ export type Size = 's' | 'wide' | 'large';
 export interface Placed {
   widget: string;
   size: Size;
+  /** This placement's own choice (a plan), where the page offers none. */
+  params?: Record<string, string>;
 }
 
 export interface Board {
