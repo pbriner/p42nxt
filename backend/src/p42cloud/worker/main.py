@@ -27,6 +27,7 @@ from p42cloud.services.announcements.service import notify_due
 from p42cloud.services.calls.service import deliver
 from p42cloud.services.calls.service import recover as recover_calls
 from p42cloud.services.jobs.service import claim, execute, recover, tick
+from p42cloud.services.languages.service import apply_changed
 from p42cloud.services.notifications import telegram
 
 log = logging.getLogger("p42cloud.worker")
@@ -78,14 +79,16 @@ async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
 
 
 async def _each_minute(engine: AsyncEngine, now: datetime) -> None:
-    """What a stopped worker left behind: runs end, calls are asked about; and messages whose
-    time has come go out as notifications."""
+    """What a stopped worker left behind: runs end, calls are asked about; messages whose time
+    has come go out as notifications; translations changed by hand are shown."""
     if ended := await recover(engine, now):
         log.warning("ended %d runs a stopped worker left behind", ended)
     if lost := await recover_calls(engine, now):
         log.warning("%d outside calls lost their answer; asking first", lost)
     if notified := await notify_due(engine):
         log.info("%d messages sent as notifications", notified)
+    if shown := await apply_changed(engine):
+        log.info("%d texts got their changed translations", shown)
 
 
 def main(argv: list[str] | None = None) -> int:

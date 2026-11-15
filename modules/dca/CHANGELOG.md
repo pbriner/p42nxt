@@ -2,8 +2,8 @@
 
 ## 0.7.0
 
-- German translations of everything the module defines (tables, fields, menus, actions,
-  widgets, roles, notification kinds), shipped in `translations/de.json`. Needs the core 0.37.
+- German translations of everything the module defines (tables, fields, choices, form
+  sections, menus, actions, widgets, roles, notification kinds), shipped in `translations/de.json`. Needs the core 0.37.
 
 ## 0.6.0
 

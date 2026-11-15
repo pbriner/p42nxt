@@ -13,11 +13,13 @@ from dataclasses import dataclass
 from typing import Any, cast
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from p42cloud.data.catalog import Catalog, TableDef
+from p42cloud.data.catalog import Catalog, TableDef, load_catalog
 from p42cloud.data.sql import ident, qualified
 from p42cloud.data.types.translated_text import LANGUAGE as CODE
+from p42cloud.kernel.context import EVERYTHING, Context, working_as
+from p42cloud.kernel.db import transaction
 from p42cloud.kernel.errors import FieldError, Problem
 
 ENGLISH = "en"
@@ -78,6 +80,66 @@ def _places(catalog: Catalog) -> list[_Where]:
     return found
 
 
+@dataclass(frozen=True)
+class _Nested:
+    """Translated texts inside a JSON field: a choice's labels, a form's section titles."""
+
+    table: str
+    column: str
+    kind: str  # choice, section
+    natural: str
+    module: str
+    join: str = ""
+
+
+_FIELD_ID = "t.schema || '.' || t.name || '.' || r.name"
+_TABLE_OF_FIELD = 'JOIN sys."table" t ON t.sys_id = r."table"'
+_NESTED = (
+    _Nested("sys.field", "options", "choice", _FIELD_ID, "t.schema", _TABLE_OF_FIELD),
+    _Nested("sys.form_view", "sections", "section", "r.name", "r.module"),
+)
+
+
+def _entries(kind: str, value: Any) -> list[tuple[str, dict[str, str]]]:
+    """(the text's part of the key, its translated text) inside a JSON value; the texts are
+    the value's own, so changing them changes the value."""
+    if kind == "choice":
+        options = cast(dict[str, Any], value) if isinstance(value, dict) else {}
+        items: list[Any] = options.get("values") or []
+        return [
+            (f"choice:{entry['value']}", label)
+            for entry in _objects(items)
+            if isinstance(label := entry.get("label"), dict)
+        ]
+    sections: list[Any] = value if isinstance(value, list) else []  # pyright: ignore[reportUnknownVariableType]
+    return [
+        (f"section:{n}", title)
+        for n, entry in enumerate(_objects(sections), 1)
+        if isinstance(title := entry.get("title"), dict)
+    ]
+
+
+def _objects(items: list[Any]) -> list[dict[str, Any]]:
+    """The JSON objects of a list, typed; anything else as an empty one (keeps positions)."""
+    return [cast(dict[str, Any], i) if isinstance(i, dict) else {} for i in items]
+
+
+async def _nested_rows(
+    conn: AsyncConnection, nested: _Nested, module: str | None = None
+) -> list[Any]:
+    schema, name = nested.table.split(".")
+    found = await conn.execute(
+        text(
+            f"SELECT r.sys_id, {nested.natural} AS natural, {nested.module} AS module,"  # noqa: S608
+            f" r.{ident(nested.column)} AS value FROM {qualified(schema, name)} r {nested.join}"
+            f" WHERE r.deleted IS NULL AND r.{ident(nested.column)} IS NOT NULL"
+            + (f" AND {nested.module} = :m" if module else "")
+        ),
+        {"m": module},
+    )
+    return list(found)
+
+
 async def sources(
     conn: AsyncConnection, catalog: Catalog, module: str | None = None
 ) -> list[Source]:
@@ -98,6 +160,13 @@ async def sources(
             found.extend(
                 Source(_key(place.table, row.natural, name), row.module, row.english)
                 for row in rows
+            )
+    for nested in _NESTED:
+        for row in await _nested_rows(conn, nested, module):
+            found.extend(
+                Source(SEPARATOR.join((nested.table, row.natural, part)), row.module, label["en"])
+                for part, label in _entries(nested.kind, row.value)
+                if label.get("en")
             )
     return sorted(found, key=lambda s: s.key)
 
@@ -307,13 +376,7 @@ async def apply(conn: AsyncConnection, catalog: Catalog) -> int:
                 if key not in managed:
                     continue
                 value: dict[str, str] = dict(row.value)
-                wanted = dict(value)
-                for lang in languages:
-                    have = kept[lang].get(key)
-                    if have is not None and have["english"] == value.get(ENGLISH):
-                        wanted[lang] = have["text"]
-                    else:
-                        wanted.pop(lang, None)
+                wanted = _translated(value, key, kept)
                 if wanted != value:
                     await conn.execute(
                         text(
@@ -323,6 +386,47 @@ async def apply(conn: AsyncConnection, catalog: Catalog) -> int:
                         {"v": _json(wanted), "i": row.sys_id},
                     )
                     written += 1
+    return written + await _apply_nested(conn, managed, kept)
+
+
+def _translated(
+    value: dict[str, str], key: str, kept: dict[str, dict[str, dict[str, Any]]]
+) -> dict[str, str]:
+    """A text with the translations in force for it, and without those that aren't."""
+    wanted = dict(value)
+    for lang, translations in kept.items():
+        have = translations.get(key)
+        if have is not None and have["english"] == value.get(ENGLISH):
+            wanted[lang] = have["text"]
+        else:
+            wanted.pop(lang, None)
+    return wanted
+
+
+async def _apply_nested(
+    conn: AsyncConnection, managed: set[str], kept: dict[str, dict[str, dict[str, Any]]]
+) -> int:
+    written = 0
+    for nested in _NESTED:
+        schema, name = nested.table.split(".")
+        for row in await _nested_rows(conn, nested):
+            value = json.loads(json.dumps(row.value))  # a copy to change
+            changed = False
+            for part, label in _entries(nested.kind, value):
+                key = SEPARATOR.join((nested.table, row.natural, part))
+                if key in managed and (wanted := _translated(label, key, kept)) != label:
+                    label.clear()
+                    label.update(wanted)
+                    changed = True
+            if changed:
+                await conn.execute(
+                    text(
+                        f"UPDATE {qualified(schema, name)}"  # noqa: S608
+                        f" SET {ident(nested.column)} = CAST(:v AS jsonb) WHERE sys_id = :i"
+                    ),
+                    {"v": json.dumps(value, ensure_ascii=False), "i": row.sys_id},
+                )
+                written += 1
     return written
 
 
@@ -344,3 +448,25 @@ async def seed(conn: AsyncConnection) -> None:
             ),
             {"c": code, "n": name, "o": offered},
         )
+
+
+_seen: dict[str, Any] = {}  # per worker: what the translations looked like when last applied
+
+
+async def apply_changed(engine: AsyncEngine) -> int:
+    """The worker's part: translations changed by hand (Platform, Translations) are put on the
+    records within a minute, without waiting for an import or a module update."""
+    with working_as(Context(channel="job:sys.languages", access=EVERYTHING)):
+        async with transaction(engine, "sys") as conn:
+            mark = tuple(
+                (
+                    await conn.execute(
+                        text("SELECT count(*), max(updated), count(deleted) FROM sys.translation")
+                    )
+                ).one()
+            )
+            if _seen.get("mark") == mark:
+                return 0
+            written = await apply(conn, await load_catalog(conn))
+            _seen["mark"] = mark
+            return written
