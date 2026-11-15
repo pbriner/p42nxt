@@ -5,6 +5,7 @@ the money should last. A job checks every plan every few minutes and buys when i
 version every buy is a dry run: recorded and notified, never sent to Kraken.
 """
 
+from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -106,7 +107,7 @@ PLAN = Table(
         "buy_hour": Integer("Hour (UTC, 0 to 23)", required=True, default=8),
         "end_date": Date("End date"),
         "max_price": Number("Never above this price"),
-        "monthly_limit": Number("At most per month"),
+        "monthly_limit": Number("Monthly limit"),
         "dynamic": Boolean("Price tiers", required=True, default=False),
         "reference": Choice(
             "Tiers compare with",
@@ -134,6 +135,8 @@ PLAN = Table(
             read_only=True,  # held by the cycle, resumed with Resume
         ),
         "hold_reason": Text("Why on hold", read_only=True),
+        # Orders of others on the pair before this were looked at (by Resume): not asked again.
+        "others_from": DateTime("Other orders checked from", read_only=True),
         "next_buy": DateTime("Next buy", read_only=True),
         "planned_buys": Integer("Buys left in the period", read_only=True),
         "period_end": DateTime("Period ends", read_only=True),
@@ -329,6 +332,7 @@ async def _check_status(change: Change, current: dict[str, Any]) -> None:
     values |= {
         "hold_reason": None,
         "next_buy": None,
+        "others_from": datetime.now(UTC).isoformat(),
         "last_message": "Resumed: the next check plans the next buy.",
     }
 

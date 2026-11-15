@@ -101,6 +101,29 @@ async def price(http: httpx.AsyncClient, pair: str) -> Decimal:
     return Decimal(str(ticker["c"][0]))
 
 
+@dataclass(frozen=True)
+class Ticker:
+    """The last trade's price and the best prices to sell (bid) and buy (ask) at now."""
+
+    last: Decimal
+    bid: Decimal
+    ask: Decimal
+
+    @property
+    def gap(self) -> Decimal:
+        """The gap between buying and selling, as a share of the selling price."""
+        return (self.ask - self.bid) / self.bid if self.bid > 0 else Decimal(1)
+
+
+async def ticker(http: httpx.AsyncClient, pair: str) -> Ticker:
+    found = _of_pair(await public(http, "Ticker", pair=pair), pair)
+    return Ticker(
+        last=Decimal(str(found["c"][0])),
+        bid=Decimal(str(found["b"][0])),
+        ask=Decimal(str(found["a"][0])),
+    )
+
+
 async def market(http: httpx.AsyncClient, pair: str) -> Market:
     info = _of_pair(await public(http, "AssetPairs", pair=pair), pair)
     return Market(
@@ -170,7 +193,15 @@ def _fill(txid: str, info: dict[str, Any]) -> Fill:
     )
 
 
-async def add_order(http: httpx.AsyncClient, pair: str, volume: Decimal, userref: int) -> str:
+def _ref(reference: int | str) -> dict[str, str]:
+    """Our reference as Kraken takes it: the order's ID (`cl_ord_id`, a UUID), or the number
+    orders sent before 0.6.0 carry (`userref`)."""
+    return {"userref": str(reference)} if isinstance(reference, int) else {"cl_ord_id": reference}
+
+
+async def add_order(
+    http: httpx.AsyncClient, pair: str, volume: Decimal, reference: int | str
+) -> str:
     """A market buy, carrying our reference so it can be found again; Kraken's order ID."""
     result = await private(
         http,
@@ -179,7 +210,7 @@ async def add_order(http: httpx.AsyncClient, pair: str, volume: Decimal, userref
         type="buy",
         ordertype="market",
         volume=format(volume, "f"),
-        userref=str(userref),
+        **_ref(reference),
     )
     answer = cast(dict[str, Any], result or {})
     txids = cast(list[str], answer.get("txid") or [])
@@ -194,10 +225,10 @@ async def order(http: httpx.AsyncClient, txid: str) -> Fill | None:
     return _fill(txid, cast(dict[str, Any], info)) if isinstance(info, dict) else None
 
 
-async def find(http: httpx.AsyncClient, userref: int) -> Fill | None:
+async def find(http: httpx.AsyncClient, reference: int | str) -> Fill | None:
     """An order placed with our reference, open or closed; None if Kraken has none."""
     for path, key in (("OpenOrders", "open"), ("ClosedOrders", "closed")):
-        result = cast(dict[str, Any], await private(http, path, userref=str(userref)) or {})
+        result = cast(dict[str, Any], await private(http, path, **_ref(reference)) or {})
         for txid, info in cast(dict[str, Any], result.get(key) or {}).items():
             return _fill(txid, cast(dict[str, Any], info))
     return None
@@ -209,3 +240,64 @@ async def closes(http: httpx.AsyncClient, pair: str) -> list[tuple[datetime, Dec
         list[list[Any]], _of_pair(await public(http, "OHLC", pair=pair, interval="1440"), pair)
     )
     return [(datetime.fromtimestamp(int(c[0]), tz=UTC), Decimal(str(c[4]))) for c in candles]
+
+
+async def last_close(http: httpx.AsyncClient, pair: str) -> Decimal | None:
+    """Yesterday's close: the last finished day (Kraken's last candle is today, still open)."""
+    days = await closes(http, pair)
+    return days[-2][1] if len(days) >= 2 else None  # noqa: PLR2004 - today and the day before
+
+
+def _same_pair(described: str, pair: str) -> bool:
+    return described.replace("X", "").replace("Z", "") == pair.replace("X", "").replace("Z", "")
+
+
+@dataclass(frozen=True)
+class Other:
+    """An order on the pair this plan didn't place."""
+
+    txid: str
+    status: str
+    kind: str  # buy, sell
+    volume: Decimal
+    at: datetime
+
+
+async def others(
+    http: httpx.AsyncClient, pair: str, since: datetime, ours: set[str]
+) -> list[Other]:
+    """Buys on the pair since then that aren't ours (by Kraken's order ID or our reference),
+    open or done: another system, or someone by hand, buying the same pair. Sells don't spend
+    the plan's money; an open buy older than `since` is left alone until it fills."""
+    found: list[Other] = []
+    opened = cast(dict[str, Any], await private(http, "OpenOrders") or {})
+    closed = cast(
+        dict[str, Any],
+        await private(http, "ClosedOrders", start=str(int(since.timestamp()))) or {},
+    )
+    for key, result in (("open", opened), ("closed", closed)):
+        for txid, raw in cast(dict[str, Any], result.get(key) or {}).items():
+            info = cast(dict[str, Any], raw)
+            descr = cast(dict[str, Any], info.get("descr") or {})
+            mine = txid in ours or str(info.get("cl_ord_id") or "") in ours
+            if mine or descr.get("type") != "buy":
+                continue
+            if not _same_pair(str(descr.get("pair", "")), pair):
+                continue
+            volume = Decimal(str(info.get("vol_exec") or "0"))
+            if key == "closed" and volume <= 0:
+                continue  # cancelled before anything was bought
+            stamp = info.get("closetm" if key == "closed" else "opentm") or 0
+            at = datetime.fromtimestamp(float(stamp), tz=UTC)
+            if at < since:
+                continue  # looked at already (Resume), or before the cooldown
+            found.append(
+                Other(
+                    txid,
+                    str(info.get("status", key)),
+                    str(descr.get("type", "")),
+                    volume if key == "closed" else Decimal(str(info.get("vol") or "0")),
+                    at,
+                )
+            )
+    return found

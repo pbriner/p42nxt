@@ -67,8 +67,18 @@ Each order is recorded before it goes to Kraken, with a reference of its own. If
 is lost, the app asks Kraken about that reference before sending anything again, so an order is
 never placed twice. The order then shows Kraken's own price, cost and fee.
 
+Right before each real buy, the app also checks:
+
+- **Nobody else buys the same pair.** If Kraken shows a buy on the pair that this app didn't
+  place, for example from another program or one you made by hand, the plan goes on hold. Sells
+  don't count.
+- **The market looks normal.** If buying and selling prices are more than 2 % apart, or the price
+  is more than 10 % away from yesterday's close, the buy waits and is tried again at the next
+  check. You're told once.
+
 ## A plan is on hold
 
 When Kraken refuses an order (for example, not enough money) or an order stays unclear, the plan
 goes **on hold** and you're notified. It doesn't buy until you've looked: read **Why on hold**,
-check the order on Kraken, then press **Resume**.
+check the order on Kraken, then press **Resume**. Buys by others from before you pressed Resume
+don't hold the plan again.

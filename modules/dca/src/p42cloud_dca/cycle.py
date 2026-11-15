@@ -1,8 +1,10 @@
 """The cycle: every few minutes each active plan is checked with its owner's Kraken connection,
 and buys when it's due: a dry run, or a real order when the plan, its owner's key check and the
-installation's switch all say so (on the production installation only)."""
+installation's switch all say so (on the production installation only).
 
-import secrets
+Right before a real buy, two more checks: no other system trades the pair (else the plan holds
+until its owner has looked), and the market looks normal (else it waits for the next check)."""
+
 from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
@@ -19,6 +21,9 @@ FEE = Decimal("0.0026")  # Kraken's taker fee, for dry runs
 MAX_MESSAGE = 500
 UNCLEAR = timedelta(minutes=30)  # an order still open or unclear this long holds its plan
 REAL = ("filled", "submitting", "unknown")  # what real orders spend
+MAX_GAP = Decimal("0.02")  # buying and selling prices further apart: the market waits
+MAX_MOVE = Decimal("0.10")  # further from yesterday's close: the market waits
+WAITING = "Waiting:"
 
 
 def _decimal(value: Any) -> Decimal | None:
@@ -105,7 +110,6 @@ async def _buy(  # noqa: PLR0913 - what's bought, for whom, at what price, when
     cost = _cents(decision.amount * price)
     cur = pair.currency
     said = f"{decision.amount} {pair.asset} at {price:.2f} {cur} ({cost} {cur})"
-    userref = secrets.randbelow(2**31 - 1) + 1
     order = await client.create(
         "dca.order",
         {
@@ -119,14 +123,14 @@ async def _buy(  # noqa: PLR0913 - what's bought, for whom, at what price, when
             "cost": str(cost),
             "fee": str((cost * FEE).quantize(Decimal("0.0001"))),
             "currency": cur,
-            "userref": userref if plan["live"] else None,
             "placed_at": now.isoformat(),
         },
     )
     if plan["live"]:
         await client.call(
             "dca.place_order",
-            {"pair": pair.name, "volume": str(decision.amount), "userref": userref},
+            # The order's own ID is its reference at Kraken (client order ID).
+            {"pair": pair.name, "volume": str(decision.amount), "cl_ord_id": order["sys_id"]},
             owner=plan["owner"],
             about=("dca.order", order["sys_id"]),
         )
@@ -154,7 +158,7 @@ async def _settle(
     for order in orders:
         if order["state"] not in ("submitting", "unknown"):
             continue
-        ref = order["userref"]
+        ref = order["userref"] or order["sys_id"]
         if order["state"] == "submitting" and order["kraken_txid"]:
             fill = await kraken.order(http, order["kraken_txid"])
             if fill is not None and await apply_fill(client, order, fill.answer()) == "filled":
@@ -241,6 +245,10 @@ async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tup
     )
     message = decision.message
     bought = False
+    if decision.action == "buy" and plan["live"]:
+        stopped = await _before_real_buy(client, plan, pair, orders, now)
+        if stopped is not None:
+            return stopped, False
     if decision.action == "buy":
         message = await _buy(client, plan, pair, decision, price=price, now=now)
         bought = True
@@ -259,6 +267,67 @@ async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tup
         plan["_etag"],
     )
     return message, bought
+
+
+async def _before_real_buy(
+    client: Client, plan: dict[str, Any], pair: Pair, orders: list[dict[str, Any]], now: datetime
+) -> str | None:
+    """Why a real buy mustn't happen now, if anything: another system trades the pair (the
+    plan holds), or the market looks wrong (it waits; the buy stays due)."""
+    hours = float(_decimal(plan["cooldown_hours"]) or strategy.DEFAULT_COOLDOWN)
+    since = now - timedelta(hours=hours)
+    if (looked := _moment(plan["others_from"])) is not None:
+        since = max(since, looked)
+    # The owner's orders of every plan are ours: two plans on one pair don't hold each other.
+    mine = await every(
+        client,
+        "dca.order",
+        where={"field": "owner", "op": "eq", "value": plan["owner"]},
+        sort=["placed_at"],
+    )
+    ours = {str(o[k]) for o in [*orders, *mine] for k in ("kraken_txid", "sys_id") if o[k]}
+    async with client.connection(kraken.TYPE, owner=plan["owner"]) as http:
+        others = await kraken.others(http, pair.name, since, ours)
+        ticker = await kraken.ticker(http, pair.name)
+        close = await kraken.last_close(http, pair.name)
+    if others:
+        first = others[0]
+        kind = "an open order" if first.status in ("open", "pending") else "a buy"
+        reason = (
+            f"Kraken has {kind} on {pair.name} this plan didn't place ({first.txid},"
+            f" {first.at:%d.%m.%Y %H:%M} UTC): another system or someone by hand trades the"
+            " same pair. Check it on Kraken, then Resume."
+        )
+        await hold(client, plan["sys_id"], reason)
+        return f"On hold: {reason}"
+    wrong = _market_wrong(ticker, close)
+    if wrong is None:
+        return None
+    said = f"{WAITING} {wrong} The buy waits for the next check."
+    if not str(plan["last_message"] or "").startswith(WAITING):
+        await client.notify(
+            "dca.problem",
+            f"DCA plan waits: {plan['name']}",
+            people=[plan["owner"]],
+            message=said,
+            link=f"/form/dca.plan/{plan['sys_id']}",
+            severity="warning",
+        )
+    return await _say(client, plan, said, now)
+
+
+def _market_wrong(ticker: kraken.Ticker, close: Decimal | None) -> str | None:
+    if ticker.gap > MAX_GAP:
+        return (
+            f"Buying ({ticker.ask:,.2f}) and selling ({ticker.bid:,.2f}) are"
+            f" {ticker.gap * 100:.1f} % apart, more than {MAX_GAP * 100:.0f} %."
+        )
+    if close and abs(ticker.last - close) / close > MAX_MOVE:
+        return (
+            f"The price ({ticker.last:,.2f}) is {(ticker.last - close) / close * 100:+.1f} %"
+            f" from yesterday's close ({close:,.2f}), more than {MAX_MOVE * 100:.0f} %."
+        )
+    return None
 
 
 async def _say(client: Client, plan: dict[str, Any], message: str, now: datetime) -> str:
