@@ -25,6 +25,7 @@ from p42cloud.security.sign_in import invitations
 from p42cloud.security.sign_in import models as sign_in
 from p42cloud.security.tokens import hooks as token_hooks
 from p42cloud.security.tokens import models as tokens
+from p42cloud.services.backups import manifest as backups
 from p42cloud.services.calls import models as calls
 from p42cloud.services.connections import models as connections
 from p42cloud.services.connections import service as connection_service
@@ -75,7 +76,7 @@ CORE = Module(
     docs=DOCS if DOCS.is_dir() else None,
     description="People, access, sign-in and the platform itself.",
     seed=access.seed,
-    settings=(settings.TIME_ZONE, sign_in.PASSWORDS_OFF, *ui.SETTINGS),
+    settings=(settings.TIME_ZONE, sign_in.PASSWORDS_OFF, *ui.SETTINGS, *backups.SETTINGS),
     category="Platform",
     icon="settings",
     navigation=ui.NAVIGATION,
@@ -88,11 +89,13 @@ CORE = Module(
     jobs=(
         *jobs.JOBS,
         *notifications.JOBS,
+        *backups.JOBS,
         Job("check_updates", "Check for module updates", check_updates, timeout=120),
     ),
     schedules=(
         *jobs.SCHEDULES,
         *notifications.SCHEDULES,
+        *backups.SCHEDULES,
         Schedule("check_updates", "Module updates, daily", "check_updates", "37 5 * * *"),
     ),
 )
