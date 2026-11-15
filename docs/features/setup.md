@@ -31,6 +31,10 @@ installation then never asks.
 
 ## Updating
 
+From the app: set up the updater once (`deploy/updater-install.sh <name>`), then administrators
+use **Update now** or **Update tonight** under Platform → Available updates (`releases.md`). By
+hand:
+
 ```bash
 deploy/update.sh <name> [--version <version> | --image <image>]
 ```

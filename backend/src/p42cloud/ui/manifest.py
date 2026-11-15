@@ -1,7 +1,12 @@
 """What the screens add to the core: their tables, hooks, settings, views, navigation, themes."""
 
+from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
+
+from p42cloud.data.settings import value
 from p42cloud.services.connections.service import check
 from p42cloud.services.jobs.service import queue
+from p42cloud.services.update_requests.service import tonight
 from p42cloud.ui.actions.models import UI_ACTION, ActionResult, ActionRun, UIAction
 from p42cloud.ui.favorites import models as favorites
 from p42cloud.ui.forms import layouts
@@ -51,6 +56,12 @@ VIEWS = (
     ListView("sys.group", ("name", "description", "assignable")),
     ListView("sys.role", ("label", "name", "module_ref", "powerful"), search=("label", "name")),
     ListView("sys.module", ("label", "name", "version", "enabled"), sort=("label",)),
+    ListView(
+        "sys.update_request",
+        ("target_ref", "version", "state", "not_before", "requested_by", "finished"),
+        sort=("-created",),
+        searchable=False,
+    ),
     ListView(
         "sys.widget",
         ("title", "module_ref", "kind", "dashboard", "shown"),
@@ -141,6 +152,7 @@ NAVIGATION = (
         (
             Item("modules", "Modules", "sys.module", icon="extension"),
             Item("updates", "Available updates", "sys.module_update", icon="update"),
+            Item("update_requests", "Updates", "sys.update_request", icon="history"),
             Item("tables", "Tables", "sys.table", icon="table"),
             Item("settings", "Settings", "sys.setting", icon="tune"),
         ),
@@ -213,12 +225,62 @@ async def _run_now(run: ActionRun) -> ActionResult:
     return ActionResult(message="Queued: it starts as soon as a worker is free.")
 
 
+async def _update(run: ActionRun, *, at_night: bool) -> ActionResult:
+    """Asks the updater on the machine to update to this release (checked by the request's
+    hook: administrators, the second factor again, one at a time)."""
+    zone = str(await value(run.records.conn, "sys.time_zone") or "UTC")
+    when = tonight(zone) if at_night else datetime.now(UTC)
+    await run.records.create(
+        "sys.update_request",
+        {
+            "target": run.record["module"],
+            "version": run.record["available"],
+            "not_before": when,
+        },
+    )
+    said = f"tonight at {when.astimezone(ZoneInfo(zone)):%H:%M}" if at_night else "now"
+    return ActionResult(
+        message=f"Requested {said}: the updater on the machine starts it. Follow it under Updates."
+    )
+
+
+async def _update_now(run: ActionRun) -> ActionResult:
+    return await _update(run, at_night=False)
+
+
+async def _update_tonight(run: ActionRun) -> ActionResult:
+    return await _update(run, at_night=True)
+
+
 async def _check(run: ActionRun) -> ActionResult:
     """Whether the connection works: the type's check, through the safe client."""
     return ActionResult(message=await check(run.records, run.sys_id))
 
 
 ACTIONS = (
+    UIAction(
+        "update_now",
+        "sys.module_update",
+        "Update now",
+        places=("form_button", "list_row"),
+        icon="system_update_alt",
+        operation="read",
+        condition={"field": "fits", "op": "eq", "value": True},
+        second_factor=True,
+        confirm="Update now? A backup is made first; the app is unavailable for a few minutes.",
+        handler=_update_now,
+    ),
+    UIAction(
+        "update_tonight",
+        "sys.module_update",
+        "Update tonight",
+        places=("form_button", "list_row"),
+        icon="bedtime",
+        operation="read",
+        condition={"field": "fits", "op": "eq", "value": True},
+        second_factor=True,
+        handler=_update_tonight,
+    ),
     UIAction(
         "mark_read",
         "sys.notification",

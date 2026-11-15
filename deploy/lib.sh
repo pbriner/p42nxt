@@ -5,9 +5,10 @@
 
 # Docker Compose prefers the shell's variables to .env: a P42_* (or the project's name) left in
 # the shell would quietly win over the installation's own values. Only .env counts.
+# (P42_HOME stays: it only says where installations are, and Compose doesn't read it.)
 only_the_installation() {
     for variable in $(env | sed -n 's/^\(P42_[A-Z0-9_]*\)=.*/\1/p') COMPOSE_PROJECT_NAME; do
-        unset "$variable"
+        [ "$variable" = "P42_HOME" ] || unset "$variable"
     done
 }
 
@@ -47,4 +48,16 @@ apply_backup_folder() {
         echo "Backups go to $folder from now on."
         set_env P42_BACKUPS "$folder"
     fi
+}
+
+# A backup before an update, beside the nightly ones (the nightly clean-up leaves it alone);
+# sets $backup to its file.
+backup_before_update() {
+    backup=$(setting P42_BACKUPS)/p42-before-update-$(date -u +%Y%m%d-%H%M%S).dump
+    echo "Backing up the database to $backup ..."
+    (
+        umask 077
+        docker compose exec -T postgres pg_dump -U p42_admin -d p42 --format=custom >"$backup.partial"
+    )
+    mv "$backup.partial" "$backup"
 }

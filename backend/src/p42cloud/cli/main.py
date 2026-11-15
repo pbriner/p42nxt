@@ -10,6 +10,7 @@ import getpass
 import json
 import os
 import sys
+import uuid
 from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,7 @@ from p42cloud.kernel.secrets import Sealer
 from p42cloud.kernel.setup import set_up_database
 from p42cloud.modules.core import CORE, compose
 from p42cloud.modules.core_release import verified_image
+from p42cloud.modules.install import compose as compose_modules
 from p42cloud.modules.install import install_modules, states
 from p42cloud.modules.install_package import Source, install_package
 from p42cloud.modules.lifecycle import remove, switch_off, switch_on
@@ -40,6 +42,7 @@ from p42cloud.modules.updates import refresh
 from p42cloud.security.sign_in.credentials import NewKey
 from p42cloud.security.sign_in.first_admin import create_first_admin
 from p42cloud.services.backups.manifest import FOLDER
+from p42cloud.services.update_requests import service as update_requests
 
 
 async def _set_up() -> int:
@@ -247,6 +250,47 @@ async def _backup_folder(new: str | None) -> int:
     return 0
 
 
+# The app's own "no" to the updater: not 1, which is also Docker's when the worker is restarting.
+UPDATER_NO = 3
+
+
+async def _updater(
+    command: str, request: str | None, state: str | None, extra: dict[str, str]
+) -> int:
+    """For the updater service on the machine: what's due, starting it, how it went."""
+    settings = get_settings()
+    compose_modules([CORE, *discover(settings.modules_dir)])  # the notification kinds, among others
+    engine = create_engine(settings.owner_database_url)
+    try:
+        with working_as(Context(channel="updater")):
+            async with owner_transaction(engine) as conn:
+                if command == "next":
+                    found = await update_requests.due(conn)
+                    if found:
+                        print(found["sys_id"], found["target"], found["version"])
+                    return 0
+                if request is None:
+                    print("Name the request.", file=sys.stderr)
+                    return 2
+                if command == "start":
+                    started = await update_requests.start(conn, uuid.UUID(request))
+                    return 0 if started else UPDATER_NO
+                await update_requests.finish(
+                    conn,
+                    uuid.UUID(request),
+                    state=state or "",
+                    message=extra.get("message", ""),
+                    backup=extra.get("backup") or None,
+                    log=sys.stdin.read() if not sys.stdin.isatty() else "",
+                )
+    except Problem as problem:
+        print(f"{problem.title} {problem.detail or ''}".strip(), file=sys.stderr)
+        return UPDATER_NO
+    finally:
+        await engine.dispose()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="p42cloud")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -268,6 +312,12 @@ def main(argv: list[str] | None = None) -> int:
     modules.add_argument(
         "--file", type=Path, help="install or update: a package file, next to its .sig file"
     )
+    updater = commands.add_parser("updater", help="for the updater service on the machine")
+    updater.add_argument("updater_command", choices=["next", "start", "finish"])
+    updater.add_argument("request", nargs="?")
+    updater.add_argument("state", nargs="?", help="finish: succeeded, put_back or failed")
+    updater.add_argument("--message", default="")
+    updater.add_argument("--backup", default="")
     backup = commands.add_parser("backup", help="the backup folder (a setting)")
     folder = backup.add_subparsers(dest="backup_command", required=True).add_parser(
         "folder", help="print the setting Backup folder, or --set it"
@@ -306,6 +356,12 @@ def main(argv: list[str] | None = None) -> int:
         "check": _check,
         "core": lambda: _core_image(args.version),
         "backup": lambda: _backup_folder(args.new_folder),
+        "updater": lambda: _updater(
+            args.updater_command,
+            args.request,
+            args.state,
+            {"message": args.message, "backup": args.backup},
+        ),
     }
     return asyncio.run(commands_run[args.command]())
 

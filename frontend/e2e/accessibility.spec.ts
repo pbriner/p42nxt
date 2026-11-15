@@ -19,6 +19,7 @@ const PAGES = [
   '/form/dca.plan/new',
   '/dashboard/dca',
   '/list/sys.widget',
+  '/list/sys.update_request',
 ];
 
 test.describe('signed in', () => {

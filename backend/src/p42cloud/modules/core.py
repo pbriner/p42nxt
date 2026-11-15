@@ -34,6 +34,8 @@ from p42cloud.services.jobs import manifest as jobs
 from p42cloud.services.jobs.models import Job, Schedule
 from p42cloud.services.notifications import manifest as notifications
 from p42cloud.services.routes import models as module_routes
+from p42cloud.services.update_requests import models as update_request_models
+from p42cloud.services.update_requests import service as update_requests
 from p42cloud.ui import manifest as ui
 
 # The repository's docs/features, which is also where the image puts them: the same place
@@ -62,6 +64,7 @@ CORE = Module(
         *notifications.TABLES,
         *module_routes.TABLES,
         *backup_models.TABLES,
+        *update_request_models.TABLES,
     ),
     roles=tuple(access.ROLES),
     hooks=(
@@ -74,6 +77,7 @@ CORE = Module(
         *jobs.HOOKS,
         *connection_service.TABLE_HOOKS,
         *notifications.HOOKS,
+        *update_requests.HOOKS,
     ),
     docs=DOCS if DOCS.is_dir() else None,
     description="People, access, sign-in and the platform itself.",

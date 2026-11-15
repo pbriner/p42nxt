@@ -2,6 +2,20 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.33.0
+
+- Updating from the app: **Update now** and **Update tonight** on an available update
+  (administrators, the authenticator code again). Requests are records (`sys.update_request`,
+  Platform → Updates): a version the signed index offers only, one at a time, cancellable until
+  they start; their result, the backup made before and the updater's log are kept, and
+  administrators and the requester are told (`sys.update_finished`).
+- The updater on the machine (`deploy/updater.sh`, set up as a launchd or systemd service by
+  `deploy/updater-install.sh`) carries them out through the worker's command line
+  (`p42cloud updater next | start | finish`): the core as `deploy/update.sh` does, a module with
+  a backup first and a restart. The app still never controls Docker.
+- The deploy scripts keep `P42_HOME` (where installations are) when they clear the shell's other
+  `P42_*` values.
+
 ## 0.32.2
 
 - New installations run as the person who installed them (`P42_UID`, `P42_GID`, written by

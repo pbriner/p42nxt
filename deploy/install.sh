@@ -127,6 +127,9 @@ The installation $name is ready.
 Keep a copy of $folder/master.key somewhere safe: without it, encrypted secrets
 can't be recovered.
 
+To update it from the app (Platform, Available updates), set up its updater once:
+  $here/updater-install.sh $name
+
 Open the app and set it up with the setup code: your company's name, the first administrator,
 the modules. Or make the first administrator here instead (asks for a password and a code from
 an authenticator app):
