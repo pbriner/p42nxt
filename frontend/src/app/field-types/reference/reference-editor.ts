@@ -1,4 +1,4 @@
-import { Component, effect, inject, input, model, signal } from '@angular/core';
+import { Component, effect, inject, input, model, signal, untracked } from '@angular/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -83,13 +83,34 @@ export class ReferenceEditor implements FieldEditor {
   protected readonly options = signal<Named[]>([]);
   protected readonly searched = signal(false);
   private name = '';
+  /** The record picked here: its name is known already. */
+  private chosen: string | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     effect(() => {
-      this.name = this.shown() ?? (this.value() ? String(this.value()) : '');
-      this.text.set(this.name);
+      const shown = this.shown();
+      const value = this.value() ? String(this.value()) : null;
+      untracked(() => {
+        if (shown !== null || !value) {
+          this.name = shown ?? '';
+          this.text.set(this.name);
+        } else if (value !== this.chosen) {
+          // An ID without its name (filled in from the address): shown by its name, looked up.
+          this.name = value;
+          this.text.set(value);
+          void this.lookUp(value);
+        }
+      });
     });
+  }
+
+  private async lookUp(id: string): Promise<void> {
+    const name = await this.tables.nameOf(String(this.field().options.table), id);
+    if (name !== null && String(this.value()) === id) {
+      this.name = name;
+      this.text.set(name);
+    }
   }
 
   protected icon(): string {
@@ -112,6 +133,7 @@ export class ReferenceEditor implements FieldEditor {
   }
 
   protected picked(found: Named): void {
+    this.chosen = found.sys_id;
     this.name = found.name;
     this.text.set(found.name);
     this.value.set(found.sys_id);

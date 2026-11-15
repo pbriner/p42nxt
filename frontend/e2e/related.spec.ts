@@ -77,3 +77,21 @@ test('records in a related list link to their own forms', async ({ page }, info)
   await page.getByRole('link', { name: `Team of ${name}` }).click(); // and back to the group
   await expect(page).toHaveURL(new RegExp(`/form/sys.group/${group.sys_id}$`));
 });
+
+test('a new record from a related list shows the record it belongs to by name', async ({
+  page,
+}, info) => {
+  await page.goto('/');
+  const client = await api(page);
+  const name = `Named ${info.project.name} ${Date.now() % 100000}`;
+  const group = await client.post('/api/v1/sys/group', { name });
+  const person = await client.post('/api/v1/sys/person', { name: `Member of ${name}` });
+  await client.post('/api/v1/sys/membership', { group: group.sys_id, person: person.sys_id });
+
+  await page.goto(`/form/sys.group/${group.sys_id}`);
+  await page.getByRole('tab', { name: /Memberships/ }).click();
+  await page.getByRole('link', { name: 'New' }).click();
+  await expect(page.getByRole('heading', { name: 'New Membership' })).toBeVisible();
+  const field = page.getByRole('combobox', { name: 'Group' });
+  await expect(field).toHaveValue(name); // its name, not its ID
+});
