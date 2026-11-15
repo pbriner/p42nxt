@@ -19,6 +19,8 @@ export interface Related {
   label: string;
   /** Declared by the form: always a tab, even when empty. */
   declared: boolean;
+  /** A link to any record: its table field's condition too. */
+  also?: Record<string, string>;
 }
 
 interface Opened {
@@ -91,13 +93,21 @@ export class RelatedTabs {
     return `${r.table}.${r.field}`;
   }
 
+  /** The records of a list: those pointing here (and, for links to any record, of this table). */
+  private filters(r: Related, id: string): Record<string, string> {
+    return {
+      [`filter[${r.field}]`]: id,
+      ...Object.fromEntries(Object.entries(r.also ?? {}).map(([k, v]) => [`filter[${k}]`, v])),
+    };
+  }
+
   private async countAll(lists: Related[], id: string): Promise<void> {
     const counts = new Map<string, number | null>();
     await Promise.all(
       lists.map(async (r) => {
         try {
           const { data } = await this.api.get<{ total: number | null }>(path(r.table), {
-            query: { [`filter[${r.field}]`]: id, limit: 1, fields: 'sys_id', count: true },
+            query: { ...this.filters(r, id), limit: 1, fields: 'sys_id', count: true },
           });
           counts.set(this.key(r), data.total);
         } catch {
@@ -202,7 +212,7 @@ export class RelatedTabs {
       next: string | null;
     }>(path(related.table), {
       query: {
-        [`filter[${related.field}]`]: this.id(),
+        ...this.filters(related, this.id()),
         limit: MAX_ROWS,
         sort: view?.sort?.join(',') ?? '-updated',
         count: false,
@@ -264,7 +274,7 @@ export class RelatedTabs {
 
   /** A new record that already points back here. */
   protected prefill(related: Related): Record<string, string> {
-    return { [related.field]: this.id() };
+    return { [related.field]: this.id(), ...related.also };
   }
 
   protected openRow(table: string, row: Record<string, unknown>): void {

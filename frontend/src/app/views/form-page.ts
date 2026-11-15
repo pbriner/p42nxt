@@ -31,6 +31,7 @@ import { unitOf } from '../field-types/registry';
 import { ProblemState } from '../pages/problem-state';
 import { ActionRunner } from './action-runner';
 import { ConnectionSecrets } from './connection-secrets';
+import { RecordHistory } from './record-history';
 import { ConfirmDialog } from './confirm-dialog';
 import { FieldDisplay } from './field-display';
 import { Related, RelatedTabs } from './related-tabs';
@@ -56,6 +57,11 @@ interface Conflict {
 }
 
 const SYSTEM = new Set(['sys_id', 'created', 'created_by', 'updated', 'updated_by', 'source']);
+// The platform's own people: the system, and SQL from outside the app.
+const PLATFORM = new Set([
+  '00000000-0000-7000-8000-000000000001',
+  '00000000-0000-7000-8000-000000000002',
+]);
 
 function same(a: unknown, b: unknown): boolean {
   return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -65,6 +71,7 @@ function same(a: unknown, b: unknown): boolean {
 @Component({
   selector: 'app-form-page',
   imports: [
+    RecordHistory,
     ConnectionSecrets,
     FieldDisplay,
     MatButtonModule,
@@ -179,13 +186,22 @@ export class FormPage {
       info.referenced_by.find((r) => r.table === table && r.field === field)?.label ?? table;
     for (const r of form.related ?? []) {
       if (info.referenced_by.some((x) => x.table === r.table && x.field === r.field)) {
-        found.push({ ...r, label: label(r.table, r.field), declared: true });
+        const also = info.referenced_by.find(
+          (x) => x.table === r.table && x.field === r.field,
+        )?.also;
+        found.push({ ...r, label: label(r.table, r.field), declared: true, also });
       }
     }
     if (form.related_auto) {
       for (const r of info.referenced_by) {
         if (!found.some((x) => x.table === r.table && x.field === r.field)) {
-          found.push({ table: r.table, field: r.field, label: r.label, declared: false });
+          found.push({
+            table: r.table,
+            field: r.field,
+            label: r.label,
+            declared: false,
+            also: r.also,
+          });
         }
       }
     }
@@ -349,8 +365,19 @@ export class FormPage {
   }
 
   protected displayed(field: FieldInfo): string | null {
+    const state = (this.original()['_reference_state'] as Record<string, string> | undefined)?.[
+      field.name
+    ];
+    if (state === 'hidden') {
+      return this.i18n.t('ref.hidden');
+    }
     const display = (this.original()['_display'] as Values | undefined)?.[field.name];
-    return display === undefined || display === null ? null : String(display);
+    if (display === undefined || display === null) {
+      return null;
+    }
+    return state === 'retired'
+      ? `${String(display)} (${this.i18n.t('ref.retired')})`
+      : String(display);
   }
 
   protected set(name: string, value: unknown): void {
@@ -385,6 +412,15 @@ export class FormPage {
     );
   }
 
+  /** Who did it: their name, or "the system" for the platform's own work (no person record they
+   * may read). */
+  private who(id: unknown, name: unknown): string {
+    if (name !== undefined && name !== null) {
+      return String(name);
+    }
+    return PLATFORM.has(String(id)) ? this.i18n.t('form.the_system') : '—';
+  }
+
   protected meta(): string {
     const record = this.original();
     if (this.creating() || !record['created']) {
@@ -399,11 +435,11 @@ export class FormPage {
     return [
       this.i18n.t('form.created_by', {
         when: when(record['created']),
-        who: String(display['created_by'] ?? '—'),
+        who: this.who(record['created_by'], display['created_by']),
       }),
       this.i18n.t('form.updated_by', {
         when: when(record['updated']),
-        who: String(display['updated_by'] ?? '—'),
+        who: this.who(record['updated_by'], display['updated_by']),
       }),
     ].join(' · ');
   }

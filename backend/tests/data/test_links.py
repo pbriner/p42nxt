@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from p42cloud.data.declarations import Table
+from p42cloud.data.types.any_record import AnyRecord
 from p42cloud.data.types.datetime import DateTime
 from p42cloud.data.types.reference import TYPE, Reference
 from p42cloud.data.types.string import String
@@ -158,3 +159,16 @@ async def test_a_field_can_become_read_only_on_an_upgrade(
         await install_modules(owner, [CORE, _module(module_id, "1.0.0", before)])
         done = await install_modules(owner, [CORE, _module(module_id, "1.1.0", after)])
     assert f"{module_id} 1.0.0 → 1.1.0" in done  # how forms show it: no change of its values
+
+
+async def test_a_link_to_any_record_can_name_its_table_field_on_an_upgrade(
+    owner: AsyncEngine, new_module: Callable[[], Awaitable[str]]
+) -> None:
+    module_id = await new_module()
+    fields = {"about_table": String("About table", max_length=80)}
+    before = Table("note", "Note", fields | {"about": AnyRecord("About")})
+    after = Table("note", "Note", fields | {"about": AnyRecord("About", table_field="about_table")})
+    with working_as(Context(channel="test")):
+        await install_modules(owner, [CORE, _module(module_id, "1.0.0", before)])
+        done = await install_modules(owner, [CORE, _module(module_id, "1.1.0", after)])
+    assert f"{module_id} 1.0.0 → 1.1.0" in done

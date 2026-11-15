@@ -2,6 +2,23 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.35.0
+
+- Related lists from links to any record: `AnyRecord(table_field=)` names the field saying which
+  table, and the linked record lists them (shares, external IDs, outside calls, notifications);
+  the table description says which condition on that field applies (`also`).
+- Outside calls link the record they're about (`about`), and notifications the record their link
+  leads to (`about_table`, `about`); those from before are linked on this upgrade. So a DCA
+  order lists its Kraken call and the notifications about it, a job run the notices about it.
+- A record's history: `GET /api/v1/<module>/<table>/<id>/history`, and a History section on every
+  form (who changed which field from what to what, when), for those who may read the record and
+  only the fields they may read.
+- The platform's own changes say "by the system" instead of "by —".
+- References always read as names, never IDs: a retired (deleted) target keeps its name, marked
+  "retired", and its link (e.g. runs of a job a module no longer has); one the person may not read
+  says "a record you can't open" and leads nowhere (`_reference_state`: `retired`, `hidden`); links
+  to any record are named too, through their table field.
+
 ## 0.34.1
 
 - An upgrade that marks an existing field read only works: how forms show a field is no change of

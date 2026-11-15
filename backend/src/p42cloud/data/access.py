@@ -31,7 +31,7 @@ SHARE = Table(
     "Share",
     {
         "table": Reference("Table", "sys.table", required=True),
-        "record": AnyRecord("Record", required=True),
+        "record": AnyRecord("Record", table_field="table", required=True),
         "person": Reference("Shared with", "sys.person", required=True),
         "edit": Boolean("May change it", required=True, default=False),
         "until": DateTime("Until"),

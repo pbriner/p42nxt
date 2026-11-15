@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from p42cloud.data.declarations import Table
+from p42cloud.data.types.any_record import AnyRecord
 from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.choice import Choice
 from p42cloud.data.types.datetime import DateTime
@@ -50,6 +51,9 @@ NOTIFICATION = Table(
         "message": Text("Message"),
         # A path inside the app, never another site.
         "link": String("Link", max_length=500),
+        # The record a link to a form leads to: that record's form lists its notifications.
+        "about_table": String("About table", max_length=80, read_only=True),
+        "about": AnyRecord("About", table_field="about_table", read_only=True),
         "severity": Choice(
             "Severity",
             SEVERITIES,

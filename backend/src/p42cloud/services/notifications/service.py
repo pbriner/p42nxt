@@ -10,6 +10,7 @@ import re
 import uuid
 from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -116,6 +117,41 @@ _ACTIVE = text(
 )
 
 
+_FORM = re.compile(
+    r"^/form/(?P<table>[a-z][a-z0-9]{0,15}\.[a-z][a-z0-9_]{0,39})/(?P<id>[0-9a-f-]{36})(?:[/?#]|$)"
+)
+
+
+def _about(link: str | None) -> dict[str, Any]:
+    """The record a link to its form leads to; none for other links."""
+    found = _FORM.match(link or "")
+    if found is None:
+        return {"about_table": None, "about": None}
+    try:
+        return {"about_table": found["table"], "about": uuid.UUID(found["id"])}
+    except ValueError:
+        return {"about_table": None, "about": None}
+
+
+async def link_about(conn: AsyncConnection) -> None:
+    """0.35.0: calls and notifications from before link the record they're about."""
+    await conn.execute(
+        text(
+            "UPDATE sys.outside_call SET about = CAST(record_id AS uuid)"
+            " WHERE about IS NULL AND record_id ~ '^[0-9a-f-]{36}$'"
+        )
+    )
+    await conn.execute(
+        text(
+            "UPDATE sys.notification SET"
+            " about_table = substring(link from '^/form/([a-z][a-z0-9]*\\.[a-z][a-z0-9_]*)/'),"
+            " about = CAST(substring(link from '^/form/[^/]+/([0-9a-f-]{36})') AS uuid)"
+            " WHERE about IS NULL"
+            " AND link ~ '^/form/[a-z][a-z0-9]*\\.[a-z][a-z0-9_]*/[0-9a-f-]{36}'"
+        )
+    )
+
+
 def _checked_link(link: str | None) -> str | None:
     """Only paths inside the app: a notification can't send anyone to another site."""
     if link is None:
@@ -174,8 +210,9 @@ async def send(  # noqa: PLR0913 - what a notification says, all by keyword
     made = list(
         await conn.execute(
             text(
-                "INSERT INTO sys.notification (person, kind, title, message, link, severity, read)"
-                " SELECT p, :kind, :title, :message, :link, :severity, false"
+                "INSERT INTO sys.notification (person, kind, title, message, link, severity, read,"
+                " about_table, about) SELECT p, :kind, :title, :message, :link, :severity, false,"
+                " :about_table, :about"
                 " FROM unnest(CAST(:people AS uuid[])) p RETURNING sys_id, person"
             ),
             {
@@ -185,6 +222,7 @@ async def send(  # noqa: PLR0913 - what a notification says, all by keyword
                 "message": message,
                 "link": target,
                 "severity": severity,
+                **_about(target),
             },
         )
     )

@@ -62,7 +62,11 @@ export class FieldDisplay {
   protected readonly json = computed(() => JSON.stringify(this.value(), null, 2));
   protected readonly link = computed(() => {
     const value = this.value();
-    return value === null || value === undefined
+    const state = (this.record()['_reference_state'] as Record<string, string> | undefined)?.[
+      this.field().name
+    ];
+    // A record the person can't open: no way there.
+    return value === null || value === undefined || state === 'hidden'
       ? null
       : (unitOf(this.field().type).link?.(value, this.field()) ?? null);
   });

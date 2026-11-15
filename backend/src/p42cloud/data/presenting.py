@@ -14,6 +14,7 @@ from p42cloud.kernel.context import Access
 from p42cloud.kernel.errors import Problem
 
 OPERATIONS = ("read", "create", "write", "delete", "restore")
+MAX_NAMED = 500  # the records named at once per table (one page)
 _PER_RECORD = ("write", "delete", "restore")
 
 
@@ -73,20 +74,33 @@ def _referenced_by(
     for other in catalog.tables.values():
         if other.retired or other.switched_off or not access.of(other.key, "read"):
             continue
+        fields = {f.name: f for f in other.active_fields()}
         for f in other.active_fields():
-            if f.field.type != "reference" or f.field.options.get("table") != table.key:
+            also = _also(table, f, fields)
+            pointing = f.field.type == "reference" and f.field.options.get("table") == table.key
+            if not (pointing or also) or not _covers(access, other, "read", f.name):
                 continue
-            if not _covers(access, other, "read", f.name):
-                continue
-            found.append(
-                {
-                    "table": other.key,
-                    "field": f.name,
-                    "label": translated(other.label_plural or other.label, language),
-                    "field_label": translated(f.field.label, language),
-                }
-            )
+            entry: dict[str, Any] = {
+                "table": other.key,
+                "field": f.name,
+                "label": translated(other.label_plural or other.label, language),
+                "field_label": translated(f.field.label, language),
+            }
+            if also:
+                entry["also"] = also
+            found.append(entry)
     return found
+
+
+def _also(table: TableDef, f: FieldDef, fields: dict[str, FieldDef]) -> dict[str, str] | None:
+    """For a link to any record: the condition on its table field that makes it this table's."""
+    named = f.field.options.get("table_field") if f.field.type == "any_record" else None
+    holder = fields.get(str(named)) if named else None
+    if holder is None:
+        return None
+    if holder.field.type == "reference":  # to sys.table: this table's record
+        return {holder.name: str(table.id)} if table.id is not None else None
+    return {holder.name: table.key}
 
 
 def describe(
@@ -113,23 +127,82 @@ async def display_names(
     records: Records, catalog: Catalog, target_key: str, ids: set[UUID]
 ) -> dict[UUID, Any]:
     """The display values of referenced records the person may read; the others stay unnamed."""
+    return {k: name for k, (name, _) in (await named(records, catalog, target_key, ids)).items()}
+
+
+async def named(
+    records: Records, catalog: Catalog, target_key: str, ids: set[UUID]
+) -> dict[UUID, tuple[Any, bool]]:
+    """The referenced records the person may read: each one's display value, and whether it's
+    retired (deleted: history keeps pointing to it). Those they may not read aren't there."""
     target = catalog.table(target_key)
-    if target is None or not ids:
+    if target is None or not ids or target.display is None:
         return {}
-    shown = target.display
-    if shown is None:
-        return {}
-    try:
-        page = await records.list(
-            target_key,
-            where={"field": "sys_id", "op": "in", "value": [str(i) for i in ids]},
-            limit=len(ids),
-            count=False,
-        )
-    except Problem:  # a table they may not read: no names
-        return {}
-    language = records.situation.language
-    return {r.sys_id: translated(r.values.get(shown), language) for r in page.records}
+    shown, language = target.display, records.situation.language
+    found: dict[UUID, tuple[Any, bool]] = {}
+    for retired in (False, True):
+        wanted = [str(i) for i in ids if i not in found]
+        if not wanted:
+            break
+        try:
+            page = await records.list(
+                target_key,
+                where={"field": "sys_id", "op": "in", "value": wanted},
+                limit=min(len(wanted), MAX_NAMED),
+                count=False,
+                deleted=retired,
+            )
+        except Problem:  # a table they may not read: no names
+            return found
+        for r in page.records:
+            found[r.sys_id] = (translated(r.values.get(shown), language), retired)
+    return found
+
+
+def _target(catalog: Catalog, table: TableDef, f: FieldDef, record: Record) -> str | None:
+    """The table a reference of this record points to: its declared one, or, for a link to any
+    record, the one its table field names (a table's name, or its record of sys.table)."""
+    declared = f.type.references(f.field.options)
+    if declared is not None or f.field.type != "any_record":
+        return declared
+    holder = f.field.options.get("table_field")
+    named_by = record.values.get(str(holder)) if holder else None
+    if named_by is None:
+        return None
+    if isinstance(named_by, str) and "." in named_by:
+        return named_by
+    return next((t.key for t in catalog.tables.values() if t.id == named_by), None)
+
+
+def _names_of(
+    catalog: Catalog,
+    table: TableDef,
+    record: Record,
+    names: dict[str, dict[UUID, tuple[Any, bool]]],
+    language: str,
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """A record's references and choices named, and the references' states where they aren't
+    simply named: retired (named, marked), or hidden (the person may not read it: neither its
+    name nor its ID is shown)."""
+    display: dict[str, Any] = {}
+    state: dict[str, str] = {}
+    for f in table.active_fields():
+        value = record.values.get(f.name)
+        if value is None:
+            continue
+        target = _target(catalog, table, f, record)
+        if target is not None:
+            known = names.get(target, {})
+            if value not in known:
+                state[f.name] = "hidden"
+                continue
+            display[f.name], retired = known[value]
+            if retired:
+                state[f.name] = "retired"
+        elif f.field.type == "choice":
+            labels = {v["value"]: v.get("label") for v in f.field.options.get("values", [])}
+            display[f.name] = translated(labels.get(value), language)
+    return display, state
 
 
 async def annotate(records: Records, table: TableDef, found: list[Record]) -> list[dict[str, Any]]:
@@ -139,28 +212,18 @@ async def annotate(records: Records, table: TableDef, found: list[Record]) -> li
     language = records.situation.language
     references: dict[str, set[UUID]] = {}
     for f in table.active_fields():
-        target = f.type.references(f.field.options)
-        if target is not None:
-            references.setdefault(target, set()).update(
-                r.values[f.name] for r in found if r.values.get(f.name) is not None
-            )
+        for r in found:
+            target = _target(records.catalog, table, f, r)
+            if target is not None and isinstance(r.values.get(f.name), UUID):
+                references.setdefault(target, set()).add(r.values[f.name])
     names = {
-        key: await display_names(records, records.catalog, key, ids)
-        for key, ids in references.items()
+        key: await named(records, records.catalog, key, ids) for key, ids in references.items()
     }
     allowed = await records.may(table, [r.sys_id for r in found], _PER_RECORD)
     for record, body in zip(found, bodies, strict=True):
-        display: dict[str, Any] = {}
-        for f in table.active_fields():
-            value = record.values.get(f.name)
-            if value is None:
-                continue
-            target = f.type.references(f.field.options)
-            if target is not None and value in names.get(target, {}):
-                display[f.name] = names[target][value]
-            elif f.field.type == "choice":
-                labels = {v["value"]: v.get("label") for v in f.field.options.get("values", [])}
-                display[f.name] = translated(labels.get(value), language)
+        display, state = _names_of(records.catalog, table, record, names, language)
         body["_display"] = display
+        if state:
+            body["_reference_state"] = state
         body["_access"] = allowed.get(record.sys_id, dict.fromkeys(_PER_RECORD, False))
     return bodies

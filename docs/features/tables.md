@@ -42,6 +42,7 @@ the database makes, how a value is checked and stored, and which changes keep ev
 | `Date`, `DateTime`, `Duration` | `date`, `timestamptz`, `interval` | A date and time needs a time zone and is stored in UTC. Durations are ISO 8601 without years or months (`P1DT2H30M`) |
 | `Choice(values, tones=)` | `text` | One of the declared values (`a-z`, `0-9`, `_`), each with a label. `tones` makes some stand out in lists: `primary`, `tertiary`, `error` or `muted` (struck through), in the theme's colours |
 | `Reference(table)` | `uuid` | The record exists (foreign key, indexed). `key=` fills it from another field instead (below) |
+| `AnyRecord(table_field=)` | `uuid` | A record of any table; `table_field` names the field saying which (a reference to `sys.table`, or a table's name), and gives the linked record a related list |
 | `Json` | `jsonb` | Valid JSON |
 
 ### References filled from a key

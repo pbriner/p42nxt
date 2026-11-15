@@ -21,6 +21,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
 
+from p42cloud.data.history import MAX_ENTRIES, history
 from p42cloud.data.presenting import annotate
 from p42cloud.kernel.errors import Problem
 from p42cloud.ui.actions.service import available
@@ -154,6 +155,24 @@ async def read_record(
         (found,) = await annotate(records, records.catalog.tables[key], [record])
         await available(records, records.catalog.tables[key], [found])
     return _one(response, _only(found, fields))
+
+
+@router.get("/{module}/{table}/{sys_id}/history")
+@requires(SIGNED_IN)
+async def record_history(
+    module: str,
+    table: str,
+    sys_id: UUID,
+    request: Request,
+    caller: Who,
+    limit: Annotated[int, Query(ge=1, le=MAX_ENTRIES)] = 100,
+) -> dict[str, Any]:
+    """The record's changes from the audit log, newest first, for those who may read it: of each
+    change only the fields they may read."""
+    services: Services = request.app.state.services
+    key = _key(module, table)
+    async with services.records(caller.context(language(request))) as records:
+        return {"entries": await history(records, key, sys_id, limit)}
 
 
 @router.patch("/{module}/{table}/{sys_id}")

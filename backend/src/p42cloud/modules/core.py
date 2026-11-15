@@ -12,7 +12,7 @@ from p42cloud.modules import models as module_models
 from p42cloud.modules.install import compose as connect
 from p42cloud.modules.install import install_modules
 from p42cloud.modules.manifest import CORE as CORE_ID
-from p42cloud.modules.manifest import Module
+from p42cloud.modules.manifest import Migration, Module
 from p42cloud.modules.updates import check_updates
 from p42cloud.security.access import hooks as access_hooks
 from p42cloud.security.access import manifest as access
@@ -33,6 +33,7 @@ from p42cloud.services.connections import service as connection_service
 from p42cloud.services.jobs import manifest as jobs
 from p42cloud.services.jobs.models import Job, Schedule
 from p42cloud.services.notifications import manifest as notifications
+from p42cloud.services.notifications import service as notifications_service
 from p42cloud.services.routes import models as module_routes
 from p42cloud.services.update_requests import models as update_request_models
 from p42cloud.services.update_requests import service as update_requests
@@ -82,6 +83,7 @@ CORE = Module(
     docs=DOCS if DOCS.is_dir() else None,
     description="People, access, sign-in and the platform itself.",
     seed=access.seed,
+    migrations=(Migration("0.35.0", notifications_service.link_about),),
     settings=(
         settings.TIME_ZONE,
         *installation.SETTINGS,
