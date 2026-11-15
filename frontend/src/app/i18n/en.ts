@@ -114,6 +114,8 @@ export const EN = {
   'sign_in.code': 'Code',
   'sign_in.code_hint': 'Lost your phone? Enter one of your recovery codes.',
   'sign_in.verify': 'Verify',
+  'verify.title': 'Confirm it’s you',
+  'verify.text': 'This change needs a fresh code from your authenticator app.',
   'sign_in.start_again': 'Start again',
   'sign_in.or_passkey': 'or use your passkey',
   'enroll.title': 'Set up a second factor',

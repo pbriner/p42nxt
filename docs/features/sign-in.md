@@ -55,7 +55,9 @@ Waiting sessions end after 10 minutes.
 - People see their own sessions and end them; administrators see and end anyone's. Nobody sees
   a session's token.
 - **Changes to access** (groups, memberships, roles, grants) need the second factor given in the
-  last 15 minutes. Giving it again doesn't start a new session.
+  last 15 minutes. Giving it again doesn't start a new session. The browser app asks for the code
+  when the server says so (`verify_again`), gives it (`POST /api/v1/sign-in/verify`) and makes
+  the change again, once.
 
 ## Invitations and resets
 
