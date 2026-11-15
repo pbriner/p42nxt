@@ -1,5 +1,6 @@
 """Releases: signatures, changelogs, the signed index, updates that fit, and the release check."""
 
+import base64
 import json
 import subprocess
 from collections.abc import AsyncGenerator
@@ -8,6 +9,7 @@ from pathlib import Path
 
 import httpx
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from packaging.version import Version
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -51,8 +53,10 @@ def test_signatures_hold_only_for_trusted_keys() -> None:
     assert not releases.verify(b"package", "not base64!", KEYS)
 
 
-def test_the_platform_trusts_no_key_until_one_is_added() -> None:
-    assert releases.TRUSTED_KEYS == ()
+def test_every_trusted_key_is_an_ed25519_public_key() -> None:
+    assert releases.TRUSTED_KEYS
+    for key in releases.TRUSTED_KEYS:
+        Ed25519PublicKey.from_public_bytes(base64.b64decode(key, validate=True))
 
 
 def test_changelog_entries_and_security_releases() -> None:
@@ -237,3 +241,17 @@ def test_publishing_signs_the_package_and_the_index(
     assert release["version"] == hello
     assert releases.verify(b"a package", (tmp_path / f"{wheel.name}.sig").read_text(), KEYS)
     assert release["sha256"] == releases.sha256(b"a package")
+
+
+def test_signing_by_hand_refuses_a_key_the_platform_doesnt_trust(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    package = tmp_path / "p42cloud_x-1.0.0-py3-none-any.whl"
+    package.write_bytes(b"package")
+    monkeypatch.setenv("P42_RELEASE_KEY", PRIVATE)  # a test key, not a trusted one
+    with pytest.raises(SystemExit, match="doesn't trust"):
+        release_tool.sign_file(package)
+    monkeypatch.setenv("P42_RELEASE_KEY", "not a key")
+    with pytest.raises(SystemExit, match="isn't a release key"):
+        release_tool.sign_file(package)
+    assert not package.with_name(f"{package.name}.sig").exists()

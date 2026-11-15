@@ -122,7 +122,12 @@ docker compose restart web worker                    # to use it
 ```
 
 `--file <package>.whl` installs a package downloaded by hand instead; its signature must lie
-next to it (`<package>.whl.sig`). No registry is needed then.
+next to it (`<package>.whl.sig`). No registry is needed then. A package built by hand is signed with
+`uv run python -m p42cloud.modules.release_tool sign --file <package>.whl` (in `backend/`): it
+asks for the private release key without showing it (or takes `P42_RELEASE_KEY`), and refuses a
+key the platform doesn't trust. In the deployment the file reaches the `module` command through
+a folder given to it: `docker compose run --rm -v <folder>:/pkg:ro module install <module>
+--file /pkg/<package>.whl`.
 
 Before anything changes, the package must:
 

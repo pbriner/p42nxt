@@ -2,6 +2,13 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.28.0
+
+- The platform trusts the maintainer's release key: signed releases and packages can be
+  installed now (with no key, nothing could).
+- `release_tool sign --file <package>` signs a package by hand (asks for the private key, not
+  shown), to install it from the file; it refuses a key the platform doesn't trust.
+
 ## 0.27.0
 
 - References filled from a key (`Reference(table, key=, match=)`): the database links a record to
