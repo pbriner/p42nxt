@@ -9,6 +9,7 @@ from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.choice import Choice
 from p42cloud.data.types.integer import Integer
 from p42cloud.data.types.json import Json
+from p42cloud.data.types.reference import Reference
 from p42cloud.data.types.string import String
 from p42cloud.data.types.translated_text import TranslatedText
 
@@ -17,7 +18,8 @@ THEME = Table(
     "Theme",
     {
         "name": String("Name", max_length=40, required=True, unique=True),
-        "module": String("Module", max_length=16, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         "label": TranslatedText("Label", required=True),
         "description": TranslatedText("Description"),
         # {token: [light, dark]}; tokens it doesn't set keep the app's built-in colours.

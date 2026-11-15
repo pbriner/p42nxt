@@ -49,7 +49,7 @@ THEMES = builtin.THEMES
 VIEWS = (
     ListView("sys.person", ("name", "email", "kind", "active"), search=("name", "email")),
     ListView("sys.group", ("name", "description", "assignable")),
-    ListView("sys.role", ("label", "name", "module", "powerful"), search=("label", "name")),
+    ListView("sys.role", ("label", "name", "module_ref", "powerful"), search=("label", "name")),
     ListView("sys.module", ("label", "name", "version", "enabled"), sort=("label",)),
     ListView(
         "sys.schedule",
@@ -59,13 +59,13 @@ VIEWS = (
     ),
     ListView(
         "sys.connection",
-        ("label", "type", "base_url", "health", "checked"),
+        ("label", "type_ref", "base_url", "health", "checked"),
         sort=("label",),
         searchable=False,
     ),
     ListView(
         "sys.outside_call",
-        ("call", "owner", "state", "attempts", "sent", "message"),
+        ("call_ref", "owner", "state", "attempts", "sent", "message"),
         sort=("-created",),
         searchable=False,
     ),
@@ -75,7 +75,7 @@ VIEWS = (
         sort=("-created",),
         search=("title", "message"),
     ),
-    ListView("sys.notification_kind", ("label", "name", "module", "channels"), sort=("label",)),
+    ListView("sys.notification_kind", ("label", "name", "module_ref", "channels"), sort=("label",)),
     ListView(
         "sys.notification_delivery",
         ("person", "channel", "state", "attempts", "sent", "message"),
@@ -84,7 +84,10 @@ VIEWS = (
     ),
     ListView("sys.person_channel", ("channel", "state", "name", "full_text"), searchable=False),
     ListView(
-        "sys.notification_subscription", ("kind", "channel", "on"), sort=("kind",), searchable=False
+        "sys.notification_subscription",
+        ("kind_ref", "channel", "on"),
+        sort=("kind",),
+        searchable=False,
     ),
     ListView("sys.connection_secret", ("name", "connection", "updated"), searchable=False),
     ListView(

@@ -211,6 +211,58 @@ def _secrets(table: TableDef) -> tuple[str, ...]:
     return tuple(f.name for f in table.fields if f.type.secret)
 
 
+def _links(table: TableDef) -> tuple[str, ...]:
+    """The link trigger's arguments: per reference filled from a key, four (reference.py)."""
+    found: list[str] = []
+    names = {f.name for f in table.active_fields()}
+    for f in table.active_fields():
+        key = f.field.options.get("key") if f.type.name == "reference" else None
+        if key is None:
+            continue
+        if key not in names:
+            raise Problem(
+                409,
+                "bad_link",
+                "A reference filled from a key needs that field.",
+                detail=f"{table.key}.{f.name} is filled from {key}, which it doesn't have.",
+            )
+        schema, name = str(f.field.options["table"]).split(".", 1)
+        found += [f.name, key, qualified(schema, name), str(f.field.options["match"])]
+    return tuple(found)
+
+
+def _link_steps(table: TableDef, before: tuple[str, ...]) -> list[Step]:
+    """The link trigger (again, if its links changed), and the links of the records there."""
+    wanted = _links(table)
+    if wanted == before:
+        return []
+    name = qualified(table.schema, table.name)
+    steps = [Step(f"DROP TRIGGER IF EXISTS p42_link ON {name}", f"Stop linking {table.key}")]
+    if not wanted:
+        return steps
+    arguments = ", ".join(literal(a) for a in wanted)
+    steps.append(
+        Step(
+            f"CREATE TRIGGER p42_link BEFORE INSERT OR UPDATE ON {name}"
+            f" FOR EACH ROW EXECUTE FUNCTION sys.p42_link({arguments})",
+            f"Link {table.key}'s records by their keys",
+        )
+    )
+    old = {before[i] for i in range(0, len(before), 4)}
+    for i in range(0, len(wanted), 4):
+        ref, key = wanted[i], wanted[i + 1]
+        if ref in old:
+            continue
+        steps.append(
+            Step(
+                f"UPDATE {name} SET {ident(key)} = {ident(key)}"  # noqa: S608 - checked names only
+                f" WHERE {ident(key)} IS NOT NULL AND {ident(ref)} IS NULL",
+                f"Link the records of {table.key} there already ({ref})",
+            )
+        )
+    return steps
+
+
 def _create(table: TableDef, wanted_role: str) -> list[Step]:
     name = qualified(table.schema, table.name)
     columns = [SYSTEM_COLUMNS.strip()] + [
@@ -231,7 +283,7 @@ def _create(table: TableDef, wanted_role: str) -> list[Step]:
     ]
     if table.key in METADATA_TABLES:
         steps.append(_announce(table))
-    return steps
+    return steps + _link_steps(table, ())
 
 
 def _announce(table: TableDef) -> Step:
@@ -297,7 +349,7 @@ def _change(table: TableDef, existing: Existing) -> list[Step]:
         ]
     if table.key in METADATA_TABLES and "p42_announce" not in existing.triggers:
         steps.append(_announce(table))
-    return steps
+    return steps + _link_steps(table, existing.triggers.get("p42_link", ()))
 
 
 def plan(catalog: Catalog, database: Database) -> list[Step]:

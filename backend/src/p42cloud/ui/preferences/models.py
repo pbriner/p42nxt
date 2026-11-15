@@ -25,7 +25,8 @@ PREFERENCE = Table(
             default="system",
         ),
         # Empty: the installation's default theme.
-        "theme": String("Theme", max_length=40),
+        "theme": String("Theme name", max_length=40),
+        "theme_ref": Reference("Theme", "sys.theme", key="theme"),
         "page_size": Integer("Records per page", required=True, default=20),
         # Empty: the browser's language.
         "language": Choice("Language", {"en": "English", "de": "Deutsch"}),

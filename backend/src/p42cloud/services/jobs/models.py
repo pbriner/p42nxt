@@ -22,7 +22,8 @@ JOB = Table(
     "Job",
     {
         "name": String("Name", max_length=120, required=True, unique=True),
-        "module": String("Module", max_length=16, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         "label": TranslatedText("Label", required=True),
         "timeout": Integer("Time limit (seconds)", required=True, default=300),
         "retries": Integer("Tries again", required=True, default=2),
@@ -37,11 +38,12 @@ SCHEDULE = Table(
     "Schedule",
     {
         "name": String("Name", max_length=120, required=True, unique=True),
-        "module": String("Module", max_length=16, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         "label": TranslatedText("Label", required=True),
         # The job by its name (the key modules use), and as a link to its record.
         "job": String("Job name", max_length=120, required=True),
-        "job_ref": Reference("Job", "sys.job"),
+        "job_ref": Reference("Job", "sys.job", key="job"),
         # Administrators may change when it runs, or pause it; upgrades keep what they set.
         "cron": String("When (cron)", max_length=100, required=True),
         "time_zone": String("Time zone", max_length=64, required=True, default="UTC"),
@@ -78,9 +80,9 @@ JOB_RUN = Table(
     {
         # By their names (the keys the worker uses), and as links to their records.
         "job": String("Job name", max_length=120, required=True),
-        "job_ref": Reference("Job", "sys.job"),
+        "job_ref": Reference("Job", "sys.job", key="job"),
         "schedule": String("Schedule name", max_length=120),
-        "schedule_ref": Reference("Schedule", "sys.schedule"),
+        "schedule_ref": Reference("Schedule", "sys.schedule", key="schedule"),
         "state": Choice(
             "State",
             STATES,

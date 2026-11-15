@@ -353,6 +353,38 @@ GRANT EXECUTE ON FUNCTION sys.p42_security_event(text, jsonb) TO p42_mod_sys;
 CREATE INDEX audit_log_security ON sys.audit_log (operation, created) WHERE table_name IS NULL;
 """
 
+# References filled from a key (data/types/reference.py): per link the trigger gets four
+# arguments, written by the engine: the reference, the key field, the target table, and the
+# target's key fields (dots between). Run as the owner, so the writer needn't read the target.
+_LINKS = """
+CREATE FUNCTION sys.p42_link() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog, sys AS $$
+DECLARE
+    i integer := 0;
+    given text;
+    found uuid;
+    matched text;
+    patch jsonb := '{}'::jsonb;
+BEGIN
+    WHILE i < TG_NARGS LOOP
+        given := to_jsonb(NEW) ->> TG_ARGV[i + 1];
+        found := NULL;
+        IF given IS NOT NULL THEN
+            SELECT string_agg(format('%I', part), ' || ''.'' || ' ORDER BY n) INTO matched
+            FROM unnest(string_to_array(TG_ARGV[i + 3], '.')) WITH ORDINALITY AS p(part, n);
+            EXECUTE format('SELECT sys_id FROM %s WHERE %s = $1 AND deleted IS NULL LIMIT 1',
+                           TG_ARGV[i + 2]::regclass, matched)
+                INTO found USING given;
+        END IF;
+        patch := patch || jsonb_build_object(TG_ARGV[i], found);
+        i := i + 4;
+    END LOOP;
+    NEW := jsonb_populate_record(NEW, patch);
+    RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION sys.p42_link() FROM PUBLIC;
+"""
+
 STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0001_context", _CONTEXT),
     ("0002_record_rules", _RECORD_RULES),
@@ -363,4 +395,5 @@ STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0007_unaccent", _UNACCENT),
     ("0008_personal", _PERSONAL),
     ("0009_security_events", _SECURITY_EVENTS),
+    ("0010_links", _LINKS),
 )

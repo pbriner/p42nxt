@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from p42cloud.data.declarations import Table
 from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.json import Json
+from p42cloud.data.types.reference import Reference
 from p42cloud.data.types.string import String
 
 FORM_VIEW = Table(
@@ -12,8 +13,10 @@ FORM_VIEW = Table(
     "Form view",
     {
         "name": String("Name", max_length=120, required=True, unique=True),
-        "module": String("Module", max_length=16, required=True),
-        "table": String("Table", max_length=80, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
+        "table": String("Table name", max_length=80, required=True),
+        "table_ref": Reference("Table", "sys.table", key="table", match="schema.name"),
         # [{"title": {...}, "fields": [...], "columns": 2}]
         "sections": Json("Sections", required=True),
         # [{"table": "task.task", "field": "project"}]: shown first, even when empty.

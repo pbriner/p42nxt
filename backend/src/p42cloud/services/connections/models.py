@@ -31,7 +31,8 @@ CONNECTION_TYPE = Table(
     "Connection type",
     {
         "name": String("Name", max_length=120, required=True, unique=True),
-        "module": String("Module", max_length=16, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         "label": TranslatedText("Label", required=True),
         "auth": Choice("Signing in", AUTHS, required=True, default="none"),
         # The only hosts its connections may reach.
@@ -50,7 +51,8 @@ CONNECTION = Table(
     "Connection",
     {
         "owner": Reference("Owner", "sys.person", required=True),
-        "type": String("Type", max_length=120, required=True),
+        "type": String("Type name", max_length=120, required=True),
+        "type_ref": Reference("Type", "sys.connection_type", key="type"),
         "label": String("Name", max_length=120, required=True),
         "base_url": Url("Address", required=True),
         "health": Choice(

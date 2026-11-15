@@ -15,8 +15,10 @@ LIST_VIEW = Table(
     "List view",
     {
         "name": String("Name", max_length=120, required=True, unique=True),
-        "module": String("Module", max_length=16, required=True),
-        "table": String("Table", max_length=80, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
+        "table": String("Table name", max_length=80, required=True),
+        "table_ref": Reference("Table", "sys.table", key="table", match="schema.name"),
         "label": TranslatedText("Label", required=True),
         "columns": Json("Columns", required=True),
         "sort": Json("Sort"),
@@ -36,7 +38,8 @@ SAVED_VIEW = Table(
     "Saved view",
     {
         "person": Reference("Person", "sys.person", required=True),
-        "view": String("List view", max_length=120, required=True),
+        "view": String("List view name", max_length=120, required=True),
+        "view_ref": Reference("List view", "sys.list_view", key="view"),
         "name": String("Name", max_length=100, required=True),
         "columns": Json("Columns"),
         "sort": Json("Sort"),
@@ -55,7 +58,8 @@ VIEW_STATE = Table(
     "Remembered list",
     {
         "person": Reference("Person", "sys.person", required=True),
-        "view": String("List view", max_length=120, required=True),
+        "view": String("List view name", max_length=120, required=True),
+        "view_ref": Reference("List view", "sys.list_view", key="view"),
         "columns": Json("Columns"),
         "sort": Json("Sort"),
     },

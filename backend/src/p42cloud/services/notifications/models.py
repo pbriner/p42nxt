@@ -24,7 +24,8 @@ NOTIFICATION_KIND = Table(
     "Notification kind",
     {
         "name": String("Name", max_length=120, required=True, unique=True),
-        "module": String("Module", max_length=16, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         "label": TranslatedText("Label", required=True),
         "description": TranslatedText("Description"),
         # The channels people get it on unless they chose; administrators may change them, and
@@ -43,7 +44,8 @@ NOTIFICATION = Table(
     {
         # Personal: only this person sees it, administrators included.
         "person": Reference("For", "sys.person", required=True),
-        "kind": String("Kind", max_length=120, required=True),
+        "kind": String("Kind name", max_length=120, required=True),
+        "kind_ref": Reference("Kind", "sys.notification_kind", key="kind"),
         "title": String("Title", max_length=200, required=True),
         "message": Text("Message"),
         # A path inside the app, never another site.
@@ -96,7 +98,8 @@ SUBSCRIPTION = Table(
     "Notification choice",
     {
         "person": Reference("Person", "sys.person", required=True),
-        "kind": String("Kind", max_length=120, required=True),
+        "kind": String("Kind name", max_length=120, required=True),
+        "kind_ref": Reference("Kind", "sys.notification_kind", key="kind"),
         "channel": Choice("Channel", CHANNELS, required=True),
         "on": Boolean("On", required=True, default=True),
     },
