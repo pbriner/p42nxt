@@ -18,6 +18,11 @@ The core (`sys`): the engine and the platform's own features.
   German for everything it defines.
 - The translated-text editor shows English and the person's language; the others behind
   "Other languages".
+- Choice labels (`sys.field|<table>.<field>|choice:<value>`) and form section titles
+  (`sys.form_view|<form>|section:<n>`) are translated too.
+- Translations changed by hand (Platform → Translations) show within a minute (the worker).
+- Lists say "Loading…" until their first page has come, and don't say "No records" while
+  loading.
 
 ## 0.36.1
 

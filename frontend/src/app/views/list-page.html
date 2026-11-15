@@ -120,7 +120,12 @@
         <mat-progress-bar mode="indeterminate" class="progress" />
       }
       <div class="scroll">
-        @if (cards()) {
+        @if (!page() && !error()) {
+          <div class="loading" role="status">
+            <mat-spinner diameter="32" aria-hidden="true" />
+            <span>{{ i18n.t('common.loading') }}</span>
+          </div>
+        } @else if (cards()) {
           <ul class="cards">
             @for (row of page()?.records ?? []; track row.sys_id) {
               <li
@@ -252,7 +257,7 @@
             </tbody>
           </table>
         }
-        @if (page() && !page()!.records.length) {
+        @if (page() && !page()!.records.length && !busy()) {
           <p class="empty muted">{{ none() }}</p>
         }
         @if (error(); as message) {

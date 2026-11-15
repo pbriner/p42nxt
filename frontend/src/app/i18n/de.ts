@@ -4,6 +4,7 @@ import { TextKey } from './en';
 export const DE: Record<TextKey, string> = {
   'app.skip': 'Zum Inhalt springen',
   'common.cancel': 'Abbrechen',
+  'common.loading': 'Wird geladen…',
   'common.close': 'Schliessen',
   'common.save': 'Speichern',
   'common.saved': 'Gespeichert',
