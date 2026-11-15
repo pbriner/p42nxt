@@ -2,6 +2,18 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.30.0
+
+- Widgets form one catalog: every dashboard offers every widget the person may read, its own
+  dashboard's first and grouped by module, so a module's widgets (Kraken DCA's) can be placed on
+  the home dashboard. A widget's `dashboard` is where it's placed by default; `shown` and the
+  audiences apply there, elsewhere it's available.
+- A widget about a record (a plan) keeps its own choice where the page offers none: the card
+  offers the records and saves the choice with its placement (`params`); it can be placed once
+  per record.
+- Appearance → **Widgets**: the catalog for administrators, with each widget's module, and its
+  audiences on its form.
+
 ## 0.29.0
 
 - The browser app asks for the authenticator code again when a change needs a recent one

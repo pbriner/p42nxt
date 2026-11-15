@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { noSidewaysScroll, storage } from './helpers';
+import { choose, noSidewaysScroll, opened, storage } from './helpers';
 
 test.use({ storageState: storage('plain') });
 
@@ -32,4 +32,32 @@ test('the DCA dashboard shows one plan at a time', async ({ page }, info) => {
     'Dry runs',
   );
   await noSidewaysScroll(page);
+});
+
+test('a DCA widget on the home dashboard keeps its own plan', async ({ page }, info) => {
+  const plan = `Bitcoin ${info.project.name}`;
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customize' }).click();
+  await page.getByRole('button', { name: 'Add widget' }).click();
+  const dialog = await opened(page);
+  await dialog.getByRole('searchbox', { name: 'Search widgets or modules' }).fill('invested');
+  await dialog
+    .getByRole('button', { name: /^Invested\b/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('Dashboard saved')).toBeVisible();
+
+  // No choice on the home page: the card keeps its own.
+  const own = page.getByRole('combobox', { name: 'DCA plan for Invested' });
+  await choose(page, own, plan);
+  const invested = page.locator('app-widget-card').filter({ hasText: 'Invested' }).first();
+  await expect(invested.getByText(`${plan} · dry runs`)).toBeVisible();
+  await page.reload();
+  await expect(invested.getByText(`${plan} · dry runs`)).toBeVisible(); // kept
+
+  await page.getByRole('button', { name: 'Customize' }).click();
+  await page.getByRole('button', { name: 'Remove Invested' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(invested).toBeHidden();
 });

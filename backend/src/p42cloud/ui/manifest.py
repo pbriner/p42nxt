@@ -52,6 +52,12 @@ VIEWS = (
     ListView("sys.role", ("label", "name", "module_ref", "powerful"), search=("label", "name")),
     ListView("sys.module", ("label", "name", "version", "enabled"), sort=("label",)),
     ListView(
+        "sys.widget",
+        ("title", "module_ref", "kind", "dashboard", "shown"),
+        sort=("module", "position"),
+        search=("title", "name"),
+    ),
+    ListView(
         "sys.schedule",
         ("label", "job_ref", "cron", "time_zone", "active", "next_run", "last_state"),
         sort=("label",),
@@ -178,7 +184,10 @@ NAVIGATION = (
     ),
     Section(
         "Appearance",
-        (Item("themes", "Themes", "sys.theme", icon="palette", keywords=("colours", "colors")),),
+        (
+            Item("themes", "Themes", "sys.theme", icon="palette", keywords=("colours", "colors")),
+            Item("widgets", "Widgets", "sys.widget", icon="widgets", keywords=("dashboard",)),
+        ),
     ),
 )
 

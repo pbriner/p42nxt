@@ -326,6 +326,7 @@ export const DE: Record<TextKey, string> = {
   'dash.size_s': 'S',
   'dash.size_wide': 'Breit',
   'dash.size_large': 'Gross',
+  'dash.choice_for': '{what} für {title}',
   'widget.show_all': 'Alle zeigen',
   'widget.choose': 'Nichts zu zeigen, bis oben etwas gewählt ist.',
   'widget.nothing': 'Nichts hier.',
