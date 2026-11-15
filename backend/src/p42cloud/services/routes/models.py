@@ -9,6 +9,7 @@ from p42cloud.data.declarations import Table
 from p42cloud.data.records import Records
 from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.choice import Choice
+from p42cloud.data.types.reference import Reference
 from p42cloud.data.types.string import String
 from p42cloud.data.types.translated_text import TranslatedText
 
@@ -26,7 +27,8 @@ MODULE_ROUTE = Table(
     {
         # <module> <METHOD> <path>, e.g. "dca GET /widget/profit".
         "name": String("Name", max_length=200, required=True, unique=True),
-        "module": String("Module", max_length=16, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         "method": Choice("Method", METHODS, required=True),
         "path": String("Path", max_length=160, required=True),
         "description": TranslatedText("What it does"),

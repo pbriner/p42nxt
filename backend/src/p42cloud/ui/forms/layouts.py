@@ -18,7 +18,8 @@ RELATED_LAYOUT = Table(
     "Related lists layout",
     {
         "person": Reference("Person", "sys.person", required=True),
-        "form": String("Form", max_length=120, required=True),
+        "form": String("Form name", max_length=120, required=True),
+        "form_ref": Reference("Form", "sys.form_view", key="form"),
         # [{"table": "sys.membership", "field": "group"}], in tab order; empty: as the default
         # (the person only switched tabs so far).
         "shown": Json("Shown lists"),

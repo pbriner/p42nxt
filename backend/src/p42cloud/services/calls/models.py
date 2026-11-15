@@ -25,9 +25,13 @@ CALL_TYPE = Table(
     "Outside call type",
     {
         "name": String("Name", max_length=120, required=True, unique=True),
-        "module": String("Module", max_length=16, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         "label": TranslatedText("Label", required=True),
-        "connection_type": String("Connection type", max_length=120, required=True),
+        "connection_type": String("Connection type name", max_length=120, required=True),
+        "connection_type_ref": Reference(
+            "Connection type", "sys.connection_type", key="connection_type"
+        ),
         "retries": Integer("Tries again", required=True, default=3),
         "custom": Boolean("Made by an administrator", required=True, default=False),
     },
@@ -48,8 +52,10 @@ OUTSIDE_CALL = Table(
     "outside_call",
     "Outside call",
     {
-        "call": String("Call", max_length=120, required=True),
-        "module": String("Module", max_length=16, required=True),
+        "call": String("Call name", max_length=120, required=True),
+        "call_ref": Reference("Call", "sys.call_type", key="call"),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         # For whom: their connection is used, and they see their calls.
         "owner": Reference("For", "sys.person", required=True),
         # Unique: the outside system is asked by it whether the call happened.

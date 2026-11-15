@@ -21,7 +21,8 @@ WIDGET = Table(
     "Widget",
     {
         "name": String("Name", max_length=120, required=True, unique=True),
-        "module": String("Module", max_length=16, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         "title": TranslatedText("Title", required=True),
         "kind": Choice(
             "Kind",
@@ -30,7 +31,8 @@ WIDGET = Table(
         ),
         # "home", or a module's ID: its dashboard.
         "dashboard": String("Dashboard", max_length=16, required=True),
-        "list": String("List view", max_length=120),
+        "list": String("List view name", max_length=120),
+        "list_ref": Reference("List view", "sys.list_view", key="list"),
         # A GET route of the module answering the figure or the chart's points.
         "source_route": String("Source route", max_length=160),
         # A source widget about one record: the page offers a choice of the table's records.
@@ -71,7 +73,8 @@ WIDGET_AUDIENCE = Table(
     "widget_audience",
     "Widget audience",
     {
-        "widget": String("Widget", max_length=120, required=True),
+        "widget": String("Widget name", max_length=120, required=True),
+        "widget_ref": Reference("Widget", "sys.widget", key="widget"),
         "group": Reference("Group", "sys.group", required=True),
         "shown": Choice("Shown", SHOWN, required=True, default="default"),
     },

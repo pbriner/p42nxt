@@ -6,6 +6,7 @@ from p42cloud.data.types.choice import Choice
 from p42cloud.data.types.icon import Icon
 from p42cloud.data.types.json import Json
 from p42cloud.data.types.markdown import Markdown
+from p42cloud.data.types.reference import Reference
 from p42cloud.data.types.string import String
 
 MODULE = Table(
@@ -31,7 +32,8 @@ DOC_PAGE = Table(
     "doc_page",
     "Documentation page",
     {
-        "module": String("Module", max_length=16, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         "path": String("Path", max_length=255, required=True),
         "title": String("Title", max_length=255, required=True),
         "body": Markdown("Text", required=True),
@@ -44,7 +46,8 @@ MODULE_UPDATE = Table(
     "module_update",
     "Available update",
     {
-        "module": String("Module", max_length=16, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         "installed": String("Installed", max_length=40, required=True),
         "available": String("Available", max_length=40, required=True),
         "kind": Choice(

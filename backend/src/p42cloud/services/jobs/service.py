@@ -40,19 +40,6 @@ _ACCOUNTS = uuid.UUID("6f2b1c34-7a0e-5d4f-9c21-4a8e0b7d1f42")
 # The installed modules' jobs, by name: (module, job). Filled when modules are composed.
 JOBS: dict[str, tuple[str, Job]] = {}
 
-_JOB = text("SELECT sys_id FROM sys.job WHERE name = :n AND deleted IS NULL")
-_SCHEDULE = text("SELECT sys_id FROM sys.schedule WHERE name = :n AND deleted IS NULL")
-
-
-async def _links(conn: AsyncConnection, job: str, schedule: str | None) -> dict[str, Any]:
-    """A run's job and schedule by name, and as links to their records."""
-    return {
-        "job": job,
-        "job_ref": await conn.scalar(_JOB, {"n": job}),
-        "schedule": schedule,
-        "schedule_ref": await conn.scalar(_SCHEDULE, {"n": schedule}) if schedule else None,
-    }
-
 
 def register(module: str, jobs: tuple[Job, ...]) -> None:
     for job in jobs:
@@ -152,11 +139,10 @@ async def write_jobs(
             "missed": schedule.missed,
             "next": parse(schedule.cron).next_after(now, schedule.time_zone),
         }
-        values["job_ref"] = await conn.scalar(_JOB, {"n": values["job"]})
         changed = await conn.execute(
             text(
                 "UPDATE sys.schedule SET module = :module, label = CAST(:label AS jsonb),"
-                " job = :job, job_ref = :job_ref, missed = :missed, deleted = NULL"
+                " job = :job, missed = :missed, deleted = NULL"
                 " WHERE name = :name"
             ),
             values,
@@ -164,9 +150,9 @@ async def write_jobs(
         if changed.rowcount == 0:
             await conn.execute(
                 text(
-                    "INSERT INTO sys.schedule (name, module, label, job, job_ref, cron, time_zone,"
+                    "INSERT INTO sys.schedule (name, module, label, job, cron, time_zone,"
                     " missed, active, next_run, custom) VALUES (:name, :module,"
-                    " CAST(:label AS jsonb), :job, :job_ref, :cron, :zone, :missed, true, :next,"
+                    " CAST(:label AS jsonb), :job, :cron, :zone, :missed, true, :next,"
                     " false)"
                 ),
                 values,
@@ -276,13 +262,14 @@ async def tick(engine: AsyncEngine, now: datetime | None = None) -> int:
                     state = "skipped" if busy else "queued"
                     await conn.execute(
                         text(
-                            "INSERT INTO sys.job_run (job, job_ref, schedule, schedule_ref, state,"
+                            "INSERT INTO sys.job_run (job, schedule, state,"
                             " trigger, attempt, not_before, finished, message) VALUES (:job,"
-                            " :job_ref, :schedule, :schedule_ref, :state, 'schedule', 1, :now,"
+                            " :schedule, :state, 'schedule', 1, :now,"
                             " :finished, :message)"
                         ),
                         {
-                            **await _links(conn, row.job, row.name),
+                            "job": row.job,
+                            "schedule": row.name,
                             "state": state,
                             "now": now,
                             "finished": now if busy else None,
@@ -306,11 +293,11 @@ async def queue(conn: AsyncConnection, job: str, schedule: str | None, trigger: 
     """A run to start as soon as a worker is free (`Run now`)."""
     found = await conn.scalar(
         text(
-            "INSERT INTO sys.job_run (job, job_ref, schedule, schedule_ref, state, trigger,"
-            " attempt, not_before) VALUES (:job, :job_ref, :schedule, :schedule_ref, 'queued',"
+            "INSERT INTO sys.job_run (job, schedule, state, trigger,"
+            " attempt, not_before) VALUES (:job, :schedule, 'queued',"
             " :trigger, 1, now()) RETURNING sys_id"
         ),
-        {**await _links(conn, job, schedule), "trigger": trigger},
+        {"job": job, "schedule": schedule, "trigger": trigger},
     )
     if not isinstance(found, uuid.UUID):
         raise RuntimeError("no run made")
@@ -446,12 +433,13 @@ async def _finish(
                 wait = FIRST_WAIT * (2 ** (run.attempt - 1))
                 await conn.execute(
                     text(
-                        "INSERT INTO sys.job_run (job, job_ref, schedule, schedule_ref, state,"
-                        " trigger, attempt, not_before) VALUES (:job, :job_ref, :schedule,"
-                        " :schedule_ref, 'queued', 'retry', :attempt, now() + :wait)"
+                        "INSERT INTO sys.job_run (job, schedule, state,"
+                        " trigger, attempt, not_before) VALUES (:job, :schedule,"
+                        " 'queued', 'retry', :attempt, now() + :wait)"
                     ),
                     {
-                        **await _links(conn, run.job, run.schedule),
+                        "job": run.job,
+                        "schedule": run.schedule,
                         "attempt": run.attempt + 1,
                         "wait": wait,
                     },

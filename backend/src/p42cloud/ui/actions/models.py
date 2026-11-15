@@ -11,6 +11,7 @@ from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.choice import Choice
 from p42cloud.data.types.icon import Icon
 from p42cloud.data.types.json import Json
+from p42cloud.data.types.reference import Reference
 from p42cloud.data.types.string import String
 from p42cloud.data.types.translated_text import TranslatedText
 
@@ -19,8 +20,10 @@ UI_ACTION = Table(
     "UI action",
     {
         "name": String("Name", max_length=120, required=True, unique=True),
-        "module": String("Module", max_length=16, required=True),
-        "table": String("Table", max_length=80, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
+        "table": String("Table name", max_length=80, required=True),
+        "table_ref": Reference("Table", "sys.table", key="table", match="schema.name"),
         "label": TranslatedText("Label", required=True),
         "icon": Icon("Icon"),
         # form_button, form_menu, list_bulk, list_row

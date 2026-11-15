@@ -41,8 +41,24 @@ the database makes, how a value is checked and stored, and which changes keep ev
 | `Boolean` | `boolean` | |
 | `Date`, `DateTime`, `Duration` | `date`, `timestamptz`, `interval` | A date and time needs a time zone and is stored in UTC. Durations are ISO 8601 without years or months (`P1DT2H30M`) |
 | `Choice(values, tones=)` | `text` | One of the declared values (`a-z`, `0-9`, `_`), each with a label. `tones` makes some stand out in lists: `primary`, `tertiary`, `error` or `muted` (struck through), in the theme's colours |
-| `Reference(table)` | `uuid` | The record exists (foreign key, indexed) |
+| `Reference(table)` | `uuid` | The record exists (foreign key, indexed). `key=` fills it from another field instead (below) |
 | `Json` | `jsonb` | Valid JSON |
+
+### References filled from a key
+
+Records that code goes by name (a run names its job, a list view its table) link the record the
+name stands for with a reference filled from that key:
+
+```python
+"job": String("Job name", max_length=120, required=True),
+"job_ref": Reference("Job", "sys.job", key="job"),            # the job whose name it is
+"table_ref": Reference("Table", "sys.table", key="table", match="schema.name"),
+```
+
+The database sets the reference on every write, whatever wrote it and whatever it sent for the
+reference: the active record whose key (`match`, `name` by default; fields joined by dots) is the
+field's value, or none. Records there already are linked when the reference is added. Like any
+reference, it gives the target's form a related list.
 
 ## What the database enforces
 

@@ -16,7 +16,6 @@ from p42cloud.kernel.db import create_engine, owner_transaction, transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.services.jobs import service
 from p42cloud.services.jobs.cron import parse
-from p42cloud.services.jobs.manifest import link_runs
 from p42cloud.services.jobs.models import Job, JobRun, Schedule
 from p42cloud.services.jobs.service import JOBS, claim, execute, recover, run_job, tick, write_jobs
 from tests.security.helpers import acting, change
@@ -271,7 +270,7 @@ async def test_a_schedule_keeps_the_job_its_module_gave_it(engine: AsyncEngine) 
     assert refused.value.code == "declared_only"
 
 
-async def test_runs_from_before_get_their_links(upgraded: Settings) -> None:
+async def test_a_run_written_by_plain_sql_is_linked_too(upgraded: Settings) -> None:
     owner = create_engine(upgraded.owner_database_url)
     with working_as(Context(channel="test")):
         async with owner_transaction(owner) as conn:
@@ -282,7 +281,6 @@ async def test_runs_from_before_get_their_links(upgraded: Settings) -> None:
                     " RETURNING sys_id"
                 )
             )
-            await link_runs(conn)
             linked = (
                 await conn.execute(
                     text(

@@ -2,6 +2,20 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.27.0
+
+- References filled from a key (`Reference(table, key=, match=)`): the database links a record to
+  the one its key field names, on every write by any way in; records there already are linked
+  when the reference is added. The job and schedule links use it now.
+- The core's records that named others by text link them too, so their forms get related lists:
+  the module (jobs, schedules, roles, views, forms, UI actions, form rules, navigation, themes,
+  widgets, connection and call types, notification kinds, outside calls, routes, documentation,
+  available updates), the table (views, forms, UI actions, form rules, navigation), the
+  notification kind (notifications, subscriptions), the connection type (connections, call
+  types), the call type (outside calls), the list view (saved views, view states, navigation,
+  list widgets), the widget (dashboard placements), the form (related-list layouts) and the
+  theme (preferences). Lists show the links.
+
 ## 0.26.0
 
 - Schedules and job runs link their records: a schedule its job (`job_ref`), a run its job and

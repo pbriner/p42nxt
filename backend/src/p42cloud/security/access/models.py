@@ -58,7 +58,8 @@ ROLE = Table(
         "name": String("Name", max_length=80, required=True, unique=True),
         "label": TranslatedText("Label", required=True),
         "description": TranslatedText("Description"),
-        "module": String("Module", max_length=16, required=True),
+        "module": String("Module name", max_length=16, required=True),
+        "module_ref": Reference("Module", "sys.module", key="module"),
         # Built by access administrators in the app, not declared by a module.
         "custom": Boolean("Custom", required=True, default=False),
         # Only members of a group holding sys.admin may give these to a group.

@@ -4,7 +4,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncConnection
 
 from p42cloud.data.hooks import Change, TableHook
 from p42cloud.kernel.errors import Problem
@@ -54,28 +53,6 @@ async def _repair_groups(run: JobRun) -> str:
     for group in groups:
         await recalculate_group(conn, run.records.catalog, group)
     return f"{len(groups)} groups checked."
-
-
-async def link_runs(conn: AsyncConnection) -> None:
-    """0.26.0: schedules and runs from before link their job and schedule records."""
-    await conn.execute(
-        text(
-            "UPDATE sys.schedule s SET job_ref = j.sys_id FROM sys.job j"
-            " WHERE j.name = s.job AND j.deleted IS NULL AND s.job_ref IS NULL"
-        )
-    )
-    await conn.execute(
-        text(
-            "UPDATE sys.job_run r SET job_ref = j.sys_id FROM sys.job j"
-            " WHERE j.name = r.job AND j.deleted IS NULL AND r.job_ref IS NULL"
-        )
-    )
-    await conn.execute(
-        text(
-            "UPDATE sys.job_run r SET schedule_ref = s.sys_id FROM sys.schedule s"
-            " WHERE s.name = r.schedule AND s.deleted IS NULL AND r.schedule_ref IS NULL"
-        )
-    )
 
 
 HOOKS = (TableHook("sys.schedule", before=_check_schedule),)
