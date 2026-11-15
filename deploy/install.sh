@@ -85,6 +85,9 @@ P42_SETUP_CODE=$setup_code
 # A copy of the setting Backup folder (change it in the app, then deploy/restart.sh).
 P42_BACKUPS=$backups
 P42_PORT=$port
+# Who the app runs as: the person installing it (their key, their backup folder).
+P42_UID=$(id -u)
+P42_GID=$(id -g)
 EOF
 
 cd "$folder"

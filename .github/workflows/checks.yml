@@ -140,6 +140,6 @@ jobs:
           if deploy/install.sh ci --image p42cloud:ci; then
             echo "the installer took over an existing installation" >&2; exit 1
           fi
-      - name: Database log (when it fails)
+      - name: Logs (when it fails)
         if: failure()
-        run: docker compose --project-directory "$P42_HOME/ci" logs --tail 200 postgres
+        run: docker compose --project-directory "$P42_HOME/ci" logs --tail 200 postgres web worker
