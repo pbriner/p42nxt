@@ -390,7 +390,7 @@ module = Module(
     id="dca",
     name="Kraken DCA",
     version="0.5.0",
-    depends_on={"sys": ">=0.34,<1"},
+    depends_on={"sys": ">=0.37,<1"},
     tables=(PLAN, TIER, ORDER),
     roles=(USER, KEEPER),
     hooks=(
@@ -398,6 +398,7 @@ module = Module(
         TableHook("dca.tier", before=_check_tier),
     ),
     docs=Path(__file__).parent / "docs",
+    translations=Path(__file__).parent / "translations",
     description="Dollar cost averaging on your own Kraken account.",
     category="Finance",
     icon="currency_bitcoin",

@@ -34,6 +34,7 @@ from p42cloud.web.caller import Rates
 from p42cloud.web.routes import (
     actions,
     aggregates,
+    languages,
     mcp,
     meta,
     people,
@@ -152,6 +153,7 @@ def create_app(
     app.include_router(people.router)
     app.include_router(tables.router)
     app.include_router(screens.router)
+    app.include_router(languages.router)
     app.include_router(mcp.router)
     # The modules' own routes, filled at start: before the generic ones they'd otherwise match.
     modules_router = APIRouter()

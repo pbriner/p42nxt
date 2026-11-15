@@ -62,6 +62,13 @@ VIEWS = (
         sort=("-valid_from",),
         search=("subject",),
     ),
+    ListView("sys.language", ("name", "code", "offered"), sort=("code",)),
+    ListView(
+        "sys.translation",
+        ("key", "language", "text", "origin", "module"),
+        sort=("key",),
+        search=("key", "text"),
+    ),
     ListView(
         "sys.update_request",
         ("target_ref", "version", "state", "not_before", "requested_by", "finished"),
@@ -159,6 +166,8 @@ NAVIGATION = (
             Item("modules", "Modules", "sys.module", icon="extension"),
             Item("updates", "Available updates", "sys.module_update", icon="update"),
             Item("update_requests", "Updates", "sys.update_request", icon="history"),
+            Item("languages", "Languages", "sys.language", icon="translate"),
+            Item("translations", "Translations", "sys.translation", icon="g_translate"),
             Item("tables", "Tables", "sys.table", icon="table"),
             Item("settings", "Settings", "sys.setting", icon="tune"),
         ),

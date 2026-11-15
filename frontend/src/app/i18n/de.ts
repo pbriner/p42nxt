@@ -58,6 +58,19 @@ export const DE: Record<TextKey, string> = {
   'notify.kinds_hint': 'Verbinden Sie Telegram, um zu wählen.',
   'notify.on_telegram': '{kind} über Telegram',
   'messages.close': 'Meldung {subject} schliessen',
+  'languages.title': 'Übersetzungen',
+  'languages.english':
+    'Englisch ist die Sprache, in der alle Texte geschrieben sind; die anderen werden daraus übersetzt.',
+  'languages.explain':
+    'Laden Sie die Texte aller Module herunter, übersetzen Sie sie und laden Sie die Datei wieder hoch. Leere Texte bleiben Englisch.',
+  'languages.coverage': '{done} von {all} Texten übersetzt.',
+  'languages.export': 'Texte herunterladen',
+  'languages.import': 'Übersetzungen laden',
+  'languages.not_json': 'Diese Datei ist keine Übersetzungsdatei (JSON).',
+  'languages.imported':
+    'Geladen: {added} neu, {changed} geändert, {removed} entfernt, {unchanged} unverändert.',
+  'translated.others': 'Weitere Sprachen ({n})',
+  'translated.fewer': 'Weniger Sprachen',
   'bell.label': 'Benachrichtigungen',
   'bell.label_unread': 'Benachrichtigungen, {n} ungelesen',
   'bell.title': 'Benachrichtigungen',

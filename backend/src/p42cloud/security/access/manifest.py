@@ -77,6 +77,8 @@ ROLES = [
             Grant("sys.theme", ALL),
             Grant("sys.widget_audience", ALL),
             Grant("sys.announcement", ALL),
+            Grant("sys.language", ALL),
+            Grant("sys.translation", ALL),
             Grant("sys.job", ("read",)),
             Grant("sys.schedule", ("read",)),
             Grant("sys.schedule", ("write",), fields=("cron", "time_zone", "active", "missed")),
@@ -114,6 +116,7 @@ ROLES = [
             Grant("sys.group", ("read",), fields=("name", "description", "assignable")),
             Grant(SHARES, ALL, condition=MINE),
             Grant(SHARES, ("read",), condition={"field": "person", "op": "eq", "value": "@me"}),
+            Grant("sys.language", ("read",)),
             # Messages for everyone, or for a group they're in.
             Grant(
                 "sys.announcement",

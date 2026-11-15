@@ -173,6 +173,10 @@
       }
     }
 
+    @if (table.table === 'sys.language' && !creating() && original()['code']) {
+      <app-language-exchange [code]="$any(original()['code'])" />
+    }
+
     @if (meta(); as line) {
       <p class="meta muted">{{ line }}</p>
     }

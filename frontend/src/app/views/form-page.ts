@@ -31,6 +31,7 @@ import { unitOf } from '../field-types/registry';
 import { ProblemState } from '../pages/problem-state';
 import { ActionRunner } from './action-runner';
 import { ConnectionSecrets } from './connection-secrets';
+import { LanguageExchange } from './language-exchange';
 import { RecordHistory } from './record-history';
 import { ConfirmDialog } from './confirm-dialog';
 import { FieldDisplay } from './field-display';
@@ -73,6 +74,7 @@ function same(a: unknown, b: unknown): boolean {
   imports: [
     RecordHistory,
     ConnectionSecrets,
+    LanguageExchange,
     FieldDisplay,
     MatButtonModule,
     MatCardModule,

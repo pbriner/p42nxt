@@ -26,6 +26,7 @@ module = Module(
 | `tables`, `roles` | Its tables and roles, declared (`tables.md`, `access.md`) |
 | `hooks` | Code to run when its own tables' records change (`records.md`). A module hooks only its own tables |
 | `docs` | A folder of Markdown files: its documentation |
+| `translations` | A folder of `<language>.json` files: translations of what it defines, in the format the languages export writes (`languages.md`) |
 | `seed` | Records it makes once installed; run again at every upgrade, so it must do nothing twice |
 | `migrations` | Code that moves data on the upgrade to a version (below) |
 | `category`, `icon` | Where the module shows in the navigator (`General` and `extension` if not given) |

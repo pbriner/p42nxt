@@ -1,0 +1,3521 @@
+{
+ "language": "de",
+ "module": "sys",
+ "texts": [
+  {
+   "key": "sys.connection_type|sys.telegram|label",
+   "english": "Telegram bot",
+   "text": "Telegram-Bot"
+  },
+  {
+   "key": "sys.field|sys.announcement.about_update|label",
+   "english": "About the update",
+   "text": "Über das Update"
+  },
+  {
+   "key": "sys.field|sys.announcement.audience|label",
+   "english": "Audience",
+   "text": "Zielgruppe"
+  },
+  {
+   "key": "sys.field|sys.announcement.deliver|label",
+   "english": "Show as",
+   "text": "Anzeigen als"
+  },
+  {
+   "key": "sys.field|sys.announcement.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|sys.announcement.notified|label",
+   "english": "Notified",
+   "text": "Benachrichtigt"
+  },
+  {
+   "key": "sys.field|sys.announcement.subject|label",
+   "english": "Subject",
+   "text": "Betreff"
+  },
+  {
+   "key": "sys.field|sys.announcement.text|label",
+   "english": "Message",
+   "text": "Meldung"
+  },
+  {
+   "key": "sys.field|sys.announcement.valid_from|label",
+   "english": "Shown from",
+   "text": "Angezeigt ab"
+  },
+  {
+   "key": "sys.field|sys.announcement.valid_until|label",
+   "english": "Shown until",
+   "text": "Angezeigt bis"
+  },
+  {
+   "key": "sys.field|sys.api_token.expires|label",
+   "english": "Expires",
+   "text": "Läuft ab"
+  },
+  {
+   "key": "sys.field|sys.api_token.last_used|label",
+   "english": "Last used",
+   "text": "Zuletzt verwendet"
+  },
+  {
+   "key": "sys.field|sys.api_token.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.api_token.person|label",
+   "english": "Acts as",
+   "text": "Handelt als"
+  },
+  {
+   "key": "sys.field|sys.api_token.prefix|label",
+   "english": "Starts with",
+   "text": "Beginnt mit"
+  },
+  {
+   "key": "sys.field|sys.api_token.roles|label",
+   "english": "Only these roles",
+   "text": "Nur diese Rollen"
+  },
+  {
+   "key": "sys.field|sys.api_token.token|label",
+   "english": "Token hash",
+   "text": "Token-Hash"
+  },
+  {
+   "key": "sys.field|sys.backup.file|label",
+   "english": "File",
+   "text": "Datei"
+  },
+  {
+   "key": "sys.field|sys.backup.folder|label",
+   "english": "Folder",
+   "text": "Ordner"
+  },
+  {
+   "key": "sys.field|sys.backup.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|sys.backup.made|label",
+   "english": "Made",
+   "text": "Erstellt"
+  },
+  {
+   "key": "sys.field|sys.backup.size|label",
+   "english": "Size (MB)",
+   "text": "Grösse (MB)"
+  },
+  {
+   "key": "sys.field|sys.call_type.connection_type_ref|label",
+   "english": "Connection type",
+   "text": "Verbindungstyp"
+  },
+  {
+   "key": "sys.field|sys.call_type.connection_type|label",
+   "english": "Connection type name",
+   "text": "Name des Verbindungstyps"
+  },
+  {
+   "key": "sys.field|sys.call_type.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.call_type.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.call_type.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.call_type.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.call_type.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.call_type.retries|label",
+   "english": "Tries again",
+   "text": "Versucht es erneut"
+  },
+  {
+   "key": "sys.field|sys.channel_state.bot|label",
+   "english": "Bot",
+   "text": "Bot"
+  },
+  {
+   "key": "sys.field|sys.channel_state.name|label",
+   "english": "Channel",
+   "text": "Kanal"
+  },
+  {
+   "key": "sys.field|sys.channel_state.offset|label",
+   "english": "Read up to",
+   "text": "Gelesen bis"
+  },
+  {
+   "key": "sys.field|sys.channel_state.polled|label",
+   "english": "Last asked",
+   "text": "Zuletzt gefragt"
+  },
+  {
+   "key": "sys.field|sys.connection.base_url|help",
+   "english": "Empty: the usual address of its type.",
+   "text": "Leer: die übliche Adresse seines Typs."
+  },
+  {
+   "key": "sys.field|sys.connection.base_url|label",
+   "english": "Address",
+   "text": "Adresse"
+  },
+  {
+   "key": "sys.field|sys.connection.checked|label",
+   "english": "Checked",
+   "text": "Geprüft"
+  },
+  {
+   "key": "sys.field|sys.connection.health_message|label",
+   "english": "Last check said",
+   "text": "Letzte Prüfung sagte"
+  },
+  {
+   "key": "sys.field|sys.connection.health|label",
+   "english": "Works",
+   "text": "Funktioniert"
+  },
+  {
+   "key": "sys.field|sys.connection.label|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.connection.owner|label",
+   "english": "Owner",
+   "text": "Besitzer"
+  },
+  {
+   "key": "sys.field|sys.connection.type_ref|label",
+   "english": "Type",
+   "text": "Typ"
+  },
+  {
+   "key": "sys.field|sys.connection.type|label",
+   "english": "Type name",
+   "text": "Typname"
+  },
+  {
+   "key": "sys.field|sys.connection_secret.connection|label",
+   "english": "Connection",
+   "text": "Verbindung"
+  },
+  {
+   "key": "sys.field|sys.connection_secret.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.connection_secret.owner|label",
+   "english": "Owner",
+   "text": "Besitzer"
+  },
+  {
+   "key": "sys.field|sys.connection_secret.value|label",
+   "english": "Value",
+   "text": "Wert"
+  },
+  {
+   "key": "sys.field|sys.connection_type.allowed_hosts|label",
+   "english": "Allowed hosts",
+   "text": "Erlaubte Hosts"
+  },
+  {
+   "key": "sys.field|sys.connection_type.api_key_header|label",
+   "english": "Key header",
+   "text": "Schlüssel-Header"
+  },
+  {
+   "key": "sys.field|sys.connection_type.auth|label",
+   "english": "Signing in",
+   "text": "Anmelden"
+  },
+  {
+   "key": "sys.field|sys.connection_type.base_url|label",
+   "english": "Usual address",
+   "text": "Übliche Adresse"
+  },
+  {
+   "key": "sys.field|sys.connection_type.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.connection_type.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.connection_type.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.connection_type.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.connection_type.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.connection_type.secrets|label",
+   "english": "Secrets it needs",
+   "text": "Benötigte Geheimnisse"
+  },
+  {
+   "key": "sys.field|sys.credential.confirmed|label",
+   "english": "Confirmed",
+   "text": "Bestätigt"
+  },
+  {
+   "key": "sys.field|sys.credential.counter|label",
+   "english": "Signature counter",
+   "text": "Signaturzähler"
+  },
+  {
+   "key": "sys.field|sys.credential.key_id|label",
+   "english": "Passkey ID",
+   "text": "Passkey-ID"
+  },
+  {
+   "key": "sys.field|sys.credential.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|sys.credential.label|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.credential.last_step|label",
+   "english": "Last step",
+   "text": "Letzter Schritt"
+  },
+  {
+   "key": "sys.field|sys.credential.last_used|label",
+   "english": "Last used",
+   "text": "Zuletzt verwendet"
+  },
+  {
+   "key": "sys.field|sys.credential.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.credential.secret|label",
+   "english": "Secret",
+   "text": "Geheimnis"
+  },
+  {
+   "key": "sys.field|sys.dashboard_layout.dashboard|label",
+   "english": "Dashboard",
+   "text": "Dashboard"
+  },
+  {
+   "key": "sys.field|sys.dashboard_layout.items|label",
+   "english": "Widgets",
+   "text": "Widgets"
+  },
+  {
+   "key": "sys.field|sys.dashboard_layout.known|label",
+   "english": "Known widgets",
+   "text": "Bekannte Widgets"
+  },
+  {
+   "key": "sys.field|sys.dashboard_layout.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.doc_page.body|label",
+   "english": "Text",
+   "text": "Text"
+  },
+  {
+   "key": "sys.field|sys.doc_page.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.doc_page.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.doc_page.path|label",
+   "english": "Path",
+   "text": "Pfad"
+  },
+  {
+   "key": "sys.field|sys.doc_page.title|label",
+   "english": "Title",
+   "text": "Titel"
+  },
+  {
+   "key": "sys.field|sys.external_id.external|label",
+   "english": "ID there",
+   "text": "ID dort"
+  },
+  {
+   "key": "sys.field|sys.external_id.record|label",
+   "english": "Record",
+   "text": "Datensatz"
+  },
+  {
+   "key": "sys.field|sys.external_id.system|label",
+   "english": "System",
+   "text": "System"
+  },
+  {
+   "key": "sys.field|sys.external_id.table|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.field|sys.favorite.item|label",
+   "english": "Item",
+   "text": "Eintrag"
+  },
+  {
+   "key": "sys.field|sys.favorite.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|sys.favorite.label|label",
+   "english": "Folder name",
+   "text": "Ordnername"
+  },
+  {
+   "key": "sys.field|sys.favorite.parent|label",
+   "english": "Folder",
+   "text": "Ordner"
+  },
+  {
+   "key": "sys.field|sys.favorite.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.favorite.position|label",
+   "english": "Position",
+   "text": "Position"
+  },
+  {
+   "key": "sys.field|sys.field.default|label",
+   "english": "Default",
+   "text": "Standard"
+  },
+  {
+   "key": "sys.field|sys.field.help|label",
+   "english": "Help",
+   "text": "Hilfe"
+  },
+  {
+   "key": "sys.field|sys.field.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.field.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.field.options|label",
+   "english": "Options",
+   "text": "Optionen"
+  },
+  {
+   "key": "sys.field|sys.field.personal|label",
+   "english": "Personal data",
+   "text": "Personendaten"
+  },
+  {
+   "key": "sys.field|sys.field.position|label",
+   "english": "Position",
+   "text": "Position"
+  },
+  {
+   "key": "sys.field|sys.field.required|label",
+   "english": "Required",
+   "text": "Pflichtfeld"
+  },
+  {
+   "key": "sys.field|sys.field.table|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.field|sys.field.type|label",
+   "english": "Type",
+   "text": "Typ"
+  },
+  {
+   "key": "sys.field|sys.field.unique|label",
+   "english": "Unique",
+   "text": "Eindeutig"
+  },
+  {
+   "key": "sys.field|sys.field_type.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.field_type.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.form_rule.condition|label",
+   "english": "When",
+   "text": "Wann"
+  },
+  {
+   "key": "sys.field|sys.form_rule.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.form_rule.hide|label",
+   "english": "Hide",
+   "text": "Ausblenden"
+  },
+  {
+   "key": "sys.field|sys.form_rule.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.form_rule.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.form_rule.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.form_rule.read_only|label",
+   "english": "Read-only",
+   "text": "Nur lesen"
+  },
+  {
+   "key": "sys.field|sys.form_rule.required|label",
+   "english": "Required",
+   "text": "Pflichtfeld"
+  },
+  {
+   "key": "sys.field|sys.form_rule.table_ref|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.field|sys.form_rule.table|label",
+   "english": "Table name",
+   "text": "Tabellenname"
+  },
+  {
+   "key": "sys.field|sys.form_view.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.form_view.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.form_view.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.form_view.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.form_view.related_auto|label",
+   "english": "Every related list",
+   "text": "Jede Bezugsliste"
+  },
+  {
+   "key": "sys.field|sys.form_view.related|label",
+   "english": "Related lists",
+   "text": "Bezugslisten"
+  },
+  {
+   "key": "sys.field|sys.form_view.sections|label",
+   "english": "Sections",
+   "text": "Abschnitte"
+  },
+  {
+   "key": "sys.field|sys.form_view.table_ref|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.field|sys.form_view.table|label",
+   "english": "Table name",
+   "text": "Tabellenname"
+  },
+  {
+   "key": "sys.field|sys.grant.condition|label",
+   "english": "Only for records where",
+   "text": "Nur für Datensätze, bei denen"
+  },
+  {
+   "key": "sys.field|sys.grant.fields|label",
+   "english": "Only these fields",
+   "text": "Nur diese Felder"
+  },
+  {
+   "key": "sys.field|sys.grant.operation|label",
+   "english": "Operation",
+   "text": "Vorgang"
+  },
+  {
+   "key": "sys.field|sys.grant.role|label",
+   "english": "Role",
+   "text": "Rolle"
+  },
+  {
+   "key": "sys.field|sys.grant.table|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.field|sys.group.assignable|label",
+   "english": "Work can be assigned to it",
+   "text": "Arbeit kann ihm zugewiesen werden"
+  },
+  {
+   "key": "sys.field|sys.group.description|label",
+   "english": "Description",
+   "text": "Beschreibung"
+  },
+  {
+   "key": "sys.field|sys.group.jobs_of|label",
+   "english": "For the jobs of (module)",
+   "text": "Für die Jobs von (Modul)"
+  },
+  {
+   "key": "sys.field|sys.group.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.group.provider_group|label",
+   "english": "The provider's group",
+   "text": "Die Gruppe des Anbieters"
+  },
+  {
+   "key": "sys.field|sys.group.provider|label",
+   "english": "Members from the provider",
+   "text": "Mitglieder vom Anbieter"
+  },
+  {
+   "key": "sys.field|sys.group.rule|label",
+   "english": "Members are the people where",
+   "text": "Mitglieder sind die Personen, bei denen"
+  },
+  {
+   "key": "sys.field|sys.group_role.condition|label",
+   "english": "Only for records where",
+   "text": "Nur für Datensätze, bei denen"
+  },
+  {
+   "key": "sys.field|sys.group_role.group|label",
+   "english": "Group",
+   "text": "Gruppe"
+  },
+  {
+   "key": "sys.field|sys.group_role.role|label",
+   "english": "Role",
+   "text": "Rolle"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.active|label",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.claims|label",
+   "english": "Fields from claims",
+   "text": "Felder aus Claims"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.client_id|label",
+   "english": "Client ID",
+   "text": "Client-ID"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.client_secret|label",
+   "english": "Client secret",
+   "text": "Client-Secret"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.create_people|label",
+   "english": "Creates people at their first sign-in",
+   "text": "Legt Personen bei der ersten Anmeldung an"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.domains|label",
+   "english": "Email domains",
+   "text": "E-Mail-Domains"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.groups_claim|label",
+   "english": "Groups claim",
+   "text": "Gruppen-Claim"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.issuer|label",
+   "english": "Issuer",
+   "text": "Aussteller"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.kind|label",
+   "english": "Signs in",
+   "text": "Meldet sich an"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.scopes|label",
+   "english": "Scopes",
+   "text": "Scopes"
+  },
+  {
+   "key": "sys.field|sys.identity_provider.trust_email|label",
+   "english": "Vouches for emails",
+   "text": "Bürgt für E-Mails"
+  },
+  {
+   "key": "sys.field|sys.invitation.expires|label",
+   "english": "Expires",
+   "text": "Läuft ab"
+  },
+  {
+   "key": "sys.field|sys.invitation.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|sys.invitation.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.invitation.token|label",
+   "english": "Link hash",
+   "text": "Link-Hash"
+  },
+  {
+   "key": "sys.field|sys.invitation.used|label",
+   "english": "Used",
+   "text": "Verwendet"
+  },
+  {
+   "key": "sys.field|sys.job.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.job.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.job.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.job.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.job.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.job.retries|label",
+   "english": "Tries again",
+   "text": "Versucht es erneut"
+  },
+  {
+   "key": "sys.field|sys.job.timeout|label",
+   "english": "Time limit (seconds)",
+   "text": "Zeitlimit (Sekunden)"
+  },
+  {
+   "key": "sys.field|sys.job_run.attempt|label",
+   "english": "Attempt",
+   "text": "Versuch"
+  },
+  {
+   "key": "sys.field|sys.job_run.finished|label",
+   "english": "Finished",
+   "text": "Beendet"
+  },
+  {
+   "key": "sys.field|sys.job_run.job_ref|label",
+   "english": "Job",
+   "text": "Job"
+  },
+  {
+   "key": "sys.field|sys.job_run.job|label",
+   "english": "Job name",
+   "text": "Jobname"
+  },
+  {
+   "key": "sys.field|sys.job_run.message|label",
+   "english": "Result",
+   "text": "Ergebnis"
+  },
+  {
+   "key": "sys.field|sys.job_run.not_before|label",
+   "english": "Not before",
+   "text": "Nicht vor"
+  },
+  {
+   "key": "sys.field|sys.job_run.schedule_ref|label",
+   "english": "Schedule",
+   "text": "Zeitplan"
+  },
+  {
+   "key": "sys.field|sys.job_run.schedule|label",
+   "english": "Schedule name",
+   "text": "Name des Zeitplans"
+  },
+  {
+   "key": "sys.field|sys.job_run.started|label",
+   "english": "Started",
+   "text": "Gestartet"
+  },
+  {
+   "key": "sys.field|sys.job_run.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|sys.job_run.trigger|label",
+   "english": "Started by",
+   "text": "Gestartet von"
+  },
+  {
+   "key": "sys.field|sys.job_run.worker|label",
+   "english": "Worker",
+   "text": "Worker"
+  },
+  {
+   "key": "sys.field|sys.language.code|label",
+   "english": "Code",
+   "text": "Code"
+  },
+  {
+   "key": "sys.field|sys.language.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.language.offered|label",
+   "english": "Offered",
+   "text": "Angeboten"
+  },
+  {
+   "key": "sys.field|sys.list_view.available|label",
+   "english": "More columns",
+   "text": "Weitere Spalten"
+  },
+  {
+   "key": "sys.field|sys.list_view.columns|label",
+   "english": "Columns",
+   "text": "Spalten"
+  },
+  {
+   "key": "sys.field|sys.list_view.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.list_view.filter|label",
+   "english": "Filter",
+   "text": "Filter"
+  },
+  {
+   "key": "sys.field|sys.list_view.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.list_view.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.list_view.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.list_view.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.list_view.searchable|label",
+   "english": "In the search",
+   "text": "In der Suche"
+  },
+  {
+   "key": "sys.field|sys.list_view.search|label",
+   "english": "Searched fields",
+   "text": "Durchsuchte Felder"
+  },
+  {
+   "key": "sys.field|sys.list_view.sort|label",
+   "english": "Sort",
+   "text": "Sortierung"
+  },
+  {
+   "key": "sys.field|sys.list_view.table_ref|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.field|sys.list_view.table|label",
+   "english": "Table name",
+   "text": "Tabellenname"
+  },
+  {
+   "key": "sys.field|sys.membership.from_rule|label",
+   "english": "From the group's rule",
+   "text": "Aus der Regel der Gruppe"
+  },
+  {
+   "key": "sys.field|sys.membership.group|label",
+   "english": "Group",
+   "text": "Gruppe"
+  },
+  {
+   "key": "sys.field|sys.membership.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.module.category|label",
+   "english": "Category",
+   "text": "Kategorie"
+  },
+  {
+   "key": "sys.field|sys.module.depends_on|label",
+   "english": "Depends on",
+   "text": "Hängt ab von"
+  },
+  {
+   "key": "sys.field|sys.module.description|label",
+   "english": "Description",
+   "text": "Beschreibung"
+  },
+  {
+   "key": "sys.field|sys.module.enabled|label",
+   "english": "On",
+   "text": "Bei"
+  },
+  {
+   "key": "sys.field|sys.module.icon|label",
+   "english": "Icon",
+   "text": "Symbol"
+  },
+  {
+   "key": "sys.field|sys.module.label|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.module.name|label",
+   "english": "ID",
+   "text": "ID"
+  },
+  {
+   "key": "sys.field|sys.module.protected|label",
+   "english": "Part of the core",
+   "text": "Teil des Kerns"
+  },
+  {
+   "key": "sys.field|sys.module.version|label",
+   "english": "Version",
+   "text": "Version"
+  },
+  {
+   "key": "sys.field|sys.module_route.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.module_route.description|label",
+   "english": "What it does",
+   "text": "Was es tut"
+  },
+  {
+   "key": "sys.field|sys.module_route.method|label",
+   "english": "Method",
+   "text": "Methode"
+  },
+  {
+   "key": "sys.field|sys.module_route.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.module_route.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.module_route.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.module_route.path|label",
+   "english": "Path",
+   "text": "Pfad"
+  },
+  {
+   "key": "sys.field|sys.module_update.available|label",
+   "english": "Available",
+   "text": "Verfügbar"
+  },
+  {
+   "key": "sys.field|sys.module_update.fits|label",
+   "english": "Fits",
+   "text": "Passt"
+  },
+  {
+   "key": "sys.field|sys.module_update.installed|label",
+   "english": "Installed",
+   "text": "Installiert"
+  },
+  {
+   "key": "sys.field|sys.module_update.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|sys.module_update.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.module_update.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.module_update.needs|label",
+   "english": "Needs first",
+   "text": "Braucht zuerst"
+  },
+  {
+   "key": "sys.field|sys.module_update.notes|label",
+   "english": "Release notes",
+   "text": "Versionshinweise"
+  },
+  {
+   "key": "sys.field|sys.module_update.package|label",
+   "english": "Package",
+   "text": "Paket"
+  },
+  {
+   "key": "sys.field|sys.nav_item.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.nav_item.filter|label",
+   "english": "Filter",
+   "text": "Filter"
+  },
+  {
+   "key": "sys.field|sys.nav_item.icon|label",
+   "english": "Icon",
+   "text": "Symbol"
+  },
+  {
+   "key": "sys.field|sys.nav_item.keywords|label",
+   "english": "Keywords",
+   "text": "Stichwörter"
+  },
+  {
+   "key": "sys.field|sys.nav_item.kind|label",
+   "english": "Opens",
+   "text": "Öffnet"
+  },
+  {
+   "key": "sys.field|sys.nav_item.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.nav_item.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.nav_item.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.nav_item.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.nav_item.path|label",
+   "english": "Page",
+   "text": "Seite"
+  },
+  {
+   "key": "sys.field|sys.nav_item.position|label",
+   "english": "Position",
+   "text": "Position"
+  },
+  {
+   "key": "sys.field|sys.nav_item.section|label",
+   "english": "Section",
+   "text": "Abschnitt"
+  },
+  {
+   "key": "sys.field|sys.nav_item.table_ref|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.field|sys.nav_item.table|label",
+   "english": "Table name",
+   "text": "Tabellenname"
+  },
+  {
+   "key": "sys.field|sys.nav_item.view_ref|label",
+   "english": "List view",
+   "text": "Listenansicht"
+  },
+  {
+   "key": "sys.field|sys.nav_item.view|label",
+   "english": "List view name",
+   "text": "Name der Listenansicht"
+  },
+  {
+   "key": "sys.field|sys.notification.about_table|label",
+   "english": "About table",
+   "text": "Über die Tabelle"
+  },
+  {
+   "key": "sys.field|sys.notification.about|label",
+   "english": "About",
+   "text": "Über"
+  },
+  {
+   "key": "sys.field|sys.notification.kind_ref|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|sys.notification.kind|label",
+   "english": "Kind name",
+   "text": "Name der Art"
+  },
+  {
+   "key": "sys.field|sys.notification.link|label",
+   "english": "Link",
+   "text": "Link"
+  },
+  {
+   "key": "sys.field|sys.notification.message|label",
+   "english": "Message",
+   "text": "Meldung"
+  },
+  {
+   "key": "sys.field|sys.notification.person|label",
+   "english": "For",
+   "text": "Für"
+  },
+  {
+   "key": "sys.field|sys.notification.read|label",
+   "english": "Read",
+   "text": "Lesen"
+  },
+  {
+   "key": "sys.field|sys.notification.severity|label",
+   "english": "Severity",
+   "text": "Schweregrad"
+  },
+  {
+   "key": "sys.field|sys.notification.title|label",
+   "english": "Title",
+   "text": "Titel"
+  },
+  {
+   "key": "sys.field|sys.notification_delivery.attempts|label",
+   "english": "Attempts",
+   "text": "Versuche"
+  },
+  {
+   "key": "sys.field|sys.notification_delivery.channel|label",
+   "english": "Channel",
+   "text": "Kanal"
+  },
+  {
+   "key": "sys.field|sys.notification_delivery.message|label",
+   "english": "Last said",
+   "text": "Zuletzt gesagt"
+  },
+  {
+   "key": "sys.field|sys.notification_delivery.not_before|label",
+   "english": "Not before",
+   "text": "Nicht vor"
+  },
+  {
+   "key": "sys.field|sys.notification_delivery.notification|label",
+   "english": "Notification",
+   "text": "Benachrichtigung"
+  },
+  {
+   "key": "sys.field|sys.notification_delivery.person|label",
+   "english": "For",
+   "text": "Für"
+  },
+  {
+   "key": "sys.field|sys.notification_delivery.sent|label",
+   "english": "Sent",
+   "text": "Gesendet"
+  },
+  {
+   "key": "sys.field|sys.notification_delivery.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|sys.notification_kind.channels|label",
+   "english": "Channels by default",
+   "text": "Standardkanäle"
+  },
+  {
+   "key": "sys.field|sys.notification_kind.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.notification_kind.declared_channels|label",
+   "english": "Channels the module suggests",
+   "text": "Vom Modul vorgeschlagene Kanäle"
+  },
+  {
+   "key": "sys.field|sys.notification_kind.description|label",
+   "english": "Description",
+   "text": "Beschreibung"
+  },
+  {
+   "key": "sys.field|sys.notification_kind.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.notification_kind.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.notification_kind.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.notification_kind.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.notification_subscription.channel|label",
+   "english": "Channel",
+   "text": "Kanal"
+  },
+  {
+   "key": "sys.field|sys.notification_subscription.kind_ref|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|sys.notification_subscription.kind|label",
+   "english": "Kind name",
+   "text": "Name der Art"
+  },
+  {
+   "key": "sys.field|sys.notification_subscription.on|label",
+   "english": "On",
+   "text": "Bei"
+  },
+  {
+   "key": "sys.field|sys.notification_subscription.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.outside_call.about|label",
+   "english": "About",
+   "text": "Über"
+  },
+  {
+   "key": "sys.field|sys.outside_call.answer|label",
+   "english": "Answer",
+   "text": "Antwort"
+  },
+  {
+   "key": "sys.field|sys.outside_call.attempts|label",
+   "english": "Attempts",
+   "text": "Versuche"
+  },
+  {
+   "key": "sys.field|sys.outside_call.call_ref|label",
+   "english": "Call",
+   "text": "Aufruf"
+  },
+  {
+   "key": "sys.field|sys.outside_call.call|label",
+   "english": "Call name",
+   "text": "Name des Aufrufs"
+  },
+  {
+   "key": "sys.field|sys.outside_call.key|label",
+   "english": "Key",
+   "text": "Schlüssel"
+  },
+  {
+   "key": "sys.field|sys.outside_call.message|label",
+   "english": "Last said",
+   "text": "Zuletzt gesagt"
+  },
+  {
+   "key": "sys.field|sys.outside_call.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.outside_call.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.outside_call.not_before|label",
+   "english": "Not before",
+   "text": "Nicht vor"
+  },
+  {
+   "key": "sys.field|sys.outside_call.owner|label",
+   "english": "For",
+   "text": "Für"
+  },
+  {
+   "key": "sys.field|sys.outside_call.payload|label",
+   "english": "What it sends",
+   "text": "Was es sendet"
+  },
+  {
+   "key": "sys.field|sys.outside_call.record_id|label",
+   "english": "About record",
+   "text": "Über den Datensatz"
+  },
+  {
+   "key": "sys.field|sys.outside_call.record_table|label",
+   "english": "About table",
+   "text": "Über die Tabelle"
+  },
+  {
+   "key": "sys.field|sys.outside_call.sent|label",
+   "english": "Last sent",
+   "text": "Zuletzt gesendet"
+  },
+  {
+   "key": "sys.field|sys.outside_call.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|sys.person.active|label",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|sys.person.email|label",
+   "english": "Email",
+   "text": "E-Mail"
+  },
+  {
+   "key": "sys.field|sys.person.emergency_access|label",
+   "english": "Emergency access",
+   "text": "Notfallzugang"
+  },
+  {
+   "key": "sys.field|sys.person.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|sys.person.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.person_channel.address|label",
+   "english": "Chat",
+   "text": "Chat"
+  },
+  {
+   "key": "sys.field|sys.person_channel.bot|label",
+   "english": "Bot",
+   "text": "Bot"
+  },
+  {
+   "key": "sys.field|sys.person_channel.channel|label",
+   "english": "Channel",
+   "text": "Kanal"
+  },
+  {
+   "key": "sys.field|sys.person_channel.code|label",
+   "english": "Code",
+   "text": "Code"
+  },
+  {
+   "key": "sys.field|sys.person_channel.expires|label",
+   "english": "Code expires",
+   "text": "Code läuft ab"
+  },
+  {
+   "key": "sys.field|sys.person_channel.full_text|label",
+   "english": "Send the whole message",
+   "text": "Die ganze Meldung senden"
+  },
+  {
+   "key": "sys.field|sys.person_channel.name|label",
+   "english": "Connected as",
+   "text": "Verbunden als"
+  },
+  {
+   "key": "sys.field|sys.person_channel.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.person_channel.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|sys.preference.language|label",
+   "english": "Language",
+   "text": "Sprache"
+  },
+  {
+   "key": "sys.field|sys.preference.mode|label",
+   "english": "Mode",
+   "text": "Modus"
+  },
+  {
+   "key": "sys.field|sys.preference.page_size|label",
+   "english": "Records per page",
+   "text": "Datensätze pro Seite"
+  },
+  {
+   "key": "sys.field|sys.preference.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.preference.theme_ref|label",
+   "english": "Theme",
+   "text": "Design"
+  },
+  {
+   "key": "sys.field|sys.preference.theme|label",
+   "english": "Theme name",
+   "text": "Designname"
+  },
+  {
+   "key": "sys.field|sys.related_layout.form_ref|label",
+   "english": "Form",
+   "text": "Formular"
+  },
+  {
+   "key": "sys.field|sys.related_layout.form|label",
+   "english": "Form name",
+   "text": "Formularname"
+  },
+  {
+   "key": "sys.field|sys.related_layout.last|label",
+   "english": "Open last",
+   "text": "Zuletzt geöffnet"
+  },
+  {
+   "key": "sys.field|sys.related_layout.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.related_layout.shown|label",
+   "english": "Shown lists",
+   "text": "Angezeigte Listen"
+  },
+  {
+   "key": "sys.field|sys.role.custom|label",
+   "english": "Custom",
+   "text": "Eigene"
+  },
+  {
+   "key": "sys.field|sys.role.description|label",
+   "english": "Description",
+   "text": "Beschreibung"
+  },
+  {
+   "key": "sys.field|sys.role.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.role.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.role.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.role.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.role.powerful|label",
+   "english": "Powerful",
+   "text": "Mächtig"
+  },
+  {
+   "key": "sys.field|sys.role.switched_off|label",
+   "english": "Switched off",
+   "text": "Ausgeschaltet"
+  },
+  {
+   "key": "sys.field|sys.role_include.includes|label",
+   "english": "Includes",
+   "text": "Enthält"
+  },
+  {
+   "key": "sys.field|sys.role_include.role|label",
+   "english": "Role",
+   "text": "Rolle"
+  },
+  {
+   "key": "sys.field|sys.saved_view.columns|label",
+   "english": "Columns",
+   "text": "Spalten"
+  },
+  {
+   "key": "sys.field|sys.saved_view.filter|label",
+   "english": "Filter",
+   "text": "Filter"
+  },
+  {
+   "key": "sys.field|sys.saved_view.is_default|label",
+   "english": "Opens by default",
+   "text": "Öffnet standardmässig"
+  },
+  {
+   "key": "sys.field|sys.saved_view.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.saved_view.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.saved_view.search|label",
+   "english": "Search",
+   "text": "Suche"
+  },
+  {
+   "key": "sys.field|sys.saved_view.sort|label",
+   "english": "Sort",
+   "text": "Sortierung"
+  },
+  {
+   "key": "sys.field|sys.saved_view.view_ref|label",
+   "english": "List view",
+   "text": "Listenansicht"
+  },
+  {
+   "key": "sys.field|sys.saved_view.view|label",
+   "english": "List view name",
+   "text": "Name der Listenansicht"
+  },
+  {
+   "key": "sys.field|sys.schedule.active|label",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|sys.schedule.cron|label",
+   "english": "When (cron)",
+   "text": "Wann (cron)"
+  },
+  {
+   "key": "sys.field|sys.schedule.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.schedule.job_ref|label",
+   "english": "Job",
+   "text": "Job"
+  },
+  {
+   "key": "sys.field|sys.schedule.job|label",
+   "english": "Job name",
+   "text": "Jobname"
+  },
+  {
+   "key": "sys.field|sys.schedule.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.schedule.last_state|label",
+   "english": "Last run",
+   "text": "Letzter Lauf"
+  },
+  {
+   "key": "sys.field|sys.schedule.missed|label",
+   "english": "Missed runs",
+   "text": "Verpasste Läufe"
+  },
+  {
+   "key": "sys.field|sys.schedule.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.schedule.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.schedule.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.schedule.next_run|label",
+   "english": "Next run",
+   "text": "Nächster Lauf"
+  },
+  {
+   "key": "sys.field|sys.schedule.time_zone|label",
+   "english": "Time zone",
+   "text": "Zeitzone"
+  },
+  {
+   "key": "sys.field|sys.session.address|label",
+   "english": "Address",
+   "text": "Adresse"
+  },
+  {
+   "key": "sys.field|sys.session.agent|label",
+   "english": "Browser",
+   "text": "Browser"
+  },
+  {
+   "key": "sys.field|sys.session.challenge|label",
+   "english": "Passkey challenge",
+   "text": "Passkey-Challenge"
+  },
+  {
+   "key": "sys.field|sys.session.expires|label",
+   "english": "Ends at the latest",
+   "text": "Endet spätestens"
+  },
+  {
+   "key": "sys.field|sys.session.last_seen|label",
+   "english": "Last used",
+   "text": "Zuletzt verwendet"
+  },
+  {
+   "key": "sys.field|sys.session.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.session.stage|label",
+   "english": "Stage",
+   "text": "Stufe"
+  },
+  {
+   "key": "sys.field|sys.session.token|label",
+   "english": "Token hash",
+   "text": "Token-Hash"
+  },
+  {
+   "key": "sys.field|sys.session.verified|label",
+   "english": "Second factor given",
+   "text": "Zweiter Faktor gegeben"
+  },
+  {
+   "key": "sys.field|sys.setting.help|label",
+   "english": "Help",
+   "text": "Hilfe"
+  },
+  {
+   "key": "sys.field|sys.setting.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.setting.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.setting.public|label",
+   "english": "Everyone may read it",
+   "text": "Alle dürfen es lesen"
+  },
+  {
+   "key": "sys.field|sys.setting.value|label",
+   "english": "Value",
+   "text": "Wert"
+  },
+  {
+   "key": "sys.field|sys.share.edit|label",
+   "english": "May change it",
+   "text": "Darf es ändern"
+  },
+  {
+   "key": "sys.field|sys.share.owner|label",
+   "english": "Shared by",
+   "text": "Freigegeben von"
+  },
+  {
+   "key": "sys.field|sys.share.person|label",
+   "english": "Shared with",
+   "text": "Freigegeben für"
+  },
+  {
+   "key": "sys.field|sys.share.record|label",
+   "english": "Record",
+   "text": "Datensatz"
+  },
+  {
+   "key": "sys.field|sys.share.table|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.field|sys.share.until|label",
+   "english": "Until",
+   "text": "Bis"
+  },
+  {
+   "key": "sys.field|sys.sign_in_flow.expires|label",
+   "english": "Expires",
+   "text": "Läuft ab"
+  },
+  {
+   "key": "sys.field|sys.sign_in_flow.nonce|label",
+   "english": "Nonce",
+   "text": "Nonce"
+  },
+  {
+   "key": "sys.field|sys.sign_in_flow.provider|label",
+   "english": "Provider",
+   "text": "Anbieter"
+  },
+  {
+   "key": "sys.field|sys.sign_in_flow.state|label",
+   "english": "State hash",
+   "text": "Status-Hash"
+  },
+  {
+   "key": "sys.field|sys.sign_in_flow.verifier|label",
+   "english": "PKCE verifier",
+   "text": "PKCE-Verifier"
+  },
+  {
+   "key": "sys.field|sys.table.display_field|label",
+   "english": "Display field",
+   "text": "Anzeigefeld"
+  },
+  {
+   "key": "sys.field|sys.table.label_plural|label",
+   "english": "Label for several",
+   "text": "Bezeichnung für mehrere"
+  },
+  {
+   "key": "sys.field|sys.table.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.table.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.table.owner_field|label",
+   "english": "Owner field",
+   "text": "Besitzerfeld"
+  },
+  {
+   "key": "sys.field|sys.table.schema|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.table.switched_off|label",
+   "english": "Switched off",
+   "text": "Ausgeschaltet"
+  },
+  {
+   "key": "sys.field|sys.table.unique_together|label",
+   "english": "Unique together",
+   "text": "Gemeinsam eindeutig"
+  },
+  {
+   "key": "sys.field|sys.theme.cards|label",
+   "english": "Cards",
+   "text": "Karten"
+  },
+  {
+   "key": "sys.field|sys.theme.colors|label",
+   "english": "Colours",
+   "text": "Farben"
+  },
+  {
+   "key": "sys.field|sys.theme.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.theme.description|label",
+   "english": "Description",
+   "text": "Beschreibung"
+  },
+  {
+   "key": "sys.field|sys.theme.font|label",
+   "english": "Font",
+   "text": "Schrift"
+  },
+  {
+   "key": "sys.field|sys.theme.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.theme.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.theme.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.theme.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.theme.radius|label",
+   "english": "Corner radius",
+   "text": "Eckenradius"
+  },
+  {
+   "key": "sys.field|sys.translation.english|label",
+   "english": "English",
+   "text": "Englisch"
+  },
+  {
+   "key": "sys.field|sys.translation.key|label",
+   "english": "Key",
+   "text": "Schlüssel"
+  },
+  {
+   "key": "sys.field|sys.translation.language|label",
+   "english": "Language",
+   "text": "Sprache"
+  },
+  {
+   "key": "sys.field|sys.translation.module|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.translation.origin|label",
+   "english": "From",
+   "text": "Von"
+  },
+  {
+   "key": "sys.field|sys.translation.text|label",
+   "english": "Translation",
+   "text": "Übersetzung"
+  },
+  {
+   "key": "sys.field|sys.ui_action.condition|label",
+   "english": "When",
+   "text": "Wann"
+  },
+  {
+   "key": "sys.field|sys.ui_action.confirm|label",
+   "english": "Ask first",
+   "text": "Zuerst fragen"
+  },
+  {
+   "key": "sys.field|sys.ui_action.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.ui_action.go|label",
+   "english": "Then",
+   "text": "Dann"
+  },
+  {
+   "key": "sys.field|sys.ui_action.handler|label",
+   "english": "Runs the module's code",
+   "text": "Führt den Code des Moduls aus"
+  },
+  {
+   "key": "sys.field|sys.ui_action.icon|label",
+   "english": "Icon",
+   "text": "Symbol"
+  },
+  {
+   "key": "sys.field|sys.ui_action.inputs|label",
+   "english": "Asks for",
+   "text": "Fragt nach"
+  },
+  {
+   "key": "sys.field|sys.ui_action.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.ui_action.message|label",
+   "english": "Says when done",
+   "text": "Meldet nach Abschluss"
+  },
+  {
+   "key": "sys.field|sys.ui_action.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.ui_action.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.ui_action.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.ui_action.operation|label",
+   "english": "Needs",
+   "text": "Braucht"
+  },
+  {
+   "key": "sys.field|sys.ui_action.places|label",
+   "english": "Where",
+   "text": "Wo"
+  },
+  {
+   "key": "sys.field|sys.ui_action.second_factor|label",
+   "english": "Needs the second factor again",
+   "text": "Braucht erneut den zweiten Faktor"
+  },
+  {
+   "key": "sys.field|sys.ui_action.set|label",
+   "english": "Sets",
+   "text": "Setzt"
+  },
+  {
+   "key": "sys.field|sys.ui_action.table_ref|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.field|sys.ui_action.table|label",
+   "english": "Table name",
+   "text": "Tabellenname"
+  },
+  {
+   "key": "sys.field|sys.update_request.backup|label",
+   "english": "Backup made before",
+   "text": "Sicherung davor"
+  },
+  {
+   "key": "sys.field|sys.update_request.finished|label",
+   "english": "Finished",
+   "text": "Beendet"
+  },
+  {
+   "key": "sys.field|sys.update_request.from_version|label",
+   "english": "From version",
+   "text": "Von Version"
+  },
+  {
+   "key": "sys.field|sys.update_request.log|label",
+   "english": "What the updater did",
+   "text": "Was der Updater getan hat"
+  },
+  {
+   "key": "sys.field|sys.update_request.message|label",
+   "english": "Result",
+   "text": "Ergebnis"
+  },
+  {
+   "key": "sys.field|sys.update_request.not_before|label",
+   "english": "Not before",
+   "text": "Nicht vor"
+  },
+  {
+   "key": "sys.field|sys.update_request.requested_by|label",
+   "english": "Requested by",
+   "text": "Angefordert von"
+  },
+  {
+   "key": "sys.field|sys.update_request.started|label",
+   "english": "Started",
+   "text": "Gestartet"
+  },
+  {
+   "key": "sys.field|sys.update_request.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|sys.update_request.target_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.update_request.target|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.update_request.version|label",
+   "english": "To version",
+   "text": "Auf Version"
+  },
+  {
+   "key": "sys.field|sys.view_state.columns|label",
+   "english": "Columns",
+   "text": "Spalten"
+  },
+  {
+   "key": "sys.field|sys.view_state.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.view_state.sort|label",
+   "english": "Sort",
+   "text": "Sortierung"
+  },
+  {
+   "key": "sys.field|sys.view_state.view_ref|label",
+   "english": "List view",
+   "text": "Listenansicht"
+  },
+  {
+   "key": "sys.field|sys.view_state.view|label",
+   "english": "List view name",
+   "text": "Name der Listenansicht"
+  },
+  {
+   "key": "sys.field|sys.widget.accent|label",
+   "english": "Accent (chart colour 1 to 8)",
+   "text": "Akzent (Diagrammfarbe 1 bis 8)"
+  },
+  {
+   "key": "sys.field|sys.widget.chart|label",
+   "english": "Chart",
+   "text": "Diagramm"
+  },
+  {
+   "key": "sys.field|sys.widget.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.widget.dashboard|label",
+   "english": "Dashboard",
+   "text": "Dashboard"
+  },
+  {
+   "key": "sys.field|sys.widget.field|label",
+   "english": "Measured field",
+   "text": "Gemessenes Feld"
+  },
+  {
+   "key": "sys.field|sys.widget.filled|label",
+   "english": "Filled",
+   "text": "Ausgeführt"
+  },
+  {
+   "key": "sys.field|sys.widget.filter|label",
+   "english": "Filter",
+   "text": "Filter"
+  },
+  {
+   "key": "sys.field|sys.widget.group|label",
+   "english": "Grouped by",
+   "text": "Gruppiert nach"
+  },
+  {
+   "key": "sys.field|sys.widget.icon|label",
+   "english": "Icon",
+   "text": "Symbol"
+  },
+  {
+   "key": "sys.field|sys.widget.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|sys.widget.list_ref|label",
+   "english": "List view",
+   "text": "Listenansicht"
+  },
+  {
+   "key": "sys.field|sys.widget.list|label",
+   "english": "List view name",
+   "text": "Name der Listenansicht"
+  },
+  {
+   "key": "sys.field|sys.widget.measure|label",
+   "english": "Measure",
+   "text": "Kennzahl"
+  },
+  {
+   "key": "sys.field|sys.widget.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.widget.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.widget.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.widget.param_table|label",
+   "english": "Chosen from",
+   "text": "Gewählt aus"
+  },
+  {
+   "key": "sys.field|sys.widget.param|label",
+   "english": "Chosen",
+   "text": "Gewählt"
+  },
+  {
+   "key": "sys.field|sys.widget.period|label",
+   "english": "Per",
+   "text": "Pro"
+  },
+  {
+   "key": "sys.field|sys.widget.position|label",
+   "english": "Position",
+   "text": "Position"
+  },
+  {
+   "key": "sys.field|sys.widget.refresh|label",
+   "english": "Refresh (seconds)",
+   "text": "Aktualisieren (Sekunden)"
+  },
+  {
+   "key": "sys.field|sys.widget.shown|label",
+   "english": "For everyone who may read it",
+   "text": "Für alle, die es lesen dürfen"
+  },
+  {
+   "key": "sys.field|sys.widget.sizes|label",
+   "english": "Sizes",
+   "text": "Grössen"
+  },
+  {
+   "key": "sys.field|sys.widget.size|label",
+   "english": "Size",
+   "text": "Grösse"
+  },
+  {
+   "key": "sys.field|sys.widget.source_route|label",
+   "english": "Source route",
+   "text": "Quellroute"
+  },
+  {
+   "key": "sys.field|sys.widget.target|label",
+   "english": "Target",
+   "text": "Ziel"
+  },
+  {
+   "key": "sys.field|sys.widget.text|label",
+   "english": "Text",
+   "text": "Text"
+  },
+  {
+   "key": "sys.field|sys.widget.title|label",
+   "english": "Title",
+   "text": "Titel"
+  },
+  {
+   "key": "sys.field|sys.widget.trend|label",
+   "english": "Trend by",
+   "text": "Trend nach"
+  },
+  {
+   "key": "sys.field|sys.widget_audience.group|label",
+   "english": "Group",
+   "text": "Gruppe"
+  },
+  {
+   "key": "sys.field|sys.widget_audience.shown|label",
+   "english": "Shown",
+   "text": "Angezeigt"
+  },
+  {
+   "key": "sys.field|sys.widget_audience.widget_ref|label",
+   "english": "Widget",
+   "text": "Widget"
+  },
+  {
+   "key": "sys.field|sys.widget_audience.widget|label",
+   "english": "Widget name",
+   "text": "Widget-Name"
+  },
+  {
+   "key": "sys.job|sys.backup|label",
+   "english": "Back up the database",
+   "text": "Datenbank sichern"
+  },
+  {
+   "key": "sys.job|sys.check_updates|label",
+   "english": "Check for module updates",
+   "text": "Nach Modul-Updates suchen"
+  },
+  {
+   "key": "sys.job|sys.notification_cleanup|label",
+   "english": "Put away old notifications",
+   "text": "Alte Benachrichtigungen wegräumen"
+  },
+  {
+   "key": "sys.job|sys.repair_groups|label",
+   "english": "Check the dynamic groups' members",
+   "text": "Mitglieder der dynamischen Gruppen prüfen"
+  },
+  {
+   "key": "sys.list_view|sys.announcement|label",
+   "english": "Messages",
+   "text": "Meldungen"
+  },
+  {
+   "key": "sys.list_view|sys.api_token|label",
+   "english": "API tokens",
+   "text": "API-Tokens"
+  },
+  {
+   "key": "sys.list_view|sys.backup|label",
+   "english": "Backups",
+   "text": "Sicherungen"
+  },
+  {
+   "key": "sys.list_view|sys.call_type|label",
+   "english": "Outside call types",
+   "text": "Arten externer Aufrufe"
+  },
+  {
+   "key": "sys.list_view|sys.channel_state|label",
+   "english": "Channel states",
+   "text": "Kanalstatus"
+  },
+  {
+   "key": "sys.list_view|sys.connection_secret|label",
+   "english": "Connection secrets",
+   "text": "Verbindungsgeheimnisse"
+  },
+  {
+   "key": "sys.list_view|sys.connection_type|label",
+   "english": "Connection types",
+   "text": "Verbindungstypen"
+  },
+  {
+   "key": "sys.list_view|sys.connection|label",
+   "english": "Connections",
+   "text": "Verbindungen"
+  },
+  {
+   "key": "sys.list_view|sys.credential|label",
+   "english": "Credentials",
+   "text": "Anmeldedaten"
+  },
+  {
+   "key": "sys.list_view|sys.dashboard_layout|label",
+   "english": "Dashboard layouts",
+   "text": "Dashboard-Anordnungen"
+  },
+  {
+   "key": "sys.list_view|sys.doc_page|label",
+   "english": "Documentation pages",
+   "text": "Dokumentationsseiten"
+  },
+  {
+   "key": "sys.list_view|sys.external_id|label",
+   "english": "External IDs",
+   "text": "Externe IDs"
+  },
+  {
+   "key": "sys.list_view|sys.favorite|label",
+   "english": "Favorites",
+   "text": "Favoriten"
+  },
+  {
+   "key": "sys.list_view|sys.field_type|label",
+   "english": "Field types",
+   "text": "Feldtypen"
+  },
+  {
+   "key": "sys.list_view|sys.field|label",
+   "english": "Fields",
+   "text": "Felder"
+  },
+  {
+   "key": "sys.list_view|sys.form_rule|label",
+   "english": "Form rules",
+   "text": "Formularregeln"
+  },
+  {
+   "key": "sys.list_view|sys.form_view|label",
+   "english": "Form views",
+   "text": "Formularansichten"
+  },
+  {
+   "key": "sys.list_view|sys.grant|label",
+   "english": "Grants",
+   "text": "Berechtigungen"
+  },
+  {
+   "key": "sys.list_view|sys.group_role|label",
+   "english": "Roles of groups",
+   "text": "Rollen von Gruppen"
+  },
+  {
+   "key": "sys.list_view|sys.group|label",
+   "english": "Groups",
+   "text": "Gruppen"
+  },
+  {
+   "key": "sys.list_view|sys.identity_provider|label",
+   "english": "Sign-in providers",
+   "text": "Anmeldeanbieter"
+  },
+  {
+   "key": "sys.list_view|sys.invitation|label",
+   "english": "Invitations",
+   "text": "Einladungen"
+  },
+  {
+   "key": "sys.list_view|sys.job_run|label",
+   "english": "Job runs",
+   "text": "Jobläufe"
+  },
+  {
+   "key": "sys.list_view|sys.job|label",
+   "english": "Jobs",
+   "text": "Jobs"
+  },
+  {
+   "key": "sys.list_view|sys.language|label",
+   "english": "Languages",
+   "text": "Sprachen"
+  },
+  {
+   "key": "sys.list_view|sys.list_view|label",
+   "english": "List views",
+   "text": "Listenansichten"
+  },
+  {
+   "key": "sys.list_view|sys.membership|label",
+   "english": "Memberships",
+   "text": "Mitgliedschaften"
+  },
+  {
+   "key": "sys.list_view|sys.module_route|label",
+   "english": "Module routes",
+   "text": "Modulrouten"
+  },
+  {
+   "key": "sys.list_view|sys.module_update|label",
+   "english": "Available updates",
+   "text": "Verfügbare Updates"
+  },
+  {
+   "key": "sys.list_view|sys.module|label",
+   "english": "Modules",
+   "text": "Module"
+  },
+  {
+   "key": "sys.list_view|sys.nav_item|label",
+   "english": "Navigation items",
+   "text": "Navigationseinträge"
+  },
+  {
+   "key": "sys.list_view|sys.notification_delivery|label",
+   "english": "Notification deliveries",
+   "text": "Benachrichtigungszustellungen"
+  },
+  {
+   "key": "sys.list_view|sys.notification_kind|label",
+   "english": "Notification kinds",
+   "text": "Benachrichtigungsarten"
+  },
+  {
+   "key": "sys.list_view|sys.notification_subscription|label",
+   "english": "Notification choices",
+   "text": "Benachrichtigungswahlen"
+  },
+  {
+   "key": "sys.list_view|sys.notification|label",
+   "english": "Notifications",
+   "text": "Benachrichtigungen"
+  },
+  {
+   "key": "sys.list_view|sys.outside_call|label",
+   "english": "Outside calls",
+   "text": "Externe Aufrufe"
+  },
+  {
+   "key": "sys.list_view|sys.person_channel|label",
+   "english": "Linked channels",
+   "text": "Verknüpfte Kanäle"
+  },
+  {
+   "key": "sys.list_view|sys.person|label",
+   "english": "People",
+   "text": "Personen"
+  },
+  {
+   "key": "sys.list_view|sys.preference|label",
+   "english": "Preferences",
+   "text": "Einstellungen"
+  },
+  {
+   "key": "sys.list_view|sys.related_layout|label",
+   "english": "Related lists layouts",
+   "text": "Anordnungen der Bezugslisten"
+  },
+  {
+   "key": "sys.list_view|sys.role_include|label",
+   "english": "Included roles",
+   "text": "Enthaltene Rollen"
+  },
+  {
+   "key": "sys.list_view|sys.role|label",
+   "english": "Roles",
+   "text": "Rollen"
+  },
+  {
+   "key": "sys.list_view|sys.saved_view|label",
+   "english": "Saved views",
+   "text": "Gespeicherte Ansichten"
+  },
+  {
+   "key": "sys.list_view|sys.schedule|label",
+   "english": "Schedules",
+   "text": "Zeitpläne"
+  },
+  {
+   "key": "sys.list_view|sys.session|label",
+   "english": "Sessions",
+   "text": "Sitzungen"
+  },
+  {
+   "key": "sys.list_view|sys.setting|label",
+   "english": "Settings",
+   "text": "Einstellungen"
+  },
+  {
+   "key": "sys.list_view|sys.share|label",
+   "english": "Shares",
+   "text": "Freigaben"
+  },
+  {
+   "key": "sys.list_view|sys.sign_in_flow|label",
+   "english": "Sign-ins through providers",
+   "text": "Anmeldungen über Anbieter"
+  },
+  {
+   "key": "sys.list_view|sys.table|label",
+   "english": "Tables",
+   "text": "Tabellen"
+  },
+  {
+   "key": "sys.list_view|sys.theme|label",
+   "english": "Themes",
+   "text": "Designs"
+  },
+  {
+   "key": "sys.list_view|sys.translation|label",
+   "english": "Translations",
+   "text": "Übersetzungen"
+  },
+  {
+   "key": "sys.list_view|sys.ui_action|label",
+   "english": "UI actions",
+   "text": "UI-Aktionen"
+  },
+  {
+   "key": "sys.list_view|sys.update_request|label",
+   "english": "Updates",
+   "text": "Updates"
+  },
+  {
+   "key": "sys.list_view|sys.view_state|label",
+   "english": "Remembered lists",
+   "text": "Gemerkte Listen"
+  },
+  {
+   "key": "sys.list_view|sys.widget_audience|label",
+   "english": "Widget audiences",
+   "text": "Widget-Zielgruppen"
+  },
+  {
+   "key": "sys.list_view|sys.widget|label",
+   "english": "Widgets",
+   "text": "Widgets"
+  },
+  {
+   "key": "sys.nav_item|sys.announcements|label",
+   "english": "Messages",
+   "text": "Meldungen"
+  },
+  {
+   "key": "sys.nav_item|sys.announcements|section",
+   "english": "Appearance",
+   "text": "Aussehen"
+  },
+  {
+   "key": "sys.nav_item|sys.backups|label",
+   "english": "Backups",
+   "text": "Sicherungen"
+  },
+  {
+   "key": "sys.nav_item|sys.backups|section",
+   "english": "Automation",
+   "text": "Automatisierung"
+  },
+  {
+   "key": "sys.nav_item|sys.connections|label",
+   "english": "Connections",
+   "text": "Verbindungen"
+  },
+  {
+   "key": "sys.nav_item|sys.connections|section",
+   "english": "Connections",
+   "text": "Verbindungen"
+  },
+  {
+   "key": "sys.nav_item|sys.groups|label",
+   "english": "Groups",
+   "text": "Gruppen"
+  },
+  {
+   "key": "sys.nav_item|sys.groups|section",
+   "english": "People and access",
+   "text": "Personen und Zugriff"
+  },
+  {
+   "key": "sys.nav_item|sys.job_runs|label",
+   "english": "Job runs",
+   "text": "Jobläufe"
+  },
+  {
+   "key": "sys.nav_item|sys.job_runs|section",
+   "english": "Automation",
+   "text": "Automatisierung"
+  },
+  {
+   "key": "sys.nav_item|sys.languages|label",
+   "english": "Languages",
+   "text": "Sprachen"
+  },
+  {
+   "key": "sys.nav_item|sys.languages|section",
+   "english": "Modules and data",
+   "text": "Module und Daten"
+  },
+  {
+   "key": "sys.nav_item|sys.modules|label",
+   "english": "Modules",
+   "text": "Module"
+  },
+  {
+   "key": "sys.nav_item|sys.modules|section",
+   "english": "Modules and data",
+   "text": "Module und Daten"
+  },
+  {
+   "key": "sys.nav_item|sys.notification_deliveries|label",
+   "english": "Notification deliveries",
+   "text": "Benachrichtigungszustellungen"
+  },
+  {
+   "key": "sys.nav_item|sys.notification_deliveries|section",
+   "english": "Automation",
+   "text": "Automatisierung"
+  },
+  {
+   "key": "sys.nav_item|sys.notification_kinds|label",
+   "english": "Notification kinds",
+   "text": "Benachrichtigungsarten"
+  },
+  {
+   "key": "sys.nav_item|sys.notification_kinds|section",
+   "english": "Automation",
+   "text": "Automatisierung"
+  },
+  {
+   "key": "sys.nav_item|sys.notifications|label",
+   "english": "Notifications",
+   "text": "Benachrichtigungen"
+  },
+  {
+   "key": "sys.nav_item|sys.notifications|section",
+   "english": "My work",
+   "text": "Meine Arbeit"
+  },
+  {
+   "key": "sys.nav_item|sys.outside_calls|label",
+   "english": "Outside calls",
+   "text": "Externe Aufrufe"
+  },
+  {
+   "key": "sys.nav_item|sys.outside_calls|section",
+   "english": "Automation",
+   "text": "Automatisierung"
+  },
+  {
+   "key": "sys.nav_item|sys.people|label",
+   "english": "People",
+   "text": "Personen"
+  },
+  {
+   "key": "sys.nav_item|sys.people|section",
+   "english": "People and access",
+   "text": "Personen und Zugriff"
+  },
+  {
+   "key": "sys.nav_item|sys.providers|label",
+   "english": "Sign-in providers",
+   "text": "Anmeldeanbieter"
+  },
+  {
+   "key": "sys.nav_item|sys.providers|section",
+   "english": "People and access",
+   "text": "Personen und Zugriff"
+  },
+  {
+   "key": "sys.nav_item|sys.roles|label",
+   "english": "Roles",
+   "text": "Rollen"
+  },
+  {
+   "key": "sys.nav_item|sys.roles|section",
+   "english": "People and access",
+   "text": "Personen und Zugriff"
+  },
+  {
+   "key": "sys.nav_item|sys.schedules|label",
+   "english": "Schedules",
+   "text": "Zeitpläne"
+  },
+  {
+   "key": "sys.nav_item|sys.schedules|section",
+   "english": "Automation",
+   "text": "Automatisierung"
+  },
+  {
+   "key": "sys.nav_item|sys.settings|label",
+   "english": "Settings",
+   "text": "Einstellungen"
+  },
+  {
+   "key": "sys.nav_item|sys.settings|section",
+   "english": "Modules and data",
+   "text": "Module und Daten"
+  },
+  {
+   "key": "sys.nav_item|sys.tables|label",
+   "english": "Tables",
+   "text": "Tabellen"
+  },
+  {
+   "key": "sys.nav_item|sys.tables|section",
+   "english": "Modules and data",
+   "text": "Module und Daten"
+  },
+  {
+   "key": "sys.nav_item|sys.themes|label",
+   "english": "Themes",
+   "text": "Designs"
+  },
+  {
+   "key": "sys.nav_item|sys.themes|section",
+   "english": "Appearance",
+   "text": "Aussehen"
+  },
+  {
+   "key": "sys.nav_item|sys.tokens|label",
+   "english": "API tokens",
+   "text": "API-Tokens"
+  },
+  {
+   "key": "sys.nav_item|sys.tokens|section",
+   "english": "People and access",
+   "text": "Personen und Zugriff"
+  },
+  {
+   "key": "sys.nav_item|sys.translations|label",
+   "english": "Translations",
+   "text": "Übersetzungen"
+  },
+  {
+   "key": "sys.nav_item|sys.translations|section",
+   "english": "Modules and data",
+   "text": "Module und Daten"
+  },
+  {
+   "key": "sys.nav_item|sys.update_requests|label",
+   "english": "Updates",
+   "text": "Updates"
+  },
+  {
+   "key": "sys.nav_item|sys.update_requests|section",
+   "english": "Modules and data",
+   "text": "Module und Daten"
+  },
+  {
+   "key": "sys.nav_item|sys.updates|label",
+   "english": "Available updates",
+   "text": "Verfügbare Updates"
+  },
+  {
+   "key": "sys.nav_item|sys.updates|section",
+   "english": "Modules and data",
+   "text": "Module und Daten"
+  },
+  {
+   "key": "sys.nav_item|sys.widgets|label",
+   "english": "Widgets",
+   "text": "Widgets"
+  },
+  {
+   "key": "sys.nav_item|sys.widgets|section",
+   "english": "Appearance",
+   "text": "Aussehen"
+  },
+  {
+   "key": "sys.notification_kind|sys.job_failed|description",
+   "english": "A schedule's job failed after its last try, having worked before.",
+   "text": "Der Job eines Zeitplans ist nach dem letzten Versuch fehlgeschlagen, nachdem er vorher funktioniert hatte."
+  },
+  {
+   "key": "sys.notification_kind|sys.job_failed|label",
+   "english": "A scheduled job fails",
+   "text": "Ein geplanter Job schlägt fehl"
+  },
+  {
+   "key": "sys.notification_kind|sys.message|description",
+   "english": "A message administrators send as a notification, to everyone or to a group.",
+   "text": "Eine Meldung, die Administratoren als Benachrichtigung senden, an alle oder an eine Gruppe."
+  },
+  {
+   "key": "sys.notification_kind|sys.message|label",
+   "english": "A message from administrators",
+   "text": "Eine Meldung der Administratoren"
+  },
+  {
+   "key": "sys.notification_kind|sys.module_roles|description",
+   "english": "After a module is installed: the roles it brings, to give to groups of people.",
+   "text": "Nach der Installation eines Moduls: die Rollen, die es bringt, um sie Gruppen zu geben."
+  },
+  {
+   "key": "sys.notification_kind|sys.module_roles|label",
+   "english": "A module brings roles",
+   "text": "Ein Modul bringt Rollen"
+  },
+  {
+   "key": "sys.notification_kind|sys.update_finished|description",
+   "english": "An update requested in the app has run: done, or failed (with the version before put back or not).",
+   "text": "Ein in der App angefordertes Update ist gelaufen: fertig oder fehlgeschlagen (mit oder ohne Rückkehr zur Version davor)."
+  },
+  {
+   "key": "sys.notification_kind|sys.update_finished|label",
+   "english": "An update is done",
+   "text": "Ein Update ist fertig"
+  },
+  {
+   "key": "sys.role|sys.access_admin|description",
+   "english": "Manages groups, their members and roles, and custom roles.",
+   "text": "Verwaltet Gruppen, ihre Mitglieder und Rollen sowie eigene Rollen."
+  },
+  {
+   "key": "sys.role|sys.access_admin|label",
+   "english": "Access administrator",
+   "text": "Zugriffsadministrator"
+  },
+  {
+   "key": "sys.role|sys.admin|description",
+   "english": "Runs the platform: people, settings, modules.",
+   "text": "Betreibt die Plattform: Personen, Einstellungen, Module."
+  },
+  {
+   "key": "sys.role|sys.admin|label",
+   "english": "Administrator",
+   "text": "Administrator"
+  },
+  {
+   "key": "sys.role|sys.user|description",
+   "english": "Everyone: sees who's who and shares their own records.",
+   "text": "Alle: sehen, wer wer ist, und teilen ihre eigenen Datensätze."
+  },
+  {
+   "key": "sys.role|sys.user|label",
+   "english": "User",
+   "text": "Benutzer"
+  },
+  {
+   "key": "sys.schedule|sys.backup|label",
+   "english": "Database backup, daily",
+   "text": "Datenbanksicherung, täglich"
+  },
+  {
+   "key": "sys.schedule|sys.check_updates|label",
+   "english": "Module updates, daily",
+   "text": "Modul-Updates, täglich"
+  },
+  {
+   "key": "sys.schedule|sys.notification_cleanup|label",
+   "english": "Old notifications, daily",
+   "text": "Alte Benachrichtigungen, täglich"
+  },
+  {
+   "key": "sys.schedule|sys.repair_groups|label",
+   "english": "Dynamic groups, nightly",
+   "text": "Dynamische Gruppen, nachts"
+  },
+  {
+   "key": "sys.table|sys.announcement|label",
+   "english": "Message",
+   "text": "Meldung"
+  },
+  {
+   "key": "sys.table|sys.announcement|label_plural",
+   "english": "Messages",
+   "text": "Meldungen"
+  },
+  {
+   "key": "sys.table|sys.api_token|label",
+   "english": "API token",
+   "text": "API-Token"
+  },
+  {
+   "key": "sys.table|sys.api_token|label_plural",
+   "english": "API tokens",
+   "text": "API-Tokens"
+  },
+  {
+   "key": "sys.table|sys.backup|label",
+   "english": "Backup",
+   "text": "Sicherung"
+  },
+  {
+   "key": "sys.table|sys.backup|label_plural",
+   "english": "Backups",
+   "text": "Sicherungen"
+  },
+  {
+   "key": "sys.table|sys.call_type|label",
+   "english": "Outside call type",
+   "text": "Art des externen Aufrufs"
+  },
+  {
+   "key": "sys.table|sys.call_type|label_plural",
+   "english": "Outside call types",
+   "text": "Arten externer Aufrufe"
+  },
+  {
+   "key": "sys.table|sys.channel_state|label",
+   "english": "Channel state",
+   "text": "Kanalstatus"
+  },
+  {
+   "key": "sys.table|sys.channel_state|label_plural",
+   "english": "Channel states",
+   "text": "Kanalstatus"
+  },
+  {
+   "key": "sys.table|sys.connection_secret|label",
+   "english": "Connection secret",
+   "text": "Verbindungsgeheimnis"
+  },
+  {
+   "key": "sys.table|sys.connection_secret|label_plural",
+   "english": "Connection secrets",
+   "text": "Verbindungsgeheimnisse"
+  },
+  {
+   "key": "sys.table|sys.connection_type|label",
+   "english": "Connection type",
+   "text": "Verbindungstyp"
+  },
+  {
+   "key": "sys.table|sys.connection_type|label_plural",
+   "english": "Connection types",
+   "text": "Verbindungstypen"
+  },
+  {
+   "key": "sys.table|sys.connection|label",
+   "english": "Connection",
+   "text": "Verbindung"
+  },
+  {
+   "key": "sys.table|sys.connection|label_plural",
+   "english": "Connections",
+   "text": "Verbindungen"
+  },
+  {
+   "key": "sys.table|sys.credential|label",
+   "english": "Credential",
+   "text": "Anmeldedaten"
+  },
+  {
+   "key": "sys.table|sys.credential|label_plural",
+   "english": "Credentials",
+   "text": "Anmeldedaten"
+  },
+  {
+   "key": "sys.table|sys.dashboard_layout|label",
+   "english": "Dashboard layout",
+   "text": "Dashboard-Anordnung"
+  },
+  {
+   "key": "sys.table|sys.dashboard_layout|label_plural",
+   "english": "Dashboard layouts",
+   "text": "Dashboard-Anordnungen"
+  },
+  {
+   "key": "sys.table|sys.doc_page|label",
+   "english": "Documentation page",
+   "text": "Dokumentationsseite"
+  },
+  {
+   "key": "sys.table|sys.doc_page|label_plural",
+   "english": "Documentation pages",
+   "text": "Dokumentationsseiten"
+  },
+  {
+   "key": "sys.table|sys.external_id|label",
+   "english": "External ID",
+   "text": "Externe ID"
+  },
+  {
+   "key": "sys.table|sys.external_id|label_plural",
+   "english": "External IDs",
+   "text": "Externe IDs"
+  },
+  {
+   "key": "sys.table|sys.favorite|label",
+   "english": "Favorite",
+   "text": "Favorit"
+  },
+  {
+   "key": "sys.table|sys.favorite|label_plural",
+   "english": "Favorites",
+   "text": "Favoriten"
+  },
+  {
+   "key": "sys.table|sys.field_type|label",
+   "english": "Field type",
+   "text": "Feldtyp"
+  },
+  {
+   "key": "sys.table|sys.field_type|label_plural",
+   "english": "Field types",
+   "text": "Feldtypen"
+  },
+  {
+   "key": "sys.table|sys.field|label",
+   "english": "Field",
+   "text": "Feld"
+  },
+  {
+   "key": "sys.table|sys.field|label_plural",
+   "english": "Fields",
+   "text": "Felder"
+  },
+  {
+   "key": "sys.table|sys.form_rule|label",
+   "english": "Form rule",
+   "text": "Formularregel"
+  },
+  {
+   "key": "sys.table|sys.form_rule|label_plural",
+   "english": "Form rules",
+   "text": "Formularregeln"
+  },
+  {
+   "key": "sys.table|sys.form_view|label",
+   "english": "Form view",
+   "text": "Formularansicht"
+  },
+  {
+   "key": "sys.table|sys.form_view|label_plural",
+   "english": "Form views",
+   "text": "Formularansichten"
+  },
+  {
+   "key": "sys.table|sys.grant|label",
+   "english": "Grant",
+   "text": "Berechtigung"
+  },
+  {
+   "key": "sys.table|sys.grant|label_plural",
+   "english": "Grants",
+   "text": "Berechtigungen"
+  },
+  {
+   "key": "sys.table|sys.group_role|label",
+   "english": "Role of a group",
+   "text": "Rolle einer Gruppe"
+  },
+  {
+   "key": "sys.table|sys.group_role|label_plural",
+   "english": "Roles of groups",
+   "text": "Rollen von Gruppen"
+  },
+  {
+   "key": "sys.table|sys.group|label",
+   "english": "Group",
+   "text": "Gruppe"
+  },
+  {
+   "key": "sys.table|sys.group|label_plural",
+   "english": "Groups",
+   "text": "Gruppen"
+  },
+  {
+   "key": "sys.table|sys.identity_provider|label",
+   "english": "Sign-in provider",
+   "text": "Anmeldeanbieter"
+  },
+  {
+   "key": "sys.table|sys.identity_provider|label_plural",
+   "english": "Sign-in providers",
+   "text": "Anmeldeanbieter"
+  },
+  {
+   "key": "sys.table|sys.invitation|label",
+   "english": "Invitation",
+   "text": "Einladung"
+  },
+  {
+   "key": "sys.table|sys.invitation|label_plural",
+   "english": "Invitations",
+   "text": "Einladungen"
+  },
+  {
+   "key": "sys.table|sys.job_run|label",
+   "english": "Job run",
+   "text": "Joblauf"
+  },
+  {
+   "key": "sys.table|sys.job_run|label_plural",
+   "english": "Job runs",
+   "text": "Jobläufe"
+  },
+  {
+   "key": "sys.table|sys.job|label",
+   "english": "Job",
+   "text": "Job"
+  },
+  {
+   "key": "sys.table|sys.job|label_plural",
+   "english": "Jobs",
+   "text": "Jobs"
+  },
+  {
+   "key": "sys.table|sys.language|label",
+   "english": "Language",
+   "text": "Sprache"
+  },
+  {
+   "key": "sys.table|sys.language|label_plural",
+   "english": "Languages",
+   "text": "Sprachen"
+  },
+  {
+   "key": "sys.table|sys.list_view|label",
+   "english": "List view",
+   "text": "Listenansicht"
+  },
+  {
+   "key": "sys.table|sys.list_view|label_plural",
+   "english": "List views",
+   "text": "Listenansichten"
+  },
+  {
+   "key": "sys.table|sys.membership|label",
+   "english": "Membership",
+   "text": "Mitgliedschaft"
+  },
+  {
+   "key": "sys.table|sys.membership|label_plural",
+   "english": "Memberships",
+   "text": "Mitgliedschaften"
+  },
+  {
+   "key": "sys.table|sys.module_route|label",
+   "english": "Module route",
+   "text": "Modulroute"
+  },
+  {
+   "key": "sys.table|sys.module_route|label_plural",
+   "english": "Module routes",
+   "text": "Modulrouten"
+  },
+  {
+   "key": "sys.table|sys.module_update|label",
+   "english": "Available update",
+   "text": "Verfügbares Update"
+  },
+  {
+   "key": "sys.table|sys.module_update|label_plural",
+   "english": "Available updates",
+   "text": "Verfügbare Updates"
+  },
+  {
+   "key": "sys.table|sys.module|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.table|sys.module|label_plural",
+   "english": "Modules",
+   "text": "Module"
+  },
+  {
+   "key": "sys.table|sys.nav_item|label",
+   "english": "Navigation item",
+   "text": "Navigationseintrag"
+  },
+  {
+   "key": "sys.table|sys.nav_item|label_plural",
+   "english": "Navigation items",
+   "text": "Navigationseinträge"
+  },
+  {
+   "key": "sys.table|sys.notification_delivery|label",
+   "english": "Notification delivery",
+   "text": "Benachrichtigungszustellung"
+  },
+  {
+   "key": "sys.table|sys.notification_delivery|label_plural",
+   "english": "Notification deliveries",
+   "text": "Benachrichtigungszustellungen"
+  },
+  {
+   "key": "sys.table|sys.notification_kind|label",
+   "english": "Notification kind",
+   "text": "Benachrichtigungsart"
+  },
+  {
+   "key": "sys.table|sys.notification_kind|label_plural",
+   "english": "Notification kinds",
+   "text": "Benachrichtigungsarten"
+  },
+  {
+   "key": "sys.table|sys.notification_subscription|label",
+   "english": "Notification choice",
+   "text": "Benachrichtigungswahl"
+  },
+  {
+   "key": "sys.table|sys.notification_subscription|label_plural",
+   "english": "Notification choices",
+   "text": "Benachrichtigungswahlen"
+  },
+  {
+   "key": "sys.table|sys.notification|label",
+   "english": "Notification",
+   "text": "Benachrichtigung"
+  },
+  {
+   "key": "sys.table|sys.notification|label_plural",
+   "english": "Notifications",
+   "text": "Benachrichtigungen"
+  },
+  {
+   "key": "sys.table|sys.outside_call|label",
+   "english": "Outside call",
+   "text": "Externer Aufruf"
+  },
+  {
+   "key": "sys.table|sys.outside_call|label_plural",
+   "english": "Outside calls",
+   "text": "Externe Aufrufe"
+  },
+  {
+   "key": "sys.table|sys.person_channel|label",
+   "english": "Linked channel",
+   "text": "Verknüpfter Kanal"
+  },
+  {
+   "key": "sys.table|sys.person_channel|label_plural",
+   "english": "Linked channels",
+   "text": "Verknüpfte Kanäle"
+  },
+  {
+   "key": "sys.table|sys.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.table|sys.person|label_plural",
+   "english": "People",
+   "text": "Personen"
+  },
+  {
+   "key": "sys.table|sys.preference|label",
+   "english": "Preferences",
+   "text": "Einstellungen"
+  },
+  {
+   "key": "sys.table|sys.preference|label_plural",
+   "english": "Preferences",
+   "text": "Einstellungen"
+  },
+  {
+   "key": "sys.table|sys.related_layout|label",
+   "english": "Related lists layout",
+   "text": "Anordnung der Bezugslisten"
+  },
+  {
+   "key": "sys.table|sys.related_layout|label_plural",
+   "english": "Related lists layouts",
+   "text": "Anordnungen der Bezugslisten"
+  },
+  {
+   "key": "sys.table|sys.role_include|label",
+   "english": "Included role",
+   "text": "Enthaltene Rolle"
+  },
+  {
+   "key": "sys.table|sys.role_include|label_plural",
+   "english": "Included roles",
+   "text": "Enthaltene Rollen"
+  },
+  {
+   "key": "sys.table|sys.role|label",
+   "english": "Role",
+   "text": "Rolle"
+  },
+  {
+   "key": "sys.table|sys.role|label_plural",
+   "english": "Roles",
+   "text": "Rollen"
+  },
+  {
+   "key": "sys.table|sys.saved_view|label",
+   "english": "Saved view",
+   "text": "Gespeicherte Ansicht"
+  },
+  {
+   "key": "sys.table|sys.saved_view|label_plural",
+   "english": "Saved views",
+   "text": "Gespeicherte Ansichten"
+  },
+  {
+   "key": "sys.table|sys.schedule|label",
+   "english": "Schedule",
+   "text": "Zeitplan"
+  },
+  {
+   "key": "sys.table|sys.schedule|label_plural",
+   "english": "Schedules",
+   "text": "Zeitpläne"
+  },
+  {
+   "key": "sys.table|sys.session|label",
+   "english": "Session",
+   "text": "Sitzung"
+  },
+  {
+   "key": "sys.table|sys.session|label_plural",
+   "english": "Sessions",
+   "text": "Sitzungen"
+  },
+  {
+   "key": "sys.table|sys.setting|label",
+   "english": "Setting",
+   "text": "Einstellung"
+  },
+  {
+   "key": "sys.table|sys.setting|label_plural",
+   "english": "Settings",
+   "text": "Einstellungen"
+  },
+  {
+   "key": "sys.table|sys.share|label",
+   "english": "Share",
+   "text": "Freigabe"
+  },
+  {
+   "key": "sys.table|sys.share|label_plural",
+   "english": "Shares",
+   "text": "Freigaben"
+  },
+  {
+   "key": "sys.table|sys.sign_in_flow|label",
+   "english": "Sign-in through a provider",
+   "text": "Anmeldung über einen Anbieter"
+  },
+  {
+   "key": "sys.table|sys.sign_in_flow|label_plural",
+   "english": "Sign-ins through providers",
+   "text": "Anmeldungen über Anbieter"
+  },
+  {
+   "key": "sys.table|sys.table|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.table|sys.table|label_plural",
+   "english": "Tables",
+   "text": "Tabellen"
+  },
+  {
+   "key": "sys.table|sys.theme|label",
+   "english": "Theme",
+   "text": "Design"
+  },
+  {
+   "key": "sys.table|sys.theme|label_plural",
+   "english": "Themes",
+   "text": "Designs"
+  },
+  {
+   "key": "sys.table|sys.translation|label",
+   "english": "Translation",
+   "text": "Übersetzung"
+  },
+  {
+   "key": "sys.table|sys.translation|label_plural",
+   "english": "Translations",
+   "text": "Übersetzungen"
+  },
+  {
+   "key": "sys.table|sys.ui_action|label",
+   "english": "UI action",
+   "text": "UI-Aktion"
+  },
+  {
+   "key": "sys.table|sys.ui_action|label_plural",
+   "english": "UI actions",
+   "text": "UI-Aktionen"
+  },
+  {
+   "key": "sys.table|sys.update_request|label",
+   "english": "Update",
+   "text": "Update"
+  },
+  {
+   "key": "sys.table|sys.update_request|label_plural",
+   "english": "Updates",
+   "text": "Updates"
+  },
+  {
+   "key": "sys.table|sys.view_state|label",
+   "english": "Remembered list",
+   "text": "Gemerkte Liste"
+  },
+  {
+   "key": "sys.table|sys.view_state|label_plural",
+   "english": "Remembered lists",
+   "text": "Gemerkte Listen"
+  },
+  {
+   "key": "sys.table|sys.widget_audience|label",
+   "english": "Widget audience",
+   "text": "Widget-Zielgruppe"
+  },
+  {
+   "key": "sys.table|sys.widget_audience|label_plural",
+   "english": "Widget audiences",
+   "text": "Widget-Zielgruppen"
+  },
+  {
+   "key": "sys.table|sys.widget|label",
+   "english": "Widget",
+   "text": "Widget"
+  },
+  {
+   "key": "sys.table|sys.widget|label_plural",
+   "english": "Widgets",
+   "text": "Widgets"
+  },
+  {
+   "key": "sys.theme|blue|description",
+   "english": "The app's built-in blue, with a light navigator and outlined cards.",
+   "text": "Das eingebaute Blau der App, mit hellem Navigator und umrandeten Karten."
+  },
+  {
+   "key": "sys.theme|blue|label",
+   "english": "Blue",
+   "text": "Blau"
+  },
+  {
+   "key": "sys.theme|violet|description",
+   "english": "Violet accents, a dark violet navigator and raised white cards.",
+   "text": "Violette Akzente, ein dunkelvioletter Navigator und erhabene weisse Karten."
+  },
+  {
+   "key": "sys.theme|violet|label",
+   "english": "Violet",
+   "text": "Violett"
+  },
+  {
+   "key": "sys.ui_action|sys.check|label",
+   "english": "Check",
+   "text": "Prüfen"
+  },
+  {
+   "key": "sys.ui_action|sys.mark_read|label",
+   "english": "Mark as read",
+   "text": "Als gelesen markieren"
+  },
+  {
+   "key": "sys.ui_action|sys.mark_read|message",
+   "english": "Marked as read.",
+   "text": "Als gelesen markiert."
+  },
+  {
+   "key": "sys.ui_action|sys.mark_unread|label",
+   "english": "Mark as unread",
+   "text": "Als ungelesen markieren"
+  },
+  {
+   "key": "sys.ui_action|sys.mark_unread|message",
+   "english": "Marked as unread.",
+   "text": "Als ungelesen markiert."
+  },
+  {
+   "key": "sys.ui_action|sys.pause|label",
+   "english": "Pause",
+   "text": "Pausieren"
+  },
+  {
+   "key": "sys.ui_action|sys.pause|message",
+   "english": "Paused.",
+   "text": "Pausiert."
+  },
+  {
+   "key": "sys.ui_action|sys.resume|label",
+   "english": "Resume",
+   "text": "Fortsetzen"
+  },
+  {
+   "key": "sys.ui_action|sys.resume|message",
+   "english": "Resumed.",
+   "text": "Fortgesetzt."
+  },
+  {
+   "key": "sys.ui_action|sys.run_now|label",
+   "english": "Run now",
+   "text": "Jetzt ausführen"
+  },
+  {
+   "key": "sys.ui_action|sys.update_now|confirm",
+   "english": "Update now? A backup is made first; the app is unavailable for a few minutes.",
+   "text": "Jetzt aktualisieren? Zuerst wird eine Sicherung erstellt; die App ist einige Minuten nicht erreichbar."
+  },
+  {
+   "key": "sys.ui_action|sys.update_now|label",
+   "english": "Update now",
+   "text": "Jetzt aktualisieren"
+  },
+  {
+   "key": "sys.ui_action|sys.update_tonight|label",
+   "english": "Update tonight",
+   "text": "Heute Nacht aktualisieren"
+  },
+  {
+   "key": "sys.widget|sys.people|title",
+   "english": "People",
+   "text": "Personen"
+  }
+ ]
+}

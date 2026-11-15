@@ -2,6 +2,23 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.37.0
+
+- Languages and translations as records (`sys.language`, `sys.translation`; Platform →
+  Languages, Translations). Everyone may see the languages; administrators manage them.
+- Translations of what modules define (table and field names, menus, actions, widgets, roles …)
+  are kept apart and put onto those texts after every module install and update: this
+  installation's own over the module's, and only while the English they were made from is
+  unchanged (else English shows until they're translated again).
+- Export and import as JSON: `GET /api/v1/languages/{code}/export` and
+  `POST /api/v1/languages/{code}/import` (administrators), all or nothing, with checks (known
+  texts, plain text up to 2000 characters, the same `{placeholders}`, at most 5 MB);
+  `GET /api/v1/languages` (public). A language's form has Download texts and Load translations.
+- A module may ship `translations/<language>.json` (`Module(translations=…)`). The core ships
+  German for everything it defines.
+- The translated-text editor shows English and the person's language; the others behind
+  "Other languages".
+
 ## 0.36.1
 
 - Available updates are right as soon as a module is installed, updated or removed: updates its

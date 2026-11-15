@@ -34,6 +34,7 @@ from p42cloud.services.connections import models as connections
 from p42cloud.services.connections import service as connection_service
 from p42cloud.services.jobs import manifest as jobs
 from p42cloud.services.jobs.models import Job, Schedule
+from p42cloud.services.languages import models as language_models
 from p42cloud.services.notifications import manifest as notifications
 from p42cloud.services.notifications import service as notifications_service
 from p42cloud.services.routes import models as module_routes
@@ -69,6 +70,7 @@ CORE = Module(
         *backup_models.TABLES,
         *update_request_models.TABLES,
         *announcement_models.TABLES,
+        *language_models.TABLES,
     ),
     roles=tuple(access.ROLES),
     hooks=(
@@ -85,6 +87,7 @@ CORE = Module(
         *announcements.HOOKS,
     ),
     docs=DOCS if DOCS.is_dir() else None,
+    translations=Path(__file__).parent.parent / "translations",
     description="People, access, sign-in and the platform itself.",
     seed=access.seed,
     migrations=(Migration("0.35.0", notifications_service.link_about),),
