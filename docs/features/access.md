@@ -31,6 +31,8 @@ rule matches, for example `{"field": "kind", "op": "in", "value": ["external"]}`
 - **Rules can't be gamed**: they use only the person's own fields, and none people change about
   themselves (name and email). `@me`, `@my_groups` and `@person` are refused.
 - Service accounts are never members of a group with a rule.
+- A module's jobs' own group (`<module> jobs`, `jobs_of` set by the platform) takes no people and
+  no other roles; the marker can't be changed in the app (`jobs.md`).
 
 ## Groups following a sign-in provider
 

@@ -15,6 +15,11 @@ KINDS = (
         "A schedule's job failed after its last try, having worked before.",
         channels=("telegram",),
     ),
+    NotificationKind(
+        "module_roles",
+        "A module brings roles",
+        "After a module is installed: the roles it brings, to give to groups of people.",
+    ),
 )
 
 

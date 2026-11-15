@@ -31,7 +31,7 @@ from p42cloud.services.connections.service import write_types
 from p42cloud.services.jobs.service import register as register_jobs
 from p42cloud.services.jobs.service import write_jobs
 from p42cloud.services.notifications.service import register as register_kinds
-from p42cloud.services.notifications.service import write_kinds
+from p42cloud.services.notifications.service import send, write_kinds
 from p42cloud.services.routes.service import register as register_routes
 from p42cloud.services.routes.service import write_routes
 from p42cloud.ui.actions.service import register as register_actions
@@ -282,11 +282,29 @@ async def install_modules(
             await write_themes(conn, module.id, module.themes)
             await settings.write(conn, module.id, module.settings)
             await _record(conn, module, module.id in protected)
+            if state is None and module.id != CORE and module.roles:
+                await _announce_roles(conn, module)
             if state is not None and (not state.enabled or state.removed):
                 await switch(conn, module.id, on=False)  # new tables and roles stay off too
         if before != module.parsed_version or (state is not None and state.removed):
             done.append(f"{module.id} {before or 'new'} → {module.version}")
     return done
+
+
+async def _announce_roles(conn: AsyncConnection, module: Module) -> None:
+    """Administrators hear which roles a new module brings: nobody holds them yet."""
+    names = ", ".join(r.label for r in module.roles)
+    await send(
+        conn,
+        "sys.module_roles",
+        f"{module.name} is installed: give its roles to groups",
+        roles=("sys.admin",),
+        message=(
+            f"Its roles: {names}. Nobody holds them yet: give the ones people need to groups"
+            " (People and access, Groups). Its jobs have theirs already."
+        ),
+        link=f"/list/sys.role?filter%5Bmodule%5D={module.id}",
+    )
 
 
 async def _migrate(conn: AsyncConnection, module: Module, before: Version) -> list[str]:

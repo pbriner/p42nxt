@@ -96,3 +96,4 @@ and unread ones after a year.
 | Kind | To | When |
 |---|---|---|
 | `sys.job_failed` | Administrators, also on Telegram by default | A schedule starts failing (`jobs.md`) |
+| `sys.module_roles` | Administrators | A module is installed: the roles it brings, which nobody holds yet, to give to groups |

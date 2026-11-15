@@ -23,6 +23,7 @@ from p42cloud.modules.core import CORE
 from p42cloud.modules.install import install_modules
 from p42cloud.modules.manifest import Module
 from p42cloud.modules.registry import discover
+from p42cloud.security.access.manifest import ADMINISTRATORS
 from p42cloud.security.access.roles import Grant, Role
 from tests.conftest import ADMIN_URL
 from tests.security.helpers import acting
@@ -202,3 +203,42 @@ async def test_everyone_reads_the_documentation(app: AsyncEngine) -> None:
     assert any(r.values["path"] == "records.md" for r in pages.records)
     assert {"name", "version"} <= modules.records[0].values.keys()
     assert "depends_on" not in modules.records[0].values
+
+
+async def test_administrators_hear_which_roles_a_new_module_brings(
+    owner: AsyncEngine,
+    app: AsyncEngine,
+    new_module: Callable[[], Awaitable[str]],
+    tmp_path: Path,
+) -> None:
+    module_id = await new_module()
+    async with acting(app, None) as records:
+        admin = await records.create("sys.person", {"name": f"Admin of {module_id}"})
+        await records.create("sys.membership", {"group": ADMINISTRATORS, "person": admin.sys_id})
+    async with acting(app, None) as records:
+        admins = await records.conn.scalar(
+            text(
+                "SELECT count(DISTINCT m.person) FROM sys.membership m"
+                ' JOIN sys.group_role gr ON gr."group" = m."group" AND gr.deleted IS NULL'
+                " JOIN sys.role r ON r.sys_id = gr.role AND r.name = 'sys.admin'"
+                " JOIN sys.person p ON p.sys_id = m.person AND p.active AND p.kind <> 'service'"
+                " WHERE m.deleted IS NULL"
+            )
+        )
+    await _install(owner, _module(module_id, _docs(tmp_path, {"index.md": "# X\n"})))
+    await _install(
+        owner, _module(module_id, _docs(tmp_path, {"index.md": "# X\n"}), version="1.0.1")
+    )
+    async with acting(app, None) as records:
+        told = list(
+            await records.conn.execute(
+                text(
+                    "SELECT title, message, link FROM sys.notification"
+                    " WHERE kind = 'sys.module_roles' AND link LIKE :l"
+                ),
+                {"l": f"%{module_id}"},
+            )
+        )
+    assert admins and len(told) == admins  # once each, on the install only, not the upgrade
+    assert "give its roles to groups" in told[0].title
+    assert "Reader" in told[0].message
