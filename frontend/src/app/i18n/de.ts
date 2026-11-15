@@ -72,6 +72,14 @@ export const DE: Record<TextKey, string> = {
     'Geladen: {added} neu, {changed} geändert, {removed} entfernt, {unchanged} unverändert.',
   'translated.others': 'Weitere Sprachen ({n})',
   'translated.fewer': 'Weniger Sprachen',
+  'access.title': 'Anmeldung',
+  'access.explain':
+    'Erstellen Sie einen einmaligen Link für diese Person und geben Sie ihn weiter. Damit setzt sie ihr eigenes Passwort und einen zweiten Faktor. Der Link funktioniert einmal, während 7 Tagen; nur der neueste gilt.',
+  'access.make': 'Einladungslink erstellen',
+  'access.reset': 'Anmeldung zurücksetzen',
+  'access.reset_confirm':
+    'Die Anmeldung dieser Person zurücksetzen? Sie wird überall abgemeldet und verliert Passwort, Authenticator-Apps, Passkeys und Wiederherstellungscodes. Geben Sie danach den neuen Link weiter.',
+  'access.valid': 'Gültig bis {until}. Geben Sie ihn selbst weiter, zum Beispiel per Nachricht.',
   'bell.label': 'Benachrichtigungen',
   'bell.label_unread': 'Benachrichtigungen, {n} ungelesen',
   'bell.title': 'Benachrichtigungen',

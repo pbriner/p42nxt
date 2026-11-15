@@ -173,3 +173,29 @@ test('a record shows who changed what, when', async ({ page }, info) => {
   await expect(history.getByText(`${name} changed`)).toBeVisible();
   await expect(history.getByText('Created', { exact: true })).toBeVisible();
 });
+
+test('an administrator makes an invitation link the person can set a password with', async ({
+  page,
+  browser,
+}, info) => {
+  test.skip(info.project.name !== 'desktop', 'a link per person: once is enough');
+  await page.goto('/');
+  const id = await person(page, `Newcomer ${Date.now() % 100000}`);
+  await page.goto(`/form/sys.person/${id}`);
+  await page.getByRole('button', { name: 'Make invitation link' }).click();
+  const link = page.locator('app-person-sign-in code');
+  const dialog = page.getByRole('dialog', { name: 'Confirm it’s you' });
+  await expect(link.or(dialog)).toBeVisible();
+  if (await dialog.isVisible()) {
+    // The sign-in was a while ago: a code again, from a step no other test has used.
+    await page.waitForTimeout(30_000 - (Date.now() % 30_000) + 1_000);
+    await dialog.getByLabel('Code').fill(code(personOf('admin').key, Date.now() + 30_000));
+    await dialog.getByRole('button', { name: 'Verify' }).click();
+  }
+  await expect(link).toContainText('/sign-in/invitation#');
+  const fresh = await browser.newContext();
+  const newcomer = await fresh.newPage();
+  await newcomer.goto((await link.textContent())!.trim());
+  await expect(newcomer.getByRole('heading', { name: 'Choose a password' })).toBeVisible();
+  await fresh.close();
+});

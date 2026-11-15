@@ -63,6 +63,8 @@ Waiting sessions end after 10 minutes.
 
 Administrators bring people in with a one-time link, valid 7 days, which they pass on (email
 comes later). It leads to setting a password, then a second factor.
+In the app it's the **Sign-in** section of a person's form (**Make invitation link**, **Reset
+sign-in**); through the API, `POST /api/v1/people/{person}/invitation` with `{"reset": false}`.
 
 - A **reset** first ends the person's sessions and retires all their credentials (password,
   apps, passkeys, recovery codes), then makes a new link.
