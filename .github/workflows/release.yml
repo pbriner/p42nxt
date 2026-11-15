@@ -61,7 +61,7 @@ jobs:
         run: |
           wheel=$(ls dist/*.whl)
           mkdir -p registry
-          gh release download registry -p index.json -D registry || true
+          .github/scripts/fetch-index.sh registry/index.json
           uv run python -m p42cloud.modules.release_tool publish \
             --module "$MODULE" --wheel "$wheel" --index registry/index.json \
             --url "https://github.com/${{ github.repository }}/releases/download/$TAG/$(basename "$wheel")"

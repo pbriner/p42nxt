@@ -64,7 +64,7 @@ jobs:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           mkdir -p registry
-          gh release download registry -p index.json -D registry || true
+          .github/scripts/fetch-index.sh registry/index.json
           uv run python -m p42cloud.modules.release_tool publish-image \
             --image "$IMAGE@$DIGEST" --index registry/index.json
       - name: Publish
