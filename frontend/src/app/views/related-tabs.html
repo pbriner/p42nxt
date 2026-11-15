@@ -18,64 +18,64 @@
           <ng-template mat-tab-label>
             {{ r.label }} <span class="count">{{ count(r) }}</span>
           </ng-template>
+          @if ($index === selected() && opened(); as list) {
+            <ng-container *ngTemplateOutlet="content; context: { $implicit: list }" />
+          }
         </mat-tab>
       }
     </mat-tab-group>
-    @if (opened(); as list) {
-      <div class="list">
-        <div class="list-head">
-          @if (list.info.operations['create']) {
-            <a
-              mat-stroked-button
-              [routerLink]="['/form', list.related.table, 'new']"
-              [queryParams]="prefill(list.related)"
-            >
-              <span class="material-symbols-outlined" aria-hidden="true">add</span>{{ i18n.t('list.new') }}
-            </a>
-          }
-        </div>
-        @if (list.rows.length) {
-          <div class="scroll">
-            <table>
-              <thead>
-                <tr>
-                  @for (c of list.columns; track c) {
-                    <th scope="col">{{ field(list.info, c)?.label ?? c }}</th>
-                  }
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of list.rows; track row['sys_id']) {
-                  <tr
-                    tabindex="0"
-                    (click)="openRow(list.related.table, row)"
-                    (keydown.enter)="openRow(list.related.table, row)"
-                  >
-                    @for (c of list.columns; track c) {
-                      <td>
-                        @if (linkOf(list.info, row, c); as link) {
-                          <a
-                            [routerLink]="link"
-                            (click)="$event.stopPropagation()"
-                            (keydown.enter)="$event.stopPropagation()"
-                            >{{ value(list.info, row, c) }}</a
-                          >
-                        } @else {
-                          {{ value(list.info, row, c) }}
-                        }
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else {
-          <p class="muted empty">{{ i18n.t('form.related_none') }}</p>
-        }
-      </div>
-    }
   } @else {
     <p class="muted">{{ i18n.t('form.no_related') }}</p>
   }
 </section>
+<!-- The open list, inside its tab's panel (so it belongs to the tab). -->
+<ng-template #content let-list>
+  <div class="list">
+    <div class="list-head">
+      @if (list.info.operations['create']) {
+        <a mat-stroked-button [routerLink]="['/form', list.related.table, 'new']" [queryParams]="prefill(list.related)">
+          <span class="material-symbols-outlined" aria-hidden="true">add</span>{{ i18n.t('list.new') }}
+        </a>
+      }
+    </div>
+    @if (list.rows.length) {
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              @for (c of list.columns; track c) {
+                <th scope="col">{{ field(list.info, c)?.label ?? c }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of list.rows; track row['sys_id']) {
+              <tr
+                tabindex="0"
+                (click)="openRow(list.related.table, row)"
+                (keydown.enter)="openRow(list.related.table, row)"
+              >
+                @for (c of list.columns; track c) {
+                  <td>
+                    @if (linkOf(list.info, row, c); as link) {
+                      <a
+                        [routerLink]="link"
+                        (click)="$event.stopPropagation()"
+                        (keydown.enter)="$event.stopPropagation()"
+                        >{{ value(list.info, row, c) }}</a
+                      >
+                    } @else {
+                      {{ value(list.info, row, c) }}
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="muted empty">{{ i18n.t('form.related_none') }}</p>
+    }
+  </div>
+</ng-template>

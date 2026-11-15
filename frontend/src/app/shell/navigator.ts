@@ -1,5 +1,14 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatDialog } from '@angular/material/dialog';
@@ -80,11 +89,15 @@ export class Navigator {
   protected readonly topLevel = computed(() => this.rows(null));
 
   constructor() {
+    // Opens the module once on arriving at its page; closing it there afterwards must stay
+    // closed, so what's open isn't a reason to look again.
     effect(() => {
       const current = this.currentModule();
-      if (current && !this.openModules().has(current)) {
-        this.toggleModule(current);
-      }
+      untracked(() => {
+        if (current && !this.openModules().has(current)) {
+          this.toggleModule(current);
+        }
+      });
     });
   }
 

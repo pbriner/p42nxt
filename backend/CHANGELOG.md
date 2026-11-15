@@ -2,6 +2,17 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.26.0
+
+- Schedules and job runs link their records: a schedule its job (`job_ref`), a run its job and
+  schedule (`job_ref`, `schedule_ref`), beside the names the worker goes by. A job's form lists
+  its schedules and runs, a schedule's form its runs, and the lists show the links. Runs and
+  schedules from before are linked on the upgrade. A schedule's job can't be changed: it comes
+  with its module.
+- A form's related lists: the open list is inside its tab's panel (screen readers announced an
+  empty panel, with the list after it).
+- The navigator: the module of the page shown opens by itself, and can be closed there again.
+
 ## 0.25.0
 
 - The backup folder is a setting: **Backup folder** (`sys.backup_folder`), the folder on the

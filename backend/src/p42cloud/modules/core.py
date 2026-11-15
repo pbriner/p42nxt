@@ -12,7 +12,7 @@ from p42cloud.modules import models as module_models
 from p42cloud.modules.install import compose as connect
 from p42cloud.modules.install import install_modules
 from p42cloud.modules.manifest import CORE as CORE_ID
-from p42cloud.modules.manifest import Module
+from p42cloud.modules.manifest import Migration, Module
 from p42cloud.modules.updates import check_updates
 from p42cloud.security.access import hooks as access_hooks
 from p42cloud.security.access import manifest as access
@@ -78,6 +78,7 @@ CORE = Module(
     docs=DOCS if DOCS.is_dir() else None,
     description="People, access, sign-in and the platform itself.",
     seed=access.seed,
+    migrations=(Migration("0.26.0", jobs.link_runs),),
     settings=(settings.TIME_ZONE, sign_in.PASSWORDS_OFF, *ui.SETTINGS, *backups.SETTINGS),
     category="Platform",
     icon="settings",

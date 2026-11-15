@@ -53,7 +53,7 @@ VIEWS = (
     ListView("sys.module", ("label", "name", "version", "enabled"), sort=("label",)),
     ListView(
         "sys.schedule",
-        ("label", "cron", "time_zone", "active", "next_run", "last_state"),
+        ("label", "job_ref", "cron", "time_zone", "active", "next_run", "last_state"),
         sort=("label",),
         searchable=False,
     ),
@@ -89,7 +89,16 @@ VIEWS = (
     ListView("sys.connection_secret", ("name", "connection", "updated"), searchable=False),
     ListView(
         "sys.job_run",
-        ("job", "state", "trigger", "attempt", "started", "finished", "message"),
+        (
+            "job_ref",
+            "schedule_ref",
+            "state",
+            "trigger",
+            "attempt",
+            "started",
+            "finished",
+            "message",
+        ),
         sort=("-created",),
         searchable=False,
     ),

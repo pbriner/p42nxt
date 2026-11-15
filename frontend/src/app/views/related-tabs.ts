@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -41,7 +42,7 @@ interface Layout {
 /** The records pointing to this one, a tab per kind, each with its count. */
 @Component({
   selector: 'app-related-tabs',
-  imports: [MatButtonModule, MatTabsModule, RouterLink],
+  imports: [NgTemplateOutlet, MatButtonModule, MatTabsModule, RouterLink],
   templateUrl: './related-tabs.html',
   styleUrl: './related-tabs.scss',
 })
