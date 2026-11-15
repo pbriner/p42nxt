@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { api, noSidewaysScroll, opened, storage } from './helpers';
+import { api, code, noSidewaysScroll, opened, person as personOf, storage } from './helpers';
 
 test.use({ storageState: storage('admin') });
 
@@ -117,4 +117,44 @@ test.describe('without the right to change', () => {
     await expect(page.getByText('Ada Admin').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save' })).toBeHidden();
   });
+});
+
+test('a change that needs the code again asks for it, then goes through', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'desktop', 'one code per step: once is enough');
+  await page.goto('/');
+  const name = `Verify ${Date.now() % 100000}`;
+  const id = await person(page, name);
+  // The server answers the first save as for a second factor older than its limit.
+  let asked = false;
+  await page.route(`**/api/v1/sys/person/${id}`, async (route) => {
+    if (route.request().method() === 'PATCH' && !asked) {
+      asked = true;
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/problem+json',
+        body: JSON.stringify({
+          code: 'verify_again',
+          title: 'Enter a code from your authenticator app again to change access.',
+        }),
+      });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.goto(`/form/sys.person/${id}`);
+  await page.getByLabel('Name').fill(`${name} changed`);
+  await page.getByRole('button', { name: 'Save' }).click();
+  // The save waits for the code meanwhile (its spinner turns), so not `opened()`.
+  const dialog = page.getByRole('dialog', { name: 'Confirm it’s you' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel('Code').fill('000000');
+  await dialog.getByRole('button', { name: 'Verify' }).click();
+  await expect(dialog.getByRole('alert')).toBeVisible(); // a wrong code: says so, stays open
+  // The next step's code: the sign-in used this one, and a code works once.
+  await dialog.getByLabel('Code').fill(code(personOf('admin').key, Date.now() + 30_000));
+  await dialog.getByRole('button', { name: 'Verify' }).click();
+  await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: `Person ${name} changed` })).toBeVisible();
 });

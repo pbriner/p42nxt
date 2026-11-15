@@ -54,6 +54,8 @@ export class Api {
   private readonly router = inject(Router);
   /** The language the API answers in (labels, messages). */
   readonly language = signal('en');
+  /** Asks the person for their second factor again (the shell's dialog); true once given. */
+  verifyAgain: (() => Promise<boolean>) | null = null;
 
   get<T>(path: string, options: Options = {}): Promise<Answer<T>> {
     return this.request<T>('GET', path, options);
@@ -77,6 +79,24 @@ export class Api {
   }
 
   async request<T>(method: string, path: string, options: Options = {}): Promise<Answer<T>> {
+    try {
+      return await this.send<T>(method, path, options);
+    } catch (error) {
+      // A change that needs a recent second factor: asked for, then tried once more.
+      if (
+        error instanceof Problem &&
+        error.code === 'verify_again' &&
+        !options.quiet &&
+        this.verifyAgain &&
+        (await this.verifyAgain())
+      ) {
+        return this.send<T>(method, path, options);
+      }
+      throw error;
+    }
+  }
+
+  private async send<T>(method: string, path: string, options: Options): Promise<Answer<T>> {
     const url = new URL(path, window.location.origin);
     for (const [key, value] of Object.entries(options.query ?? {})) {
       if (value !== null && value !== undefined && value !== '') {

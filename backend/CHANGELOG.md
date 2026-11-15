@@ -2,6 +2,12 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.29.0
+
+- The browser app asks for the authenticator code again when a change needs a recent one
+  (access, API tokens, invitations, some actions), then makes the change: before, it only said so,
+  and the change couldn't be made in the app at all after the first 15 minutes.
+
 ## 0.28.0
 
 - The platform trusts the maintainer's release key: signed releases and packages can be

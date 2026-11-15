@@ -116,6 +116,8 @@ export const DE: Record<TextKey, string> = {
   'sign_in.code': 'Code',
   'sign_in.code_hint': 'Telefon verloren? Gib einen deiner Wiederherstellungscodes ein.',
   'sign_in.verify': 'Bestätigen',
+  'verify.title': 'Bestätigen Sie, dass Sie es sind',
+  'verify.text': 'Für diese Änderung braucht es einen neuen Code aus Ihrer Authenticator-App.',
   'sign_in.start_again': 'Neu beginnen',
   'sign_in.or_passkey': 'oder nimm deinen Passkey',
   'enroll.title': 'Zweiten Faktor einrichten',

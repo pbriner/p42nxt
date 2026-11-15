@@ -2,10 +2,11 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, HostListener, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
-import { filter, map } from 'rxjs';
+import { filter, firstValueFrom, map } from 'rxjs';
 
 import { Api } from '../core/api';
 import { I18n } from '../core/i18n';
@@ -15,6 +16,7 @@ import { Session, initials } from '../core/session';
 import { Bell } from './bell';
 import { GlobalSearch } from './global-search';
 import { Navigator } from './navigator';
+import { VerifyDialog } from './verify-dialog';
 
 const WIDE = '(min-width: 960px)';
 const COMPACT_NAME = '(max-width: 599px)';
@@ -42,6 +44,7 @@ export class Shell {
   private readonly navigation = inject(Navigation);
   private readonly router = inject(Router);
   private readonly api = inject(Api);
+  private readonly dialog = inject(MatDialog);
   private readonly search = viewChild(GlobalSearch);
 
   protected readonly wide = toSignal(
@@ -84,6 +87,15 @@ export class Shell {
 
   constructor() {
     void this.loadStage();
+    // One dialog for all the changes waiting for it at once.
+    let asking: Promise<boolean> | null = null;
+    this.api.verifyAgain = () =>
+      (asking ??= firstValueFrom(
+        this.dialog.open<VerifyDialog, void, boolean>(VerifyDialog).afterClosed(),
+      ).then((given) => {
+        asking = null;
+        return !!given;
+      }));
   }
 
   private async loadStage(): Promise<void> {
