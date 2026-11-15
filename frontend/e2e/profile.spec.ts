@@ -18,7 +18,8 @@ test('mode, language and theme apply at once and stay', async ({ page }) => {
   await expect(html).toHaveAttribute('lang', 'de');
 
   await page.getByRole('combobox', { name: 'Farbschema' }).click();
-  await page.getByRole('option', { name: 'Blue' }).click();
+  // Theme names are translated like everything modules define.
+  await page.getByRole('option', { name: 'Blau' }).click();
   await expect.poll(() => html.getAttribute('data-cards')).toBe('outlined');
 
   await page.reload();

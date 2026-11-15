@@ -75,6 +75,9 @@ class Module:
     hooks: tuple[TableHook, ...] = ()
     # A folder of Markdown files: the module's documentation, written into the wiki's pages.
     docs: Path | None = None
+    # A folder of <language>.json files: translations of what the module defines (the format
+    # the languages export writes).
+    translations: Path | None = None
     description: str = ""
     # Records the module makes once installed (the core's starting groups); must be safe to run
     # again at every upgrade.
@@ -149,9 +152,15 @@ class Module:
                     )
                 )
         found += self._place_problems()
-        if self.docs is not None and not self.docs.is_dir():
-            found.append(FieldError("docs", "missing", f"No folder {self.docs}."))
+        found += self._folder_problems()
         return found
+
+    def _folder_problems(self) -> list[FieldError]:
+        return [
+            FieldError(name, "missing", f"No folder {folder}.")
+            for name, folder in (("docs", self.docs), ("translations", self.translations))
+            if folder is not None and not folder.is_dir()
+        ]
 
     def check(self) -> None:
         found = self.problems()

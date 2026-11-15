@@ -30,6 +30,7 @@ from p42cloud.services.connections.service import register as register_types
 from p42cloud.services.connections.service import write_types
 from p42cloud.services.jobs.service import register as register_jobs
 from p42cloud.services.jobs.service import write_jobs
+from p42cloud.services.languages import service as languages
 from p42cloud.services.notifications.service import register as register_kinds
 from p42cloud.services.notifications.service import send, write_kinds
 from p42cloud.services.routes.service import register as register_routes
@@ -308,6 +309,7 @@ async def install_modules(
             await write_navigation(conn, catalog, module.id, module.navigation)
             await write_themes(conn, module.id, module.themes)
             await settings.write(conn, module.id, module.settings)
+            await _ship_translations(conn, module)
             await _record(conn, module, module.id in protected)
             if state is None and module.id != CORE and module.roles:
                 await _announce_roles(conn, module)
@@ -315,7 +317,24 @@ async def install_modules(
                 await switch(conn, module.id, on=False)  # new tables and roles stay off too
         if before != module.parsed_version or (state is not None and state.removed):
             done.append(f"{module.id} {before or 'new'} → {module.version}")
+    # The modules wrote their texts in English: the translations in force go back on.
+    async with owner_transaction(engine) as conn:
+        await languages.seed(conn)
+        await languages.apply(conn, await load_catalog(conn))
     return done
+
+
+async def _ship_translations(conn: AsyncConnection, module: Module) -> None:
+    """The module's own translations, one file per language."""
+    if module.translations is None:
+        return
+    catalog = await load_catalog(conn)
+    for file in sorted(module.translations.glob("*.json")):
+        try:
+            given = json.loads(file.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as error:
+            raise _refuse(f"{module.id}: {file.name} can't be read: {error}") from error
+        await languages.ship(conn, catalog, module.id, languages.check_language(file.stem), given)
 
 
 async def _announce_roles(conn: AsyncConnection, module: Module) -> None:

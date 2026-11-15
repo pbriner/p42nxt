@@ -297,7 +297,7 @@
   },
   "info": {
     "title": "P42cloud",
-    "version": "0.36.1"
+    "version": "0.37.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -394,6 +394,151 @@
         "summary": "Installation",
         "tags": [
           "setup"
+        ]
+      }
+    },
+    "/api/v1/languages": {
+      "get": {
+        "description": "The languages, which are offered, and how much of what modules define each covers.",
+        "operationId": "get_languages_api_v1_languages_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Languages Api V1 Languages Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Languages",
+        "tags": [
+          "languages"
+        ]
+      }
+    },
+    "/api/v1/languages/{code}/export": {
+      "get": {
+        "description": "Every text modules define, in English, with its translation and state (missing, done,\noutdated): the file to fill in and import again.",
+        "operationId": "export_language_api_v1_languages__code__export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+              "title": "Code",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "module",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[a-z][a-z0-9]{1,15}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Module"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Export Language Api V1 Languages  Code  Export Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Language",
+        "tags": [
+          "languages"
+        ]
+      }
+    },
+    "/api/v1/languages/{code}/import": {
+      "post": {
+        "description": "This installation's translations from an export file, all or nothing; an empty text\nremoves one. Shown at once, and kept over module updates.",
+        "operationId": "import_language_api_v1_languages__code__import_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+              "title": "Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Given",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Import Language Api V1 Languages  Code  Import Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Language",
+        "tags": [
+          "languages"
         ]
       }
     },

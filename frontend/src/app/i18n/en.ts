@@ -56,6 +56,19 @@ export const EN = {
   'notify.kinds_hint': 'Connect Telegram to choose.',
   'notify.on_telegram': '{kind} on Telegram',
   'messages.close': 'Close the message {subject}',
+  'languages.title': 'Translations',
+  'languages.english':
+    'English is the language every text is written in; the others are translated from it.',
+  'languages.explain':
+    'Download the texts of all modules to translate them, then load the file back. Texts you leave empty stay in English.',
+  'languages.coverage': '{done} of {all} texts translated.',
+  'languages.export': 'Download texts',
+  'languages.import': 'Load translations',
+  'languages.not_json': "That file isn't a translations file (JSON).",
+  'languages.imported':
+    'Loaded: {added} new, {changed} changed, {removed} removed, {unchanged} unchanged.',
+  'translated.others': 'Other languages ({n})',
+  'translated.fewer': 'Fewer languages',
   'bell.label': 'Notifications',
   'bell.label_unread': 'Notifications, {n} unread',
   'bell.title': 'Notifications',

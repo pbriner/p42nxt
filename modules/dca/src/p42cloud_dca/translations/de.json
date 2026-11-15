@@ -1,0 +1,641 @@
+{
+ "language": "de",
+ "module": "dca",
+ "texts": [
+  {
+   "key": "sys.call_type|dca.place_order|label",
+   "english": "Place a DCA order on Kraken",
+   "text": "Einen DCA-Auftrag bei Kraken platzieren"
+  },
+  {
+   "key": "sys.connection_type|dca.kraken|label",
+   "english": "Kraken",
+   "text": "Kraken"
+  },
+  {
+   "key": "sys.field|dca.order.amount|label",
+   "english": "Amount",
+   "text": "Menge"
+  },
+  {
+   "key": "sys.field|dca.order.cost|label",
+   "english": "Cost",
+   "text": "Kosten"
+  },
+  {
+   "key": "sys.field|dca.order.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.field|dca.order.error|label",
+   "english": "What went wrong",
+   "text": "Was schiefging"
+  },
+  {
+   "key": "sys.field|dca.order.fee|label",
+   "english": "Fee",
+   "text": "Gebühr"
+  },
+  {
+   "key": "sys.field|dca.order.kraken_txid|label",
+   "english": "Kraken order",
+   "text": "Kraken-Auftrag"
+  },
+  {
+   "key": "sys.field|dca.order.owner|label",
+   "english": "Owner",
+   "text": "Besitzer"
+  },
+  {
+   "key": "sys.field|dca.order.pair|label",
+   "english": "Pair",
+   "text": "Paar"
+  },
+  {
+   "key": "sys.field|dca.order.placed_at|label",
+   "english": "When",
+   "text": "Wann"
+  },
+  {
+   "key": "sys.field|dca.order.plan|label",
+   "english": "Plan",
+   "text": "Plan"
+  },
+  {
+   "key": "sys.field|dca.order.price|label",
+   "english": "Price",
+   "text": "Preis"
+  },
+  {
+   "key": "sys.field|dca.order.reconciled_at|label",
+   "english": "Checked with Kraken",
+   "text": "Bei Kraken geprüft"
+  },
+  {
+   "key": "sys.field|dca.order.source_ref|label",
+   "english": "Imported from",
+   "text": "Importiert aus"
+  },
+  {
+   "key": "sys.field|dca.order.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|dca.order.strategy|label",
+   "english": "Why",
+   "text": "Warum"
+  },
+  {
+   "key": "sys.field|dca.order.userref|label",
+   "english": "Client reference",
+   "text": "Client-Referenz"
+  },
+  {
+   "key": "sys.field|dca.plan.active|label",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|dca.plan.amount|label",
+   "english": "Amount per buy",
+   "text": "Betrag pro Kauf"
+  },
+  {
+   "key": "sys.field|dca.plan.buy_hour|label",
+   "english": "Hour (UTC, 0 to 23)",
+   "text": "Stunde (UTC, 0 bis 23)"
+  },
+  {
+   "key": "sys.field|dca.plan.cooldown_hours|label",
+   "english": "Hours between extra buys",
+   "text": "Stunden zwischen Zusatzkäufen"
+  },
+  {
+   "key": "sys.field|dca.plan.deposit_day|label",
+   "english": "Deposit day (1 to 28)",
+   "text": "Einzahlungstag (1 bis 28)"
+  },
+  {
+   "key": "sys.field|dca.plan.dynamic|label",
+   "english": "Price tiers",
+   "text": "Preisstufen"
+  },
+  {
+   "key": "sys.field|dca.plan.end_date|label",
+   "english": "End date",
+   "text": "Enddatum"
+  },
+  {
+   "key": "sys.field|dca.plan.hold_reason|label",
+   "english": "Why on hold",
+   "text": "Warum angehalten"
+  },
+  {
+   "key": "sys.field|dca.plan.keys_checked|label",
+   "english": "My Kraken key can't withdraw",
+   "text": "Mein Kraken-Schlüssel kann nichts abheben"
+  },
+  {
+   "key": "sys.field|dca.plan.last_balance|label",
+   "english": "Free on Kraken",
+   "text": "Frei bei Kraken"
+  },
+  {
+   "key": "sys.field|dca.plan.last_check|label",
+   "english": "Last checked",
+   "text": "Zuletzt geprüft"
+  },
+  {
+   "key": "sys.field|dca.plan.last_message|label",
+   "english": "Last said",
+   "text": "Zuletzt gesagt"
+  },
+  {
+   "key": "sys.field|dca.plan.last_price|label",
+   "english": "Last price",
+   "text": "Letzter Preis"
+  },
+  {
+   "key": "sys.field|dca.plan.live|label",
+   "english": "Real orders",
+   "text": "Echte Aufträge"
+  },
+  {
+   "key": "sys.field|dca.plan.loss_limit_percent|label",
+   "english": "Loss limit (%)",
+   "text": "Verlustgrenze (%)"
+  },
+  {
+   "key": "sys.field|dca.plan.loss_limit|label",
+   "english": "Loss limit",
+   "text": "Verlustgrenze"
+  },
+  {
+   "key": "sys.field|dca.plan.max_price|label",
+   "english": "Never above this price",
+   "text": "Nie über diesem Preis"
+  },
+  {
+   "key": "sys.field|dca.plan.mode|label",
+   "english": "Spread until",
+   "text": "Verteilt bis"
+  },
+  {
+   "key": "sys.field|dca.plan.monthly_limit|label",
+   "english": "Monthly limit",
+   "text": "Monatslimit"
+  },
+  {
+   "key": "sys.field|dca.plan.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|dca.plan.next_buy|label",
+   "english": "Next buy",
+   "text": "Nächster Kauf"
+  },
+  {
+   "key": "sys.field|dca.plan.others_from|label",
+   "english": "Other orders checked from",
+   "text": "Andere Aufträge geprüft ab"
+  },
+  {
+   "key": "sys.field|dca.plan.owner|label",
+   "english": "Owner",
+   "text": "Besitzer"
+  },
+  {
+   "key": "sys.field|dca.plan.pair|label",
+   "english": "Pair",
+   "text": "Paar"
+  },
+  {
+   "key": "sys.field|dca.plan.period_end|label",
+   "english": "Period ends",
+   "text": "Periode endet"
+  },
+  {
+   "key": "sys.field|dca.plan.planned_buys|label",
+   "english": "Buys left in the period",
+   "text": "Verbleibende Käufe in der Periode"
+  },
+  {
+   "key": "sys.field|dca.plan.reference|label",
+   "english": "Tiers compare with",
+   "text": "Stufen vergleichen mit"
+  },
+  {
+   "key": "sys.field|dca.plan.source_ref|label",
+   "english": "Imported from",
+   "text": "Importiert aus"
+  },
+  {
+   "key": "sys.field|dca.plan.status|label",
+   "english": "Status",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|dca.plan.target_profit_percent|label",
+   "english": "Profit target (%)",
+   "text": "Gewinnziel (%)"
+  },
+  {
+   "key": "sys.field|dca.plan.target_profit|label",
+   "english": "Profit target",
+   "text": "Gewinnziel"
+  },
+  {
+   "key": "sys.field|dca.plan.targets_hit|label",
+   "english": "Reached now",
+   "text": "Jetzt erreicht"
+  },
+  {
+   "key": "sys.field|dca.tier.amount|label",
+   "english": "Amount (0: skip)",
+   "text": "Betrag (0: auslassen)"
+  },
+  {
+   "key": "sys.field|dca.tier.enabled|label",
+   "english": "On",
+   "text": "Bei"
+  },
+  {
+   "key": "sys.field|dca.tier.owner|label",
+   "english": "Owner",
+   "text": "Besitzer"
+  },
+  {
+   "key": "sys.field|dca.tier.plan|label",
+   "english": "Plan",
+   "text": "Plan"
+  },
+  {
+   "key": "sys.field|dca.tier.threshold_percent|label",
+   "english": "Price change (%)",
+   "text": "Preisänderung (%)"
+  },
+  {
+   "key": "sys.job|dca.cycle|label",
+   "english": "Check the DCA plans",
+   "text": "DCA-Pläne prüfen"
+  },
+  {
+   "key": "sys.list_view|dca.order|label",
+   "english": "DCA orders",
+   "text": "DCA-Aufträge"
+  },
+  {
+   "key": "sys.list_view|dca.plan|label",
+   "english": "DCA plans",
+   "text": "DCA-Pläne"
+  },
+  {
+   "key": "sys.list_view|dca.tier|label",
+   "english": "Price tiers",
+   "text": "Preisstufen"
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/average_price_over_time|description",
+   "english": "The average buy price of a plan.",
+   "text": "Der durchschnittliche Kaufpreis eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/average_price|description",
+   "english": "The average price of a plan.",
+   "text": "Der Durchschnittspreis eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/balance|description",
+   "english": "The kraken balance of a plan.",
+   "text": "Das Kraken-Guthaben eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/bought|description",
+   "english": "The bought of a plan.",
+   "text": "Das Gekaufte eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/buy_prices|description",
+   "english": "The buy prices of a plan.",
+   "text": "Die Kaufpreise eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/buys_by_type|description",
+   "english": "The buys by type of a plan.",
+   "text": "Die Käufe eines Plans nach Art."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/current_value|description",
+   "english": "The current value of a plan.",
+   "text": "Der aktuelle Wert eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/fees|description",
+   "english": "The fees of a plan.",
+   "text": "Die Gebühren eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/holdings|description",
+   "english": "The holdings of a plan.",
+   "text": "Der Bestand eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/invested_over_time|description",
+   "english": "The invested over time of a plan.",
+   "text": "Das Investierte eines Plans im Zeitverlauf."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/invested_per_month|description",
+   "english": "The invested per month of a plan.",
+   "text": "Das Investierte eines Plans pro Monat."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/invested|description",
+   "english": "The invested of a plan.",
+   "text": "Das Investierte eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/last_buy|description",
+   "english": "The last buy of a plan.",
+   "text": "Der letzte Kauf eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/next_buy|description",
+   "english": "The next buy of a plan.",
+   "text": "Der nächste Kauf eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/planned_buys|description",
+   "english": "The planned buys of a plan.",
+   "text": "Die geplanten Käufe eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/profit_over_time|description",
+   "english": "The profit / loss over time of a plan.",
+   "text": "Gewinn / Verlust eines Plans im Zeitverlauf."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/profit|description",
+   "english": "The profit / loss of a plan.",
+   "text": "Gewinn / Verlust eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/running_mode|description",
+   "english": "The running mode of a plan.",
+   "text": "Der Laufmodus eines Plans."
+  },
+  {
+   "key": "sys.module_route|dca GET /widget/targets|description",
+   "english": "The targets of a plan.",
+   "text": "Die Ziele eines Plans."
+  },
+  {
+   "key": "sys.nav_item|dca.dashboard|label",
+   "english": "Dashboard",
+   "text": "Dashboard"
+  },
+  {
+   "key": "sys.nav_item|dca.dashboard|section",
+   "english": "Kraken DCA",
+   "text": "Kraken DCA"
+  },
+  {
+   "key": "sys.nav_item|dca.new_plan|label",
+   "english": "New plan",
+   "text": "Neuer Plan"
+  },
+  {
+   "key": "sys.nav_item|dca.new_plan|section",
+   "english": "Kraken DCA",
+   "text": "Kraken DCA"
+  },
+  {
+   "key": "sys.nav_item|dca.orders|label",
+   "english": "Orders",
+   "text": "Aufträge"
+  },
+  {
+   "key": "sys.nav_item|dca.orders|section",
+   "english": "Kraken DCA",
+   "text": "Kraken DCA"
+  },
+  {
+   "key": "sys.nav_item|dca.plans|label",
+   "english": "Plans",
+   "text": "Pläne"
+  },
+  {
+   "key": "sys.nav_item|dca.plans|section",
+   "english": "Kraken DCA",
+   "text": "Kraken DCA"
+  },
+  {
+   "key": "sys.notification_kind|dca.buy|description",
+   "english": "To the plan's owner, at each buy.",
+   "text": "An den Besitzer des Plans, bei jedem Kauf."
+  },
+  {
+   "key": "sys.notification_kind|dca.buy|label",
+   "english": "A buy (or dry run)",
+   "text": "Ein Kauf (oder Testlauf)"
+  },
+  {
+   "key": "sys.notification_kind|dca.hold|description",
+   "english": "To the plan's owner: Kraken refused an order, or one is unclear.",
+   "text": "An den Besitzer des Plans: Kraken hat einen Auftrag abgelehnt, oder einer ist unklar."
+  },
+  {
+   "key": "sys.notification_kind|dca.hold|label",
+   "english": "A DCA plan is on hold",
+   "text": "Ein DCA-Plan ist angehalten"
+  },
+  {
+   "key": "sys.notification_kind|dca.problem|description",
+   "english": "To the plan's owner, the first time a check fails.",
+   "text": "An den Besitzer des Plans, wenn eine Prüfung zum ersten Mal fehlschlägt."
+  },
+  {
+   "key": "sys.notification_kind|dca.problem|label",
+   "english": "A DCA plan has a problem",
+   "text": "Ein DCA-Plan hat ein Problem"
+  },
+  {
+   "key": "sys.notification_kind|dca.target|description",
+   "english": "To the plan's owner: a profit target or a loss limit, once each time.",
+   "text": "An den Besitzer des Plans: ein Gewinnziel oder eine Verlustgrenze, jedes Mal einmal."
+  },
+  {
+   "key": "sys.notification_kind|dca.target|label",
+   "english": "A DCA target is reached",
+   "text": "Ein DCA-Ziel ist erreicht"
+  },
+  {
+   "key": "sys.role|dca.keeper|description",
+   "english": "Checks the plans and records their orders: for the DCA cycle.",
+   "text": "Prüft die Pläne und erfasst ihre Aufträge: für den DCA-Zyklus."
+  },
+  {
+   "key": "sys.role|dca.keeper|label",
+   "english": "DCA cycle",
+   "text": "DCA-Zyklus"
+  },
+  {
+   "key": "sys.role|dca.user|description",
+   "english": "Makes their own DCA plans; sees only their own plans and orders.",
+   "text": "Erstellt eigene DCA-Pläne; sieht nur die eigenen Pläne und Aufträge."
+  },
+  {
+   "key": "sys.role|dca.user|label",
+   "english": "DCA investor",
+   "text": "DCA-Anleger"
+  },
+  {
+   "key": "sys.schedule|dca.cycle|label",
+   "english": "DCA cycle",
+   "text": "DCA-Zyklus"
+  },
+  {
+   "key": "sys.table|dca.order|label",
+   "english": "DCA order",
+   "text": "DCA-Auftrag"
+  },
+  {
+   "key": "sys.table|dca.order|label_plural",
+   "english": "DCA orders",
+   "text": "DCA-Aufträge"
+  },
+  {
+   "key": "sys.table|dca.plan|label",
+   "english": "DCA plan",
+   "text": "DCA-Plan"
+  },
+  {
+   "key": "sys.table|dca.plan|label_plural",
+   "english": "DCA plans",
+   "text": "DCA-Pläne"
+  },
+  {
+   "key": "sys.table|dca.tier|label",
+   "english": "Price tier",
+   "text": "Preisstufe"
+  },
+  {
+   "key": "sys.table|dca.tier|label_plural",
+   "english": "Price tiers",
+   "text": "Preisstufen"
+  },
+  {
+   "key": "sys.ui_action|dca.resume|confirm",
+   "english": "Resume this plan? Check its orders on Kraken first.",
+   "text": "Diesen Plan fortsetzen? Prüfen Sie zuerst seine Aufträge bei Kraken."
+  },
+  {
+   "key": "sys.ui_action|dca.resume|label",
+   "english": "Resume",
+   "text": "Fortsetzen"
+  },
+  {
+   "key": "sys.ui_action|dca.resume|message",
+   "english": "Resumed.",
+   "text": "Fortgesetzt."
+  },
+  {
+   "key": "sys.widget|dca.average_price_over_time|title",
+   "english": "Average buy price",
+   "text": "Durchschnittlicher Kaufpreis"
+  },
+  {
+   "key": "sys.widget|dca.average_price|title",
+   "english": "Average price",
+   "text": "Durchschnittspreis"
+  },
+  {
+   "key": "sys.widget|dca.balance|title",
+   "english": "Kraken balance",
+   "text": "Kraken-Guthaben"
+  },
+  {
+   "key": "sys.widget|dca.bought|title",
+   "english": "Bought",
+   "text": "Gekauft"
+  },
+  {
+   "key": "sys.widget|dca.buy_prices|title",
+   "english": "Buy prices",
+   "text": "Kaufpreise"
+  },
+  {
+   "key": "sys.widget|dca.buys_by_type|title",
+   "english": "Buys by type",
+   "text": "Käufe nach Art"
+  },
+  {
+   "key": "sys.widget|dca.current_value|title",
+   "english": "Current value",
+   "text": "Aktueller Wert"
+  },
+  {
+   "key": "sys.widget|dca.fees|title",
+   "english": "Fees",
+   "text": "Gebühren"
+  },
+  {
+   "key": "sys.widget|dca.holdings|title",
+   "english": "Holdings",
+   "text": "Bestand"
+  },
+  {
+   "key": "sys.widget|dca.invested_over_time|title",
+   "english": "Invested over time",
+   "text": "Investiert im Zeitverlauf"
+  },
+  {
+   "key": "sys.widget|dca.invested_per_month|title",
+   "english": "Invested per month",
+   "text": "Investiert pro Monat"
+  },
+  {
+   "key": "sys.widget|dca.invested|title",
+   "english": "Invested",
+   "text": "Investiert"
+  },
+  {
+   "key": "sys.widget|dca.last_buy|title",
+   "english": "Last buy",
+   "text": "Letzter Kauf"
+  },
+  {
+   "key": "sys.widget|dca.next_buy|title",
+   "english": "Next buy",
+   "text": "Nächster Kauf"
+  },
+  {
+   "key": "sys.widget|dca.planned_buys|title",
+   "english": "Planned buys",
+   "text": "Geplante Käufe"
+  },
+  {
+   "key": "sys.widget|dca.profit_over_time|title",
+   "english": "Profit / loss over time",
+   "text": "Gewinn / Verlust im Zeitverlauf"
+  },
+  {
+   "key": "sys.widget|dca.profit|title",
+   "english": "Profit / loss",
+   "text": "Gewinn / Verlust"
+  },
+  {
+   "key": "sys.widget|dca.running_mode|title",
+   "english": "Running mode",
+   "text": "Laufmodus"
+  },
+  {
+   "key": "sys.widget|dca.targets|title",
+   "english": "Targets",
+   "text": "Ziele"
+  }
+ ]
+}
