@@ -1,6 +1,6 @@
 [project]
 name = "p42cloud"
-version = "0.36.0"
+version = "0.36.1"
 description = "P42cloud platform: a business platform for small companies"
 requires-python = ">=3.14"
 license = "Apache-2.0"
