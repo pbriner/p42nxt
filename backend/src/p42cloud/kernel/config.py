@@ -32,9 +32,9 @@ class Settings(BaseSettings):
     # Where module releases are published (the registry's index.json is read from there). Off by
     # default: without it the installation never asks for updates.
     registry_url: str | None = None
-    # Where the daily backup job writes the database's dumps (a folder outside the database's
-    # volume). None: no backups; in production the job then fails, so administrators hear.
-    backup_dir: Path | None = None
+    # Which folder on the machine the worker was given as its backup folder (at /backups). Not
+    # a choice: the deploy scripts write it from the setting "Backup folder", which is.
+    backups_mounted: str | None = None
     # Where module packages installed from the registry are unpacked, one folder per module
     # (a persistent volume). None: only the modules in the image.
     modules_dir: Path | None = None
@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     @field_validator(
         "public_url",
         "registry_url",
-        "backup_dir",
+        "backups_mounted",
         "modules_dir",
         "trusted_proxies",
         "setup_code",

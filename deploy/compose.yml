@@ -65,7 +65,8 @@ services:
       P42_MASTER_KEY_FILE: /run/secrets/master_key
       P42_MODULES_DIR: /data/modules
       P42_REGISTRY_URL: ${P42_REGISTRY_URL:-}
-      P42_BACKUP_DIR: /backups
+      # Which folder on the machine /backups is (the setting Backup folder, via .env).
+      P42_BACKUPS_MOUNTED: ${P42_BACKUPS}
     volumes:
       - modules:/data/modules:ro
       - ${P42_BACKUPS}:/backups

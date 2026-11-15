@@ -2,6 +2,20 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.25.0
+
+- The backup folder is a setting: **Backup folder** (`sys.backup_folder`), the folder on the
+  machine, set by the installer. It must be a full path of its own (not a system or temporary
+  folder). The environment no longer chooses it (`P42_BACKUP_DIR` is gone): the deploy scripts
+  give the worker the folder the setting names and tell it which one that is
+  (`P42_BACKUPS_MOUNTED`); a change waiting for that is said by the job.
+- Backups as records (`sys.backup`, Platform → Automation → **Backups**, administrators): each
+  backup in the folder, daily or before an update, with its time and size; refreshed after each
+  backup.
+- `p42cloud backup folder [--set]` reads or sets the setting (for the deploy scripts).
+  `deploy/restart.sh <name>` applies it and restarts; `deploy/update.sh` applies it too, and an
+  installation from before keeps its folder (recorded once).
+
 ## 0.24.0
 
 - Core releases: a tag `v<version>` builds the app image for Intel and ARM machines, pushes it to

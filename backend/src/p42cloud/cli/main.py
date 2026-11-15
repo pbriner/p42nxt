@@ -7,18 +7,22 @@ Only the operator commands that must run before the app exists work on the datab
 import argparse
 import asyncio
 import getpass
+import json
 import os
 import sys
 from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from p42cloud.data.audit import Anchor, missing_months, verify_chain
+from p42cloud.data.settings import value
+from p42cloud.data.types import Invalid
 from p42cloud.kernel.config import get_settings
 from p42cloud.kernel.context import Context, working_as
-from p42cloud.kernel.db import create_engine, transaction
+from p42cloud.kernel.db import create_engine, owner_transaction, transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.outgoing import safe_client
 from p42cloud.kernel.safety import problems
@@ -34,6 +38,7 @@ from p42cloud.modules.registry import discover
 from p42cloud.modules.updates import refresh
 from p42cloud.security.sign_in.credentials import NewKey
 from p42cloud.security.sign_in.first_admin import create_first_admin
+from p42cloud.services.backups.manifest import FOLDER
 
 
 async def _set_up() -> int:
@@ -203,6 +208,31 @@ async def _core_image(version: str | None) -> int:
     return 0
 
 
+async def _backup_folder(new: str | None) -> int:
+    """The setting "Backup folder": printed (for the deploy scripts), or set (at install)."""
+    engine = create_engine(get_settings().owner_database_url)
+    try:
+        with working_as(Context(channel="cli:backup")):
+            async with owner_transaction(engine) as conn:
+                if new is not None:
+                    try:
+                        checked = FOLDER.check(new)
+                    except Invalid as error:
+                        print(str(error), file=sys.stderr)
+                        return 2
+                    await conn.execute(
+                        text(
+                            "UPDATE sys.setting SET value = CAST(:v AS jsonb)"
+                            " WHERE name = :n AND deleted IS NULL"
+                        ),
+                        {"v": json.dumps(checked), "n": FOLDER.name},
+                    )
+                print(await value(conn, FOLDER.name) or "")
+    finally:
+        await engine.dispose()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="p42cloud")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -224,6 +254,11 @@ def main(argv: list[str] | None = None) -> int:
     modules.add_argument(
         "--file", type=Path, help="install or update: a package file, next to its .sig file"
     )
+    backup = commands.add_parser("backup", help="the backup folder (a setting)")
+    folder = backup.add_subparsers(dest="backup_command", required=True).add_parser(
+        "folder", help="print the setting Backup folder, or --set it"
+    )
+    folder.add_argument("--set", dest="new_folder", help="the folder on the machine")
     core = commands.add_parser("core", help="the core's releases")
     image = core.add_subparsers(dest="core_command", required=True).add_parser(
         "image", help="the signed image of the newest (or a given) release, to update to"
@@ -256,6 +291,7 @@ def main(argv: list[str] | None = None) -> int:
         "audit": lambda: _verify(args.anchor),
         "check": _check,
         "core": lambda: _core_image(args.version),
+        "backup": lambda: _backup_folder(args.new_folder),
     }
     return asyncio.run(commands_run[args.command]())
 

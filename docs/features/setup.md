@@ -13,7 +13,14 @@ from 8080. It refuses to touch an installation that exists already, or a name Do
 knows. At the end it prints the app's address and the setup code.
 
 Keep a copy of `master.key` somewhere safe: without it, encrypted secrets can't be recovered.
-The database is backed up every night into the backup folder (`backups.md`).
+The database is backed up every night into the backup folder, a setting in the app (Platform →
+Settings, **Backup folder**; `backups.md`).
+
+To apply a setting that needs the machine (the backup folder) after changing it in the app:
+
+```bash
+deploy/restart.sh <name>
+```
 
 Modules beyond the core are installed from signed packages into the volume `modules`
 (`releases.md`). To be told about new releases, and to install them by name, set

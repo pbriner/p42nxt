@@ -15,6 +15,7 @@ from sqlalchemy.engine import make_url
 
 PG_DUMP = "pg_dump"
 PREFIX = "p42-"
+BEFORE_UPDATE = "p42-before-update-"  # deploy/update.sh makes these; the clean-up keeps them
 SUFFIX = ".dump"
 STAMP = "%Y%m%d-%H%M%S"
 LIMIT = 3300.0  # seconds a dump may take: within the job's hour, so it can clean up
@@ -22,6 +23,16 @@ LIMIT = 3300.0  # seconds a dump may take: within the job's hour, so it can clea
 
 class BackupFailed(Exception):
     """The dump didn't work; what pg_dump said."""
+
+
+@dataclass(frozen=True)
+class Found:
+    """A backup in the folder."""
+
+    file: str
+    made: datetime
+    size: int
+    kind: str  # daily, before_update
 
 
 @dataclass(frozen=True)
@@ -47,6 +58,20 @@ def _when(file: Path) -> datetime | None:
         return datetime.strptime(file.name[len(PREFIX) : -len(SUFFIX)], STAMP).replace(tzinfo=UTC)
     except ValueError:
         return None
+
+
+def found(folder: Path) -> list[Found]:
+    """The backups in the folder, newest first: the daily ones and those made before updates."""
+    backups: list[Found] = []
+    for file in folder.glob(f"{PREFIX}*{SUFFIX}"):
+        if not file.is_file():
+            continue
+        kind = "before_update" if file.name.startswith(BEFORE_UPDATE) else "daily"
+        info = file.stat()
+        made = _when(file) if kind == "daily" else None
+        made = made or datetime.fromtimestamp(info.st_mtime, UTC)
+        backups.append(Found(file.name, made, info.st_size, kind))
+    return sorted(backups, key=lambda b: b.made, reverse=True)
 
 
 def clean_up(folder: Path, keep_days: int, now: datetime) -> int:
