@@ -23,6 +23,8 @@ A key names one text: `<table>|<natural ID>|<field>`.
 | `sys.table|dca.plan|label` | A table's name |
 | `sys.field|dca.plan.amount|label` | A field's name (also `help`) |
 | `sys.nav_item|dca.plans|label` | A menu entry; other definitions likewise by their name |
+| `sys.field|dca.plan.mode|choice:recurring` | A choice's label |
+| `sys.form_view|dca.plan|section:2` | A form section's title (by position) |
 
 ## How translations are shown
 
@@ -64,7 +66,8 @@ The file:
   if it has one);
 - answers how many texts were added, changed, removed and unchanged, and how many are shown.
 
-Imported translations stay over module updates. In the app, a language's form has **Download
+Imported translations stay over module updates. A translation changed by hand under Platform →
+**Translations** shows within a minute. In the app, a language's form has **Download
 texts** and **Load translations**.
 
 ## Editing a translated text

@@ -7,6 +7,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -65,6 +66,7 @@ const DEFAULT_SORT = ['-updated'];
     MatChipsModule,
     MatMenuModule,
     MatProgressBarModule,
+    MatProgressSpinnerModule,
     MatTooltipModule,
     ProblemState,
   ],

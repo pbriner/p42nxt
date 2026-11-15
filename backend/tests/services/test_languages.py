@@ -257,3 +257,62 @@ async def test_german_is_complete_for_the_core_and_dca(owner: AsyncEngine, modul
         )
     ]
     assert left == [], f"Translate these in {module}'s translations/de.json: {left[:20]}"
+
+
+CHOICE = "sys.field|sys.announcement.kind|choice:warning"
+
+
+async def _choice_label(owner: AsyncEngine) -> dict[str, str]:
+    async with _owner(owner) as conn:
+        options = await conn.scalar(
+            text(
+                'SELECT f.options FROM sys.field f JOIN sys."table" t ON t.sys_id = f."table"'
+                " WHERE t.schema = 'sys' AND t.name = 'announcement' AND f.name = 'kind'"
+            )
+        )
+    (entry,) = [v for v in options["values"] if v["value"] == "warning"]
+    return dict(entry["label"])
+
+
+async def test_choices_and_form_sections_are_translated_too(
+    engine: AsyncEngine, owner: AsyncEngine
+) -> None:
+    async with acting(engine, None) as records:
+        out = await languages.export(records.conn, records.catalog, LANG)
+        keys = {t["key"]: t["english"] for t in out["texts"]}
+        section = next(k for k in keys if k.startswith("sys.form_view|") and "|section:" in k)
+        counts = await languages.import_texts(
+            records.conn,
+            records.catalog,
+            LANG,
+            {"texts": [{"key": CHOICE, "text": "Avertissement"}, {"key": section, "text": "Bloc"}]},
+        )
+    assert keys[CHOICE] == "Warning" and counts["added"] == 2
+    await _apply(owner)
+    assert (await _choice_label(owner))[LANG] == "Avertissement"
+    _, form, part = section.split("|")
+    async with _owner(owner) as conn:
+        sections = await conn.scalar(
+            text("SELECT sections FROM sys.form_view WHERE name = :n"), {"n": form}
+        )
+    assert sections[int(part.split(":")[1]) - 1]["title"][LANG] == "Bloc"
+
+
+async def test_a_translation_changed_by_hand_shows_within_the_minute(
+    owner: AsyncEngine, upgraded: Settings
+) -> None:
+    async with _owner(owner) as conn:
+        await conn.execute(
+            text(
+                "INSERT INTO sys.translation (language, key, text, english, origin)"
+                " VALUES (:l, :k, 'Personne', 'Person', 'installation')"
+            ),
+            {"l": LANG, "k": KEY},
+        )
+    app_engine = create_engine(upgraded.database_url)
+    try:
+        assert await languages.apply_changed(app_engine) >= 1
+        assert await languages.apply_changed(app_engine) == 0  # nothing new: nothing done
+    finally:
+        await app_engine.dispose()
+    assert (await _label(owner))[LANG] == "Personne"

@@ -2,6 +2,7 @@
 export const EN = {
   'app.skip': 'Skip to the content',
   'common.cancel': 'Cancel',
+  'common.loading': 'Loading…',
   'common.close': 'Close',
   'common.save': 'Save',
   'common.saved': 'Saved',

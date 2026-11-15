@@ -78,9 +78,49 @@
    "text": "Importiert aus"
   },
   {
+   "key": "sys.field|dca.order.state|choice:dry_run",
+   "english": "Dry run",
+   "text": "Testlauf"
+  },
+  {
+   "key": "sys.field|dca.order.state|choice:failed",
+   "english": "Failed",
+   "text": "Fehlgeschlagen"
+  },
+  {
+   "key": "sys.field|dca.order.state|choice:filled",
+   "english": "Bought",
+   "text": "Gekauft"
+  },
+  {
+   "key": "sys.field|dca.order.state|choice:submitting",
+   "english": "Sending",
+   "text": "Wird gesendet"
+  },
+  {
+   "key": "sys.field|dca.order.state|choice:unknown",
+   "english": "Answer lost",
+   "text": "Antwort verloren"
+  },
+  {
    "key": "sys.field|dca.order.state|label",
    "english": "State",
    "text": "Status"
+  },
+  {
+   "key": "sys.field|dca.order.strategy|choice:dynamic",
+   "english": "Extra (tiers)",
+   "text": "Zusätzlich (Stufen)"
+  },
+  {
+   "key": "sys.field|dca.order.strategy|choice:manual",
+   "english": "By hand",
+   "text": "Von Hand"
+  },
+  {
+   "key": "sys.field|dca.order.strategy|choice:scheduled",
+   "english": "Planned",
+   "text": "Geplant"
   },
   {
    "key": "sys.field|dca.order.strategy|label",
@@ -178,6 +218,16 @@
    "text": "Nie über diesem Preis"
   },
   {
+   "key": "sys.field|dca.plan.mode|choice:lump_sum",
+   "english": "An end date",
+   "text": "Ein Enddatum"
+  },
+  {
+   "key": "sys.field|dca.plan.mode|choice:recurring",
+   "english": "The next deposit day",
+   "text": "Der nächste Einzahlungstag"
+  },
+  {
    "key": "sys.field|dca.plan.mode|label",
    "english": "Spread until",
    "text": "Verteilt bis"
@@ -208,6 +258,36 @@
    "text": "Besitzer"
   },
   {
+   "key": "sys.field|dca.plan.pair|choice:ethchf",
+   "english": "ETH / CHF",
+   "text": "ETH / CHF"
+  },
+  {
+   "key": "sys.field|dca.plan.pair|choice:etheur",
+   "english": "ETH / EUR",
+   "text": "ETH / EUR"
+  },
+  {
+   "key": "sys.field|dca.plan.pair|choice:ethusd",
+   "english": "ETH / USD",
+   "text": "ETH / USD"
+  },
+  {
+   "key": "sys.field|dca.plan.pair|choice:xbtchf",
+   "english": "BTC / CHF",
+   "text": "BTC / CHF"
+  },
+  {
+   "key": "sys.field|dca.plan.pair|choice:xbteur",
+   "english": "BTC / EUR",
+   "text": "BTC / EUR"
+  },
+  {
+   "key": "sys.field|dca.plan.pair|choice:xbtusd",
+   "english": "BTC / USD",
+   "text": "BTC / USD"
+  },
+  {
    "key": "sys.field|dca.plan.pair|label",
    "english": "Pair",
    "text": "Paar"
@@ -223,6 +303,16 @@
    "text": "Verbleibende Käufe in der Periode"
   },
   {
+   "key": "sys.field|dca.plan.reference|choice:avg_buy",
+   "english": "The average buy price",
+   "text": "Der durchschnittliche Kaufpreis"
+  },
+  {
+   "key": "sys.field|dca.plan.reference|choice:last_buy",
+   "english": "The last buy",
+   "text": "Der letzte Kauf"
+  },
+  {
    "key": "sys.field|dca.plan.reference|label",
    "english": "Tiers compare with",
    "text": "Stufen vergleichen mit"
@@ -231,6 +321,16 @@
    "key": "sys.field|dca.plan.source_ref|label",
    "english": "Imported from",
    "text": "Importiert aus"
+  },
+  {
+   "key": "sys.field|dca.plan.status|choice:hold",
+   "english": "On hold",
+   "text": "Angehalten"
+  },
+  {
+   "key": "sys.field|dca.plan.status|choice:ok",
+   "english": "Running",
+   "text": "Läuft"
   },
   {
    "key": "sys.field|dca.plan.status|label",
@@ -276,6 +376,51 @@
    "key": "sys.field|dca.tier.threshold_percent|label",
    "english": "Price change (%)",
    "text": "Preisänderung (%)"
+  },
+  {
+   "key": "sys.form_view|dca.order|section:1",
+   "english": "DCA order",
+   "text": "DCA-Auftrag"
+  },
+  {
+   "key": "sys.form_view|dca.plan|section:1",
+   "english": "Plan",
+   "text": "Plan"
+  },
+  {
+   "key": "sys.form_view|dca.plan|section:2",
+   "english": "Real orders",
+   "text": "Echte Aufträge"
+  },
+  {
+   "key": "sys.form_view|dca.plan|section:3",
+   "english": "When",
+   "text": "Wann"
+  },
+  {
+   "key": "sys.form_view|dca.plan|section:4",
+   "english": "Limits",
+   "text": "Limiten"
+  },
+  {
+   "key": "sys.form_view|dca.plan|section:5",
+   "english": "Targets",
+   "text": "Ziele"
+  },
+  {
+   "key": "sys.form_view|dca.plan|section:6",
+   "english": "Price tiers",
+   "text": "Preisstufen"
+  },
+  {
+   "key": "sys.form_view|dca.plan|section:7",
+   "english": "What it found",
+   "text": "Was es gefunden hat"
+  },
+  {
+   "key": "sys.form_view|dca.tier|section:1",
+   "english": "Price tier",
+   "text": "Preisstufe"
   },
   {
    "key": "sys.job|dca.cycle|label",
