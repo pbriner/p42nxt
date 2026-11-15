@@ -8,6 +8,7 @@ Every caller is held to a rate: too many requests in a minute are refused for a 
 
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from urllib.parse import urlsplit
@@ -15,7 +16,7 @@ from uuid import UUID
 
 from fastapi import Request
 
-from p42cloud.data import settings
+from p42cloud.data import installation, settings
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Access, Context, working_as
 from p42cloud.kernel.db import transaction
@@ -65,9 +66,13 @@ def language(request: Request) -> str:
 class Rates:
     """Requests per caller and minute, counted in this process."""
 
-    def __init__(self, per_minute: int) -> None:
-        self.per_minute = per_minute
+    def __init__(self, per_minute: Callable[[], int]) -> None:
+        self._per_minute = per_minute  # a setting: read again each time
         self._counts: dict[tuple[str, int], int] = defaultdict(int)
+
+    @property
+    def per_minute(self) -> int:
+        return self._per_minute()
 
     def take(self, key: str) -> None:
         minute = int(time.time() // 60)
@@ -88,9 +93,10 @@ class Rates:
 def check_origin(request: Request, settings: Settings) -> None:
     """A change with cookies must come from this installation's own pages."""
     origin = request.headers.get("origin")
-    if request.method in SAFE or origin is None or settings.public_url is None:
+    public_url = installation.public_url(settings)
+    if request.method in SAFE or origin is None or public_url is None:
         return
-    mine = urlsplit(settings.public_url)
+    mine = urlsplit(public_url)
     if urlsplit(origin).netloc != mine.netloc:
         raise Problem(403, "wrong_origin", "This request didn't come from this installation.")
 

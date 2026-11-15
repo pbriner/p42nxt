@@ -17,6 +17,7 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from p42cloud.data import installation
 from p42cloud.data.audit import Anchor, missing_months, verify_chain
 from p42cloud.data.settings import value
 from p42cloud.data.types import Invalid
@@ -143,9 +144,18 @@ async def _create_admin(name: str, email: str) -> int:
     return 0
 
 
+async def _registry(engine: AsyncEngine) -> str | None:
+    """The setting Release address (read as the owner), else the environment's."""
+    async with owner_transaction(engine) as conn:
+        found = await value(conn, installation.RELEASE_ADDRESS.name)
+    return str(found or "") or get_settings().registry_url
+
+
 async def _from_package(engine: AsyncEngine, module: str, source: Source) -> list[str]:
     settings = get_settings()
-    hosts = hosts_for(settings.registry_url) if settings.registry_url else ()
+    registry = await _registry(engine)
+    source = Source(registry, source.version, source.file)
+    hosts = hosts_for(registry) if registry else ()
     async with safe_client(allowed_hosts=hosts) as http:
         done = await install_package(engine, module, settings.modules_dir, source, http)
     return [*done, "Restart the app and the worker to use it."]
@@ -157,7 +167,7 @@ async def _module(action: str, module: str | None, source: Source) -> int:
     try:
         with working_as(Context(channel=f"cli:module:{action}")):
             if action == "updates":
-                registry = settings.registry_url
+                registry = await _registry(engine)
                 async with safe_client(allowed_hosts=hosts_for(registry or "")) as http:
                     found = await refresh(engine, http, registry)
                 for update in found:
@@ -196,13 +206,17 @@ async def _module(action: str, module: str | None, source: Source) -> int:
 
 async def _core_image(version: str | None) -> int:
     """Prints the image to update to (for deploy/update.sh), checked by this image's keys."""
-    registry = get_settings().registry_url
+    engine = create_engine(get_settings().owner_database_url)
     try:
+        with working_as(Context(channel="cli:core")):
+            registry = await _registry(engine)
         async with safe_client(allowed_hosts=hosts_for(registry or "")) as http:
             found, image = await verified_image(http, registry, version)
     except Problem as problem:
         print(f"{problem.title} {problem.detail or ''}".strip(), file=sys.stderr)
         return 1
+    finally:
+        await engine.dispose()
     print(f"The core {found}, signed.", file=sys.stderr)
     print(image)
     return 0
@@ -285,7 +299,7 @@ def main(argv: list[str] | None = None) -> int:
         "module": lambda: _module(
             args.action,
             args.module,
-            Source(get_settings().registry_url, args.version, args.file),
+            Source(None, args.version, args.file),  # the registry: read from the settings
         ),
         "create-admin": lambda: _create_admin(args.name, args.email),
         "audit": lambda: _verify(args.anchor),

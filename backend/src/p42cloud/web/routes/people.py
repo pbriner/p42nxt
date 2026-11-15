@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
+from p42cloud.data import installation
 from p42cloud.security.sign_in.invitations import invite
 from p42cloud.web.caller import Caller, language, who
 from p42cloud.web.permissions import SIGNED_IN, requires
@@ -30,5 +31,5 @@ async def make_invitation(
     services: Services = request.app.state.services
     async with services.records(caller.context(language(request))) as records:
         made = await invite(records.conn, person, reset=body.reset)
-    base = (services.settings.public_url or "").rstrip("/")
+    base = (installation.public_url(services.settings) or "").rstrip("/")
     return {"link": f"{base}/sign-in/invitation#{made.token}", "expires": made.expires.isoformat()}

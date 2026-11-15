@@ -19,7 +19,7 @@ others (`backend/src/p42cloud/security/providers/`). An installation can have se
 | Fields from claims | Person fields filled from the ID token at every sign-in, like `{"name": "name"}`. Never `kind`, `active`, `emergency_access` or `email` |
 | Active | Off: not offered, and nobody signs in through it |
 
-Providers need `P42_PUBLIC_URL`: the provider sends people back to
+Providers need the app's address (the setting `sys.public_url`): the provider sends people back to
 `<public url>/api/v1/sign-in/provider-callback`. Only administrators manage providers.
 
 ## Signing in

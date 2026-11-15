@@ -16,6 +16,7 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from p42cloud.data import installation
 from p42cloud.kernel.config import Settings, get_settings
 from p42cloud.kernel.db import create_engine
 from p42cloud.kernel.secrets import Sealer, use_sealer
@@ -31,6 +32,7 @@ log = logging.getLogger("p42cloud.worker")
 IDLE = 2.0  # seconds between looks when there's nothing to do
 TICK = timedelta(seconds=5)
 RECOVER = timedelta(minutes=1)
+SETTINGS_EVERY = timedelta(seconds=installation.REFRESH)
 
 
 async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
@@ -40,13 +42,16 @@ async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
     if settings.master_key_file is not None:  # without it, jobs can't open the vault
         use_sealer(Sealer.from_file(settings.master_key_file))
     name = f"{socket.gethostname()}:{id(stop)}"
-    last_tick = last_recover = last_poll = datetime.min.replace(tzinfo=UTC)
+    last_tick = last_recover = last_poll = last_settings = datetime.min.replace(tzinfo=UTC)
     try:
         while not stop.is_set():
             now = datetime.now(UTC)
             if now - last_recover >= RECOVER:
                 await _recover(engine, now)
                 last_recover = now
+            if now - last_settings >= SETTINGS_EVERY:
+                await installation.refresh(engine)  # the app's address, for links in messages
+                last_settings = now
             if now - last_tick >= TICK:
                 await tick(engine, now)
                 last_tick = now
@@ -56,7 +61,7 @@ async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
             ):
                 await telegram.poll(engine)
                 last_poll = now
-            sent = await telegram.deliver(engine, settings.public_url)
+            sent = await telegram.deliver(engine, installation.public_url(settings))
             # One call, then one run, in turn: neither queue can starve the other.
             if (state := await deliver(engine)) is not None:
                 log.info("outside call: %s", state)

@@ -23,6 +23,7 @@ from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.json import Json
 from p42cloud.data.types.string import String
 from p42cloud.data.types.text import Text
+from p42cloud.kernel.config import get_settings
 from p42cloud.kernel.errors import FieldError, Problem
 
 SETTING = Table(
@@ -48,6 +49,9 @@ class Setting:
     check: Callable[[Any], Any]
     help: str = ""
     public: bool = False
+    # A value the environment gave before this was a setting (a Settings field): taken over once,
+    # when the setting first comes.
+    adopt: str | None = None
 
 
 # The settings of the installed modules, by name (filled when modules are composed).
@@ -72,16 +76,33 @@ async def value(conn: AsyncConnection, name: str) -> Any:
     return declared.default if declared else None
 
 
+def _adopted(setting: Setting) -> Any:
+    """The environment's value for a setting that used to come from there, checked; else None."""
+    if setting.adopt is None:
+        return None
+    try:
+        given = getattr(get_settings(), setting.adopt, None)
+    except ValueError:  # no environment to read (a test, a tool): nothing to take over
+        return None
+    if given is None:
+        return None
+    try:
+        return setting.check(given)
+    except Invalid:
+        return None
+
+
 async def write(conn: AsyncConnection, module: str, settings: tuple[Setting, ...]) -> None:
     """A module's settings as records: new ones with their default, labels kept current, values
     never overwritten; settings the module no longer declares are retired."""
     for setting in settings:
+        first = _adopted(setting)
         params = {
             "name": setting.name,
             "label": setting.label[:120],
             "help": setting.help or None,
             "public": setting.public,
-            "value": json.dumps(setting.default),
+            "value": json.dumps(setting.default if first is None else first),
         }
         changed = await conn.execute(
             text(

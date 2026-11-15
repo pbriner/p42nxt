@@ -13,9 +13,12 @@ import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
+from sqlalchemy import text
 
+from p42cloud.data import installation
 from p42cloud.kernel.config import Settings
-from p42cloud.kernel.db import create_engine
+from p42cloud.kernel.context import Context, working_as
+from p42cloud.kernel.db import create_engine, owner_transaction
 from p42cloud.kernel.secrets import Sealer
 from p42cloud.security.access.manifest import ADMINISTRATORS
 from p42cloud.security.sign_in import credentials, totp
@@ -230,12 +233,28 @@ async def test_signing_in_with_cookies_and_csrf(
     assert (await api.get("/api/v1/me")).status_code == 401
 
 
+async def _limit(upgraded: Settings, per_minute: int) -> None:
+    owner = create_engine(upgraded.owner_database_url)
+    with working_as(Context(channel="test")):
+        async with owner_transaction(owner) as conn:
+            await conn.execute(
+                text("UPDATE sys.setting SET value = CAST(:v AS jsonb) WHERE name = :n"),
+                {"v": str(per_minute), "n": "sys.requests_per_minute"},
+            )
+    await owner.dispose()
+
+
 async def test_too_many_requests_are_refused(upgraded: Settings, sealer: Sealer) -> None:
-    app = _app(upgraded, sealer, requests_per_minute=10)
-    async with app.router.lifespan_context(app):
-        transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url=SITE) as client:
-            answers = [await client.get("/api/v1/me") for _ in range(12)]
+    await _limit(upgraded, 10)  # a setting administrators change in the app
+    try:
+        app = _app(upgraded, sealer)
+        async with app.router.lifespan_context(app):
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url=SITE) as client:
+                answers = [await client.get("/api/v1/me") for _ in range(12)]
+    finally:
+        await _limit(upgraded, 600)
+        await installation.refresh(create_engine(upgraded.database_url))
     assert answers[0].status_code == 401
     assert answers[-1].status_code == 429
     assert int(answers[-1].headers["retry-after"]) > 0

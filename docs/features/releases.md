@@ -98,15 +98,15 @@ Setting up the release key, once:
 
 ## Learning about updates
 
-`p42cloud module updates` reads the index from `P42_REGISTRY_URL` (for a GitHub repository:
+`p42cloud module updates` reads the index from the setting **Release address** (`sys.registry_url`; for a GitHub repository:
 `https://github.com/<owner>/<repo>/releases/download/registry`), refuses it unless a trusted key
 signed it, and records, for every installed module with a newer release, the newest one
 (`sys.module_update`): installed and available version, normal or security, release notes, and
 whether it fits what's installed, or what must be updated first ("needs sys >=2.1"). Security
 updates come first. Only administrators see these records.
 
-The installation only downloads the index; it sends nothing about itself. `P42_REGISTRY_URL` is
-off by default, and must use https in production.
+The installation only downloads the index; it sends nothing about itself. The release address is
+empty by default, and must use https in production.
 
 ## Installing a module from its package
 

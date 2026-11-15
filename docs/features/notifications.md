@@ -75,7 +75,7 @@ channels nobody changed. A person's own choice is a record of `sys.notification_
 (personal), set with the switches in the profile; without one, the kind's default applies.
 
 **What's sent.** The severity, the title and, if the app has a public address
-(`P42_PUBLIC_URL`), the link. The message only with **Send the whole message** (off by default:
+(the setting `sys.public_url`), the link. The message only with **Send the whole message** (off by default:
 details such as amounts stay in the app, since Telegram is a third party). Plain text only.
 
 **Delivery.** Sending a notification queues a delivery per person and channel in the same

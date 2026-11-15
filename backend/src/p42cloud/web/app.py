@@ -4,6 +4,8 @@ At start it refuses an unsafe database, brings the database and the modules to t
 the owner, so audit months never run out), connects the hooks and starts the catalog cache.
 """
 
+import asyncio
+import logging
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from importlib.metadata import version
@@ -11,7 +13,9 @@ from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, FastAPI, Request, Response
+from sqlalchemy.ext.asyncio import AsyncEngine
 
+from p42cloud.data import installation
 from p42cloud.data.catalog import MetadataCache
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
@@ -41,6 +45,8 @@ from p42cloud.web.routes import (
 )
 from p42cloud.web.services import Services
 
+log = logging.getLogger("p42cloud.web")
+
 
 async def _start(
     settings: Settings, *, sealer: Sealer | None, http: httpx.AsyncClient | None, upgrade: bool
@@ -63,11 +69,8 @@ async def _start(
     seal = sealer or Sealer.from_file(settings.master_key_file)
     use_sealer(seal)
     signing_in = SignIn(engine, seal, settings)
-    providers = (
-        Providers(engine, seal, settings=settings, http=client, sign_in=signing_in)
-        if settings.public_url
-        else None
-    )
+    await installation.refresh(engine)
+    providers = Providers(engine, seal, settings=settings, http=client, sign_in=signing_in)
     cache = MetadataCache(engine)
     await cache.start()
     return Services(
@@ -78,9 +81,19 @@ async def _start(
         signing_in,
         providers,
         cache,
-        Rates(settings.requests_per_minute),
+        Rates(lambda: installation.requests_per_minute(settings)),
         client,
     )
+
+
+async def _keep_settings(engine: AsyncEngine) -> None:
+    """The settings administrators change in the app, read again every half minute."""
+    while True:
+        await asyncio.sleep(installation.REFRESH)
+        try:
+            await installation.refresh(engine)
+        except Exception:
+            log.warning("The settings couldn't be read again; the last ones stay.")
 
 
 def create_app(
@@ -96,9 +109,11 @@ def create_app(
         services = await _start(settings, sealer=sealer, http=http, upgrade=upgrade)
         app.state.services = services
         module_routes.mount(modules_router)  # the modules are composed by now
+        refreshing = asyncio.create_task(_keep_settings(services.engine))
         try:
             yield
         finally:
+            refreshing.cancel()
             await services.cache.stop()
             if http is None:
                 await services.http.aclose()

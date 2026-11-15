@@ -49,10 +49,10 @@ if [ -n "$image" ]; then
     target=$image
 else
     echo "Asking the registry, checked by the image running now ($before) ..."
-    if ! target=$(docker compose run --rm -T -e "P42_REGISTRY_URL=$(setting P42_REGISTRY_URL)" \
+    if ! target=$(docker compose run --rm -T \
         --entrypoint p42cloud upgrade core image ${version:+--version "$version"}); then
         echo "No release to update to (see above). Nothing changed." >&2
-        echo "An image older than 0.24.0 can't check releases: update it once with --image." >&2
+        echo "An image older than 0.31.0 reads no release address from the app: update it once with --image." >&2
         exit 1
     fi
 fi
