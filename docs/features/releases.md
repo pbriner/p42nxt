@@ -152,6 +152,9 @@ the registry's host only; for a registry on GitHub also from GitHub's download h
 
 ## Updating from the app
 
+The available updates are checked daily, and kept right in between: installing, updating or
+removing a module takes the updates it reached off the list at once.
+
 Administrators update without the command line: under Platform → **Available updates**, an update
 that fits offers **Update now** and **Update tonight** (03:00 in the installation's time zone).
 Both ask for the authenticator code again. The request is a record of `sys.update_request`

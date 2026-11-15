@@ -2,6 +2,12 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.36.1
+
+- Available updates are right as soon as a module is installed, updated or removed: updates its
+  new version reached leave the list, newer ones show the version now installed. Before, the list
+  waited for the next daily check.
+
 ## 0.36.0
 
 - Messages for everyone (`sys.announcement`, Communication → Messages): information, warning or

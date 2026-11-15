@@ -20,7 +20,7 @@ from p42cloud.data.catalog import load_catalog
 from p42cloud.data.metadata import write_declarations
 from p42cloud.kernel.db import owner_transaction
 from p42cloud.kernel.errors import Problem
-from p42cloud.modules.install import switch, write_docs
+from p42cloud.modules.install import settle_updates, switch, write_docs
 from p42cloud.security.access.roles import write_roles
 
 _MODULES = text("SELECT name, enabled, protected, depends_on FROM sys.module WHERE deleted IS NULL")
@@ -85,3 +85,4 @@ async def remove(engine: AsyncEngine, module: str) -> None:
         await conn.execute(
             text("UPDATE sys.module SET deleted = now() WHERE name = :id"), {"id": module}
         )
+        await settle_updates(conn, module, None)

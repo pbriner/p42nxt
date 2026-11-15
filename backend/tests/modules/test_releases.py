@@ -19,6 +19,7 @@ from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.modules import release_tool, releases
+from p42cloud.modules.install import settle_updates
 from p42cloud.modules.updates import refresh
 
 PRIVATE, PUBLIC = releases.new_key()
@@ -130,6 +131,36 @@ async def test_updates_are_recorded_from_the_signed_index(owner: AsyncEngine) ->
             ).all()
     assert [u.available for u in found] == ["9.0.0"]
     assert [tuple(r) for r in rows] == [("sys", "9.0.0", "security", True)]
+
+
+async def test_an_installed_update_leaves_the_list_at_once(owner: AsyncEngine) -> None:
+    with working_as(Context(channel="test")):
+        async with owner_transaction(owner) as conn:
+            await conn.execute(
+                text(
+                    "INSERT INTO sys.module_update (module, installed, available, kind, fits)"
+                    " VALUES ('settle', '1.0.0', '1.1.0', 'normal', true),"
+                    " ('settle', '1.0.0', '2.0.0', 'normal', true)"
+                )
+            )
+            await settle_updates(conn, "settle", "1.1.0")
+            left = (
+                await conn.execute(
+                    text(
+                        "SELECT installed, available FROM sys.module_update"
+                        " WHERE module = 'settle' AND deleted IS NULL"
+                    )
+                )
+            ).all()
+            await settle_updates(conn, "settle", None)  # removed: none left
+            gone = await conn.scalar(
+                text(
+                    "SELECT count(*) FROM sys.module_update"
+                    " WHERE module = 'settle' AND deleted IS NULL"
+                )
+            )
+    assert [tuple(r) for r in left] == [("1.1.0", "2.0.0")]
+    assert gone == 0
 
 
 async def test_a_registry_signed_by_someone_else_is_refused(owner: AsyncEngine) -> None:

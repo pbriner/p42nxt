@@ -180,6 +180,33 @@ async def _record(conn: AsyncConnection, module: Module, protected: bool) -> Non
             ),
             values,
         )
+    if installed is not None and installed != module.version:
+        await settle_updates(conn, module.id, module.version)
+
+
+async def settle_updates(conn: AsyncConnection, module: str, version: str | None) -> None:
+    """The available updates after a module changed: those its new version reached (or all,
+    when it's gone) are retired, newer ones say what's installed now. So the list is right
+    before the next check."""
+    rows = (
+        await conn.execute(
+            text(
+                "SELECT sys_id, available FROM sys.module_update"
+                " WHERE module = :m AND deleted IS NULL"
+            ),
+            {"m": module},
+        )
+    ).all()
+    for row in rows:
+        reached = version is None or Version(str(row.available)) <= Version(version)
+        await conn.execute(
+            text(
+                "UPDATE sys.module_update SET deleted = now() WHERE sys_id = :i"
+                if reached
+                else "UPDATE sys.module_update SET installed = :v WHERE sys_id = :i"
+            ),
+            {"i": row.sys_id, "v": version},
+        )
 
 
 async def switch(conn: AsyncConnection, module: str, *, on: bool) -> None:
