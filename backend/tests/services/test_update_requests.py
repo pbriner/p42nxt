@@ -2,7 +2,7 @@
 
 import uuid
 from collections.abc import AsyncGenerator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import text
@@ -152,3 +152,63 @@ async def test_update_now_and_tonight_are_actions_on_an_available_update(
     assert waiting == [
         {"target": "sys", "version": offered, "later": True, "requested_by": admin.sys_id}
     ]
+    # Everyone is told beforehand, until it starts.
+    planned = await _sql(
+        owner,
+        "SELECT a.kind, a.subject, a.valid_until = r.not_before AS until_then"
+        " FROM sys.announcement a JOIN sys.update_request r ON r.sys_id = a.about_update"
+        " WHERE r.version = :v",
+        v=offered,
+    )
+    assert len(planned) == 1 and planned[0]["kind"] == "information"
+    assert str(planned[0]["subject"]).startswith("Update planned for ")
+    assert planned[0]["until_then"]
+
+
+async def _shown(owner: AsyncEngine, request: uuid.UUID) -> list[str]:
+    found = await _sql(
+        owner,
+        "SELECT kind FROM sys.announcement WHERE about_update = :r AND valid_from <= now()"
+        " AND (valid_until IS NULL OR valid_until > now()) ORDER BY kind",
+        r=request,
+    )
+    return [str(f["kind"]) for f in found]
+
+
+async def test_the_updater_says_it_is_updating_and_stops_saying_it(
+    engine: AsyncEngine, owner: AsyncEngine, offered: str
+) -> None:
+    async with acting(engine, None) as records:
+        made = await records.create("sys.update_request", {"target": "sys", "version": offered})
+    assert await _shown(owner, made.sys_id) == []  # now: the update itself is the message
+    with working_as(Context(channel="updater")):
+        async with owner_transaction(owner) as conn:
+            assert await service.start(conn, made.sys_id)
+    assert await _shown(owner, made.sys_id) == ["warning"]
+    with working_as(Context(channel="updater")):
+        async with owner_transaction(owner) as conn:
+            await service.finish(
+                conn, made.sys_id, state="succeeded", message="", backup=None, log=""
+            )
+    assert await _shown(owner, made.sys_id) == []
+
+
+async def test_a_cancelled_plan_takes_its_message_back(
+    engine: AsyncEngine, owner: AsyncEngine, offered: str
+) -> None:
+    later = datetime.now(UTC) + timedelta(hours=3)
+    async with acting(engine, None) as records:
+        made = await records.create(
+            "sys.update_request", {"target": "sys", "version": offered, "not_before": later}
+        )
+        assert await _shown(owner, made.sys_id) == []  # not committed yet: seen from outside
+        await change(records, "sys.update_request", made.sys_id, {"state": "cancelled"})
+        left = await records.conn.scalar(
+            text(
+                "SELECT count(*) FROM sys.announcement WHERE about_update = :r"
+                " AND valid_until > now()"
+            ),
+            {"r": made.sys_id},
+        )
+    assert left == 0
+    assert await _shown(owner, made.sys_id) == []

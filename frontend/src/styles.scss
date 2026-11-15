@@ -31,6 +31,12 @@ html {
   --app-nav-accent: var(--mat-sys-primary);
   --app-nav-active: var(--mat-sys-secondary-container);
   --app-on-nav-active: var(--mat-sys-on-secondary-container);
+  --app-message-information: light-dark(#dbe8ff, #13305a);
+  --app-on-message-information: light-dark(#0b2a52, #dbe8ff);
+  --app-message-warning: light-dark(#ffefc2, #4a3800);
+  --app-on-message-warning: light-dark(#3d2e00, #ffe08a);
+  --app-message-critical: light-dark(#ffdad6, #690005);
+  --app-on-message-critical: light-dark(#410002, #ffdad6);
   --app-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --toolbar-height: 64px;
 

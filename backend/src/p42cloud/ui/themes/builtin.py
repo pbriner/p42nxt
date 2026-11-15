@@ -38,6 +38,12 @@ VIOLET = Theme(
         "nav-accent": ("#ffffff", "#d5baff"),
         "nav-active": ("#ffffff", "#ece6f5"),
         "on-nav-active": ("#1d1b1e", "#1d1b1e"),
+        "message-information": ("#dbe8ff", "#13305a"),
+        "on-message-information": ("#0b2a52", "#dbe8ff"),
+        "message-warning": ("#ffefc2", "#4a3800"),
+        "on-message-warning": ("#3d2e00", "#ffe08a"),
+        "message-critical": ("#ffdad6", "#690005"),
+        "on-message-critical": ("#410002", "#ffdad6"),
         # The first chart colour follows the theme's violet.
         "chart-1": ("#6250d6", "#9085e9"),
         "chart-7": ("#2a78d6", "#3987e5"),

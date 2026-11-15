@@ -28,8 +28,9 @@ await client.notify(
 
 - The notification is written in the **same transaction** as the change that sends it: if the
   change is undone, nobody is notified.
-- **Recipients** are the people named plus everyone holding one of the roles named (through
-  their groups, or a role that includes it). Only active people; never service accounts.
+- **Recipients** are the people named, everyone holding one of the roles named (through their
+  groups, or a role that includes it) and the members of the groups named (`groups=[…]`, IDs of
+  `sys.group`). Only active people; never service accounts.
   `notify` returns how many people it reached.
 - `title` (up to 200 characters) is required; `message` (up to 2000) is optional.
 - `severity`: `info` (the default), `success`, `warning` or `error`.
@@ -96,4 +97,5 @@ and unread ones after a year.
 | Kind | To | When |
 |---|---|---|
 | `sys.job_failed` | Administrators, also on Telegram by default | A schedule starts failing (`jobs.md`) |
+| `sys.message` | A message's audience (everyone, or a group) | A message shown as a notification becomes valid (`screens.md`) |
 | `sys.module_roles` | Administrators | A module is installed: the roles it brings, which nobody holds yet, to give to groups |

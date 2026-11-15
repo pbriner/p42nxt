@@ -13,6 +13,7 @@ import { I18n } from '../core/i18n';
 import { Installation } from '../core/installation';
 import { Navigation, target } from '../core/navigation';
 import { Session, initials } from '../core/session';
+import { Announcements } from './announcements';
 import { Bell } from './bell';
 import { GlobalSearch } from './global-search';
 import { Navigator } from './navigator';
@@ -25,6 +26,7 @@ const COMPACT_NAME = '(max-width: 599px)';
 @Component({
   selector: 'app-shell',
   imports: [
+    Announcements,
     Bell,
     GlobalSearch,
     MatButtonModule,

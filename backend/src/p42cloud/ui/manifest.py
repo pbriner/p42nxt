@@ -57,6 +57,12 @@ VIEWS = (
     ListView("sys.role", ("label", "name", "module_ref", "powerful"), search=("label", "name")),
     ListView("sys.module", ("label", "name", "version", "enabled"), sort=("label",)),
     ListView(
+        "sys.announcement",
+        ("subject", "kind", "audience", "deliver", "valid_from", "valid_until"),
+        sort=("-valid_from",),
+        search=("subject",),
+    ),
+    ListView(
         "sys.update_request",
         ("target_ref", "version", "state", "not_before", "requested_by", "finished"),
         sort=("-created",),
@@ -199,6 +205,13 @@ NAVIGATION = (
         (
             Item("themes", "Themes", "sys.theme", icon="palette", keywords=("colours", "colors")),
             Item("widgets", "Widgets", "sys.widget", icon="widgets", keywords=("dashboard",)),
+            Item(
+                "announcements",
+                "Messages",
+                "sys.announcement",
+                icon="campaign",
+                keywords=("announcement", "banner", "notice"),
+            ),
         ),
     ),
 )

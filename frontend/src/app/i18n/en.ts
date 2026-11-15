@@ -55,6 +55,7 @@ export const EN = {
   'notify.kinds': 'What goes to Telegram',
   'notify.kinds_hint': 'Connect Telegram to choose.',
   'notify.on_telegram': '{kind} on Telegram',
+  'messages.close': 'Close the message {subject}',
   'bell.label': 'Notifications',
   'bell.label_unread': 'Notifications, {n} unread',
   'bell.title': 'Notifications',

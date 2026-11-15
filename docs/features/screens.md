@@ -202,14 +202,39 @@ the record.
 
 Columns, sort and filters are checked against the list's table when they're saved.
 
+## Messages for everyone
+
+Administrators write messages (Communication → **Messages**, `/api/v1/sys/announcement`): a kind
+(information, warning or critical), a subject, a text, shown from (now when not given) and shown
+until (open when empty; it must be after shown from), an **audience** and how it's shown.
+
+- **Audience**: empty for everyone signed in, or one group. Only the audience may read the
+  message, in the band and through the API; administrators read and write all of them.
+- **Show as**: **Band** (the default), **Notification**, or **Band and notification**.
+- The **band** under the top bar shows the messages valid now, the most severe first, then the
+  newest, and asks again every minute. Each person can close an information message for
+  themselves; warnings and critical messages stay while they're valid. Its colours come from the
+  theme.
+- As a **notification** (kind `sys.message`, `notifications.md`), a message goes out once to each
+  person in the audience when it becomes valid: right away, or within a minute of its time. It
+  lands in the bell and on the channels the person chose, and links back to the message. When it
+  went out is kept (`notified`); changing or ending the message afterwards doesn't take the
+  notifications back.
+
+The updater writes its own messages, in the band for everyone, linked to its update request (`about_update`, which only it
+sets): a planned update (more than five minutes ahead, like **Update tonight**) is announced until
+it starts, and a running one says "Being updated" until it ends (at most 30 minutes). Cancelling a
+planned update takes its message back.
+
 ## Themes
 
 A theme sets colours (each with a light and a dark value), the corner radius (0 to 24 pixels),
 the card style (outlined or raised) and the font (Roboto or the system's). Colours it doesn't set
 keep the app's built-in ones. The colours a theme may set are the Material colour roles
 (`primary`, `surface-container-high` …), the parts of the app's frame (`page-background`,
-`toolbar`, `nav-background`, `nav-background-end`, `on-nav`, `nav-accent`, `nav-active` …) and
-the chart colours (`chart-1` to `chart-8`, `chart-other`), each as `#rrggbb`.
+`toolbar`, `nav-background`, `nav-background-end`, `on-nav`, `nav-accent`, `nav-active` …), the
+message band's kinds (`message-information`, `message-warning`, `message-critical`, each with its
+`on-` text colour) and the chart colours (`chart-1` to `chart-8`, `chart-other`), each as `#rrggbb`.
 
 The core brings two: **Violet**, the default, and **Blue**. Administrators make their own
 (`/api/v1/sys/theme`); a module's theme isn't changed in place, it's copied.

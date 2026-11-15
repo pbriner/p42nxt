@@ -160,6 +160,8 @@ running, succeeded, failed with the version before put back, failed, cancelled),
 before, and what the updater did. Only a version the signed index offers can be requested, one
 update at a time; until it starts, a request can only be cancelled. Administrators and the person
 who asked are told how it went (`sys.update_finished`).
+Everyone signed in sees in the message band when an update is planned and while it runs
+(`screens.md`, Messages for everyone).
 
 The app never updates itself: replacing its containers needs control over Docker on the machine,
 which the app must not have. The **updater** on the machine does it:

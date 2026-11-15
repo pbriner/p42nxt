@@ -111,18 +111,20 @@ class Client:
         *,
         people: Sequence[UUID | str] = (),
         roles: Sequence[str] = (),
+        groups: Sequence[UUID | str] = (),
         message: str | None = None,
         link: str | None = None,
         severity: str = "info",
     ) -> int:
-        """Notifies the people and the roles' holders with this request's change (undone with
-        it); returns how many people were notified."""
+        """Notifies the people, the roles' holders and the groups' members with this request's
+        change (undone with it); returns how many people were notified."""
         return await send(
             self._records.conn,
             kind,
             title,
             people=[self._id(p) for p in people],
             roles=roles,
+            groups=[self._id(g) for g in groups],
             message=message,
             link=link,
             severity=severity,

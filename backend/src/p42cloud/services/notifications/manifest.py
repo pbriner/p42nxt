@@ -22,6 +22,11 @@ KINDS = (
         " back or not).",
     ),
     NotificationKind(
+        "message",
+        "A message from administrators",
+        "A message administrators send as a notification, to everyone or to a group.",
+    ),
+    NotificationKind(
         "module_roles",
         "A module brings roles",
         "After a module is installed: the roles it brings, to give to groups of people.",

@@ -96,6 +96,12 @@ async def _demo(records: Records, admin: dict[str, str]) -> None:
         await records.create(
             "hello.greeting", {"text": words, "language": language, "author": plain}
         )
+    for kind, subject, words in (
+        ("information", "New: messages for everyone", "Administrators write them under Messages."),
+        ("warning", "Maintenance on Sunday", "The app may be unavailable from 06:00 to 07:00."),
+        ("critical", "Kraken is not answering", "Orders are on hold until it answers again."),
+    ):
+        await records.create("sys.announcement", {"kind": kind, "subject": subject, "text": words})
 
 
 async def _notifications(records: Records, people: dict[str, dict[str, str]]) -> None:
