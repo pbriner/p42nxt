@@ -62,13 +62,7 @@ if [ "$target" = "$before" ]; then
 fi
 docker image inspect "$target" >/dev/null 2>&1 || docker pull "$target"
 
-# A backup first, kept beside the nightly ones (the nightly clean-up leaves it alone).
-backups=$(setting P42_BACKUPS)
-backup=$backups/p42-before-update-$(date -u +%Y%m%d-%H%M%S).dump
-echo "Backing up the database to $backup ..."
-umask 077
-docker compose exec -T postgres pg_dump -U p42_admin -d p42 --format=custom >"$backup.partial"
-mv "$backup.partial" "$backup"
+backup_before_update
 
 # The compose file that belongs to the new image, from the image itself.
 if docker run --rm --entrypoint cat "$target" /app/deploy/compose.yml >compose.yml.new 2>/dev/null; then

@@ -70,6 +70,7 @@ ROLES = [
             Grant("sys.external_id", ("read",)),
             Grant("sys.module", ("read",)),
             Grant("sys.module_update", ("read",)),
+            Grant("sys.update_request", ("read", "create", "write")),
             Grant("sys.backup", ("read",)),
             Grant("sys.setting", ("read", "write")),
             Grant("sys.invitation", ("read",), fields=("person", "kind", "expires", "used")),

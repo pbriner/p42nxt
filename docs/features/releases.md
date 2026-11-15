@@ -149,3 +149,29 @@ commands only read it.
 Files are downloaded through the guarded client (https only, no address inside a network), from
 the registry's host only; for a registry on GitHub also from GitHub's download hosts
 (`*.githubusercontent.com`), where it redirects to.
+
+## Updating from the app
+
+Administrators update without the command line: under Platform → **Available updates**, an update
+that fits offers **Update now** and **Update tonight** (03:00 in the installation's time zone).
+Both ask for the authenticator code again. The request is a record of `sys.update_request`
+(Platform → **Updates**): what, to which version, not before when, by whom, its state (requested,
+running, succeeded, failed with the version before put back, failed, cancelled), the backup made
+before, and what the updater did. Only a version the signed index offers can be requested, one
+update at a time; until it starts, a request can only be cancelled. Administrators and the person
+who asked are told how it went (`sys.update_finished`).
+
+The app never updates itself: replacing its containers needs control over Docker on the machine,
+which the app must not have. The **updater** on the machine does it:
+
+```bash
+deploy/updater-install.sh <name>            # once: a service running as you (launchd, systemd)
+deploy/updater-install.sh <name> --remove   # take it away again
+deploy/updater.sh <name> --once             # by hand, once
+```
+
+Every minute it asks the running worker what's due (`p42cloud updater next`), marks it running,
+and does it: the core as `deploy/update.sh` does (backup, the signed image by digest, upgrade,
+check, start, the version before put back on failure); a module with a backup first, `module
+update` and a restart. It then reports the result with its log (`updater finish`). It needs no
+token and opens no way in: it reaches the app only through Docker on the machine.

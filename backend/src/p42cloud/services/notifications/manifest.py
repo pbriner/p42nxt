@@ -16,6 +16,12 @@ KINDS = (
         channels=("telegram",),
     ),
     NotificationKind(
+        "update_finished",
+        "An update is done",
+        "An update requested in the app has run: done, or failed (with the version before put"
+        " back or not).",
+    ),
+    NotificationKind(
         "module_roles",
         "A module brings roles",
         "After a module is installed: the roles it brings, to give to groups of people.",
