@@ -140,7 +140,10 @@ async def _check_connection(change: Change) -> None:
     if change.operation == "create":
         change.values["owner"] = change.person
         _, kind = _type(change.values.get("type"))
-        change.values.setdefault("base_url", kind.base_url or None)
+        if not change.values.get("base_url"):
+            change.values["base_url"] = kind.base_url or None
+        if not change.values["base_url"]:
+            raise _invalid("base_url", "This kind of connection needs its address.")
         change.values["health"] = "unknown"
         if kind.shared:
             await _check_shared(change, str(change.values.get("type")))

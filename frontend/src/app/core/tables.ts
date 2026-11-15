@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 
 import { Api } from './api';
-import { TableInfo } from './format';
+import { TableInfo, textIn } from './format';
 
 /** `sys.person` → `/api/v1/sys/person`. */
 export function path(table: string, id?: string): string {
@@ -64,8 +64,8 @@ export class Tables {
         query: { fields: display },
         quiet: true,
       });
-      const name = data[display];
-      return name === null || name === undefined || name === '' ? null : String(name);
+      const name = this.named(data[display]);
+      return name === '' ? null : name;
     } catch {
       return null;
     }
@@ -85,7 +85,15 @@ export class Tables {
     });
     return data.records.map((r) => ({
       sys_id: String(r['sys_id']),
-      name: String(r[display] ?? r['sys_id']),
+      name: this.named(r[display]) || String(r['sys_id']),
     }));
+  }
+
+  /** A display value as text: a translated one in the person's language. */
+  private named(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return typeof value === 'object' ? textIn(value, this.api.language()) : String(value);
   }
 }

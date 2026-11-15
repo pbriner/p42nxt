@@ -95,3 +95,23 @@ test('a new record from a related list shows the record it belongs to by name', 
   const field = page.getByRole('combobox', { name: 'Group' });
   await expect(field).toHaveValue(name); // its name, not its ID
 });
+
+test('a long related list turns its pages', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'paging works the same at every size');
+  await page.goto('/');
+  const client = await api(page);
+  const name = `Paged ${Date.now() % 100000}`;
+  const group = await client.post('/api/v1/sys/group', { name });
+  for (let n = 0; n < 25; n++) {
+    const person = await client.post('/api/v1/sys/person', { name: `${name} member ${n}` });
+    await client.post('/api/v1/sys/membership', { group: group.sys_id, person: person.sys_id });
+  }
+  await page.goto(`/form/sys.group/${group.sys_id}`);
+  await page.getByRole('tab', { name: /Memberships/ }).click();
+  await expect(page.getByText('1–20 of 25')).toBeVisible();
+  await page.getByRole('button', { name: 'Next page' }).click();
+  await expect(page.getByText('21–25 of 25')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next page' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Previous page' }).click();
+  await expect(page.getByText('1–20 of 25')).toBeVisible();
+});

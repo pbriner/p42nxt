@@ -66,7 +66,8 @@ forms=(FormView("task.task", (
 
 Every table gets one: a table whose module declares none gets one section with all its fields
 in two columns. Related lists are the declared ones, then (unless `related_auto=False`) every
-other table pointing to the record through a field the person may read.
+other table pointing to the record through a field the person may read. A related list shows 20 records
+at a time and turns its pages (21–40 of 1139).
 
 ## UI actions
 

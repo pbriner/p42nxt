@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+- The takeover from a previous installation is gone (its table `dca.takeover` is retired with its
+  data, its job and menu entry removed): it was for one migration, done. Imported plans and orders
+  keep where they came from (`source_ref`, now read only, labelled "Imported from").
+- What the cycle finds (status, next buy, last price, balance, message, targets reached) is shown
+  read only in forms. Needs the core 0.34.
+
 ## 0.4.0
 
 - Taking over plans, their tiers and every order from a previous installation: add the export

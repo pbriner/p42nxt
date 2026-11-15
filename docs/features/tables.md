@@ -55,10 +55,20 @@ name stands for with a reference filled from that key:
 "table_ref": Reference("Table", "sys.table", key="table", match="schema.name"),
 ```
 
-The database sets the reference on every write, whatever wrote it and whatever it sent for the
-reference: the active record whose key (`match`, `name` by default; fields joined by dots) is the
-field's value, or none. Records there already are linked when the reference is added. Like any
+It works both ways. A record that names its target gets the link: the active record whose key
+(`match`, `name` by default; fields joined by dots) is the name, or none. A record whose link is
+picked (a new one sent without the name, or a changed link with the name left as it was) gets
+the name from the picked record. The database does it on every write, whatever wrote it; the
+records service looks the name up first, so the table's checks see it, and a required name is
+satisfied by its picked link. Forms show the link and hide the name. Records there already are linked when the reference is added. Like any
 reference, it gives the target's form a related list.
+
+### Read-only fields
+
+`read_only=True` on a field (any type) marks what the platform or the module sets: a check's
+result, a run's state. Forms show it but don't edit it, and leave it out of a new record's form.
+It's a hint for forms: what protects such a field is the table's own checks (a connection's
+health comes from its check only).
 
 ## What the database enforces
 

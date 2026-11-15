@@ -293,6 +293,19 @@ export const DE: Record<TextKey, string> = {
   'form.restore_draft': 'Wiederherstellen',
   'form.discard': 'Verwerfen',
   'form.required': '{label} ist nötig',
+  'secrets.title': 'Schlüssel',
+  'secrets.explain':
+    'Womit sich die Verbindung anmeldet. Sofort verschlüsselt gespeichert und nie wieder angezeigt, auch Administratoren nicht.',
+  'secrets.set': 'Gesetzt',
+  'secrets.not_set': 'Nicht gesetzt',
+  'secrets.save': 'Speichern',
+  'secrets.saved': '{name} verschlüsselt gespeichert.',
+  'secrets.none': 'Diese Art Verbindung braucht keine Schlüssel.',
+  'secrets.after_create':
+    'Nach dem Erstellen werden hier die Schlüssel abgefragt, die diese Verbindung braucht.',
+  'related.range': '{first}–{last} von {total}',
+  'related.previous': 'Vorherige Seite',
+  'related.next': 'Nächste Seite',
   'form.related': 'Verknüpft',
   'form.more': 'Mehr ({n})',
   'form.no_related':

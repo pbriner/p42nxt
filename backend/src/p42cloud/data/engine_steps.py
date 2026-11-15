@@ -385,6 +385,54 @@ END $$;
 REVOKE ALL ON FUNCTION sys.p42_link() FROM PUBLIC;
 """
 
+# Links both ways: a link picked (set on a new record without its name, or changed while the name
+# stayed) fills in the name from the target's key; otherwise the name finds the link, as before.
+_LINKS_BOTH_WAYS = """
+CREATE OR REPLACE FUNCTION sys.p42_link() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog, sys AS $$
+DECLARE
+    i integer := 0;
+    fresh jsonb := to_jsonb(NEW);
+    before jsonb := CASE WHEN TG_OP = 'UPDATE' THEN to_jsonb(OLD) ELSE '{}'::jsonb END;
+    given_key text;
+    given_ref text;
+    found uuid;
+    found_key text;
+    matched text;
+    picked boolean;
+    patch jsonb := '{}'::jsonb;
+BEGIN
+    WHILE i < TG_NARGS LOOP
+        given_ref := fresh ->> TG_ARGV[i];
+        given_key := fresh ->> TG_ARGV[i + 1];
+        SELECT string_agg(format('%I', part), ' || ''.'' || ' ORDER BY n) INTO matched
+        FROM unnest(string_to_array(TG_ARGV[i + 3], '.')) WITH ORDINALITY AS p(part, n);
+        picked := given_ref IS NOT NULL AND (
+            (TG_OP = 'INSERT' AND given_key IS NULL)
+            OR (TG_OP = 'UPDATE' AND given_ref IS DISTINCT FROM before ->> TG_ARGV[i]
+                AND given_key IS NOT DISTINCT FROM before ->> TG_ARGV[i + 1]));
+        IF picked THEN
+            EXECUTE format('SELECT %s FROM %s WHERE sys_id = $1', matched,
+                           TG_ARGV[i + 2]::regclass)
+                INTO found_key USING given_ref::uuid;
+            patch := patch || jsonb_build_object(TG_ARGV[i + 1], found_key);
+        ELSE
+            found := NULL;
+            IF given_key IS NOT NULL THEN
+                EXECUTE format('SELECT sys_id FROM %s WHERE %s = $1 AND deleted IS NULL LIMIT 1',
+                               TG_ARGV[i + 2]::regclass, matched)
+                    INTO found USING given_key;
+            END IF;
+            patch := patch || jsonb_build_object(TG_ARGV[i], found);
+        END IF;
+        i := i + 4;
+    END LOOP;
+    NEW := jsonb_populate_record(NEW, patch);
+    RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION sys.p42_link() FROM PUBLIC;
+"""
+
 STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0001_context", _CONTEXT),
     ("0002_record_rules", _RECORD_RULES),
@@ -396,4 +444,5 @@ STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0008_personal", _PERSONAL),
     ("0009_security_events", _SECURITY_EVENTS),
     ("0010_links", _LINKS),
+    ("0011_links_both_ways", _LINKS_BOTH_WAYS),
 )

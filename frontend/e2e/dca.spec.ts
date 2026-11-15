@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { choose, noSidewaysScroll, opened, storage } from './helpers';
+import { api, choose, noSidewaysScroll, opened, storage } from './helpers';
 
 test.use({ storageState: storage('plain') });
 
@@ -36,6 +36,13 @@ test('the DCA dashboard shows one plan at a time', async ({ page }, info) => {
 
 test('a DCA widget on the home dashboard keeps its own plan', async ({ page }, info) => {
   const plan = `Bitcoin ${info.project.name}`;
+  await page.goto('/');
+  // From the defaults: an earlier run may have left its arrangement.
+  const client = await api(page);
+  const kept = await client.get('/api/v1/sys/dashboard_layout?filter[dashboard]=home');
+  for (const layout of kept.records ?? []) {
+    await client.remove(`/api/v1/sys/dashboard_layout/${layout.sys_id}`, layout._etag);
+  }
   await page.goto('/');
   await page.getByRole('button', { name: 'Customize' }).click();
   await page.getByRole('button', { name: 'Add widget' }).click();

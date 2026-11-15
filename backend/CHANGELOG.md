@@ -2,6 +2,21 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.34.0
+
+- Picking a link fills in its name field (references filled from a key work both ways: engine
+  step `0011_links_both_ways`; the records service looks the name up first, so tables' checks see
+  it): forms show the link ("Type: Kraken") and no longer ask for internal names.
+- A field option `read_only`: set by the platform or a module (a check's result, a run's state),
+  shown but not edited in forms, and left out of new records' forms. Used for connections' check
+  results, schedules' next and last runs, updates' results; the tables' checks keep guarding
+  them.
+- A connection's form asks for the keys its type needs (Kraken: API key, API secret), each set
+  or not, saved encrypted at once and never shown again; a connection's address may be left
+  empty for its type's usual one.
+- Related lists turn their pages (21–40 of 1139) instead of showing the first 20 only.
+- Record pickers show translated names (a connection type's) instead of "[object Object]".
+
 ## 0.33.0
 
 - Updating from the app: **Update now** and **Update tonight** on an available update

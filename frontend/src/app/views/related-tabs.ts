@@ -26,6 +26,12 @@ interface Opened {
   info: TableInfo;
   columns: string[];
   rows: Record<string, unknown>[];
+  /** Paging: the cursor this page was loaded with, the next page's, and those of the pages
+   * before (null: the first page). */
+  after: string | null;
+  next: string | null;
+  before: (string | null)[];
+  page: number;
 }
 
 const MAX_ROWS = 20;
@@ -179,7 +185,11 @@ export class RelatedTabs {
     this.choose(0, false);
   }
 
-  private async open(related: Related): Promise<void> {
+  private async open(
+    related: Related,
+    after: string | null = null,
+    before: (string | null)[] = [],
+  ): Promise<void> {
     const [info, view] = await Promise.all([
       this.tables.describe(related.table),
       this.views.view(related.table).catch(() => null),
@@ -187,18 +197,48 @@ export class RelatedTabs {
     const columns = (view?.columns ?? [info.display ?? 'sys_id']).filter(
       (c) => c !== related.field && info.fields.find((f) => f.name === c)?.read,
     );
-    const { data } = await this.api.get<{ records: Record<string, unknown>[] }>(
-      path(related.table),
-      {
-        query: {
-          [`filter[${related.field}]`]: this.id(),
-          limit: MAX_ROWS,
-          sort: view?.sort?.join(',') ?? '-updated',
-          count: false,
-        },
+    const { data } = await this.api.get<{
+      records: Record<string, unknown>[];
+      next: string | null;
+    }>(path(related.table), {
+      query: {
+        [`filter[${related.field}]`]: this.id(),
+        limit: MAX_ROWS,
+        sort: view?.sort?.join(',') ?? '-updated',
+        count: false,
+        after,
       },
-    );
-    this.opened.set({ related, info, columns, rows: data.records });
+    });
+    this.opened.set({
+      related,
+      info,
+      columns,
+      rows: data.records,
+      after,
+      next: data.next ?? null,
+      before,
+      page: before.length,
+    });
+  }
+
+  /** The next page of the open list, or the one before. */
+  protected async turn(by: 1 | -1): Promise<void> {
+    const list = this.opened();
+    if (by === 1 && list?.next) {
+      await this.open(list.related, list.next, [...list.before, list.after]);
+    } else if (by === -1 && list?.before.length) {
+      await this.open(list.related, list.before.at(-1) ?? null, list.before.slice(0, -1));
+    }
+  }
+
+  /** "21–40 of 1139" for the open page. */
+  protected range(list: Opened): string {
+    const first = list.page * MAX_ROWS + 1;
+    const last = list.page * MAX_ROWS + list.rows.length;
+    const total = this.counts().get(this.key(list.related));
+    return total === null || total === undefined
+      ? `${first}–${last}`
+      : this.i18n.t('related.range', { first, last, total });
   }
 
   protected field(info: TableInfo, name: string): FieldInfo | undefined {
