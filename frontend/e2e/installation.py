@@ -29,7 +29,7 @@ from p42cloud.data.catalog import load_catalog
 from p42cloud.data.records import Records
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import EVERYTHING, Context, working_as
-from p42cloud.kernel.db import create_engine, transaction
+from p42cloud.kernel.db import create_engine, owner_transaction, transaction
 from p42cloud.kernel.secrets import Sealer
 from p42cloud.kernel.setup import set_up_database
 from p42cloud.modules.core import CORE
@@ -151,6 +151,13 @@ async def _prepare(
     owner = create_engine(settings.owner_database_url)
     with working_as(Context(channel="upgrade")):
         await install_modules(owner, [CORE, *discover()])
+        # The tests send far more requests a minute than people do: a setting, as in the app.
+        async with owner_transaction(owner) as conn:
+            await conn.execute(
+                text(
+                    "UPDATE sys.setting SET value = '100000' WHERE name = 'sys.requests_per_minute'"
+                )
+            )
     await owner.dispose()
     if fresh:
         return {"people": {}, "setup_code": settings.setup_code}
@@ -260,7 +267,6 @@ def main() -> None:
         database_url=f"postgresql+asyncpg://p42_app:p42-app-dev-only@{HOST}/{database}",
         owner_database_url=f"postgresql+asyncpg://p42_owner:p42-owner-dev-only@{HOST}/{database}",
         public_url=url,
-        requests_per_minute=100_000,
         setup_code=SETUP_CODE if args.fresh else None,
     )
     sealer = Sealer(os.urandom(32))

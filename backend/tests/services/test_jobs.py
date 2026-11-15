@@ -227,7 +227,7 @@ async def test_the_update_check_runs_daily_and_says_when_there_is_no_registry(
     try:
         assert await run_job(engine, "sys.check_updates") == (
             "succeeded",
-            "No module registry is set: nothing to check.",
+            "No release address is set (Settings): nothing to check.",
         )
     finally:
         get_settings.cache_clear()

@@ -2,6 +2,18 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.31.0
+
+- Settings in the app instead of environment variables: **The app's address**
+  (`sys.public_url`), **Release address** (`sys.registry_url`), **Requests per minute**, and the
+  session times (**Sign out after inactivity**, **at the latest**), checked as before. Processes
+  read them at start and every 30 seconds, so a change takes effect within half a minute without
+  a restart. A value an installation had in its environment becomes the setting on this upgrade;
+  while a setting is empty, the environment's still counts (development, tests).
+- Sign-in providers are refused when used without the app's address, not at start: setting the
+  address switches them on.
+- The deployment no longer passes `P42_REGISTRY_URL`; the deploy scripts don't need it.
+
 ## 0.30.0
 
 - Widgets form one catalog: every dashboard offers every widget the person may read, its own

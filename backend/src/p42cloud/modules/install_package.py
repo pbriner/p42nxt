@@ -39,7 +39,9 @@ async def _from_registry(
     keys: tuple[str, ...],
 ) -> tuple[bytes, str]:
     if source.registry is None:
-        raise Problem(409, "no_registry", "No module registry is set (P42_REGISTRY_URL).")
+        raise Problem(
+            409, "no_registry", "No release address is set (Platform, Settings, Release address)."
+        )
     index = await fetch_index(http, source.registry, keys)
     release: dict[str, Any] = packages.choose(index, module, source.version)
     missing = packages.needs(release, installed)

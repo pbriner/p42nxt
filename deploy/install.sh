@@ -85,8 +85,6 @@ P42_SETUP_CODE=$setup_code
 # A copy of the setting Backup folder (change it in the app, then deploy/restart.sh).
 P42_BACKUPS=$backups
 P42_PORT=$port
-# Where module releases come from (signed), e.g. https://github.com/<owner>/<repo>/releases/download/registry
-P42_REGISTRY_URL=${P42_REGISTRY_URL:-}
 EOF
 
 cd "$folder"

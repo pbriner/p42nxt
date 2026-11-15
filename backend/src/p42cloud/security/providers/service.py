@@ -30,6 +30,7 @@ import jwt
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from p42cloud.data import installation
 from p42cloud.data.catalog import load_catalog
 from p42cloud.data.records import Records
 from p42cloud.kernel.config import Settings
@@ -96,17 +97,23 @@ class Providers:
         sign_in: SignIn,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:
-        if settings.public_url is None:
-            raise Problem(
-                409, "providers_off", "Sign-in providers need the installation's web address."
-            )
         self.engine = engine
         self.sealer = sealer
-        self.redirect_uri = settings.public_url.rstrip("/") + CALLBACK
+        self.settings = settings
         self.http = http
         self.sign_in = sign_in
         self.now = now
         self._discovered: dict[str, tuple[float, dict[str, Any], dict[str, Any]]] = {}
+
+    @property
+    def redirect_uri(self) -> str:
+        """Where providers send people back: needs the app's address (a setting)."""
+        public_url = installation.public_url(self.settings)
+        if public_url is None:
+            raise Problem(
+                409, "providers_off", "Sign-in providers need the app's address (Settings)."
+            )
+        return public_url.rstrip("/") + CALLBACK
 
     async def available(self) -> list[tuple[UUID, str]]:
         """The providers to offer on the sign-in page."""

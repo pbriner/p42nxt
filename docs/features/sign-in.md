@@ -25,7 +25,7 @@ The HTTP routes and the browser cookie come with the web layer; this is the serv
   never leaves the device, and only for this installation's address, so a look-alike site gets
   nothing it could use. The installation keeps the public key, the passkey's ID and its signature
   counter; a counter going backwards means the key was copied, and is refused. Each challenge
-  works once. Passkeys need `P42_PUBLIC_URL` (below); without it they're unavailable and
+  works once. Passkeys need the app's address (below); without it they're unavailable and
   authenticator apps still work.
 - **Adding a second factor** while signed in needs the second factor given in the last 15
   minutes, so whoever took over an open session can't add a key of their own. It ends the
@@ -48,8 +48,8 @@ Waiting sessions end after 10 minutes.
 ## Sessions
 
 - The browser holds a random token; only its hash is stored.
-- A session ends after `P42_SESSION_IDLE_MINUTES` without use (default 30) and after
-  `P42_SESSION_MAX_HOURS` in any case (default 12). Requests the app makes by itself (the bell
+- A session ends after the setting `sys.session_idle_minutes` without use (default 30) and after
+  `sys.session_max_hours` in any case (default 12). Requests the app makes by itself (the bell
   asking for notifications) send `X-P42-Background: 1` and don't count as use, so an open tab
   doesn't keep a session alive.
 - People see their own sessions and end them; administrators see and end anyone's. Nobody sees
@@ -81,7 +81,7 @@ nothing about who has an account. People with emergency access keep their passwo
 
 ## The installation's address
 
-`P42_PUBLIC_URL` is the address people open the app at, like `https://p42.example.com`: scheme
+The setting **The app's address** (`sys.public_url`) is the address people open the app at, like `https://p42.example.com`: scheme
 and host (and port), nothing after. Passkeys are bound to it. In production it must use https,
 except for `localhost`.
 

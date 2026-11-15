@@ -24,7 +24,7 @@ deploy/restart.sh <name>
 
 Modules beyond the core are installed from signed packages into the volume `modules`
 (`releases.md`). To be told about new releases, and to install them by name, set
-`P42_REGISTRY_URL` in the installation's `.env` (for a registry on GitHub:
+the **Release address** in the app (Platform → Settings; for releases on GitHub:
 `https://github.com/<owner>/<repo>/releases/download/registry`). It's empty by default: the
 installation then never asks.
 

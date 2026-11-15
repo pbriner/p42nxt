@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
+from p42cloud.data import installation
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.errors import Problem
 from p42cloud.security.sign_in.sessions import Started
@@ -40,7 +41,7 @@ def _services(request: Request) -> Services:
 
 
 def _secure(services: Services) -> bool:
-    url = services.settings.public_url or ""
+    url = installation.public_url(services.settings) or ""
     return url.startswith("https://") or services.settings.environment == "production"
 
 

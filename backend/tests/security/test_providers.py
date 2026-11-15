@@ -293,14 +293,15 @@ async def test_providers_need_the_installations_address(
 ) -> None:
     settings = upgraded.model_copy(update={"public_url": None})
     sealer = Sealer(os.urandom(32))
-    with pytest.raises(Problem) as off:
-        Providers(
-            engine,
-            sealer,
-            settings=settings,
-            http=httpx.AsyncClient(),
-            sign_in=SignIn(engine, sealer, settings),
-        )
+    providers = Providers(
+        engine,
+        sealer,
+        settings=settings,
+        http=httpx.AsyncClient(),
+        sign_in=SignIn(engine, sealer, settings),
+    )
+    with pytest.raises(Problem) as off:  # asked when used: the address is a setting
+        _ = providers.redirect_uri
     assert off.value.code == "providers_off"
 
 

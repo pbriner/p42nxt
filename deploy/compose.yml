@@ -11,7 +11,6 @@ x-p42: &p42
     P42_OWNER_DATABASE_URL: postgresql+asyncpg://p42_owner:${P42_OWNER_PASSWORD}@postgres/p42
     P42_MASTER_KEY_FILE: /run/secrets/master_key
     P42_MODULES_DIR: /data/modules
-    P42_REGISTRY_URL: ${P42_REGISTRY_URL:-}
   secrets: [master_key]
   # Modules installed from signed packages. Only `module` writes here; the rest only read.
   volumes:
@@ -46,7 +45,6 @@ services:
       P42_OWNER_DATABASE_URL: postgresql+asyncpg://p42_owner:${P42_OWNER_PASSWORD}@postgres/p42
       P42_MASTER_KEY_FILE: /run/secrets/master_key
       P42_MODULES_DIR: /data/modules
-      P42_REGISTRY_URL: ${P42_REGISTRY_URL:-}
       # The web installer's one-time code: it works only until the first administrator exists.
       P42_SETUP_CODE: ${P42_SETUP_CODE}
     ports:
@@ -64,7 +62,6 @@ services:
       P42_OWNER_DATABASE_URL: postgresql+asyncpg://p42_owner:${P42_OWNER_PASSWORD}@postgres/p42
       P42_MASTER_KEY_FILE: /run/secrets/master_key
       P42_MODULES_DIR: /data/modules
-      P42_REGISTRY_URL: ${P42_REGISTRY_URL:-}
       # Which folder on the machine /backups is (the setting Backup folder, via .env).
       P42_BACKUPS_MOUNTED: ${P42_BACKUPS}
     volumes:

@@ -40,6 +40,7 @@ from webauthn.helpers.structs import (
     UserVerificationRequirement,
 )
 
+from p42cloud.data import installation
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import Problem
@@ -66,13 +67,14 @@ class Site:
 
     @classmethod
     def of(cls, settings: Settings) -> Site:
-        if settings.public_url is None:
+        public_url = installation.public_url(settings)
+        if public_url is None:
             raise Problem(
                 409,
                 "passkeys_off",
                 "Passkeys need the installation's web address; use an authenticator app.",
             )
-        address = urlsplit(settings.public_url)
+        address = urlsplit(public_url)
         return cls(str(address.hostname), f"{address.scheme}://{address.netloc}")
 
 

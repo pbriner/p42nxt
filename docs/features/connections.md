@@ -71,4 +71,4 @@ outside call instead of calling directly; see [Outside calls](calls.md).
 
 A daily core job (`sys.check_updates`, 05:37 UTC) reads the registry's signed index through the
 safe client, only from the registry's own host, and records the updates that fit. Without a
-registry (`P42_REGISTRY_URL`) it does nothing.
+release address (the setting `sys.registry_url`) it does nothing.

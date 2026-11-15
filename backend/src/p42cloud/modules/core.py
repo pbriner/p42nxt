@@ -5,7 +5,7 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from p42cloud.data import settings
+from p42cloud.data import installation, settings
 from p42cloud.data.access import SHARE
 from p42cloud.data.external_ids import EXTERNAL_ID
 from p42cloud.modules import models as module_models
@@ -78,7 +78,13 @@ CORE = Module(
     docs=DOCS if DOCS.is_dir() else None,
     description="People, access, sign-in and the platform itself.",
     seed=access.seed,
-    settings=(settings.TIME_ZONE, sign_in.PASSWORDS_OFF, *ui.SETTINGS, *backups.SETTINGS),
+    settings=(
+        settings.TIME_ZONE,
+        *installation.SETTINGS,
+        sign_in.PASSWORDS_OFF,
+        *ui.SETTINGS,
+        *backups.SETTINGS,
+    ),
     category="Platform",
     icon="settings",
     navigation=ui.NAVIGATION,

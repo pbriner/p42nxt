@@ -25,7 +25,7 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from p42cloud.data import settings
+from p42cloud.data import installation, settings
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.db import transaction
 from p42cloud.kernel.errors import Problem
@@ -106,9 +106,15 @@ class SignIn:
         self.engine = engine
         self.sealer = sealer
         self.settings = settings
-        self.idle = timedelta(minutes=settings.session_idle_minutes)
-        self.longest = timedelta(hours=settings.session_max_hours)
         self.now = now
+
+    @property
+    def idle(self) -> timedelta:
+        return installation.session_idle(self.settings)
+
+    @property
+    def longest(self) -> timedelta:
+        return installation.session_longest(self.settings)
 
     @asynccontextmanager
     async def _work(self) -> AsyncGenerator[AsyncConnection]:

@@ -10,6 +10,8 @@ from packaging.version import Version
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from p42cloud.data import installation
+from p42cloud.data.settings import value
 from p42cloud.kernel.config import get_settings
 from p42cloud.kernel.db import owner_transaction
 from p42cloud.kernel.errors import Problem
@@ -65,7 +67,9 @@ async def refresh(
 ) -> list[releases.Update]:
     """The updates for what's installed, written as records; old ones retired."""
     if registry is None:
-        raise Problem(409, "no_registry", "No module registry is set (P42_REGISTRY_URL).")
+        raise Problem(
+            409, "no_registry", "No release address is set (Platform, Settings, Release address)."
+        )
     index = await fetch_index(http, registry, keys)
     installed = {name: s.version for name, s in (await states(engine)).items() if not s.removed}
     found = releases.updates(index, installed)
@@ -76,10 +80,11 @@ async def refresh(
 
 async def check_updates(run: JobRun) -> str:
     """The daily check: the registry's index through the safe client, only to its own host."""
-    registry = get_settings().registry_url
-    if registry is None:
-        return "No module registry is set: nothing to check."
     conn = run.records.conn
+    found_address = await value(conn, installation.RELEASE_ADDRESS.name)
+    registry = str(found_address or "") or get_settings().registry_url
+    if registry is None:
+        return "No release address is set (Settings): nothing to check."
     installed = {
         r.name: Version(r.version)
         for r in await conn.execute(

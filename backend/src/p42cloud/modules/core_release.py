@@ -54,6 +54,8 @@ async def verified_image(
 ) -> tuple[str, str]:
     """The core's release from the registry, checked by this image."""
     if registry is None:
-        raise Problem(409, "no_registry", "No module registry is set (P42_REGISTRY_URL).")
+        raise Problem(
+            409, "no_registry", "No release address is set (Platform, Settings, Release address)."
+        )
     index = await fetch_index(http, registry, keys)
     return image_of(index, wanted, Version(installed_version("p42cloud")), keys)

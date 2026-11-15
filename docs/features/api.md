@@ -79,7 +79,7 @@ or **signed in**. What a signed-in caller may do with records is decided by thei
 - **The browser**: the session cookie (`p42_session`: HttpOnly, SameSite=Lax, Secure except on
   plain-http development). Every change made with it also needs the header `X-CSRF-Token`, with
   the value of the readable cookie `p42_csrf` (set when signing in), and, when the browser sends
-  one, an `Origin` of this installation (`P42_PUBLIC_URL`).
+  one, an `Origin` of this installation (the setting `sys.public_url`).
 
 ## Signing in
 
@@ -105,7 +105,7 @@ details go to the log.
 
 ## Limits and protection
 
-- **Rate limits**: `P42_REQUESTS_PER_MINUTE` (default 600) per person, API token and network
+- **Rate limits**: the setting `sys.requests_per_minute` (default 600) per person, API token and network
   address; more are refused (429, `Retry-After`) for the rest of the minute. Counted per process.
 - Every answer carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
   `Referrer-Policy: no-referrer` and a `Content-Security-Policy` that allows no framing; API
