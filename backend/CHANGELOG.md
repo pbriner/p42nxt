@@ -2,6 +2,13 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.32.2
+
+- New installations run as the person who installed them (`P42_UID`, `P42_GID`, written by
+  `install.sh`): on Linux the app couldn't read the master key (readable by its owner only) and
+  stopped at start. The `module` command keeps the image's own user, which owns the modules folder;
+  installations from before keep running as before.
+
 ## 0.32.1
 
 - A reference filled in for a new record (New in a related list, or from the address) shows the

@@ -7,7 +7,8 @@ deploy/install.sh <name> [--image p42cloud:<version>] [--qa]
 ```
 
 It makes the installation's folder (`~/.p42cloud/<name>`: settings with random passwords, the
-one-time setup code, the master key) and its backup folder, starts the database, sets it up,
+one-time setup code, the master key, readable only by you) and its backup folder; the app runs as
+you, so it can read them, starts the database, sets it up,
 brings it to this version, checks that it's safe and starts the app on the first free port
 from 8080. It refuses to touch an installation that exists already, or a name Docker already
 knows. At the end it prints the app's address and the setup code.

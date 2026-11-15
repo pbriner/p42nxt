@@ -5,6 +5,9 @@ name: ${COMPOSE_PROJECT_NAME}
 
 x-p42: &p42
   image: ${P42_IMAGE}
+  # As the person who installed it (install.sh writes them), so the master key and the backup
+  # folder can stay theirs alone; installations from before run as the image's own user.
+  user: "${P42_UID:-10001}:${P42_GID:-0}"
   environment:
     P42_ENVIRONMENT: ${P42_ENVIRONMENT}
     P42_DATABASE_URL: postgresql+asyncpg://p42_app:${P42_APP_PASSWORD}@postgres/p42
@@ -88,6 +91,8 @@ services:
   module:
     <<: *p42
     entrypoint: ["p42cloud", "module"]
+    # The image's own user owns the modules folder; the app and the worker only read it.
+    user: "10001:0"
     volumes:
       - modules:/data/modules
     profiles: [tools]

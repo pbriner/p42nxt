@@ -64,7 +64,9 @@ docker compose start web worker
 instead (`--clean` alone) doesn't work: the audit trail's monthly parts can't be dropped that
 way.
 
-## On Linux
+## Who writes the folder
 
-The worker runs as user 10001: the backup folder must be writable for it
-(`sudo chown 10001 <backup folder>`, after `deploy/restart.sh` made it). On macOS, Docker Desktop takes care of that.
+The app and the worker run as the person who installed the installation (`P42_UID`, `P42_GID`
+in `.env`, written by `install.sh`), so the backup folder and the master key stay theirs alone
+and need no other owner. An installation made before this runs as the image's own user (10001);
+on Linux its backup folder must be writable for that user (`sudo chown 10001 <backup folder>`).
