@@ -16,6 +16,7 @@ from p42cloud.kernel.db import create_engine, owner_transaction, transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.services.jobs import service
 from p42cloud.services.jobs.cron import parse
+from p42cloud.services.jobs.manifest import link_runs
 from p42cloud.services.jobs.models import Job, JobRun, Schedule
 from p42cloud.services.jobs.service import JOBS, claim, execute, recover, run_job, tick, write_jobs
 from tests.security.helpers import acting, change
@@ -231,3 +232,65 @@ async def test_the_update_check_runs_daily_and_says_when_there_is_no_registry(
         )
     finally:
         get_settings.cache_clear()
+
+
+async def test_schedules_and_runs_link_their_job_and_schedule(engine: AsyncEngine) -> None:
+    await _quiet_queue(engine)
+    with working_as(Context(channel="test", access=EVERYTHING)):
+        async with transaction(engine, "sys") as conn:
+            run = await service.queue(conn, "sys.repair_groups", "sys.repair_groups", "manual")
+            alone = await service.queue(conn, "sys.repair_groups", None, "manual")
+            found = (
+                await conn.execute(
+                    text(
+                        "SELECT r.sys_id, r.job_ref = j.sys_id AS job_linked,"
+                        " r.schedule_ref = s.sys_id AS schedule_linked, r.schedule_ref IS NULL"
+                        " AS no_schedule, s.job_ref = j.sys_id AS schedule_job_linked"
+                        " FROM sys.job_run r, sys.job j, sys.schedule s"
+                        " WHERE r.sys_id IN (:a, :b) AND j.name = 'sys.repair_groups'"
+                        " AND s.name = 'sys.repair_groups'"
+                    ),
+                    {"a": run, "b": alone},
+                )
+            ).all()
+    by_id = {r.sys_id: r for r in found}
+    assert by_id[run].job_linked and by_id[run].schedule_linked
+    assert by_id[alone].job_linked and by_id[alone].no_schedule
+    assert by_id[run].schedule_job_linked
+
+
+async def test_a_schedule_keeps_the_job_its_module_gave_it(engine: AsyncEngine) -> None:
+    async with acting(engine, None) as records:
+        found = (
+            await records.list(
+                "sys.schedule", where={"field": "name", "op": "eq", "value": "sys.repair_groups"}
+            )
+        ).records[0]
+        with pytest.raises(Problem) as refused:
+            await change(records, "sys.schedule", found.sys_id, {"job": "sys.backup"})
+    assert refused.value.code == "declared_only"
+
+
+async def test_runs_from_before_get_their_links(upgraded: Settings) -> None:
+    owner = create_engine(upgraded.owner_database_url)
+    with working_as(Context(channel="test")):
+        async with owner_transaction(owner) as conn:
+            made = await conn.scalar(
+                text(
+                    "INSERT INTO sys.job_run (job, schedule, state, trigger, attempt)"
+                    " VALUES ('sys.repair_groups', 'sys.repair_groups', 'skipped', 'schedule', 1)"
+                    " RETURNING sys_id"
+                )
+            )
+            await link_runs(conn)
+            linked = (
+                await conn.execute(
+                    text(
+                        "SELECT job_ref IS NOT NULL AS job, schedule_ref IS NOT NULL AS schedule"
+                        " FROM sys.job_run WHERE sys_id = :id"
+                    ),
+                    {"id": made},
+                )
+            ).one()
+    await owner.dispose()
+    assert linked.job and linked.schedule

@@ -34,6 +34,14 @@ test('home greets the person and the navigator shows what they may open', async 
     await expect(nav).toBeHidden(); // the drawer closes after choosing
   } else {
     await expect(nav.getByRole('link', { name: 'Greetings' })).toHaveClass(/active/);
+    // The module of the page shown opened by itself, and still closes and opens again.
+    const hello = nav.getByRole('button', { name: 'Hello' });
+    await expect(hello).toHaveAttribute('aria-expanded', 'true');
+    await hello.click();
+    await expect(hello).toHaveAttribute('aria-expanded', 'false');
+    await expect(nav.getByRole('link', { name: 'Greetings' })).toBeHidden();
+    await hello.click();
+    await expect(nav.getByRole('link', { name: 'Greetings' })).toBeVisible();
   }
 });
 

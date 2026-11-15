@@ -38,7 +38,8 @@ time, time zone and missed runs, or pause it; upgrades keep what they set.
   group holding the module's roles); the core's jobs act as the system. Every change a job makes
   carries the channel `job:<module>.<job>` and the run's ID in the audit log.
 
-Every run is a record of `sys.job_run`: its job and schedule, state (queued, running, succeeded,
+Every run is a record of `sys.job_run`: its job and schedule (by name, and linked to their records,
+so a job's form lists its schedules and runs, and a schedule's its runs), state (queued, running, succeeded,
 failed, skipped), who started it (its schedule, someone, a retry), attempt, times and result.
 
 ## In the app

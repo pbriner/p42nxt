@@ -48,3 +48,20 @@ test('backups: the folder is a setting, and the backups have a page of their own
   await page.goto('/list/sys.backup');
   await expect(page.getByRole('heading', { name: 'Backups' })).toBeVisible();
 });
+
+test('a schedule links its job and lists its runs', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'one worker for all sizes: once is enough');
+  await page.goto('/list/sys.schedule');
+  await page.getByRole('cell', { name: 'Dynamic groups, nightly', exact: true }).click();
+  await page.getByRole('button', { name: 'Run now' }).click();
+  await expect(page.getByText('Queued: it starts as soon as a worker is free.')).toBeVisible();
+  await expect(async () => {
+    await page.reload();
+    await expect(page.getByRole('tab', { name: /Job runs/ })).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 20_000 });
+  await page.getByRole('tab', { name: /Job runs/ }).click();
+  const job = "Check the dynamic groups' members";
+  await expect(page.getByRole('link', { name: job }).first()).toBeVisible(); // the schedule's job
+  const runs = page.getByRole('tabpanel', { name: /Job runs/ });
+  await expect(runs.getByRole('link', { name: job }).first()).toBeVisible(); // each run's
+});
