@@ -70,6 +70,14 @@ export const EN = {
     'Loaded: {added} new, {changed} changed, {removed} removed, {unchanged} unchanged.',
   'translated.others': 'Other languages ({n})',
   'translated.fewer': 'Fewer languages',
+  'access.title': 'Sign-in',
+  'access.explain':
+    'Make a one-time link for this person and pass it on. With it they set their own password and a second factor. The link works once, for 7 days; only the newest one works.',
+  'access.make': 'Make invitation link',
+  'access.reset': 'Reset sign-in',
+  'access.reset_confirm':
+    "Reset this person's sign-in? It signs them out everywhere and takes away their password, authenticator apps, passkeys and recovery codes. Then pass on the new link.",
+  'access.valid': 'Valid until {until}. Pass it on yourself, for example in a message.',
   'bell.label': 'Notifications',
   'bell.label_unread': 'Notifications, {n} unread',
   'bell.title': 'Notifications',

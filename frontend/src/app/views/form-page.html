@@ -173,6 +173,12 @@
       }
     }
 
+    @if (
+      table.table === 'sys.person' && !creating() && table.operations['create'] && original()['kind'] !== 'service'
+    ) {
+      <app-person-sign-in [person]="id()" />
+    }
+
     @if (table.table === 'sys.language' && !creating() && original()['code']) {
       <app-language-exchange [code]="$any(original()['code'])" />
     }

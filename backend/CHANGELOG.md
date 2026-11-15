@@ -2,6 +2,12 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.37.1
+
+- A person's form has a **Sign-in** section for administrators: **Make invitation link** and
+  **Reset sign-in**, with the link to copy and pass on. Until now the link could only be made
+  through the API, so new people couldn't be given a way in from the app.
+
 ## 0.37.0
 
 - Languages and translations as records (`sys.language`, `sys.translation`; Platform →
