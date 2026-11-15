@@ -2,6 +2,12 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.34.1
+
+- An upgrade that marks an existing field read only works: how forms show a field is no change of
+  its values, so the check against losing values no longer refuses it (0.34.0 couldn't be
+  installed over an older version; the version before was put back).
+
 ## 0.34.0
 
 - Picking a link fills in its name field (references filled from a key work both ways: engine

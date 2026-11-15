@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from p42cloud.data.declarations import Table
+from p42cloud.data.types.datetime import DateTime
 from p42cloud.data.types.reference import TYPE, Reference
 from p42cloud.data.types.string import String
 from p42cloud.kernel.config import Settings
@@ -145,3 +146,15 @@ async def test_a_required_name_is_satisfied_by_its_picked_link(
     await app.dispose()
     assert made.values["item"] == "picked"
     assert [e.field for e in refused.value.errors] == ["item"]
+
+
+async def test_a_field_can_become_read_only_on_an_upgrade(
+    owner: AsyncEngine, new_module: Callable[[], Awaitable[str]]
+) -> None:
+    module_id = await new_module()
+    before = Table("note", "Note", {"seen": DateTime("Seen")})
+    after = Table("note", "Note", {"seen": DateTime("Seen", read_only=True)})
+    with working_as(Context(channel="test")):
+        await install_modules(owner, [CORE, _module(module_id, "1.0.0", before)])
+        done = await install_modules(owner, [CORE, _module(module_id, "1.1.0", after)])
+    assert f"{module_id} 1.0.0 → 1.1.0" in done  # how forms show it: no change of its values

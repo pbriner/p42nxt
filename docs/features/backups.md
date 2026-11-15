@@ -60,7 +60,20 @@ docker compose exec postgres rm /tmp/restore.dump
 docker compose start web worker
 ```
 
-`--create` rebuilds the database with its permissions. Restoring over the existing tables
+`--create` rebuilds the database with its permissions.
+
+Into a **new installation** (another machine, a test copy): database roles belong to the database
+server, not to the backup, so first make each installed module's role there (as `p42_admin`, for
+each module besides the core, here `dca`):
+
+```sql
+CREATE ROLE p42_mod_dca NOLOGIN NOINHERIT;
+GRANT p42_mod_dca TO p42_app WITH INHERIT FALSE, SET TRUE;
+GRANT p42_mod_dca TO p42_owner WITH ADMIN OPTION, INHERIT FALSE, SET TRUE;
+```
+
+then restore as above, set the setting **Backup folder** to the new installation's own folder (the
+backup carries the old one's), and install the modules' packages again (`module install`). Restoring over the existing tables
 instead (`--clean` alone) doesn't work: the audit trail's monthly parts can't be dropped that
 way.
 
