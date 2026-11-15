@@ -188,13 +188,15 @@ async def _service_account(conn: AsyncConnection, module: str) -> None:
     )
     await conn.execute(
         text(
-            'INSERT INTO sys."group" (sys_id, name, description, assignable)'
-            " VALUES (:id, :name, :description, false) ON CONFLICT (sys_id) DO NOTHING"
+            'INSERT INTO sys."group" (sys_id, name, description, assignable, jobs_of)'
+            " VALUES (:id, :name, :description, false, :module)"
+            " ON CONFLICT (sys_id) DO UPDATE SET jobs_of = EXCLUDED.jobs_of"
         ),
         {
             "id": group,
             "name": f"{module} jobs",
             "description": f"What the {module} module's jobs may do: its own roles.",
+            "module": module,
         },
     )
     await conn.execute(

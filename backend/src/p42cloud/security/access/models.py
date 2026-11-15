@@ -28,6 +28,8 @@ GROUP = Table(
         "name": String("Name", max_length=80, required=True, unique=True),
         "description": Text("Description"),
         "assignable": Boolean("Work can be assigned to it", required=True, default=False),
+        # A module's jobs' own group (its service account, its roles): no people join it.
+        "jobs_of": String("For the jobs of (module)", max_length=16),
         # A group with a rule gets its members from it: every active person it matches.
         "rule": Json("Members are the people where"),
         # Or from a sign-in provider: who the provider's groups claim names, at each sign-in.

@@ -2,6 +2,17 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.32.0
+
+- A module's jobs' own group (`<module> jobs`) is marked as such (`jobs_of`, set by the platform
+  on install and upgrade): people can't join it and it gets no other roles, so nobody takes over
+  the rights a module gives only its jobs (like placing orders as the DCA cycle). Someone who
+  joined before can leave; the marker can't be changed in the app.
+- After a module is installed, administrators are told which roles it brings and where to give
+  them (`sys.module_roles`).
+- An owner's transaction (installing, upgrading) keeps the owner's role where code would switch
+  to a module's: it may do more already.
+
 ## 0.31.0
 
 - Settings in the app instead of environment variables: **The app's address**

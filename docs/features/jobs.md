@@ -35,7 +35,9 @@ time, time zone and missed runs, or pause it; upgrades keep what they set.
 - **Several workers** may run side by side: each schedule slot and each run is taken by exactly
   one of them. Runs a stopped worker left behind are ended as failed.
 - **Whose rights**: a module's jobs act as the module's service account (`<module> jobs`, in a
-  group holding the module's roles); the core's jobs act as the system. Every change a job makes
+  group holding the module's roles); the core's jobs act as the system. That group is the jobs'
+  own (`jobs_of`): no one else joins it and it gets no other roles, so nobody takes over the
+  rights a module gives only its jobs; someone who joined before may leave. Every change a job makes
   carries the channel `job:<module>.<job>` and the run's ID in the audit log.
 
 Every run is a record of `sys.job_run`: its job and schedule (by name, and linked to their records,

@@ -141,6 +141,8 @@ async def group_role(change: Change) -> None:
     await switch_role(change.records.conn, "sys")
     before = await _row(change, "sys.group_role", "role")
     group = change.values.get("group", (await _row(change, "sys.group_role", "group")).get("group"))
+    if group is not None:
+        await _jobs_group(change, group)
     synced = group is not None and await change.records.conn.scalar(
         text('SELECT provider IS NOT NULL FROM sys."group" WHERE sys_id = :g'), {"g": group}
     )
@@ -154,11 +156,29 @@ async def group_role(change: Change) -> None:
             await _admins_only(change, "The role is powerful.")
 
 
+async def _jobs_group(change: Change, group: Any) -> None:
+    """A module's jobs' own group takes no one else, and no other roles."""
+    module = await change.records.conn.scalar(
+        text('SELECT jobs_of FROM sys."group" WHERE sys_id = :g'), {"g": group}
+    )
+    if module:
+        raise Problem(
+            409,
+            "jobs_group",
+            f"This group is the {module} module's jobs' own. Give people the module's roles"
+            " through a group of their own.",
+        )
+
+
 async def membership(change: Change) -> None:
     """Joining or leaving a group that holds a powerful role, and members of rule-based groups."""
     recently_verified(change)
     await switch_role(change.records.conn, "sys")
     before = await _row(change, "sys.membership", "group", "from_rule")
+    if change.operation != "delete":  # leaving one is always allowed
+        for group in _values(change, before, "group"):
+            if group is not None:
+                await _jobs_group(change, group)
     if before.get("from_rule") or change.values.get("from_rule"):
         raise Problem(409, "from_rule", "Members of a group with a rule come from the rule only.")
     for group in _values(change, before, "group"):
@@ -179,8 +199,10 @@ async def membership(change: Change) -> None:
 
 async def group(change: Change) -> None:
     """A group holding a powerful role: its rule and its existence are for administrators; it
-    can't start following a provider."""
+    can't start following a provider. Which module's jobs a group is for, only the platform says."""
     recently_verified(change)
+    if "jobs_of" in change.values:
+        raise _refuse("jobs_group", "Which module's jobs a group is for comes with the module.")
     if change.sys_id is not None and change.values.get("provider") is not None:
         await switch_role(change.records.conn, "sys")
         if await change.records.conn.scalar(_GROUP_IS_POWERFUL, {"group": change.sys_id}):

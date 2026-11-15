@@ -75,8 +75,14 @@ async def _hand_over_context(conn: AsyncConnection) -> None:
     )
 
 
+_OWNER_MARK = "p42_owner"  # on a connection in an owner transaction
+
+
 async def switch_role(conn: AsyncConnection, module_id: str) -> None:
-    """Work as `module_id` from here to the end of the transaction (one module's part of it)."""
+    """Work as `module_id` from here to the end of the transaction (one module's part of it).
+    The owner (installing, upgrading) keeps its own role: it may do more already."""
+    if conn.info.get(_OWNER_MARK):
+        return
     role = module_role(module_id)  # checked, so it's safe to put into the statement
     await conn.execute(text(f'SET LOCAL ROLE "{role}"'))
 
@@ -98,4 +104,8 @@ async def owner_transaction(engine: AsyncEngine) -> AsyncGenerator[AsyncConnecti
         if user != OWNER_ROLE:
             raise RuntimeError(f"expected the owner role {OWNER_ROLE}, connected as {user}")
         await _hand_over_context(conn)
-        yield conn
+        conn.info[_OWNER_MARK] = True
+        try:
+            yield conn
+        finally:
+            conn.info.pop(_OWNER_MARK, None)
