@@ -17,7 +17,7 @@ EXTERNAL_ID = Table(
         "system": String("System", max_length=80, required=True),
         "external": String("ID there", max_length=255, required=True),
         "table": Reference("Table", "sys.table", required=True),
-        "record": AnyRecord("Record", required=True),
+        "record": AnyRecord("Record", table_field="table", required=True),
     },
     label_plural="External IDs",
     unique_together=(("system", "table", "external"),),

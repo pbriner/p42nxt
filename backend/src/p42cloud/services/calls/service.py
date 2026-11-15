@@ -110,8 +110,9 @@ async def record(
     made = await records.conn.scalar(
         text(
             "INSERT INTO sys.outside_call (call, module, owner, key, payload, record_table,"
-            " record_id, state, attempts, not_before) VALUES (:call, :module, :owner, :key,"
-            " CAST(:payload AS jsonb), :table, :id, 'pending', 0, now()) RETURNING sys_id"
+            " record_id, about, state, attempts, not_before) VALUES (:call, :module, :owner,"
+            " :key, CAST(:payload AS jsonb), :table, :id, :about, 'pending', 0, now())"
+            " RETURNING sys_id"
         ),
         {
             "call": name,
@@ -121,6 +122,7 @@ async def record(
             "payload": body,
             "table": about[0] if about else None,
             "id": str(about[1]) if about else None,
+            "about": uuid.UUID(str(about[1])) if about else None,
         },
     )
     if not isinstance(made, uuid.UUID):

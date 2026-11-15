@@ -180,6 +180,9 @@
     @if (!creating() && !deleted()) {
       <app-related-tabs [table]="table.table" [id]="id()" [lists]="related()" />
     }
+    @if (!creating()) {
+      <app-record-history [table]="table.table" [id]="id()" />
+    }
   </form>
 } @else {
   <mat-progress-bar mode="indeterminate" />

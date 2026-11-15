@@ -19,6 +19,7 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `GET /api/v1/meta/<module>/<table>` | The table described for the caller (below) |
 | `POST /api/v1/tables` | Make or change one of the administrators' own tables (`tables.md`) |
 | `DELETE /api/v1/tables/<name>` | Retire one of them |
+| `GET /api/v1/<module>/<table>/<id>/history` | The record's changes from the audit log, newest first (`limit`, up to 200): when, what, by whom, which fields from what to what; only for those who may read the record, only the fields they may read |
 | `POST /api/v1/<module>/<table>/<id>/action/<name>` | Run a UI action on a record (`screens.md`) |
 | `POST /api/v1/<module>/<table>/action/<name>` | Run it on several (`ids`), a result per record |
 | `GET /api/v1/<module>/<table>/aggregate` | Totals (below) |

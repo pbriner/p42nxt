@@ -5,6 +5,7 @@ in memory and drops it when PostgreSQL announces a change to those tables (`LIST
 process sees a change as soon as it's committed.
 """
 
+import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -42,6 +43,7 @@ class TableDef:
     owner_field: str | None = None  # a personal table: the field naming each record's owner
     switched_off: bool = False  # its module is switched off
     display_field: str | None = None  # declared; see `display`
+    id: uuid.UUID | None = None  # its record of sys.table (links to any record name it so)
 
     @property
     def display(self) -> str | None:
@@ -117,6 +119,7 @@ async def load_catalog(conn: AsyncConnection) -> Catalog:
             owner_field=row.owner_field,
             switched_off=row.switched_off,
             display_field=row.display_field,
+            id=row.sys_id,
         )
         tables[table.key] = table
     return Catalog(tables)

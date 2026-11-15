@@ -158,3 +158,18 @@ test('a change that needs the code again asks for it, then goes through', async 
   await expect(page.getByText('Saved', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: `Person ${name} changed` })).toBeVisible();
 });
+
+test('a record shows who changed what, when', async ({ page }, info) => {
+  await page.goto('/');
+  const name = `History ${info.project.name} ${Date.now() % 100000}`;
+  const id = await person(page, name);
+  await page.goto(`/form/sys.person/${id}`);
+  await page.getByLabel('Name').fill(`${name} changed`);
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Show the history' }).click();
+  const history = page.locator('app-record-history');
+  await expect(history.getByText('Changed', { exact: true })).toBeVisible();
+  await expect(history.getByText(`${name} changed`)).toBeVisible();
+  await expect(history.getByText('Created', { exact: true })).toBeVisible();
+});

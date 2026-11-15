@@ -39,7 +39,14 @@ export interface TableInfo {
   operations: Record<string, boolean>;
   fields: FieldInfo[];
   /** Tables pointing to this one, through fields the person may read. */
-  referenced_by: { table: string; field: string; label: string; field_label: string }[];
+  referenced_by: {
+    table: string;
+    field: string;
+    label: string;
+    field_label: string;
+    /** A link to any record: what its table field must be as well. */
+    also?: Record<string, string>;
+  }[];
 }
 
 export const NUMBER_TYPES = new Set(['integer', 'decimal', 'percent', 'duration']);
@@ -49,11 +56,19 @@ export function shown(
   field: FieldInfo | undefined,
   name: string,
   language: string,
-  t: (key: 'common.yes' | 'common.no' | 'common.no_access') => string,
+  t: (
+    key: 'common.yes' | 'common.no' | 'common.no_access' | 'ref.hidden' | 'ref.retired',
+  ) => string,
 ): string {
   const display = (record['_display'] as Record<string, unknown> | undefined)?.[name];
+  // A reference never shows an ID: retired ones keep their name, marked; one the person may not
+  // read says so.
+  const state = (record['_reference_state'] as Record<string, string> | undefined)?.[name];
+  if (state === 'hidden') {
+    return t('ref.hidden');
+  }
   if (display !== undefined && display !== null) {
-    return String(display);
+    return state === 'retired' ? `${String(display)} (${t('ref.retired')})` : String(display);
   }
   if (!(name in record)) {
     return field && !field.read ? t('common.no_access') : '—';

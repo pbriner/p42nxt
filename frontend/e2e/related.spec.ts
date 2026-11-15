@@ -115,3 +115,18 @@ test('a long related list turns its pages', async ({ page }, info) => {
   await page.getByRole('button', { name: 'Previous page' }).click();
   await expect(page.getByText('1–20 of 25')).toBeVisible();
 });
+
+test('a retired record still reads as its name where it’s referenced', async ({ page }, info) => {
+  await page.goto('/');
+  const client = await api(page);
+  const name = `Retired ${info.project.name} ${Date.now() % 100000}`;
+  const group = await client.post('/api/v1/sys/group', { name });
+  const person = await client.post('/api/v1/sys/person', { name: `Member of ${name}` });
+  await client.post('/api/v1/sys/membership', { group: group.sys_id, person: person.sys_id });
+  await client.remove(`/api/v1/sys/group/${group.sys_id}`, group._etag);
+
+  await page.goto(`/form/sys.person/${person.sys_id}`);
+  await page.getByRole('tab', { name: /Memberships/ }).click();
+  await expect(page.getByRole('link', { name: `${name} (retired)` })).toBeVisible();
+  await expect(page.getByText(group.sys_id)).toHaveCount(0);
+});

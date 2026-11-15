@@ -67,7 +67,15 @@ forms=(FormView("task.task", (
 Every table gets one: a table whose module declares none gets one section with all its fields
 in two columns. Related lists are the declared ones, then (unless `related_auto=False`) every
 other table pointing to the record through a field the person may read. A related list shows 20 records
-at a time and turns its pages (21–40 of 1139).
+at a time and turns its pages (21–40 of 1139). Links to any record give related lists too (a
+DCA order lists its outside calls and the notifications about it). Below them, **History** shows
+the record's changes from the audit log when asked for: who changed which field from what to
+what, and when; only for those who may read the record, and only the fields they may read.
+
+A reference always reads as a name, never an ID: the target's name, linked to its form; a retired
+(deleted) target keeps its name, marked retired; one the person may not read says so, without its
+name or ID. Records carry this as `_display` and, where it isn't simply named, `_reference_state`
+(`retired` or `hidden`).
 
 ## UI actions
 

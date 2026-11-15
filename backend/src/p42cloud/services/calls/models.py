@@ -10,6 +10,7 @@ import httpx
 
 from p42cloud.data.declarations import Table
 from p42cloud.data.records import Records
+from p42cloud.data.types.any_record import AnyRecord
 from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.choice import Choice
 from p42cloud.data.types.datetime import DateTime
@@ -63,6 +64,8 @@ OUTSIDE_CALL = Table(
         "payload": Json("What it sends"),
         "record_table": String("About table", max_length=80),
         "record_id": String("About record", max_length=36),
+        # The same, as a link: the record's form lists its calls.
+        "about": AnyRecord("About", table_field="record_table", read_only=True),
         "state": Choice(
             "State",
             STATES,
