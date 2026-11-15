@@ -1,7 +1,8 @@
 # The app image: the engine, the core module, the browser app and the p42cloud command line.
 
-# The browser app, built on its own; only the built files go into the image.
-FROM node:24-slim AS frontend
+# The browser app, built on its own; only the built files go into the image. The same files for
+# every platform, so it's built on the builder's own.
+FROM --platform=$BUILDPLATFORM node:24-slim AS frontend
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -36,6 +37,8 @@ RUN uv sync --frozen --no-dev --package p42cloud --no-install-workspace
 COPY backend/src ./backend/src
 # The core's documentation, written into the documentation pages at install.
 COPY docs/features ./docs/features
+# The installation's compose file for this version: deploy/update.sh takes it from here.
+COPY deploy/compose.yml ./deploy/compose.yml
 COPY --from=frontend /app/frontend/dist/browser ./frontend/dist/browser
 RUN uv sync --frozen --no-dev --package p42cloud
 

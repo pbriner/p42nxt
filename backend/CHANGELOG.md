@@ -2,6 +2,17 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.24.0
+
+- Core releases: a tag `v<version>` builds the app image for Intel and ARM machines, pushes it to
+  the repository's container registry, and adds it to the signed registry index by its digest
+  (`release_tool publish-image`).
+- `p42cloud core image [--version]` names the image to update to, checked with the keys the
+  running image trusts: in the signed index, signed, by digest, never a lower version.
+- `deploy/update.sh <name>`: backup, the new image's own compose file, upgrade, check, start; the
+  version before comes back if the upgrade fails. `--image` updates to an image built here.
+- The image carries its `compose.yml`; its browser app is built once for all platforms.
+
 ## 0.23.0
 
 - Modules from signed packages: `p42cloud module install <module>` (when the installation hasn't

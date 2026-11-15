@@ -6,6 +6,7 @@
 - `keygen`: a new release key; the private half goes into the CI secret P42_RELEASE_KEY, the
   public half into TRUSTED_KEYS (releases.py).
 - `publish`: signs a module's built package and adds it to the signed registry index.
+- `publish-image`: signs the core's image (by its digest) and adds it to the index.
 - `notes`: a version's release notes, from a CHANGELOG.md.
 """
 
@@ -17,10 +18,13 @@ import subprocess
 import sys
 import tomllib
 from pathlib import Path
+from typing import Any
 
 from packaging.version import InvalidVersion, Version
 
 from p42cloud.modules import releases
+from p42cloud.modules.core_release import IMAGE
+from p42cloud.modules.manifest import CORE
 from p42cloud.modules.registry import discover
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -100,9 +104,37 @@ def publish(module_id: str, wheel: Path, index_path: Path, url: str) -> None:
         digest=releases.sha256(data),
         signature=signature,
     )
+    _write_index(index, index_path, private)
+
+
+def _write_index(index: dict[str, Any], index_path: Path, private: str) -> None:
     body = json.dumps(index, indent=2, sort_keys=True).encode()
     index_path.write_bytes(body)
     index_path.with_name(index_path.name + ".sig").write_text(releases.sign(private, body))
+
+
+def publish_image(image: str, index_path: Path) -> None:
+    """Adds the core's release (its image by digest, signed) to the index."""
+    private = os.environ["P42_RELEASE_KEY"]
+    match = IMAGE.match(image)
+    if match is None:
+        raise SystemExit(f"Name the image by its digest (…@sha256:…), not {image!r}.")
+    version = str(_version((ROOT / "backend" / "pyproject.toml").read_text()))
+    log = releases.changelog((ROOT / "backend" / "CHANGELOG.md").read_text())
+    if version not in log:
+        raise SystemExit(f"No CHANGELOG.md entry for the core {version}.")
+    index = json.loads(index_path.read_text()) if index_path.is_file() else releases.empty_index()
+    index = releases.add_release(
+        index,
+        CORE,
+        version,
+        depends_on={},
+        entry=log[version],
+        package=image,
+        digest=match["digest"],
+        signature=releases.sign(private, image.encode()),
+    )
+    _write_index(index, index_path, private)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -118,6 +150,9 @@ def main(argv: list[str] | None = None) -> int:
     published.add_argument("--wheel", type=Path, required=True)
     published.add_argument("--index", type=Path, required=True)
     published.add_argument("--url", required=True)
+    image = commands.add_parser("publish-image")
+    image.add_argument("--image", required=True)
+    image.add_argument("--index", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.command == "check":
         problems = check(args.base)
@@ -135,6 +170,9 @@ def main(argv: list[str] | None = None) -> int:
         private, public = releases.new_key()
         print(f"Private (the CI secret P42_RELEASE_KEY, nowhere else):\n  {private}")
         print(f"Public (add to TRUSTED_KEYS in releases.py):\n  {public}")
+        return 0
+    if args.command == "publish-image":
+        publish_image(args.image, args.index)
         return 0
     publish(args.module, args.wheel, args.index, args.url)
     return 0

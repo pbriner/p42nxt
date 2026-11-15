@@ -25,6 +25,7 @@ from p42cloud.kernel.safety import problems
 from p42cloud.kernel.secrets import Sealer
 from p42cloud.kernel.setup import set_up_database
 from p42cloud.modules.core import CORE, compose
+from p42cloud.modules.core_release import verified_image
 from p42cloud.modules.install import install_modules, states
 from p42cloud.modules.install_package import Source, install_package
 from p42cloud.modules.lifecycle import remove, switch_off, switch_on
@@ -188,6 +189,20 @@ async def _module(action: str, module: str | None, source: Source) -> int:
     return 0
 
 
+async def _core_image(version: str | None) -> int:
+    """Prints the image to update to (for deploy/update.sh), checked by this image's keys."""
+    registry = get_settings().registry_url
+    try:
+        async with safe_client(allowed_hosts=hosts_for(registry or "")) as http:
+            found, image = await verified_image(http, registry, version)
+    except Problem as problem:
+        print(f"{problem.title} {problem.detail or ''}".strip(), file=sys.stderr)
+        return 1
+    print(f"The core {found}, signed.", file=sys.stderr)
+    print(image)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="p42cloud")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -209,6 +224,11 @@ def main(argv: list[str] | None = None) -> int:
     modules.add_argument(
         "--file", type=Path, help="install or update: a package file, next to its .sig file"
     )
+    core = commands.add_parser("core", help="the core's releases")
+    image = core.add_subparsers(dest="core_command", required=True).add_parser(
+        "image", help="the signed image of the newest (or a given) release, to update to"
+    )
+    image.add_argument("--version", help="this release, not the newest")
     admin = commands.add_parser(
         "create-admin", help="the first administrator of a new installation (asks for a password)"
     )
@@ -235,6 +255,7 @@ def main(argv: list[str] | None = None) -> int:
         "create-admin": lambda: _create_admin(args.name, args.email),
         "audit": lambda: _verify(args.anchor),
         "check": _check,
+        "core": lambda: _core_image(args.version),
     }
     return asyncio.run(commands_run[args.command]())
 

@@ -1,0 +1,79 @@
+# Releasing the core: push a tag `v<version>` (like `v0.24.0`), the version in
+# backend/pyproject.toml. The app image is built for Intel and ARM machines and pushed to this
+# repository's container registry (ghcr.io/<owner>/<repo>), then the release is added to the
+# signed registry index by the image's digest, signed with the release key (the secret
+# P42_RELEASE_KEY). Installations update with deploy/update.sh, which checks that signature.
+name: Release the core
+
+on:
+  push:
+    tags: ["v[0-9]*"]
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: registry  # one release at a time: they all write the same index
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Which version
+        run: |
+          version="${TAG#v}"
+          declared=$(sed -n 's/^version = "\(.*\)"$/\1/p' backend/pyproject.toml)
+          if [ "$declared" != "$version" ]; then
+            echo "The tag says $version; backend/pyproject.toml says $declared." >&2
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Build and push the image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.IMAGE }}:${{ env.VERSION }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ env.VERSION }}
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+      - run: uv sync --locked --all-packages
+      - name: Sign and add to the index
+        env:
+          P42_RELEASE_KEY: ${{ secrets.P42_RELEASE_KEY }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p registry
+          gh release download registry -p index.json -D registry || true
+          uv run python -m p42cloud.modules.release_tool publish-image \
+            --image "$IMAGE@$DIGEST" --index registry/index.json
+      - name: Publish
+        run: |
+          uv run python -m p42cloud.modules.release_tool notes \
+            --changelog backend/CHANGELOG.md --version "$VERSION" > notes.md
+          printf '\nImage: `%s@%s`\n' "$IMAGE" "${{ steps.build.outputs.digest }}" >> notes.md
+          gh release create "$TAG" --title "Core $VERSION" --notes-file notes.md
+          gh release view registry >/dev/null 2>&1 || \
+            gh release create registry --title "Module registry" \
+              --notes "The signed index of every release (index.json, index.json.sig)."
+          gh release upload registry registry/index.json registry/index.json.sig --clobber
