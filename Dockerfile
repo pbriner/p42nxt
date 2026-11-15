@@ -40,5 +40,7 @@ COPY --from=frontend /app/frontend/dist/browser ./frontend/dist/browser
 RUN uv sync --frozen --no-dev --package p42cloud
 
 ENV PATH=/app/.venv/bin:$PATH
+# Modules installed from signed packages: a volume here starts out owned by the app's user.
+RUN mkdir -p /data/modules && chown 10001 /data/modules
 USER 10001
 ENTRYPOINT ["p42cloud"]

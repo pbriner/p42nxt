@@ -90,8 +90,9 @@ deleted.
 
 ## Releases and updates
 
-See `releases.md`: the version and changelog rule, signed packages, the registry and
-`p42cloud module updates`.
+See `releases.md`: the version and changelog rule, signed packages, the registry,
+`p42cloud module updates`, and installing a module from its package (`p42cloud module install` and
+`module update`).
 
 ## Records
 

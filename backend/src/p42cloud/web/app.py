@@ -51,7 +51,7 @@ async def _start(
     if found:
         await engine.dispose()
         raise RuntimeError("The database isn't safe: " + " ".join(found))
-    modules = [CORE, *discover()]
+    modules = [CORE, *discover(settings.modules_dir)]
     owner = create_engine(settings.owner_database_url)
     if upgrade:
         with working_as(Context(channel="upgrade")):

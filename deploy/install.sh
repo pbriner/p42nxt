@@ -84,6 +84,8 @@ P42_APP_PASSWORD=$(openssl rand -hex 24)
 P42_SETUP_CODE=$setup_code
 P42_BACKUPS=$backups
 P42_PORT=$port
+# Where module releases come from (signed), e.g. https://github.com/<owner>/<repo>/releases/download/registry
+P42_REGISTRY_URL=${P42_REGISTRY_URL:-}
 EOF
 
 cd "$folder"

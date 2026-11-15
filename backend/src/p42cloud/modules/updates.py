@@ -5,8 +5,6 @@ itself. An index not signed by a trusted key is refused. The result is records
 (`sys.module_update`), security updates first; a daily job keeps them current.
 """
 
-from urllib.parse import urlsplit
-
 import httpx
 from packaging.version import Version
 from sqlalchemy import text
@@ -18,6 +16,7 @@ from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.outgoing import safe_client
 from p42cloud.modules import releases
 from p42cloud.modules.install import states
+from p42cloud.modules.packages import download, hosts_for
 from p42cloud.services.jobs.models import JobRun
 
 
@@ -25,13 +24,11 @@ async def fetch_index(
     http: httpx.AsyncClient, registry: str, keys: tuple[str, ...] = releases.TRUSTED_KEYS
 ) -> dict[str, object]:
     base = registry.rstrip("/")
+    body = await download(http, f"{base}/index.json")
+    signature = await download(http, f"{base}/index.json.sig")
     try:
-        body = await http.get(f"{base}/index.json")
-        signature = await http.get(f"{base}/index.json.sig")
-        body.raise_for_status()
-        signature.raise_for_status()
-        return releases.read_index(body.content, signature.text.strip(), keys)
-    except (httpx.HTTPError, ValueError) as error:
+        return releases.read_index(body, signature.decode().strip(), keys)
+    except (UnicodeDecodeError, ValueError) as error:
         raise Problem(
             502, "registry", "The module registry can't be read.", detail=str(error)
         ) from error
@@ -89,8 +86,7 @@ async def check_updates(run: JobRun) -> str:
             text("SELECT name, version FROM sys.module WHERE deleted IS NULL")
         )
     }
-    host = urlsplit(registry).hostname or ""
-    async with safe_client(allowed_hosts=(host,)) as http:
+    async with safe_client(allowed_hosts=hosts_for(registry)) as http:
         index = await fetch_index(http, registry)
     found = releases.updates(index, installed)
     await _write(conn, found)
