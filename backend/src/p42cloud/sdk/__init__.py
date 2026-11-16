@@ -5,10 +5,11 @@ with `Role` and `Grant`, its navigation with `Section` and `Item`, its lists wit
 its forms with `FormView`, its buttons with `UIAction`, its form rules with `FormRule`, its
 widgets with `Widget`, its jobs with `Job` and `Schedule`, the outside systems it talks to with
 `ConnectionType` and the changes it makes there with `OutsideCall`, what it tells people about
-with `NotificationKind`, its own HTTP routes with `Route`, reacts to its own records' changes
-with `TableHook`, moves data with `Migration`, and reads and changes any module's records with
-`Client` (and uses connections, records outside calls and notifies people through it).
-Refusals are `Problem`s.
+with `NotificationKind`, what it tells other modules about with `EventType` and what it does when
+they publish one with `Subscription` (getting an `EventRun`), its own HTTP routes with `Route`,
+reacts to its own records' changes with `TableHook`, moves data with `Migration`, and reads and
+changes any module's records with `Client` (and uses connections, records outside calls,
+publishes events and notifies people through it). Refusals are `Problem`s.
 """
 
 from p42cloud.data.declarations import Table
@@ -45,6 +46,7 @@ from p42cloud.security.access.roles import Grant, Role
 from p42cloud.services.calls.models import CallRun, GaveUp, OutsideCall
 from p42cloud.services.calls.models import Refused as CallRefused
 from p42cloud.services.connections.models import ConnectionType
+from p42cloud.services.events.models import EventRun, EventType, Subscription
 from p42cloud.services.jobs.models import Job, JobRun, Schedule
 from p42cloud.services.notifications.models import NotificationKind
 from p42cloud.services.routes.models import Route, RouteRequest
@@ -73,6 +75,8 @@ __all__ = [
     "Decimal",
     "Duration",
     "Email",
+    "EventRun",
+    "EventType",
     "FieldError",
     "FormRule",
     "FormSection",
@@ -107,6 +111,7 @@ __all__ = [
     "Section",
     "Setting",
     "String",
+    "Subscription",
     "Table",
     "TableHook",
     "Text",

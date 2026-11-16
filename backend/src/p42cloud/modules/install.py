@@ -28,6 +28,8 @@ from p42cloud.services.calls.service import register as register_calls
 from p42cloud.services.calls.service import write_calls
 from p42cloud.services.connections.service import register as register_types
 from p42cloud.services.connections.service import write_types
+from p42cloud.services.events.service import register as register_subscriptions
+from p42cloud.services.events.service import write_events
 from p42cloud.services.jobs.service import register as register_jobs
 from p42cloud.services.jobs.service import write_jobs
 from p42cloud.services.languages import service as languages
@@ -101,6 +103,7 @@ def compose(modules: list[Module]) -> None:
         register_jobs(module.id, module.jobs)
         register_types(module.id, module.connection_types)
         register_calls(module.id, module.calls)
+        register_subscriptions(module.id, module.subscriptions)
         register_kinds(module.id, module.notification_kinds)
         register_routes(module.id, module.routes)
         settings.declare(*module.settings)
@@ -323,6 +326,7 @@ async def install_modules(
             await write_calls(
                 conn, module.id, module.calls, {t.name for t in module.connection_types}
             )
+            await write_events(conn, module.id, module.events, module.subscriptions)
             await write_navigation(conn, catalog, module.id, module.navigation)
             await write_themes(conn, module.id, module.themes)
             await settings.write(conn, module.id, module.settings)

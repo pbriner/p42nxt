@@ -21,6 +21,7 @@ from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import Problem
 from p42cloud.services.calls.service import record
 from p42cloud.services.connections.service import connect
+from p42cloud.services.events.outbox import publish
 from p42cloud.services.notifications.service import send
 from p42cloud.services.routes.models import RouteRequest
 from p42cloud.ui.actions.service import run
@@ -142,6 +143,17 @@ class Client:
         through the owner's connection, at most once (asking first if an answer was lost)."""
         who = self._id(owner) if owner is not None else None
         return await record(self._records, name, payload, owner=who, about=about)
+
+    async def publish(
+        self,
+        event_type: str,
+        *,
+        about: tuple[str, UUID | str] | None = None,
+        data: Json | None = None,
+    ) -> UUID:
+        """Publishes an event with this request's change (undone with it): every module that
+        listens for its type gets it once, after the change is saved."""
+        return await publish(self._records.conn, event_type, about=about, data=data)
 
     @asynccontextmanager
     async def connection(

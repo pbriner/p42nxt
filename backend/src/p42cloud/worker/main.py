@@ -1,9 +1,9 @@
 """Running the worker: `p42cloud-worker` (the installation's `worker` service).
 
-Every few seconds it queues the runs of due schedules, then delivers outside calls and works
-through the queue of runs, one at a time; runs a stopped worker left behind are ended. Several
-workers may run side by side: each slot, run and call is claimed by exactly one. It stops
-cleanly on SIGTERM, after the current run.
+Every few seconds it queues the runs of due schedules, then delivers outside calls and events,
+and works through the queue of runs, one at a time; runs a stopped worker left behind are
+ended. Several workers may run side by side: each slot, run, call and delivery is claimed by
+exactly one. It stops cleanly on SIGTERM, after the current run.
 """
 
 import argparse
@@ -26,6 +26,8 @@ from p42cloud.modules.registry import discover
 from p42cloud.services.announcements.service import notify_due
 from p42cloud.services.calls.service import deliver
 from p42cloud.services.calls.service import recover as recover_calls
+from p42cloud.services.events.service import deliver as deliver_event
+from p42cloud.services.events.service import recover as recover_events
 from p42cloud.services.jobs.service import claim, execute, recover, tick
 from p42cloud.services.languages.service import apply_changed
 from p42cloud.services.notifications import telegram
@@ -64,18 +66,26 @@ async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
                 await telegram.poll(engine)
                 last_poll = now
             sent = await telegram.deliver(engine, installation.public_url(settings))
-            # One call, then one run, in turn: neither queue can starve the other.
-            if (state := await deliver(engine)) is not None:
-                log.info("outside call: %s", state)
+            # One call, one event, then one run, in turn: no queue can starve the others.
+            delivered = await _deliver(engine)
             run = await claim(engine, name)
             if run is not None:
                 state = await execute(engine, run)
                 log.info("%s (attempt %d): %s", run.job, run.attempt, state)
-            elif state is None and sent is None:
+            elif not delivered and sent is None:
                 with contextlib.suppress(TimeoutError):
                     await asyncio.wait_for(stop.wait(), IDLE)
     finally:
         await engine.dispose()
+
+
+async def _deliver(engine: AsyncEngine) -> bool:
+    """One outside call and one event delivery; whether there was any."""
+    if (state := await deliver(engine)) is not None:
+        log.info("outside call: %s", state)
+    if (handled := await deliver_event(engine)) is not None:
+        log.info("event delivery: %s", handled)
+    return state is not None or handled is not None
 
 
 async def _each_minute(engine: AsyncEngine, now: datetime) -> None:
@@ -85,6 +95,8 @@ async def _each_minute(engine: AsyncEngine, now: datetime) -> None:
         log.warning("ended %d runs a stopped worker left behind", ended)
     if lost := await recover_calls(engine, now):
         log.warning("%d outside calls lost their answer; asking first", lost)
+    if stuck := await recover_events(engine, now):
+        log.warning("%d event deliveries a stopped worker left; trying again", stuck)
     if notified := await notify_due(engine):
         log.info("%d messages sent as notifications", notified)
     if shown := await apply_changed(engine):

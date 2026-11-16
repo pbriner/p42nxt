@@ -32,6 +32,7 @@ from p42cloud.services.backups import models as backup_models
 from p42cloud.services.calls import models as calls
 from p42cloud.services.connections import models as connections
 from p42cloud.services.connections import service as connection_service
+from p42cloud.services.events import manifest as events
 from p42cloud.services.jobs import manifest as jobs
 from p42cloud.services.jobs.models import Job, Schedule
 from p42cloud.services.languages import models as language_models
@@ -66,6 +67,7 @@ CORE = Module(
         *jobs.TABLES,
         *connections.TABLES,
         *calls.TABLES,
+        *events.TABLES,
         *notifications.TABLES,
         *module_routes.TABLES,
         *backup_models.TABLES,
@@ -108,16 +110,19 @@ CORE = Module(
     actions=ui.ACTIONS,
     notification_kinds=notifications.KINDS,
     connection_types=notifications.CONNECTION_TYPES,
+    events=events.EVENTS,
     jobs=(
         *jobs.JOBS,
         *notifications.JOBS,
         *backups.JOBS,
+        *events.JOBS,
         Job("check_updates", "Check for module updates", check_updates, timeout=120),
     ),
     schedules=(
         *jobs.SCHEDULES,
         *notifications.SCHEDULES,
         *backups.SCHEDULES,
+        *events.SCHEDULES,
         Schedule("check_updates", "Module updates, daily", "check_updates", "37 5 * * *"),
     ),
 )

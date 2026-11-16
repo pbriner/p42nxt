@@ -2,6 +2,17 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.39.0
+
+- Events: a module declares what it publishes (`EventType`) and what it does when another
+  module publishes (`Subscription`); `client.publish(type, about=…, data=…)` publishes in the
+  change's transaction. The worker hands each event to each listening module once, as its
+  service account, its work and the delivery's end saved together; failed handlers are tried
+  again later, then administrators are notified and can try again. Event types, subscriptions,
+  events and deliveries are records administrators read under Automation.
+- The core publishes `sys.job_failed` and `sys.job_recovered` about a schedule.
+- `deliver_events()` in the SDK's test plugin.
+
 ## 0.38.0
 
 - A module says who makes it: `Module(publisher="…")`, required to install a new module and to

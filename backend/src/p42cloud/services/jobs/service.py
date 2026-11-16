@@ -22,9 +22,10 @@ from p42cloud.data.catalog import load_catalog
 from p42cloud.data.records import Records
 from p42cloud.data.types import Invalid
 from p42cloud.kernel.context import EVERYTHING, SYSTEM_PERSON, Context, working_as
-from p42cloud.kernel.db import transaction
+from p42cloud.kernel.db import switch_role, transaction
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.security.access.service import access_for
+from p42cloud.services.events.outbox import publish
 from p42cloud.services.jobs.cron import parse
 from p42cloud.services.jobs.models import Job, JobRun, Schedule
 from p42cloud.services.notifications.service import send as notify
@@ -169,14 +170,14 @@ async def write_jobs(
             {"module": module, "kept": kept},
         )
     if jobs and module != "sys":  # the core's jobs run as the system
-        await _service_account(conn, module)
+        await ensure_service_account(conn, module)
 
 
 def _label(value: str | dict[str, str]) -> str:
     return json.dumps({"en": value} if isinstance(value, str) else value)
 
 
-async def _service_account(conn: AsyncConnection, module: str) -> None:
+async def ensure_service_account(conn: AsyncConnection, module: str) -> None:
     """The person the module's jobs act as, in a group holding the module's roles."""
     person, group = account_of(module), _group_of(module)
     await conn.execute(
@@ -426,9 +427,11 @@ async def _finish(
                     text("UPDATE sys.schedule SET last_state = :state WHERE name = :s"),
                     {"state": state, "s": run.schedule},
                 )
+                # Without the core's kinds and event types (a process that composed nothing)
+                # it just says nothing; the run's end must be recorded either way.
+                with contextlib.suppress(Problem):
+                    await _publish_outcome(conn, run, state, message, retries)
                 if state == "failed" and run.attempt > retries:
-                    # Without the core's kinds (a process that composed nothing) it just says
-                    # nothing; the run's end must be recorded either way.
                     with contextlib.suppress(Problem):
                         await _tell_failing(conn, run, message, retries)
             if state == "failed" and run.attempt <= retries:
@@ -446,6 +449,41 @@ async def _finish(
                         "wait": wait,
                     },
                 )
+
+
+async def _publish_outcome(
+    conn: AsyncConnection, run: Any, state: str, message: str | None, retries: int
+) -> None:
+    """Other modules hear when a schedule's job fails after its last try, and when it works
+    again after that: about the schedule, so they can keep one thing open per schedule."""
+    final_failure = state == "failed" and run.attempt > retries
+    if not (final_failure or state == "succeeded"):
+        return
+    before = await conn.scalar(
+        text(
+            "SELECT state FROM sys.job_run WHERE schedule = :s AND sys_id <> :id"
+            " AND (state = 'succeeded' OR (state = 'failed' AND attempt > :retries))"
+            " ORDER BY finished DESC NULLS LAST LIMIT 1"
+        ),
+        {"s": run.schedule, "id": run.sys_id, "retries": retries},
+    )
+    if state == "succeeded" and before != "failed":
+        return
+    schedule = await conn.scalar(
+        text("SELECT sys_id FROM sys.schedule WHERE name = :s"), {"s": run.schedule}
+    )
+    await publish(
+        conn,
+        "sys.job_failed" if final_failure else "sys.job_recovered",
+        about=("sys.schedule", schedule) if schedule else None,
+        data={
+            "schedule": run.schedule,
+            "job": run.job,
+            "run": str(run.sys_id),
+            "message": (message or "")[:MAX_MESSAGE] if final_failure else None,
+        },
+    )
+    await switch_role(conn, "sys")
 
 
 async def _tell_failing(conn: AsyncConnection, run: Any, message: str | None, retries: int) -> None:

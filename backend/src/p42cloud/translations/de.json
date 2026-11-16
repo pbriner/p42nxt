@@ -8,6 +8,26 @@
    "text": "Telegram-Bot"
   },
   {
+   "key": "sys.event_type|sys.job_failed|description",
+   "english": "A schedule's job failed after its last try.",
+   "text": "Der Job eines Zeitplans ist nach seinem letzten Versuch fehlgeschlagen."
+  },
+  {
+   "key": "sys.event_type|sys.job_failed|label",
+   "english": "A scheduled job fails",
+   "text": "Ein geplanter Job schlägt fehl"
+  },
+  {
+   "key": "sys.event_type|sys.job_recovered|description",
+   "english": "A schedule's job worked after having failed.",
+   "text": "Der Job eines Zeitplans hat nach einem Fehlschlag wieder funktioniert."
+  },
+  {
+   "key": "sys.event_type|sys.job_recovered|label",
+   "english": "A scheduled job works again",
+   "text": "Ein geplanter Job funktioniert wieder"
+  },
+  {
    "key": "sys.field|sys.announcement.about_update|label",
    "english": "About the update",
    "text": "Über das Update"
@@ -476,6 +496,201 @@
    "key": "sys.field|sys.doc_page.title|label",
    "english": "Title",
    "text": "Titel"
+  },
+  {
+   "key": "sys.field|sys.event.about|label",
+   "english": "About",
+   "text": "Über"
+  },
+  {
+   "key": "sys.field|sys.event.data|label",
+   "english": "Data",
+   "text": "Daten"
+  },
+  {
+   "key": "sys.field|sys.event.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.event.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.event.record_id|label",
+   "english": "About record",
+   "text": "Über den Datensatz"
+  },
+  {
+   "key": "sys.field|sys.event.record_table|label",
+   "english": "About table",
+   "text": "Über die Tabelle"
+  },
+  {
+   "key": "sys.field|sys.event.type_ref|label",
+   "english": "Type",
+   "text": "Typ"
+  },
+  {
+   "key": "sys.field|sys.event.type|label",
+   "english": "Type name",
+   "text": "Typname"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.attempts|label",
+   "english": "Attempts",
+   "text": "Versuche"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.event|label",
+   "english": "Event",
+   "text": "Ereignis"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.finished|label",
+   "english": "Finished",
+   "text": "Beendet"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.message|label",
+   "english": "Last said",
+   "text": "Zuletzt gesagt"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.not_before|label",
+   "english": "Not before",
+   "text": "Nicht vor"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.started|label",
+   "english": "Last started",
+   "text": "Zuletzt gestartet"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.state|choice:done",
+   "english": "Done",
+   "text": "Erledigt"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.state|choice:failed",
+   "english": "Failed",
+   "text": "Fehlgeschlagen"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.state|choice:pending",
+   "english": "Waiting",
+   "text": "Wartet"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.state|choice:skipped",
+   "english": "Skipped",
+   "text": "Übersprungen"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.state|choice:working",
+   "english": "Working",
+   "text": "In Arbeit"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.subscription_ref|label",
+   "english": "Subscription",
+   "text": "Abonnement"
+  },
+  {
+   "key": "sys.field|sys.event_delivery.subscription|label",
+   "english": "Subscription name",
+   "text": "Name des Abonnements"
+  },
+  {
+   "key": "sys.field|sys.event_subscription.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.event_subscription.event_type_ref|label",
+   "english": "Event type",
+   "text": "Ereignistyp"
+  },
+  {
+   "key": "sys.field|sys.event_subscription.event_type|label",
+   "english": "Event type name",
+   "text": "Name des Ereignistyps"
+  },
+  {
+   "key": "sys.field|sys.event_subscription.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.event_subscription.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.event_subscription.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.event_subscription.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.event_subscription.retries|label",
+   "english": "Tries again",
+   "text": "Versucht es erneut"
+  },
+  {
+   "key": "sys.field|sys.event_type.about|label",
+   "english": "About table",
+   "text": "Über die Tabelle"
+  },
+  {
+   "key": "sys.field|sys.event_type.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.event_type.description|label",
+   "english": "Description",
+   "text": "Beschreibung"
+  },
+  {
+   "key": "sys.field|sys.event_type.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.event_type.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.event_type.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.event_type.name|label",
+   "english": "Name",
+   "text": "Name"
   },
   {
    "key": "sys.field|sys.external_id.external|label",
@@ -2938,6 +3153,26 @@
    "text": "Dokumentationsseite"
   },
   {
+   "key": "sys.form_view|sys.event_delivery|section:1",
+   "english": "Event delivery",
+   "text": "Ereigniszustellung"
+  },
+  {
+   "key": "sys.form_view|sys.event_subscription|section:1",
+   "english": "Event subscription",
+   "text": "Ereignisabonnement"
+  },
+  {
+   "key": "sys.form_view|sys.event_type|section:1",
+   "english": "Event type",
+   "text": "Ereignistyp"
+  },
+  {
+   "key": "sys.form_view|sys.event|section:1",
+   "english": "Event",
+   "text": "Ereignis"
+  },
+  {
    "key": "sys.form_view|sys.external_id|section:1",
    "english": "External ID",
    "text": "Externe ID"
@@ -3173,6 +3408,11 @@
    "text": "Nach Modul-Updates suchen"
   },
   {
+   "key": "sys.job|sys.event_cleanup|label",
+   "english": "Put away old events",
+   "text": "Alte Ereignisse wegräumen"
+  },
+  {
    "key": "sys.job|sys.notification_cleanup|label",
    "english": "Put away old notifications",
    "text": "Alte Benachrichtigungen wegräumen"
@@ -3236,6 +3476,26 @@
    "key": "sys.list_view|sys.doc_page|label",
    "english": "Documentation pages",
    "text": "Dokumentationsseiten"
+  },
+  {
+   "key": "sys.list_view|sys.event_delivery|label",
+   "english": "Event deliveries",
+   "text": "Ereigniszustellungen"
+  },
+  {
+   "key": "sys.list_view|sys.event_subscription|label",
+   "english": "Event subscriptions",
+   "text": "Ereignisabonnements"
+  },
+  {
+   "key": "sys.list_view|sys.event_type|label",
+   "english": "Event types",
+   "text": "Ereignistypen"
+  },
+  {
+   "key": "sys.list_view|sys.event|label",
+   "english": "Events",
+   "text": "Ereignisse"
   },
   {
    "key": "sys.list_view|sys.external_id|label",
@@ -3493,6 +3753,36 @@
    "text": "Verbindungen"
   },
   {
+   "key": "sys.nav_item|sys.event_deliveries|label",
+   "english": "Event deliveries",
+   "text": "Ereigniszustellungen"
+  },
+  {
+   "key": "sys.nav_item|sys.event_deliveries|section",
+   "english": "Automation",
+   "text": "Automatisierung"
+  },
+  {
+   "key": "sys.nav_item|sys.event_types|label",
+   "english": "Event types",
+   "text": "Ereignistypen"
+  },
+  {
+   "key": "sys.nav_item|sys.event_types|section",
+   "english": "Automation",
+   "text": "Automatisierung"
+  },
+  {
+   "key": "sys.nav_item|sys.events|label",
+   "english": "Events",
+   "text": "Ereignisse"
+  },
+  {
+   "key": "sys.nav_item|sys.events|section",
+   "english": "Automation",
+   "text": "Automatisierung"
+  },
+  {
    "key": "sys.nav_item|sys.groups|label",
    "english": "Groups",
    "text": "Gruppen"
@@ -3693,6 +3983,16 @@
    "text": "Aussehen"
   },
   {
+   "key": "sys.notification_kind|sys.event_failed|description",
+   "english": "A module couldn't handle an event after its last try: what it should have done hasn't happened.",
+   "text": "Ein Modul konnte ein Ereignis auch beim letzten Versuch nicht verarbeiten: Was es hätte tun sollen, ist nicht geschehen."
+  },
+  {
+   "key": "sys.notification_kind|sys.event_failed|label",
+   "english": "An event isn't handled",
+   "text": "Ein Ereignis wird nicht verarbeitet"
+  },
+  {
    "key": "sys.notification_kind|sys.job_failed|description",
    "english": "A schedule's job failed after its last try, having worked before.",
    "text": "Der Job eines Zeitplans ist nach dem letzten Versuch fehlgeschlagen, nachdem er vorher funktioniert hatte."
@@ -3771,6 +4071,11 @@
    "key": "sys.schedule|sys.check_updates|label",
    "english": "Module updates, daily",
    "text": "Modul-Updates, täglich"
+  },
+  {
+   "key": "sys.schedule|sys.event_cleanup|label",
+   "english": "Old events, daily",
+   "text": "Alte Ereignisse, täglich"
   },
   {
    "key": "sys.schedule|sys.notification_cleanup|label",
@@ -3891,6 +4196,46 @@
    "key": "sys.table|sys.doc_page|label_plural",
    "english": "Documentation pages",
    "text": "Dokumentationsseiten"
+  },
+  {
+   "key": "sys.table|sys.event_delivery|label",
+   "english": "Event delivery",
+   "text": "Ereigniszustellung"
+  },
+  {
+   "key": "sys.table|sys.event_delivery|label_plural",
+   "english": "Event deliveries",
+   "text": "Ereigniszustellungen"
+  },
+  {
+   "key": "sys.table|sys.event_subscription|label",
+   "english": "Event subscription",
+   "text": "Ereignisabonnement"
+  },
+  {
+   "key": "sys.table|sys.event_subscription|label_plural",
+   "english": "Event subscriptions",
+   "text": "Ereignisabonnements"
+  },
+  {
+   "key": "sys.table|sys.event_type|label",
+   "english": "Event type",
+   "text": "Ereignistyp"
+  },
+  {
+   "key": "sys.table|sys.event_type|label_plural",
+   "english": "Event types",
+   "text": "Ereignistypen"
+  },
+  {
+   "key": "sys.table|sys.event|label",
+   "english": "Event",
+   "text": "Ereignis"
+  },
+  {
+   "key": "sys.table|sys.event|label_plural",
+   "english": "Events",
+   "text": "Ereignisse"
   },
   {
    "key": "sys.table|sys.external_id|label",
@@ -4411,6 +4756,11 @@
    "key": "sys.ui_action|sys.run_now|label",
    "english": "Run now",
    "text": "Jetzt ausführen"
+  },
+  {
+   "key": "sys.ui_action|sys.try_again|label",
+   "english": "Try again",
+   "text": "Erneut versuchen"
   },
   {
    "key": "sys.ui_action|sys.update_now|confirm",
