@@ -246,14 +246,19 @@ async def test_german_is_complete_for_the_core_and_dca(owner: AsyncEngine, modul
         if not installed:
             pytest.skip(f"{module} isn't installed in the test database")
         out = await languages.export(conn, await load_catalog(conn), "de", module)
-    # Other tests register jobs and calls in the core's name: only what it declares counts.
-    declared = {f"sys.{j.name}" for j in CORE.jobs} | {f"sys.{c.name}" for c in CORE.calls}
+    # Other tests register jobs, schedules and calls in the core's name: only what it declares
+    # counts.
+    declared = (
+        {f"sys.{j.name}" for j in CORE.jobs}
+        | {f"sys.{s.name}" for s in CORE.schedules}
+        | {f"sys.{c.name}" for c in CORE.calls}
+    )
     left = [
         t["key"]
         for t in out["texts"]
         if t["state"] != "done"
         and not (
-            t["key"].split("|")[0] in ("sys.job", "sys.call_type")
+            t["key"].split("|")[0] in ("sys.job", "sys.schedule", "sys.call_type")
             and t["key"].split("|")[1] not in declared
         )
     ]

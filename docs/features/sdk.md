@@ -16,6 +16,7 @@ platform, any import of another module, and loading code by name (`importlib`, `
 | `ConnectionType` | Declaring an outside system; `Client.connection()` gives a ready client (`connections.md`) |
 | `NotificationKind` | Declaring what a module tells people about; `Client.notify()` sends (`notifications.md`) |
 | `OutsideCall`, `CallRun`, `CallRefused`, `GaveUp` | Declaring a change in an outside system; `Client.call()` records one (`calls.md`) |
+| `EventType`, `Subscription`, `EventRun` | Declaring what a module tells other modules about, and what it does when another publishes; `Client.publish()` publishes (`events.md`) |
 | `Setting`, `Invalid` | Declaring a module's settings (a default and a check); `Client.setting(name)` reads a public one, or any the caller may read (`settings.md`) |
 | `Records` | The type of what hooks, jobs and calls get, for type hints; modules use it only through `Client` |
 | `UIAction`, `ActionInput`, `ActionRun`, `ActionResult`, `FormRule`, `Widget` | Declaring buttons, form rules and widgets (`screens.md`); `Client.action()` runs an action |
@@ -71,6 +72,6 @@ at the root gives an environment for all of them. The app image holds the platfo
 `run_job("<module>.<job>")` runs one of the module's jobs at once, as its service account,
 like the worker (`jobs.md`). `call_route(person, method, address)` calls a module route as a
 person (`module-routes.md`). `deliver_calls()` sends the outside calls that are due, as the worker would (`later=True` as if
-their waits were over). `stand_in("<module>.<type>", answer)` answers a connection type's
+their waits were over); `deliver_events()` hands out the events that are due, the same way. `stand_in("<module>.<type>", answer)` answers a connection type's
 requests with the test's own function instead of the outside system (an `httpx` handler), with
 secrets sealed by a key made for the test.

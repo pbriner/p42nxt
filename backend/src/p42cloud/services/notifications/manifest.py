@@ -16,6 +16,12 @@ KINDS = (
         channels=("telegram",),
     ),
     NotificationKind(
+        "event_failed",
+        "An event isn't handled",
+        "A module couldn't handle an event after its last try: what it should have done"
+        " hasn't happened.",
+    ),
+    NotificationKind(
         "update_finished",
         "An update is done",
         "An update requested in the app has run: done, or failed (with the version before put"

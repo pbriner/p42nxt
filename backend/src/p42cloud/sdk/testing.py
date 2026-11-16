@@ -13,9 +13,9 @@ and these modules installed. `as_system()` and `as_person(id)` give a `Client` f
 (committed at the end); `run_job(name)` runs a job as the worker would and returns its state and
 what it said; `call_route(person, method, address)` calls a module route as that person;
 `stand_in(type, answer)` answers for an outside system; `deliver_calls()` sends the outside
-calls that are due. Needs the development PostgreSQL (`docker compose up -d`);
-`P42_TEST_ADMIN_URL` points elsewhere. The modules' database roles are kept between sessions:
-they belong to the whole server and own nothing.
+calls that are due; `deliver_events()` hands out the events that are due. Needs the development
+PostgreSQL (`docker compose up -d`); `P42_TEST_ADMIN_URL` points elsewhere. The modules'
+database roles are kept between sessions: they belong to the whole server and own nothing.
 """
 
 import os
@@ -45,6 +45,7 @@ from p42cloud.sdk.client import Client
 from p42cloud.security.access.service import access_for
 from p42cloud.services.calls.service import deliver
 from p42cloud.services.connections.service import TEST_TRANSPORTS
+from p42cloud.services.events.service import deliver as deliver_event
 from p42cloud.services.jobs.service import run_job as run_now
 from p42cloud.services.routes.models import RouteRequest
 from p42cloud.services.routes.service import ROUTES
@@ -221,6 +222,24 @@ def deliver_calls(p42_engine: AsyncEngine) -> DeliverCalls:
         moment = datetime.now(UTC) + (timedelta(days=1) if later else timedelta(0))
         states: list[str] = []
         while (state := await deliver(p42_engine, moment)) is not None:
+            states.append(state)
+        return states
+
+    return delivering
+
+
+type DeliverEvents = Callable[..., Awaitable[list[str]]]
+
+
+@pytest.fixture
+def deliver_events(p42_engine: AsyncEngine) -> DeliverEvents:
+    """Hands out the events that are due to the modules listening, as the worker would: the
+    deliveries' states in turn. `later=True` acts as if their waits were over."""
+
+    async def delivering(*, later: bool = False) -> list[str]:
+        moment = datetime.now(UTC) + (timedelta(days=1) if later else timedelta(0))
+        states: list[str] = []
+        while (state := await deliver_event(p42_engine, moment)) is not None:
             states.append(state)
         return states
 

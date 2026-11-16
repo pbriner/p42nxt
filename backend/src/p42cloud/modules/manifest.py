@@ -30,6 +30,7 @@ from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.security.access.roles import Role
 from p42cloud.services.calls.models import OutsideCall
 from p42cloud.services.connections.models import ConnectionType
+from p42cloud.services.events.models import EventType, Subscription
 from p42cloud.services.jobs.models import Job, Schedule
 from p42cloud.services.notifications.models import NotificationKind
 from p42cloud.services.routes.models import Route
@@ -140,6 +141,9 @@ class Module:
     schedules: tuple[Schedule, ...] = ()
     connection_types: tuple[ConnectionType, ...] = ()
     calls: tuple[OutsideCall, ...] = ()
+    # What it tells other modules about, and what it listens for.
+    events: tuple[EventType, ...] = ()
+    subscriptions: tuple[Subscription, ...] = ()
     notification_kinds: tuple[NotificationKind, ...] = ()
     routes: tuple[Route, ...] = ()
     themes: tuple[Theme, ...] = ()

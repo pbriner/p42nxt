@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 from p42cloud.data.settings import value
 from p42cloud.services.connections.service import check
+from p42cloud.services.events.service import try_again
 from p42cloud.services.jobs.service import queue
 from p42cloud.services.update_requests.service import tonight
 from p42cloud.ui.actions.models import UI_ACTION, ActionResult, ActionRun, UIAction
@@ -101,6 +102,25 @@ VIEWS = (
         sort=("-created",),
         searchable=False,
     ),
+    ListView("sys.event_type", ("label", "name", "module_ref", "about"), sort=("name",)),
+    ListView(
+        "sys.event_subscription",
+        ("label", "event_type_ref", "module_ref", "retries"),
+        sort=("name",),
+        searchable=False,
+    ),
+    ListView(
+        "sys.event",
+        ("type_ref", "about", "created", "created_by"),
+        sort=("-created",),
+        searchable=False,
+    ),
+    ListView(
+        "sys.event_delivery",
+        ("event", "subscription_ref", "state", "attempts", "started", "message"),
+        sort=("-created",),
+        searchable=False,
+    ),
     ListView(
         "sys.notification",
         ("title", "severity", "read", "created"),
@@ -187,6 +207,15 @@ NAVIGATION = (
                 icon="send",
                 keywords=("orders", "api"),
             ),
+            Item("events", "Events", "sys.event", icon="bolt", keywords=("subscriptions",)),
+            Item(
+                "event_deliveries",
+                "Event deliveries",
+                "sys.event_delivery",
+                icon="call_split",
+                keywords=("events", "failed"),
+            ),
+            Item("event_types", "Event types", "sys.event_type", icon="category"),
             Item(
                 "notification_kinds", "Notification kinds", "sys.notification_kind", icon="campaign"
             ),
@@ -276,12 +305,28 @@ async def _update_tonight(run: ActionRun) -> ActionResult:
     return await _update(run, at_night=True)
 
 
+async def _try_again(run: ActionRun) -> ActionResult:
+    await try_again(run.records.conn, run.sys_id)
+    return ActionResult(message="It will be tried again shortly.")
+
+
 async def _check(run: ActionRun) -> ActionResult:
     """Whether the connection works: the type's check, through the safe client."""
     return ActionResult(message=await check(run.records, run.sys_id))
 
 
 ACTIONS = (
+    UIAction(
+        "try_again",
+        "sys.event_delivery",
+        "Try again",
+        places=("form_button", "list_row"),
+        icon="replay",
+        # Administrators only read deliveries; this is the one change they may make to one.
+        operation="read",
+        condition={"field": "state", "op": "eq", "value": "failed"},
+        handler=_try_again,
+    ),
     UIAction(
         "update_now",
         "sys.module_update",
