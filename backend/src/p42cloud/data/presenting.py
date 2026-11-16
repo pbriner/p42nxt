@@ -121,6 +121,8 @@ def describe(
         "personal": table.owner_field is not None,
         # A hierarchy: the field naming each record's parent.
         "parent": table.parent_field,
+        # Files may be attached to its records.
+        "files": table.files,
         "operations": {op: bool(access.of(table.key, op)) for op in OPERATIONS},
         "fields": [_field(table, f, access, language) for f in [*table.active_fields(), *system]],
         "referenced_by": _referenced_by(catalog, table, access, language) if catalog else [],

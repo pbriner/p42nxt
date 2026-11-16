@@ -57,6 +57,7 @@ GREETING = Table(
         "team": Reference("Team", "sys.group"),
     },
     label_plural="Greetings",
+    files=True,
 )
 
 MINE = {"field": "author", "op": "eq", "value": "@me"}
@@ -162,7 +163,7 @@ module = Module(
     name="Hello",
     publisher="p42",
     version=package_version("p42cloud-hello"),
-    depends_on={"sys": ">=0.38,<1"},
+    depends_on={"sys": ">=0.40,<1"},
     tables=(GREETING,),
     roles=(USER, KEEPER),
     hooks=(TableHook("hello.greeting", before=_before_saving),),

@@ -818,6 +818,46 @@
    "text": "Name"
   },
   {
+   "key": "sys.field|sys.file.about|label",
+   "english": "Attached to",
+   "text": "Angehängt an"
+  },
+  {
+   "key": "sys.field|sys.file.content|label",
+   "english": "Content",
+   "text": "Inhalt"
+  },
+  {
+   "key": "sys.field|sys.file.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.file.record_id|label",
+   "english": "Attached to record",
+   "text": "Angehängt an Datensatz"
+  },
+  {
+   "key": "sys.field|sys.file.record_table|label",
+   "english": "Attached to table",
+   "text": "Angehängt an Tabelle"
+  },
+  {
+   "key": "sys.field|sys.file.sha256|label",
+   "english": "Checksum",
+   "text": "Prüfsumme"
+  },
+  {
+   "key": "sys.field|sys.file.size|label",
+   "english": "Size (bytes)",
+   "text": "Grösse (Bytes)"
+  },
+  {
+   "key": "sys.field|sys.file.type|label",
+   "english": "Type",
+   "text": "Typ"
+  },
+  {
    "key": "sys.field|sys.form_rule.condition|label",
    "english": "When",
    "text": "Wann"
@@ -2433,6 +2473,11 @@
    "text": "Anzeigefeld"
   },
   {
+   "key": "sys.field|sys.table.files|label",
+   "english": "Files can be attached",
+   "text": "Dateien können angehängt werden"
+  },
+  {
    "key": "sys.field|sys.table.label_plural|label",
    "english": "Label for several",
    "text": "Bezeichnung für mehrere"
@@ -3203,6 +3248,11 @@
    "text": "Feld"
   },
   {
+   "key": "sys.form_view|sys.file|section:1",
+   "english": "File",
+   "text": "Datei"
+  },
+  {
    "key": "sys.form_view|sys.form_rule|section:1",
    "english": "Form rule",
    "text": "Formularregel"
@@ -3526,6 +3576,11 @@
    "key": "sys.list_view|sys.field|label",
    "english": "Fields",
    "text": "Felder"
+  },
+  {
+   "key": "sys.list_view|sys.file|label",
+   "english": "Files",
+   "text": "Dateien"
   },
   {
    "key": "sys.list_view|sys.form_rule|label",
@@ -4286,6 +4341,16 @@
    "key": "sys.table|sys.field|label_plural",
    "english": "Fields",
    "text": "Felder"
+  },
+  {
+   "key": "sys.table|sys.file|label",
+   "english": "File",
+   "text": "Datei"
+  },
+  {
+   "key": "sys.table|sys.file|label_plural",
+   "english": "Files",
+   "text": "Dateien"
   },
   {
    "key": "sys.table|sys.form_rule|label",

@@ -81,6 +81,7 @@ RESERVED = frozenset(
         "public",
         "static",
         "docs",
+        "files",
         "help",
         "www",
         "dashboards",

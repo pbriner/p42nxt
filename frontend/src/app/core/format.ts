@@ -38,6 +38,8 @@ export interface TableInfo {
   personal: boolean;
   /** A hierarchy: the field naming each record's parent. */
   parent: string | null;
+  /** Files may be attached to its records. */
+  files: boolean;
   operations: Record<string, boolean>;
   fields: FieldInfo[];
   /** Tables pointing to this one, through fields the person may read. */

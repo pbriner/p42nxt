@@ -638,7 +638,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-hello"
-version = "0.6.1"
+version = "0.7.0"
 source = { editable = "modules/hello" }
 dependencies = [
     { name = "p42cloud" },
