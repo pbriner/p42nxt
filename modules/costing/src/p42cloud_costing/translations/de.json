@@ -368,6 +368,21 @@
    "text": "Leser Kostenrechnung"
   },
   {
+   "key": "sys.state_transition|costing.finish|label",
+   "english": "Mark done",
+   "text": "Als erledigt markieren"
+  },
+  {
+   "key": "sys.state_transition|costing.reopen|label",
+   "english": "Reopen",
+   "text": "Wieder öffnen"
+  },
+  {
+   "key": "sys.state_transition|costing.settle|label",
+   "english": "Settle",
+   "text": "Abrechnen"
+  },
+  {
    "key": "sys.table|costing.center|label",
    "english": "Center",
    "text": "Stelle"
@@ -416,6 +431,26 @@
    "key": "sys.table|costing.order|label_plural",
    "english": "Orders",
    "text": "Aufträge"
+  },
+  {
+   "key": "sys.ui_action|costing.move_finish|label",
+   "english": "Mark done",
+   "text": "Als erledigt markieren"
+  },
+  {
+   "key": "sys.ui_action|costing.move_reopen|label",
+   "english": "Reopen",
+   "text": "Wieder öffnen"
+  },
+  {
+   "key": "sys.ui_action|costing.move_settle|confirm",
+   "english": "Settle the order? Its costs are then final.",
+   "text": "Den Auftrag abrechnen? Seine Kosten sind danach endgültig."
+  },
+  {
+   "key": "sys.ui_action|costing.move_settle|label",
+   "english": "Settle",
+   "text": "Abrechnen"
   }
  ]
 }

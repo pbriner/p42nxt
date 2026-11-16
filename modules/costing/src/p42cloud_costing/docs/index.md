@@ -31,6 +31,9 @@ A piece of work with a start and an end, under a center. An order **adds value**
 becomes part of an asset and is written off over some years) or is **upkeep or expense** (OPEX:
 a cost of the year). Offers, contracts and photos can be attached to it.
 
+An order is **open**, then **done** (Mark done; Reopen brings it back), then **settled**: its
+costs are final. Only a Controller settles.
+
 ## Spreading keys
 
 A **shared** cost center (the heating, the stairs, IT) is spread over the centers it serves by a

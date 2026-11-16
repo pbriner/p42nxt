@@ -2,6 +2,14 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.42.0
+
+- States with allowed moves: a module declares a flow for a choice field (`Flow(table, field,
+  initial, transitions)`): where a new record starts, and the only moves, each perhaps for some
+  roles only or only while the record matches a condition. Every change through the records
+  service is held to it ("From Open it can't go to Settled"); each move is also a button where it
+  applies. Flows are records (`sys.state_flow`, `sys.state_transition`).
+
 ## 0.41.0
 
 - Modules to install: the update check also offers the registry's modules not installed yet

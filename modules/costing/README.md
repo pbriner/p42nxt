@@ -1,6 +1,6 @@
 # Costing (`costing`)
 
-Version: 0.1.0 · Last updated: 2026-11-16
+Version: 0.2.0 · Last updated: 2026-11-16
 
 ## Purpose
 
@@ -12,7 +12,7 @@ and by Finance and Budget through the API.
 
 | Module | Versions | What for |
 |---|---|---|
-| `sys` | `>=0.40,<1` | Hierarchies, files, the SDK |
+| `sys` | `>=0.42,<1` | Hierarchies, files, the SDK |
 
 Core dependency: no
 
@@ -41,7 +41,8 @@ form lists its shares.
 
 ## Workflows, approvals and jobs
 
-Orders have the states open, done and settled (set by hand). No jobs.
+Orders follow a flow: open → done (Mark done), done → open (Reopen), done → settled (Settle,
+Controllers only); other moves are refused. Each move is a button on the order. No jobs.
 
 ## API
 
