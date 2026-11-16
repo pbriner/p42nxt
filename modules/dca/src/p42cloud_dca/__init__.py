@@ -371,7 +371,11 @@ async def _check_connection(change: Change, merged: dict[str, Any]) -> None:
     if "connection" not in values or not values["connection"]:
         return
     mine = {str(c["sys_id"]) for c in await _kraken_connections(change)}
-    if str(values["connection"]) not in mine or merged.get("owner") not in (None, change.person):
+    # The owner comes as text from a stored plan and as an ID on a new one: compared as text.
+    owner = merged.get("owner")
+    if str(values["connection"]) not in mine or (
+        owner is not None and str(owner) != str(change.person)
+    ):
         raise _invalid("connection", "One of your own Kraken connections.")
 
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.2
+
+- Naming a Kraken connection on an existing plan is saved; it was refused as "not one of your
+  own connections" for every plan made before, because the owner was compared in two forms.
+
 ## 0.8.1
 
 - Says who makes it (publisher `p42`), so installations take its updates only from that
