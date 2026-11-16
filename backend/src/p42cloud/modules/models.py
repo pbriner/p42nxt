@@ -34,6 +34,7 @@ MODULE = Table(
         "protected": Boolean("Part of the core", required=True, default=False),
     },
     label_plural="Modules",
+    display="title",
 )
 
 DOC_PAGE = Table(
