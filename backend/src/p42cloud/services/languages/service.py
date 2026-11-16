@@ -74,6 +74,8 @@ def _places(catalog: Catalog) -> list[_Where]:
                     'JOIN sys."table" t ON t.sys_id = r."table"',
                 )
             )
+        elif key == "sys.module":  # a module's own texts are the module's
+            found.append(_Where(table, fields, "r.name", "r.name"))
         elif "name" in names and names["name"].field.unique:
             module = "r.module" if "module" in names else "NULL"
             found.append(_Where(table, fields, "r.name", module))

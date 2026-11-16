@@ -146,7 +146,18 @@ ROLES = [
             Grant(
                 "sys.module",
                 ("read",),
-                fields=("name", "label", "version", "description", "category", "icon", "enabled"),
+                fields=(
+                    "name",
+                    "label",
+                    "version",
+                    "description",
+                    "category",
+                    "icon",
+                    "enabled",
+                    "title",
+                    "category_title",
+                    "summary",
+                ),
             ),
             # The outside calls made for them.
             Grant(

@@ -4,7 +4,7 @@ and the search across lists."""
 import os
 import uuid
 from collections.abc import AsyncGenerator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import httpx
@@ -75,6 +75,18 @@ async def test_the_navigator_shows_only_what_one_may_open(people: People) -> Non
     assert "sys.people" in plain["sys:People and access"]  # everyone sees who's who
     assert "sys.roles" not in plain["sys:People and access"]
     assert everyone["categories"][-1]["name"] == "Platform"
+
+
+async def test_the_navigator_names_modules_and_categories_in_the_persons_language(
+    people: People,
+) -> None:
+    async with acting(people.engine, people.plain) as records:
+        records.situation = replace(records.situation, language="de")
+        found = await navigation(records)
+    core = found["categories"][-1]
+    assert core["name"] == "Plattform"
+    assert [m["name"] for m in core["modules"]] == ["Kern"]
+    assert "Personen und Zugriff" in [s["label"] for s in core["modules"][0]["sections"]]
 
 
 @pytest.mark.parametrize(

@@ -37,6 +37,7 @@ from p42cloud.services.files import manifest as files
 from p42cloud.services.jobs import manifest as jobs
 from p42cloud.services.jobs.models import Job, Schedule
 from p42cloud.services.languages import models as language_models
+from p42cloud.services.maintenance import manifest as maintenance
 from p42cloud.services.notifications import manifest as notifications
 from p42cloud.services.notifications import service as notifications_service
 from p42cloud.services.routes import models as module_routes
@@ -119,6 +120,7 @@ CORE = Module(
         *notifications.JOBS,
         *backups.JOBS,
         *events.JOBS,
+        *maintenance.JOBS,
         Job("check_updates", "Check for module updates", check_updates, timeout=120),
     ),
     schedules=(
@@ -126,6 +128,7 @@ CORE = Module(
         *notifications.SCHEDULES,
         *backups.SCHEDULES,
         *events.SCHEDULES,
+        *maintenance.SCHEDULES,
         Schedule("check_updates", "Module updates, daily", "check_updates", "37 5 * * *"),
     ),
 )

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.3
+
+- Its name, category and description in German, for the navigator and the search (they
+  follow the person's language with the core 0.40).
+
 ## 0.8.2
 
 - Naming a Kraken connection on an existing plan is saved; it was refused as "not one of your

@@ -56,7 +56,7 @@ VIEWS = (
     ListView("sys.person", ("name", "email", "kind", "active"), search=("name", "email")),
     ListView("sys.group", ("name", "description", "assignable")),
     ListView("sys.role", ("label", "name", "module_ref", "powerful"), search=("label", "name")),
-    ListView("sys.module", ("label", "name", "version", "enabled"), sort=("label",)),
+    ListView("sys.module", ("title", "name", "version", "enabled"), sort=("label",)),
     ListView(
         "sys.announcement",
         ("subject", "kind", "audience", "deliver", "valid_from", "valid_until"),

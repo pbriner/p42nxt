@@ -8,6 +8,7 @@ from p42cloud.data.types.json import Json
 from p42cloud.data.types.markdown import Markdown
 from p42cloud.data.types.reference import Reference
 from p42cloud.data.types.string import String
+from p42cloud.data.types.translated_text import TranslatedText
 
 MODULE = Table(
     "module",
@@ -24,6 +25,11 @@ MODULE = Table(
         "icon": Icon("Icon"),
         # Switched off: its tables and roles count for nobody; its data stays.
         "enabled": Boolean("On", required=True, default=True),
+        # The name, category and description as people read them, in their language (the
+        # fields above stay as the module declares them, for sorting and grouping).
+        "title": TranslatedText("Name shown"),
+        "category_title": TranslatedText("Category shown"),
+        "summary": TranslatedText("Description shown"),
         # The core and what it depends on: never switched off or removed.
         "protected": Boolean("Part of the core", required=True, default=False),
     },

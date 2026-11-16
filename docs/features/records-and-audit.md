@@ -39,14 +39,18 @@ the entry names the database person and the channel `db:<role>`.
 
 The log can only be added to: changing, deleting or truncating entries is refused, the owner
 role included. It is split into monthly partitions (UTC months), created three months ahead by
-`p42cloud upgrade`. Changes can't be saved in a month that has no partition, so `p42cloud check`
-reports a missing one up to two months ahead: run `p42cloud upgrade` when it does.
+`p42cloud upgrade` and by the core's weekly job **Prepare the audit log's coming months**, so an
+installation running for months without a restart keeps saving changes. Changes can't be saved
+in a month that has no partition, so `p42cloud check` reports a missing one up to two months
+ahead: run `p42cloud upgrade` when it does.
 
 ## Hash chain
 
 When a transaction commits, each of its entries gets the next number and a hash over the
 previous hash and all its fields. `p42cloud audit verify` recomputes the chain and reports an
-entry that was changed, removed or inserted, even by someone who switched the triggers off.
+entry that was changed, removed or inserted, even by someone who switched the triggers off. The
+core's weekly job **Check the audit log for tampering** does the same; when it fails,
+administrators are notified like for any failed scheduled job, and the run says what's wrong.
 
 Someone who controls the database can also rewrite the whole chain so that it verifies again.
 To find that, keep the head that `audit verify` prints (`<number>:<hash>`) somewhere outside the

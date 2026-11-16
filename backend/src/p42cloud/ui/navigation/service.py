@@ -116,7 +116,8 @@ async def navigation(records: Records) -> dict[str, Any]:
     rows = await records.conn.execute(
         text(
             'SELECT n.name, n.module, n.section, n.label, n.icon, n.kind, n."table", n.view,'
-            " n.filter, n.path, n.keywords, m.label AS module_label, m.category,"
+            " n.filter, n.path, n.keywords, coalesce(m.title, jsonb_build_object('en', m.label))"
+            " AS module_label, m.category, m.category_title,"
             " m.icon AS module_icon"
             " FROM sys.nav_item n JOIN sys.module m ON m.name = n.module"
             " WHERE n.deleted IS NULL AND m.deleted IS NULL AND m.enabled"
@@ -131,9 +132,10 @@ async def navigation(records: Records) -> dict[str, Any]:
             row.module,
             {
                 "id": row.module,
-                "name": row.module_label,
+                "name": translated(row.module_label, language),
                 "icon": row.module_icon,
                 "category": row.category,
+                "category_title": translated(row.category_title, language) or row.category,
                 "sections": [],
             },
         )
@@ -159,8 +161,10 @@ async def navigation(records: Records) -> dict[str, Any]:
     )
     categories: list[dict[str, Any]] = []
     for module in ordered:
-        category = module.pop("category")
-        if not categories or categories[-1]["name"] != category:
-            categories.append({"name": category, "modules": []})
+        category, shown = module.pop("category"), module.pop("category_title")
+        if not categories or categories[-1]["key"] != category:
+            categories.append({"key": category, "name": shown, "modules": []})
         categories[-1]["modules"].append(module)
+    for category in categories:
+        del category["key"]  # grouped by the declared name, shown by the translated one
     return {"categories": categories}
