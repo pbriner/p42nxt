@@ -22,6 +22,8 @@ import { FieldEditor } from '../unit';
       />
       @if (percent()) {
         <span matTextSuffix>%</span>
+      } @else if (currency(); as code) {
+        <span matTextSuffix>{{ code }}</span>
       }
       @if (error()) {
         <mat-hint class="field-error" role="alert">{{ error() }}</mat-hint>
@@ -42,6 +44,10 @@ export class NumberEditor implements FieldEditor {
   readonly error = input<string | null>(null);
   readonly shown = input<string | null>(null);
   protected readonly percent = computed(() => this.field().type === 'percent');
+  /** An amount in a fixed currency shows it; one whose currency is another field doesn't. */
+  protected readonly currency = computed(() =>
+    this.field().type === 'money' ? ((this.field().options['currency'] as string) ?? null) : null,
+  );
   protected readonly step = computed(() => (this.field().type === 'integer' ? '1' : 'any'));
 
   protected text(): string {

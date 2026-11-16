@@ -53,7 +53,7 @@ export interface TableInfo {
   }[];
 }
 
-export const NUMBER_TYPES = new Set(['integer', 'decimal', 'percent', 'duration']);
+export const NUMBER_TYPES = new Set(['integer', 'decimal', 'money', 'percent', 'duration']);
 
 export function shown(
   record: Record<string, unknown>,
@@ -101,6 +101,18 @@ export function shown(
       const scale = field?.options['scale'];
       const digits = typeof scale === 'number' ? Math.min(Math.max(scale, 0), 20) : 20;
       return Number(value).toLocaleString(language, { maximumFractionDigits: digits });
+    }
+    case 'money': {
+      // The amount with its currency, as many decimals as the field keeps: "CHF 1'250.00".
+      const options = field?.options ?? {};
+      const scale = typeof options['scale'] === 'number' ? options['scale'] : 2;
+      const holder = options['currency_field'];
+      const code = options['currency'] ?? (typeof holder === 'string' ? record[holder] : null);
+      const amount = Number(value).toLocaleString(language, {
+        minimumFractionDigits: scale,
+        maximumFractionDigits: scale,
+      });
+      return code ? `${String(code)} ${amount}` : amount;
     }
     case 'secret':
       return '••••••••';

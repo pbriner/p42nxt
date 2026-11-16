@@ -8,6 +8,81 @@
    "text": "Telegram-Bot"
   },
   {
+   "key": "sys.currency|AUD|label",
+   "english": "Australian dollar",
+   "text": "Australischer Dollar"
+  },
+  {
+   "key": "sys.currency|BTC|label",
+   "english": "Bitcoin",
+   "text": "Bitcoin"
+  },
+  {
+   "key": "sys.currency|CAD|label",
+   "english": "Canadian dollar",
+   "text": "Kanadischer Dollar"
+  },
+  {
+   "key": "sys.currency|CHF|label",
+   "english": "Swiss franc",
+   "text": "Schweizer Franken"
+  },
+  {
+   "key": "sys.currency|CNY|label",
+   "english": "Chinese yuan",
+   "text": "Chinesischer Yuan"
+  },
+  {
+   "key": "sys.currency|CZK|label",
+   "english": "Czech koruna",
+   "text": "Tschechische Krone"
+  },
+  {
+   "key": "sys.currency|DKK|label",
+   "english": "Danish krone",
+   "text": "Dänische Krone"
+  },
+  {
+   "key": "sys.currency|ETH|label",
+   "english": "Ether",
+   "text": "Ether"
+  },
+  {
+   "key": "sys.currency|EUR|label",
+   "english": "Euro",
+   "text": "Euro"
+  },
+  {
+   "key": "sys.currency|GBP|label",
+   "english": "Pound sterling",
+   "text": "Britisches Pfund"
+  },
+  {
+   "key": "sys.currency|JPY|label",
+   "english": "Japanese yen",
+   "text": "Japanischer Yen"
+  },
+  {
+   "key": "sys.currency|NOK|label",
+   "english": "Norwegian krone",
+   "text": "Norwegische Krone"
+  },
+  {
+   "key": "sys.currency|PLN|label",
+   "english": "Polish złoty",
+   "text": "Polnischer Złoty"
+  },
+  {
+   "key": "sys.currency|SEK|label",
+   "english": "Swedish krona",
+   "text": "Schwedische Krone"
+  },
+  {
+   "key": "sys.currency|USD|label",
+   "english": "US dollar",
+   "text": "US-Dollar"
+  },
+  {
    "key": "sys.event_type|sys.job_failed|description",
    "english": "A schedule's job failed after its last try.",
    "text": "Der Job eines Zeitplans ist nach seinem letzten Versuch fehlgeschlagen."
@@ -453,6 +528,31 @@
    "text": "Geheimnis"
   },
   {
+   "key": "sys.field|sys.currency.active|label",
+   "english": "Offered",
+   "text": "Angeboten"
+  },
+  {
+   "key": "sys.field|sys.currency.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.currency.decimals|label",
+   "english": "Decimals",
+   "text": "Nachkommastellen"
+  },
+  {
+   "key": "sys.field|sys.currency.label|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.currency.name|label",
+   "english": "Code",
+   "text": "Code"
+  },
+  {
    "key": "sys.field|sys.dashboard_layout.dashboard|label",
    "english": "Dashboard",
    "text": "Dashboard"
@@ -691,6 +791,31 @@
    "key": "sys.field|sys.event_type.name|label",
    "english": "Name",
    "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.exchange_rate.base|label",
+   "english": "Base currency",
+   "text": "Basiswährung"
+  },
+  {
+   "key": "sys.field|sys.exchange_rate.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.field|sys.exchange_rate.date|label",
+   "english": "Date",
+   "text": "Datum"
+  },
+  {
+   "key": "sys.field|sys.exchange_rate.origin|label",
+   "english": "From",
+   "text": "Quelle"
+  },
+  {
+   "key": "sys.field|sys.exchange_rate.rate|label",
+   "english": "Rate",
+   "text": "Kurs"
   },
   {
    "key": "sys.field|sys.external_id.external|label",
@@ -3213,6 +3338,11 @@
    "text": "Anmeldedaten"
   },
   {
+   "key": "sys.form_view|sys.currency|section:1",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
    "key": "sys.form_view|sys.dashboard_layout|section:1",
    "english": "Dashboard layout",
    "text": "Dashboard-Anordnung"
@@ -3241,6 +3371,11 @@
    "key": "sys.form_view|sys.event|section:1",
    "english": "Event",
    "text": "Ereignis"
+  },
+  {
+   "key": "sys.form_view|sys.exchange_rate|section:1",
+   "english": "Exchange rate",
+   "text": "Wechselkurs"
   },
   {
    "key": "sys.form_view|sys.external_id|section:1",
@@ -3498,6 +3633,11 @@
    "text": "Alte Ereignisse wegräumen"
   },
   {
+   "key": "sys.job|sys.exchange_rates|label",
+   "english": "Load the ECB's exchange rates",
+   "text": "Wechselkurse der EZB laden"
+  },
+  {
    "key": "sys.job|sys.notification_cleanup|label",
    "english": "Put away old notifications",
    "text": "Alte Benachrichtigungen wegräumen"
@@ -3553,6 +3693,11 @@
    "text": "Anmeldedaten"
   },
   {
+   "key": "sys.list_view|sys.currency|label",
+   "english": "Currencies",
+   "text": "Währungen"
+  },
+  {
    "key": "sys.list_view|sys.dashboard_layout|label",
    "english": "Dashboard layouts",
    "text": "Dashboard-Anordnungen"
@@ -3581,6 +3726,11 @@
    "key": "sys.list_view|sys.event|label",
    "english": "Events",
    "text": "Ereignisse"
+  },
+  {
+   "key": "sys.list_view|sys.exchange_rate|label",
+   "english": "Exchange rates",
+   "text": "Wechselkurse"
   },
   {
    "key": "sys.list_view|sys.external_id|label",
@@ -3858,6 +4008,16 @@
    "text": "Verbindungen"
   },
   {
+   "key": "sys.nav_item|sys.currencies|label",
+   "english": "Currencies",
+   "text": "Währungen"
+  },
+  {
+   "key": "sys.nav_item|sys.currencies|section",
+   "english": "Modules and data",
+   "text": "Module und Daten"
+  },
+  {
    "key": "sys.nav_item|sys.event_deliveries|label",
    "english": "Event deliveries",
    "text": "Ereigniszustellungen"
@@ -3886,6 +4046,16 @@
    "key": "sys.nav_item|sys.events|section",
    "english": "Automation",
    "text": "Automatisierung"
+  },
+  {
+   "key": "sys.nav_item|sys.exchange_rates|label",
+   "english": "Exchange rates",
+   "text": "Wechselkurse"
+  },
+  {
+   "key": "sys.nav_item|sys.exchange_rates|section",
+   "english": "Modules and data",
+   "text": "Module und Daten"
   },
   {
    "key": "sys.nav_item|sys.groups|label",
@@ -4193,6 +4363,11 @@
    "text": "Alte Ereignisse, täglich"
   },
   {
+   "key": "sys.schedule|sys.exchange_rates|label",
+   "english": "Exchange rates, working days",
+   "text": "Wechselkurse, an Werktagen"
+  },
+  {
    "key": "sys.schedule|sys.notification_cleanup|label",
    "english": "Old notifications, daily",
    "text": "Alte Benachrichtigungen, täglich"
@@ -4293,6 +4468,16 @@
    "text": "Anmeldedaten"
   },
   {
+   "key": "sys.table|sys.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.table|sys.currency|label_plural",
+   "english": "Currencies",
+   "text": "Währungen"
+  },
+  {
    "key": "sys.table|sys.dashboard_layout|label",
    "english": "Dashboard layout",
    "text": "Dashboard-Anordnung"
@@ -4351,6 +4536,16 @@
    "key": "sys.table|sys.event|label_plural",
    "english": "Events",
    "text": "Ereignisse"
+  },
+  {
+   "key": "sys.table|sys.exchange_rate|label",
+   "english": "Exchange rate",
+   "text": "Wechselkurs"
+  },
+  {
+   "key": "sys.table|sys.exchange_rate|label_plural",
+   "english": "Exchange rates",
+   "text": "Wechselkurse"
   },
   {
    "key": "sys.table|sys.external_id|label",

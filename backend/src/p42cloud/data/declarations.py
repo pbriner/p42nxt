@@ -75,6 +75,21 @@ def _table_problems(declared: Table) -> list[FieldError]:
             found.append(
                 FieldError(declared.name, "bad_owner", "The owner must be a reference to a person.")
             )
+    for name, declared_field in declared.fields.items():
+        holder = (
+            declared_field.options.get("currency_field") if declared_field.type == "money" else None
+        )
+        if (
+            holder is not None
+            and getattr(declared.fields.get(str(holder)), "type", None) != "currency"
+        ):
+            found.append(
+                FieldError(
+                    f"{declared.name}.{name}",
+                    "bad_currency_field",
+                    "The currency field must be a currency field of the same table.",
+                )
+            )
     for together in declared.unique_together:
         unknown = [n for n in together if n not in declared.fields]
         if unknown or not together:

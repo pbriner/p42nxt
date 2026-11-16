@@ -7,6 +7,7 @@ the request's transaction is shared. A module never writes another module's tabl
 
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
+from datetime import date
 from typing import Any
 from uuid import UUID
 
@@ -21,6 +22,7 @@ from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import Problem
 from p42cloud.services.calls.service import record
 from p42cloud.services.connections.service import connect
+from p42cloud.services.currencies.service import convert
 from p42cloud.services.events.outbox import publish
 from p42cloud.services.notifications.service import send
 from p42cloud.services.routes.models import RouteRequest
@@ -143,6 +145,13 @@ class Client:
         through the owner's connection, at most once (asking first if an answer was lost)."""
         who = self._id(owner) if owner is not None else None
         return await record(self._records, name, payload, owner=who, about=about)
+
+    async def convert(
+        self, amount: Any, source: str, target: str, *, on: date | None = None
+    ) -> str:
+        """The amount in another currency with the rate of the day (today if not given), as
+        exact text; refused when there's no rate for the day or the days before."""
+        return str(await convert(self._records.conn, amount, source, target, on))
 
     async def publish(
         self,

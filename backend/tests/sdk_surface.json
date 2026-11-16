@@ -273,6 +273,28 @@
      "required": false
     }
    ],
+   "convert": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "amount",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "source",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "target",
+     "required": true
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "on",
+     "required": false
+    }
+   ],
    "create": [
     {
      "kind": "POSITIONAL_OR_KEYWORD",
@@ -521,6 +543,20 @@
    {
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "shared",
+    "required": false
+   }
+  ]
+ },
+ "Currency": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
     "required": false
    }
   ]
@@ -1220,6 +1256,40 @@
    {
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "themes",
+    "required": false
+   }
+  ]
+ },
+ "Money": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "currency_field",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "currency",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "precision",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "scale",
+    "required": false
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
     "required": false
    }
   ]

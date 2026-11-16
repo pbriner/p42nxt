@@ -271,3 +271,26 @@ def test_the_openapi_description_is_the_one_in_the_repository(
     assert current == committed, (
         "The API changed: run `uv run python -m p42cloud.web.openapi` and review the difference."
     )
+
+
+async def test_a_yes_no_field_is_filtered_from_the_url(
+    api: httpx.AsyncClient, admin: tuple[str, str]
+) -> None:
+    person, token = admin
+    active = await api.get(
+        "/api/v1/sys/person",
+        params={"filter[active]": "true", "filter[sys_id]": person},
+        headers=_bearer(token),
+    )
+    inactive = await api.get(
+        "/api/v1/sys/person",
+        params={"filter[active]": "false", "filter[sys_id]": person},
+        headers=_bearer(token),
+    )
+    wrong = await api.get(
+        "/api/v1/sys/person", params={"filter[active]": "maybe"}, headers=_bearer(token)
+    )
+    assert active.status_code == 200, active.text
+    assert [r["sys_id"] for r in active.json()["records"]] == [person]
+    assert inactive.json()["records"] == []
+    assert wrong.status_code == 422
