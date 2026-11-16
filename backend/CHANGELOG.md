@@ -12,6 +12,10 @@ The core (`sys`): the engine and the platform's own features.
   events and deliveries are records administrators read under Automation.
 - The core publishes `sys.job_failed` and `sys.job_recovered` about a schedule.
 - `deliver_events()` in the SDK's test plugin.
+- Lists and forms show a decimal with as many decimals as its field keeps: 0.0001 BTC no longer
+  reads as 0.
+- After an update, the update check runs within moments instead of at its daily time, so a
+  module that waited for the new core shows as fitting straight away.
 - Updates across several releases: the update offered is the newest release that fits (else the
   newest, saying what it needs), with the notes of every release on the way; a core an
   installed module doesn't accept doesn't fit ("needs a newer dca"). Publishing refuses a

@@ -269,3 +269,36 @@ async def test_a_module_from_before_publishers_keeps_loading_and_takes_one_later
     with pytest.raises(Problem) as taken:
         await _install(owner, _module(module_id, docs, version="1.0.2", publisher="other"))
     assert "only by its own publisher" in taken.value.title
+
+
+async def test_an_update_checks_for_updates_again_soon(
+    owner: AsyncEngine,
+    app: AsyncEngine,
+    new_module: Callable[[], Awaitable[str]],
+    tmp_path: Path,
+) -> None:
+    module_id = await new_module()
+    docs = _docs(tmp_path, {"index.md": "# Example\n"})
+
+    async def queued() -> int:
+        async with acting(app, None) as records:
+            found = await records.conn.scalar(
+                text(
+                    "SELECT count(*) FROM sys.job_run WHERE job = 'sys.check_updates'"
+                    " AND state = 'queued' AND trigger = 'update'"
+                )
+            )
+            await records.conn.execute(
+                text(
+                    "UPDATE sys.job_run SET state = 'skipped' WHERE job = 'sys.check_updates'"
+                    " AND state = 'queued'"
+                )
+            )
+        return int(found or 0)
+
+    await queued()  # earlier tests' runs out of the way
+    await _install(owner, _module(module_id, docs))
+    assert await queued() == 0  # a new module: nothing installed changed
+    await _install(owner, _module(module_id, docs, version="1.0.1"))
+    await _install(owner, _module(module_id, docs, version="1.0.2"))
+    assert await queued() == 1  # once, however many updates came before the worker

@@ -1243,6 +1243,11 @@
    "text": "Sein Zeitplan"
   },
   {
+   "key": "sys.field|sys.job_run.trigger|choice:update",
+   "english": "An update",
+   "text": "Ein Update"
+  },
+  {
    "key": "sys.field|sys.job_run.trigger|label",
    "english": "Started by",
    "text": "Gestartet von"
