@@ -38,6 +38,8 @@ interface Options {
   signal?: AbortSignal;
   /** Made by the app itself (polling): doesn't count as the person being there. */
   background?: boolean;
+  /** A file sent as it is (the body), not as JSON. */
+  raw?: Blob;
 }
 
 const CSRF_COOKIE = 'p42_csrf';
@@ -107,7 +109,9 @@ export class Api {
       Accept: 'application/json',
       'Accept-Language': this.language(),
     };
-    if (options.body !== undefined) {
+    if (options.raw !== undefined) {
+      headers['Content-Type'] = options.raw.type || 'application/octet-stream';
+    } else if (options.body !== undefined) {
       headers['Content-Type'] = 'application/json';
     }
     if (options.ifMatch) {
@@ -123,7 +127,7 @@ export class Api {
     const response = await fetch(url, {
       method,
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.raw ?? (options.body === undefined ? undefined : JSON.stringify(options.body)),
       credentials: 'same-origin',
       signal: options.signal,
     });

@@ -36,6 +36,8 @@ class Table:
     # A hierarchy: this field (a reference to the same table, not required) names each
     # record's parent; records without one are at the top. The database refuses loops.
     parent: str | None = None
+    # Files may be attached to its records (receipts, contracts), by those who may change them.
+    files: bool = False
 
 
 def _field_problems(table: str, name: str, declared: Field) -> list[FieldError]:
@@ -132,6 +134,7 @@ def to_catalog(schema: str, tables: list[Table]) -> Catalog:
             owner_field=t.owner,
             display_field=t.display,
             parent_field=t.parent,
+            files=t.files,
         )
         for t in tables
     ]

@@ -484,6 +484,19 @@ END $$;
 REVOKE ALL ON FUNCTION sys.p42_tree() FROM PUBLIC;
 """
 
+# Files' contents, sealed with the master key (services/files). Apart from the records describing
+# them, unaudited (the audit log would copy every file) and never changed or removed: the core
+# adds and reads them only.
+_FILE_DATA = """
+CREATE TABLE sys.file_data (
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    sealed text NOT NULL,
+    created timestamptz NOT NULL DEFAULT now()
+);
+REVOKE ALL ON sys.file_data FROM PUBLIC;
+GRANT SELECT, INSERT ON sys.file_data TO p42_mod_sys;
+"""
+
 STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0001_context", _CONTEXT),
     ("0002_record_rules", _RECORD_RULES),
@@ -497,4 +510,5 @@ STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0010_links", _LINKS),
     ("0011_links_both_ways", _LINKS_BOTH_WAYS),
     ("0012_trees", _TREES),
+    ("0013_file_data", _FILE_DATA),
 )

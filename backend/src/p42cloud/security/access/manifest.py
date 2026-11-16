@@ -89,6 +89,8 @@ ROLES = [
             Grant("sys.event_subscription", ("read",)),
             Grant("sys.event", ("read",)),
             Grant("sys.event_delivery", ("read",)),
+            # Which files there are; their contents only through their records' rights.
+            Grant("sys.file", ("read",), fields=("name", "type", "size", "record_table", "about")),
             Grant("sys.notification_kind", ("read",)),
             Grant("sys.notification_kind", ("write",), fields=("channels",)),
             Grant("sys.notification_delivery", ("read",)),

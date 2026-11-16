@@ -9,6 +9,12 @@ The core (`sys`): the engine and the platform's own features.
   record with records under it. The filter `within` finds a record and everything under it, at
   any depth. Records of a hierarchy are named by their path from the top
   ("House › Ground floor › Heating"), in lists and pickers too.
+- Files attached to records: a table allows them (`Table(…, files=True)`); whoever may read a
+  record reads its files, whoever may change it attaches and removes them
+  (`/api/v1/<module>/<table>/<id>/files`, `/api/v1/files/<id>`). Accepted by content: PDF,
+  pictures, Office documents, plain text; never web pages or SVG. At most the setting Largest
+  file (20 MB). Kept in the database, sealed with the master key, so backups hold them. Forms show
+  a Files section.
 
 ## 0.39.0
 

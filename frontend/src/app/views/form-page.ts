@@ -33,6 +33,7 @@ import { ActionRunner } from './action-runner';
 import { ConnectionSecrets } from './connection-secrets';
 import { LanguageExchange } from './language-exchange';
 import { PersonSignIn } from './person-sign-in';
+import { RecordFiles } from './record-files';
 import { RecordHistory } from './record-history';
 import { ConfirmDialog } from './confirm-dialog';
 import { FieldDisplay } from './field-display';
@@ -73,6 +74,7 @@ function same(a: unknown, b: unknown): boolean {
 @Component({
   selector: 'app-form-page',
   imports: [
+    RecordFiles,
     RecordHistory,
     ConnectionSecrets,
     LanguageExchange,

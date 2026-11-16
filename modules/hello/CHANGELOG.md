@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.0
+
+- Files can be attached to greetings: the reference for modules using files. Needs the core
+  0.40.
+
 ## 0.6.1
 
 - Says who makes it (publisher `p42`) and takes its version from its package. Needs the core

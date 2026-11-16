@@ -33,6 +33,7 @@ from p42cloud.services.calls import models as calls
 from p42cloud.services.connections import models as connections
 from p42cloud.services.connections import service as connection_service
 from p42cloud.services.events import manifest as events
+from p42cloud.services.files import manifest as files
 from p42cloud.services.jobs import manifest as jobs
 from p42cloud.services.jobs.models import Job, Schedule
 from p42cloud.services.languages import models as language_models
@@ -68,6 +69,7 @@ CORE = Module(
         *connections.TABLES,
         *calls.TABLES,
         *events.TABLES,
+        *files.TABLES,
         *notifications.TABLES,
         *module_routes.TABLES,
         *backup_models.TABLES,
@@ -100,6 +102,7 @@ CORE = Module(
         sign_in.PASSWORDS_OFF,
         *ui.SETTINGS,
         *backups.SETTINGS,
+        *files.SETTINGS,
     ),
     category="Platform",
     icon="settings",
