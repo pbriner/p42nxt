@@ -10,6 +10,7 @@ import base64
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -137,14 +138,23 @@ def add_release(  # noqa: PLR0913 - one release, described in full
     package: str,
     digest: str,
     signature: str,
+    migrations: tuple[str, ...] = (),
 ) -> dict[str, Any]:
-    """The index with this release added (a release already there is replaced)."""
+    """The index with this release added (a release already there is replaced). Refused when
+    the release drops a data migration an earlier one had: an installation skipping that
+    release would never move its data."""
     releases = cast(dict[str, list[dict[str, Any]]], index.setdefault("modules", {}))
     found = [r for r in releases.get(module, []) if r["version"] != version]
+    if gone := lost_migrations(found, version, migrations):
+        raise ValueError(
+            f"{module} {version} drops data migrations earlier releases had: {', '.join(gone)}."
+            " Keep every migration in the module for good."
+        )
     found.append(
         {
             "version": version,
             "depends_on": depends_on,
+            "migrations": sorted(migrations, key=Version),
             "kind": "security" if entry.security else "normal",
             "notes": entry.notes,
             "package": package,
@@ -154,6 +164,17 @@ def add_release(  # noqa: PLR0913 - one release, described in full
     )
     releases[module] = sorted(found, key=lambda r: Version(r["version"]))
     return index
+
+
+def lost_migrations(
+    earlier: list[dict[str, Any]], version: str, migrations: tuple[str, ...]
+) -> list[str]:
+    """Migrations that releases before `version` had and this one hasn't."""
+    had: set[str] = set()
+    for release in earlier:
+        if Version(release["version"]) < Version(version):
+            had.update(cast(list[str], release.get("migrations", [])))
+    return sorted(had - set(migrations), key=Version)
 
 
 def read_index(data: bytes, signature: str, keys: tuple[str, ...] = TRUSTED_KEYS) -> dict[str, Any]:
@@ -184,11 +205,50 @@ class Update:
         return self.needs is None
 
 
-def updates(index: dict[str, Any], installed: dict[str, Version]) -> list[Update]:
-    """For every installed module, its newest release, and whether it fits what's installed.
+def _blockers(
+    index_entry: dict[str, Any],
+    module: str,
+    installed: dict[str, Version],
+    requires: Mapping[str, Mapping[str, str]],
+) -> list[str]:
+    """What stands in the way of this release: what it needs that isn't installed, and
+    installed modules that don't accept its version (an old module on a new core)."""
+    found = [
+        f"{other} {wanted}"
+        for other, wanted in cast(dict[str, str], index_entry.get("depends_on", {})).items()
+        if other not in installed or installed[other] not in SpecifierSet(wanted)
+    ]
+    version = Version(index_entry["version"])
+    found += [
+        f"a newer {other} ({other} accepts {module} {needs[module]})"
+        for other, needs in sorted(requires.items())
+        if other != module and module in needs and version not in SpecifierSet(needs[module])
+    ]
+    return found
 
-    Security updates first. A release needing a newer core or another module says so.
+
+def _notes(passed: list[dict[str, Any]]) -> str:
+    """The notes of every release passed on the way, newest first, each under its version."""
+    if len(passed) == 1:
+        return str(passed[0].get("notes", ""))
+    return "\n\n".join(
+        f"## {r['version']}\n\n{r.get('notes', '')}".rstrip() for r in reversed(passed)
+    )
+
+
+def updates(
+    index: dict[str, Any],
+    installed: dict[str, Version],
+    requires: Mapping[str, Mapping[str, str]] | None = None,
+) -> list[Update]:
+    """For every installed module, the newest release that fits what's installed (else the
+    newest, saying what it needs), with the notes of every release on the way.
+
+    `requires` is what the installed modules depend on: a release an installed module doesn't
+    accept (a core it isn't made for) doesn't fit until that module is updated. Security
+    updates first.
     """
+    requires = requires or {}
     found: list[Update] = []
     modules = cast(dict[str, list[dict[str, Any]]], index.get("modules", {}))
     for module, current in sorted(installed.items()):
@@ -201,20 +261,20 @@ def updates(index: dict[str, Any], installed: dict[str, Version]) -> list[Update
                 continue
         if not newer:
             continue
-        latest = max(newer, key=lambda r: Version(r["version"]))
-        missing = [
-            f"{other} {wanted}"
-            for other, wanted in cast(dict[str, str], latest.get("depends_on", {})).items()
-            if other not in installed or installed[other] not in SpecifierSet(wanted)
-        ]
+        newer.sort(key=lambda r: Version(r["version"]))
+        blocked = {r["version"]: _blockers(r, module, installed, requires) for r in newer}
+        fitting = [r for r in newer if not blocked[r["version"]]]
+        chosen = fitting[-1] if fitting else newer[-1]
+        passed = [r for r in newer if Version(r["version"]) <= Version(chosen["version"])]
+        missing = blocked[chosen["version"]]
         found.append(
             Update(
                 module=module,
                 installed=str(current),
-                available=latest["version"],
-                security=any(r.get("kind") == "security" for r in newer),
-                notes=str(latest.get("notes", "")),
-                package=str(latest.get("package", "")),
+                available=chosen["version"],
+                security=any(r.get("kind") == "security" for r in passed),
+                notes=_notes(passed),
+                package=str(chosen.get("package", "")),
                 needs=f"needs {', '.join(missing)}" if missing else None,
             )
         )

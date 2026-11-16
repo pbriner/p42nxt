@@ -74,6 +74,10 @@ On an upgrade, the migrations whose version lies after the installed version and
 one run in version order, after the tables are adjusted and in the same transaction. A fresh
 install runs none. They run as the owner role.
 
+A migration stays in its module for good: an installation that skips releases runs every one it
+passes. Publishing a release without one an earlier release had is refused. Fields a module no
+longer declares keep their columns, so an old migration still finds what it moves.
+
 ## Switching off and removing
 
 `p42cloud module list | on <id> | off <id> | remove <id> | install <id>`. Nothing is ever

@@ -39,6 +39,7 @@ def _release(index: dict[str, object], module: str, version: str, **extra: objec
         package=f"https://example.test/{module}-{version}.whl",
         digest="0" * 64,
         signature="sig",
+        migrations=tuple(extra.pop("migrations", ())),  # type: ignore[arg-type]
     )
 
 
@@ -83,6 +84,43 @@ def test_updates_say_what_fits_and_what_it_needs() -> None:
         ("cmdb", "2.0.0", False, False),
     ]
     assert found[1].needs == "needs sys >=0.5"
+
+
+def test_an_installation_releases_behind_gets_the_newest_that_fits_with_every_note() -> None:
+    index = releases.empty_index()
+    _release(index, "sys", "0.38.1")
+    _release(index, "sys", "0.39.0", security=True)
+    _release(index, "sys", "1.0.0")  # the installed task module isn't made for it
+    _release(index, "task", "1.1.0", depends_on={"sys": ">=0.38,<1"})
+    _release(index, "task", "1.2.0", depends_on={"sys": ">=1"})  # needs the core 1.0 first
+    found = releases.updates(
+        index,
+        {"sys": Version("0.38.0"), "task": Version("1.0.0")},
+        {"sys": {}, "task": {"sys": ">=0.30,<1"}},
+    )
+    core, task = found
+    assert (core.module, core.available, core.security, core.fits) == ("sys", "0.39.0", True, True)
+    assert core.notes == "## 0.39.0\n\nNotes 0.39.0\n\n## 0.38.1\n\nNotes 0.38.1"
+    assert (task.available, task.fits, task.notes) == ("1.1.0", True, "Notes 1.1.0")
+
+
+def test_a_core_no_installed_module_accepts_says_so() -> None:
+    index = releases.empty_index()
+    _release(index, "sys", "1.0.0")
+    [core] = releases.updates(
+        index, {"sys": Version("0.39.0")}, {"sys": {}, "dca": {"sys": ">=0.38,<1"}}
+    )
+    assert not core.fits
+    assert core.needs == "needs a newer dca (dca accepts sys >=0.38,<1)"
+
+
+def test_a_release_may_not_drop_an_earlier_data_migration() -> None:
+    index = releases.empty_index()
+    _release(index, "task", "1.0.0", migrations=("0.9.0",))
+    _release(index, "task", "1.1.0", migrations=("0.9.0", "1.1.0"))
+    with pytest.raises(ValueError, match=r"drops data migrations earlier releases had: 1\.1\.0"):
+        _release(index, "task", "1.2.0", migrations=("0.9.0",))
+    _release(index, "task", "1.0.1", migrations=("0.9.0",))  # a fix of an older line: fine
 
 
 def test_an_index_is_believed_only_with_a_trusted_signature() -> None:

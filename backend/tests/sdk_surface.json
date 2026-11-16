@@ -1,0 +1,1977 @@
+{
+ "ActionInput": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "type",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "required",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "options",
+    "required": false
+   }
+  ]
+ },
+ "ActionResult": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "message",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "go",
+    "required": false
+   }
+  ]
+ },
+ "ActionRun": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "records",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "sys_id",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "record",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "inputs",
+    "required": true
+   }
+  ]
+ },
+ "AnyRecord": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "table_field",
+    "required": false
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Boolean": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "CallRefused": {
+  "methods": {},
+  "params": null
+ },
+ "CallRun": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "key",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "payload",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "owner",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "record_table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "record_id",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "attempt",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "now",
+    "required": true
+   }
+  ]
+ },
+ "Change": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "records",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "operation",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "sys_id",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "values",
+    "required": false
+   }
+  ]
+ },
+ "Choice": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "values",
+    "required": true
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "tones",
+    "required": false
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Client": {
+  "methods": {
+   "action": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "table",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "sys_id",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "name",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "inputs",
+     "required": false
+    }
+   ],
+   "call": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "name",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "payload",
+     "required": true
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "owner",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "about",
+     "required": false
+    }
+   ],
+   "connection": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "type_name",
+     "required": true
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "owner",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "label",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "connection",
+     "required": false
+    }
+   ],
+   "create": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "table",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "values",
+     "required": true
+    }
+   ],
+   "delete": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "table",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "sys_id",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "etag",
+     "required": true
+    }
+   ],
+   "get": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "table",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "sys_id",
+     "required": true
+    }
+   ],
+   "list": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "table",
+     "required": true
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "where",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "sort",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "limit",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "after",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "deleted",
+     "required": false
+    }
+   ],
+   "notify": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "kind",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "title",
+     "required": true
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "people",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "roles",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "groups",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "message",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "link",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "severity",
+     "required": false
+    }
+   ],
+   "of": null,
+   "publish": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "event_type",
+     "required": true
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "about",
+     "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "data",
+     "required": false
+    }
+   ],
+   "restore": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "table",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "sys_id",
+     "required": true
+    }
+   ],
+   "setting": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "name",
+     "required": true
+    }
+   ],
+   "update": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "table",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "sys_id",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "values",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "etag",
+     "required": true
+    }
+   ]
+  },
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "records",
+    "required": true
+   }
+  ]
+ },
+ "Color": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "ConnectionType": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "allowed_hosts",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "auth",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "secrets",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "base_url",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "api_key_header",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "sign",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "check",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "shared",
+    "required": false
+   }
+  ]
+ },
+ "Date": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "DateTime": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Decimal": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "precision",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "scale",
+    "required": false
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Duration": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Email": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "EventRun": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "records",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "event",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "type",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "data",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "about_table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "about_id",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "published",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "published_by",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "attempt",
+    "required": true
+   }
+  ]
+ },
+ "EventType": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "about",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "description",
+    "required": false
+   }
+  ]
+ },
+ "FieldError": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "field",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "code",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "message",
+    "required": true
+   }
+  ]
+ },
+ "FormRule": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "condition",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "hide",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "required",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "read_only",
+    "required": false
+   }
+  ]
+ },
+ "FormSection": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "title",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "fields",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "columns",
+    "required": false
+   }
+  ]
+ },
+ "FormView": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "sections",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "related",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "related_auto",
+    "required": false
+   }
+  ]
+ },
+ "GaveUp": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "why",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "message",
+    "required": true
+   }
+  ]
+ },
+ "Grant": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "operations",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "condition",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "fields",
+    "required": false
+   }
+  ]
+ },
+ "Hostname": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Icon": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Integer": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Invalid": {
+  "methods": {},
+  "params": null
+ },
+ "Item": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "kind",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "view",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "filter",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "path",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "icon",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "keywords",
+    "required": false
+   }
+  ]
+ },
+ "Job": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "run",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "timeout",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "retries",
+    "required": false
+   }
+  ]
+ },
+ "JobRun": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "records",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "run",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "job",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "attempt",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "now",
+    "required": true
+   }
+  ]
+ },
+ "Json": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "ListView": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "columns",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "sort",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "filter",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "available",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "search",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "searchable",
+    "required": false
+   }
+  ]
+ },
+ "Markdown": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Migration": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "version",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "run",
+    "required": true
+   }
+  ]
+ },
+ "Module": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "id",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "version",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "publisher",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "depends_on",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "tables",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "roles",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "hooks",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "docs",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "translations",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "description",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "seed",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "migrations",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "settings",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "category",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "icon",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "navigation",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "views",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "forms",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "actions",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "rules",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "widgets",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "jobs",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "schedules",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "connection_types",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "calls",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "events",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "subscriptions",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "notification_kinds",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "routes",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "themes",
+    "required": false
+   }
+  ]
+ },
+ "NotificationKind": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "description",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "channels",
+    "required": false
+   }
+  ]
+ },
+ "OutsideCall": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "connection_type",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "send",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "reconcile",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "done",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "retries",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "gave_up",
+    "required": false
+   }
+  ]
+ },
+ "Percent": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Phone": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Problem": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "status",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "code",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "title",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "detail",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "errors",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "extra",
+    "required": false
+   }
+  ]
+ },
+ "Records": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "conn",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "catalog",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "situation",
+    "required": false
+   }
+  ]
+ },
+ "Reference": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "key",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "match",
+    "required": false
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "RelatedList": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "field",
+    "required": true
+   }
+  ]
+ },
+ "Role": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "grants",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "includes",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "powerful",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "description",
+    "required": false
+   }
+  ]
+ },
+ "Route": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "method",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "path",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "handler",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "description",
+    "required": false
+   }
+  ]
+ },
+ "RouteRequest": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "records",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "person",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "params",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "query",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "body",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "language",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "extra",
+    "required": false
+   }
+  ]
+ },
+ "Schedule": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "job",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "cron",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "time_zone",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "missed",
+    "required": false
+   }
+  ]
+ },
+ "Secret": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Section": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "items",
+    "required": true
+   }
+  ]
+ },
+ "Setting": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "default",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "check",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "help",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "public",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "adopt",
+    "required": false
+   }
+  ]
+ },
+ "String": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "max_length",
+    "required": false
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Subscription": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "event",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "handler",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "retries",
+    "required": false
+   }
+  ]
+ },
+ "Table": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "fields",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label_plural",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "unique_together",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "owner",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "display",
+    "required": false
+   }
+  ]
+ },
+ "TableHook": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "before",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "after",
+    "required": false
+   }
+  ]
+ },
+ "Text": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "TranslatedText": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "UIAction": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "places",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "icon",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "operation",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "condition",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "confirm",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "inputs",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "second_factor",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "set",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "handler",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "message",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "go",
+    "required": false
+   }
+  ]
+ },
+ "Url": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Widget": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "title",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "kind",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "dashboard",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "list",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "source",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "param",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "filter",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "measure",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "field",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "group",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "period",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "chart",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "text",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "icon",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "accent",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "filled",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "target",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "trend",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "sizes",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "size",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "refresh",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "shown",
+    "required": false
+   }
+  ]
+ },
+ "package_version": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "distribution",
+    "required": true
+   }
+  ]
+ }
+}
