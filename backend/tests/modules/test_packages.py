@@ -33,6 +33,7 @@ def _wheel(
     module: str = MODULE,
     requires: str = "p42cloud",
     extra: dict[str, str] | None = None,
+    publisher: str = "test",
 ) -> bytes:
     """A module package as the release workflow builds one, for a small module."""
     info = f"p42cloud_{module}-{module_version}.dist-info"
@@ -40,6 +41,7 @@ def _wheel(
         f"p42cloud_{module}/__init__.py": (
             "from p42cloud.sdk import Module\n"
             f"module = Module(id='{module}', name='Parcel', version='{module_version}',"
+            f" publisher='{publisher}',"
             f" depends_on={{'sys': '>={version('p42cloud')}'}})\n"
         ),
         f"{info}/METADATA": (
@@ -119,7 +121,9 @@ async def _install(
     module: str = MODULE,
 ) -> list[str]:
     with working_as(Context(channel="test")):
-        return await install_package(owner, module, folder, source, http, keys=KEYS)
+        return await install_package(
+            owner, module, folder, source, http, keys=KEYS, publishers={"test": KEYS}
+        )
 
 
 async def test_a_signed_package_installs_and_updates_the_module(
@@ -267,3 +271,39 @@ async def test_downloads_stop_after_a_few_redirects() -> None:
     loop = httpx.AsyncClient(transport=httpx.MockTransport(answer))
     with pytest.raises(Problem, match="redirects too often"):
         await packages.download(loop, "https://registry.test/x")
+
+
+async def test_a_package_its_publisher_didnt_sign_is_refused(
+    owner: AsyncEngine, folder: Path
+) -> None:
+    # Signed by a trusted key, but the package says it's someone else's: that's not believed.
+    data = _wheel("1.0.0", publisher="other")
+    http = _registry(_index(("1.0.0", data)), {"parcel-1.0.0.whl": data})
+    with pytest.raises(Problem) as refused:
+        await _install(owner, folder, Source(REGISTRY), http)
+    assert refused.value.code == "wrong_publisher"
+
+
+async def test_an_installed_module_is_updated_only_by_its_publisher(
+    owner: AsyncEngine, folder: Path
+) -> None:
+    module = "parcelpin"
+    first = _wheel("1.0.0", module=module)
+    taken = _wheel("9.0.0", module=module, publisher="other")
+    http = _registry(
+        _index(("1.0.0", first), ("9.0.0", taken), module=module),
+        {f"{module}-1.0.0.whl": first, f"{module}-9.0.0.whl": taken},
+    )
+    await _install(owner, folder, Source(REGISTRY, "1.0.0"), http, module)
+    with working_as(Context(channel="test")), pytest.raises(Problem) as refused:
+        await install_package(
+            owner,
+            module,
+            folder,
+            Source(REGISTRY, "9.0.0"),
+            http,
+            keys=KEYS,
+            publishers={"test": KEYS, "other": KEYS},
+        )
+    assert "only by its own publisher" in str(refused.value.detail or refused.value.title)
+    assert str((await states(owner))[module].version) == "1.0.0"

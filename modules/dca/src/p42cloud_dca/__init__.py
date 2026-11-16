@@ -428,9 +428,10 @@ async def _check_tier(change: Change) -> None:
 module = Module(
     id="dca",
     name="Kraken DCA",
+    publisher="p42",
     # The package's version: one place to raise it (pyproject.toml).
     version=package_version("p42cloud-dca"),
-    depends_on={"sys": ">=0.37.3,<1"},
+    depends_on={"sys": ">=0.38,<1"},
     tables=(PLAN, TIER, ORDER),
     roles=(USER, KEEPER),
     hooks=(

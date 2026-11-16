@@ -16,7 +16,7 @@ from p42cloud.data.hooks import Change, TableHook
 from p42cloud.data.types.string import String
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
-from p42cloud.kernel.db import create_engine
+from p42cloud.kernel.db import create_engine, owner_transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.safety import problems
 from p42cloud.modules.core import CORE
@@ -57,6 +57,7 @@ def _module(module_id: str, docs: Path, **changes: object) -> Module:
     item = Table("item", "Item", {"name": String("Name", max_length=40)})
     made = Module(
         id=module_id,
+        publisher="test",
         name="Example",
         version="1.0.0",
         depends_on={"sys": f">={version('p42cloud')}"},
@@ -242,3 +243,29 @@ async def test_administrators_hear_which_roles_a_new_module_brings(
     assert admins and len(told) == admins  # once each, on the install only, not the upgrade
     assert "give its roles to groups" in told[0].title
     assert "Reader" in told[0].message
+
+
+async def test_a_module_from_before_publishers_keeps_loading_and_takes_one_later(
+    owner: AsyncEngine,
+    app: AsyncEngine,
+    new_module: Callable[[], Awaitable[str]],
+    tmp_path: Path,
+) -> None:
+    module_id = await new_module()
+    docs = _docs(tmp_path, {"index.md": "# Example\n"})
+    with pytest.raises(Problem) as nobody:
+        await _install(owner, _module(module_id, docs, publisher=""))
+    assert "who makes it" in nobody.value.title
+    await _install(owner, _module(module_id, docs))
+    # As installed before publishers: no publisher on record, nor in its manifest.
+    with working_as(Context(channel="test")):
+        async with owner_transaction(owner) as conn:
+            await conn.execute(
+                text("UPDATE sys.module SET publisher = NULL WHERE name = :m"), {"m": module_id}
+            )
+    assert await _install(owner, _module(module_id, docs, publisher="")) == []  # still loads
+    await _install(owner, _module(module_id, docs, version="1.0.1"))
+    assert (await _record(app, module_id))["publisher"] == "test"
+    with pytest.raises(Problem) as taken:
+        await _install(owner, _module(module_id, docs, version="1.0.2", publisher="other"))
+    assert "only by its own publisher" in taken.value.title

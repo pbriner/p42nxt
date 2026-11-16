@@ -27,6 +27,7 @@ ITEM = Table("item", "Item", {"name": String("Name", max_length=40, unique=True)
 def _module(module_id: str, version_: str, note: Table) -> Module:
     return Module(
         id=module_id,
+        publisher="test",
         name="Links",
         version=version_,
         depends_on={"sys": f">={version('p42cloud')}"},

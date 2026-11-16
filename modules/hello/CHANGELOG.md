@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1
+
+- Says who makes it (publisher `p42`) and takes its version from its package. Needs the core
+  0.38.
+
 ## 0.6.0
 
 - Two widgets with their own source on the dashboard: how many languages people greet in, and

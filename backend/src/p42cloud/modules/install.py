@@ -148,9 +148,17 @@ async def write_docs(conn: AsyncConnection, module: str, folder: Path | None) ->
 
 async def _record(conn: AsyncConnection, module: Module, protected: bool) -> None:
     """The module's record: new ones start switched on; a returning one keeps its state."""
-    installed = await conn.scalar(
-        text("SELECT version FROM sys.module WHERE name = :id"), {"id": module.id}
-    )
+    found = (
+        await conn.execute(
+            text("SELECT version, publisher FROM sys.module WHERE name = :id"), {"id": module.id}
+        )
+    ).first()
+    installed = None if found is None else found.version
+    if found is not None and found.publisher and found.publisher != module.publisher:
+        raise _refuse(
+            f"{module.id} is installed from the publisher {found.publisher!r}; this package is"
+            f" from {module.publisher!r}. A module is updated only by its own publisher."
+        )
     values = {
         "id": module.id,
         "label": module.name[:80],
@@ -160,14 +168,15 @@ async def _record(conn: AsyncConnection, module: Module, protected: bool) -> Non
         "protected": protected,
         "category": module.category,
         "icon": module.icon,
+        "publisher": module.publisher,
     }
     if installed is None:
         await conn.execute(
             text(
                 "INSERT INTO sys.module"
                 " (name, label, version, depends_on, description, enabled, protected, category,"
-                " icon) VALUES (:id, :label, :version, CAST(:depends_on AS jsonb), :description,"
-                " true, :protected, :category, :icon)"
+                " icon, publisher) VALUES (:id, :label, :version, CAST(:depends_on AS jsonb),"
+                " :description, true, :protected, :category, :icon, :publisher)"
             ),
             values,
         )
@@ -176,7 +185,8 @@ async def _record(conn: AsyncConnection, module: Module, protected: bool) -> Non
             text(
                 "UPDATE sys.module SET label = :label, version = :version,"
                 " depends_on = CAST(:depends_on AS jsonb), description = :description,"
-                " protected = :protected, category = :category, icon = :icon, deleted = NULL"
+                " protected = :protected, category = :category, icon = :icon, deleted = NULL,"
+                " publisher = :publisher"
                 " WHERE name = :id"
             ),
             values,
@@ -256,6 +266,17 @@ def _core_dependencies(ordered: list[Module]) -> set[str]:
     return found
 
 
+def _may_take(module: Module, state: State | None) -> None:
+    """A module is never downgraded, and a new one says who makes it."""
+    if state is not None and state.version > module.parsed_version:
+        raise _refuse(
+            f"{module.id} {state.version} is installed; {module.version} would go back. Modules"
+            " are never downgraded."
+        )
+    if state is None and not module.publisher:
+        raise _refuse(f"{module.id} doesn't say who makes it (Module(publisher=…)).")
+
+
 async def install_modules(
     engine: AsyncEngine, modules: list[Module], *, bring_back: frozenset[str] = frozenset()
 ) -> list[str]:
@@ -276,11 +297,7 @@ async def install_modules(
     for module in ordered:
         state = known.get(module.id)
         before = state.version if state is not None else None
-        if before is not None and before > module.parsed_version:
-            raise _refuse(
-                f"{module.id} {before} is installed; {module.version} would go back. Modules are"
-                " never downgraded."
-            )
+        _may_take(module, state)
         if module.id == CORE:
             done += await upgrade(engine, list(module.tables))
         async with owner_transaction(engine) as conn:

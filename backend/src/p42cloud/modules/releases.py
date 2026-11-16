@@ -19,11 +19,14 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from packaging.specifiers import SpecifierSet
 from packaging.version import InvalidVersion, Version
 
-# The public halves of the release keys this platform trusts (base64). Add a new key here before
-# releasing with it; remove one only when nothing signed with it is in use any more.
-TRUSTED_KEYS: tuple[str, ...] = (
-    "5LJak2r9/Jji0BRfMTSZdkmtwsjwLD3R2GPfcBb2oQs=",  # the maintainer's, since 2026-11-15
-)
+# The publishers this platform trusts, each with the public halves of its release keys (base64).
+# A package is believed only when its own publisher's key signed it. Add a key before releasing
+# with it; remove one only when nothing signed with it is in use any more.
+PUBLISHERS: dict[str, tuple[str, ...]] = {
+    "p42": ("5LJak2r9/Jji0BRfMTSZdkmtwsjwLD3R2GPfcBb2oQs=",),  # the maintainer's, since 2026-11-15
+}
+# Any trusted publisher's key: what a registry's index may be signed with.
+TRUSTED_KEYS: tuple[str, ...] = tuple(k for keys in PUBLISHERS.values() for k in keys)
 
 INDEX_FORMAT = 1
 _HEADING = re.compile(r"^## +(?P<version>\S+)(?P<security> +\(security\))? *$")

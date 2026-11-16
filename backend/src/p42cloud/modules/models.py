@@ -16,6 +16,8 @@ MODULE = Table(
         "name": String("ID", max_length=16, required=True, unique=True),
         "label": String("Name", max_length=80, required=True),
         "version": String("Version", max_length=40, required=True),
+        # Who makes it: its updates come only from them (set when installed).
+        "publisher": String("Publisher", max_length=31, read_only=True),
         "depends_on": Json("Depends on"),
         "description": String("Description", max_length=255),
         "category": String("Category", max_length=40),

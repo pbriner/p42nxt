@@ -58,6 +58,7 @@ async def engine(upgraded: Settings) -> AsyncGenerator[AsyncEngine]:
 def _with(module_id: str, depends: dict[str, str], docs: Path | None = None) -> Module:
     return Module(
         id=module_id,
+        publisher="test",
         name=module_id,
         version="1.0.0",
         depends_on=SYS | depends,

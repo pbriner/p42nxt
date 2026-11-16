@@ -92,6 +92,8 @@ def publish(module_id: str, wheel: Path, index_path: Path, url: str) -> None:
     private = os.environ["P42_RELEASE_KEY"]
     module = next(m for m in discover() if m.id == module_id)
     log = releases.changelog((ROOT / "modules" / module_id / "CHANGELOG.md").read_text())
+    if not module.publisher:
+        raise SystemExit(f"{module_id} doesn't say who makes it (Module(publisher=…)).")
     packaged = releases.wheel_version(wheel.name)
     if packaged != module.version:
         raise SystemExit(
