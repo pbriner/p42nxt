@@ -76,6 +76,9 @@ def refusal(error: DBAPIError) -> Problem | None:
         ("23503", "f"): ("no_such_record", "There's no record with this ID."),
         ("23514", "r"): ("required", "This field is required."),
         ("23514", "c"): ("invalid", "This value isn't allowed here."),
+        ("23514", "t"): ("loop", "A record can't be under itself or one of its own."),
+        ("23514", "k"): ("has_children", "Records are under it: move or remove them first."),
+        ("23514", "p"): ("parent_removed", "It can't be under a removed record."),
     }.get((str(state), kind[:1]))
     if found is None:
         return None

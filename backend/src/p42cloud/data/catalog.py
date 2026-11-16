@@ -44,6 +44,7 @@ class TableDef:
     switched_off: bool = False  # its module is switched off
     display_field: str | None = None  # declared; see `display`
     id: uuid.UUID | None = None  # its record of sys.table (links to any record name it so)
+    parent_field: str | None = None  # a hierarchy: the field naming each record's parent
 
     @property
     def display(self) -> str | None:
@@ -73,7 +74,7 @@ class Catalog:
 
 _TABLES = text(
     'SELECT sys_id, "schema", name, label, label_plural, unique_together, owner_field,'
-    " coalesce(switched_off, false) AS switched_off, display_field,"
+    " coalesce(switched_off, false) AS switched_off, display_field, parent_field,"
     " deleted IS NOT NULL AS retired"
     ' FROM sys."table"'
 )
@@ -120,6 +121,7 @@ async def load_catalog(conn: AsyncConnection) -> Catalog:
             switched_off=row.switched_off,
             display_field=row.display_field,
             id=row.sys_id,
+            parent_field=row.parent_field,
         )
         tables[table.key] = table
     return Catalog(tables)

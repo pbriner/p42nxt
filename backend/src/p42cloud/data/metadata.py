@@ -51,6 +51,8 @@ METADATA_TABLES = [
             # Its module is switched off: nobody reads or writes it until it's on again.
             "switched_off": Boolean("Switched off", required=True, default=False),
             "display_field": String("Display field", max_length=40),
+            # A hierarchy: the field naming each record's parent.
+            "parent_field": String("Parent field", max_length=40),
         },
         label_plural="Tables",
         unique_together=(("schema", "name"),),
@@ -117,7 +119,7 @@ _TABLE_VALUES = (
     '"schema" = :schema, name = :name, label = CAST(:label AS jsonb),'
     " label_plural = CAST(:label_plural AS jsonb),"
     " unique_together = CAST(:unique_together AS jsonb), owner_field = :owner_field,"
-    " display_field = :display_field"
+    " display_field = :display_field, parent_field = :parent_field"
 )
 _FIELD_COLUMNS = (
     '"table", name, type, label, help, options, required, "unique", "default", personal, position'
@@ -137,6 +139,7 @@ async def _write_table(conn: AsyncConnection, schema: str, declared: Table) -> u
         "unique_together": _json([list(u) for u in declared.unique_together] or None),
         "owner_field": declared.owner,
         "display_field": declared.display,
+        "parent_field": declared.parent,
     }
     row_id = await conn.scalar(
         text('SELECT sys_id FROM sys."table" WHERE "schema" = :schema AND name = :name'), values
@@ -146,9 +149,10 @@ async def _write_table(conn: AsyncConnection, schema: str, declared: Table) -> u
             text(
                 'INSERT INTO sys."table"'
                 ' ("schema", name, label, label_plural, unique_together, owner_field,'
-                " display_field, switched_off) VALUES (:schema, :name, CAST(:label AS jsonb),"
-                " CAST(:label_plural AS jsonb), CAST(:unique_together AS jsonb), :owner_field,"
-                " :display_field, false) RETURNING sys_id"
+                " display_field, parent_field, switched_off) VALUES (:schema, :name,"
+                " CAST(:label AS jsonb), CAST(:label_plural AS jsonb),"
+                " CAST(:unique_together AS jsonb), :owner_field, :display_field, :parent_field,"
+                " false) RETURNING sys_id"
             ),
             values,
         )

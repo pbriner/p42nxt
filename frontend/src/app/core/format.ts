@@ -36,6 +36,8 @@ export interface TableInfo {
   label_plural: string | null;
   display: string | null;
   personal: boolean;
+  /** A hierarchy: the field naming each record's parent. */
+  parent: string | null;
   operations: Record<string, boolean>;
   fields: FieldInfo[];
   /** Tables pointing to this one, through fields the person may read. */

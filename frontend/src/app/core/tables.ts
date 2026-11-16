@@ -64,7 +64,7 @@ export class Tables {
         query: { fields: display },
         quiet: true,
       });
-      const name = this.named(data[display]);
+      const name = this.shownName(data, display);
       return name === '' ? null : name;
     } catch {
       return null;
@@ -85,8 +85,15 @@ export class Tables {
     });
     return data.records.map((r) => ({
       sys_id: String(r['sys_id']),
-      name: this.named(r[display]) || String(r['sys_id']),
+      name: this.shownName(r, display) || String(r['sys_id']),
     }));
+  }
+
+  /** How a record is named: as the API shows it (a hierarchy's records by their path, like
+   *  "House › Heating"), else its display field. */
+  private shownName(record: Record<string, unknown>, display: string): string {
+    const shown = (record['_display'] as Record<string, unknown> | undefined)?.[display];
+    return shown !== undefined && shown !== null ? String(shown) : this.named(record[display]);
   }
 
   /** A display value as text: a translated one in the person's language. */

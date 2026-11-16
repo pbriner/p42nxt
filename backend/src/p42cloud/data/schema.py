@@ -231,6 +231,24 @@ def _links(table: TableDef) -> tuple[str, ...]:
     return tuple(found)
 
 
+def _tree_steps(table: TableDef, before: tuple[str, ...]) -> list[Step]:
+    """The hierarchy trigger, on a table with a parent field (again, if the field changed)."""
+    wanted = (table.parent_field,) if table.parent_field else ()
+    if wanted == before:
+        return []
+    name = qualified(table.schema, table.name)
+    steps = [Step(f"DROP TRIGGER IF EXISTS p42_tree ON {name}", f"Stop the tree of {table.key}")]
+    if wanted:
+        steps.append(
+            Step(
+                f"CREATE TRIGGER p42_tree BEFORE INSERT OR UPDATE ON {name}"
+                f" FOR EACH ROW EXECUTE FUNCTION sys.p42_tree({literal(wanted[0])})",
+                f"Keep {table.key} a tree (no loops; nothing removed with records under it)",
+            )
+        )
+    return steps
+
+
 def _link_steps(table: TableDef, before: tuple[str, ...]) -> list[Step]:
     """The link trigger (again, if its links changed), and the links of the records there."""
     wanted = _links(table)
@@ -283,7 +301,7 @@ def _create(table: TableDef, wanted_role: str) -> list[Step]:
     ]
     if table.key in METADATA_TABLES:
         steps.append(_announce(table))
-    return steps + _link_steps(table, ())
+    return steps + _link_steps(table, ()) + _tree_steps(table, ())
 
 
 def _announce(table: TableDef) -> Step:
@@ -349,7 +367,11 @@ def _change(table: TableDef, existing: Existing) -> list[Step]:
         ]
     if table.key in METADATA_TABLES and "p42_announce" not in existing.triggers:
         steps.append(_announce(table))
-    return steps + _link_steps(table, existing.triggers.get("p42_link", ()))
+    return (
+        steps
+        + _link_steps(table, existing.triggers.get("p42_link", ()))
+        + _tree_steps(table, existing.triggers.get("p42_tree", ()))
+    )
 
 
 def plan(catalog: Catalog, database: Database) -> list[Step]:
