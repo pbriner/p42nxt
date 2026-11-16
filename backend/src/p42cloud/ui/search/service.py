@@ -66,17 +66,27 @@ async def scopes(records: Records) -> list[Scope]:
     return found[:MAX_SCOPES]
 
 
-def _shown(record: dict[str, Any], name: str) -> str:
-    value = record.get("_display", {}).get(name, record.get(name))
-    return "" if value is None else str(value)
+def _shown(scope: Scope, record: dict[str, Any], name: str, language: str) -> str:
+    """A value as words in the person's language; yes/no and raw data say nothing on their
+    own in a line, so they're left out."""
+    named = record.get("_display", {}).get(name)
+    if named is not None:
+        return str(named)
+    value = record.get(name)
+    kind = next((f.field.type for f in scope.table.fields if f.name == name), None)
+    if value is None or kind in ("boolean", "json") or isinstance(value, bool | dict | list):
+        return str(translated(value, language) or "") if kind == "translated_text" else ""
+    return str(value)
 
 
-def _hit(scope: Scope, record: dict[str, Any]) -> dict[str, Any]:
+def _hit(scope: Scope, record: dict[str, Any], language: str) -> dict[str, Any]:
     """A found record as a line: its name and first column, then a few more."""
     display = scope.table.display
     others = [c for c in scope.columns if c != display]
-    title = [_shown(record, n) for n in ([display] if display else []) + others[:1]]
-    rest = [_shown(record, n) for n in others[1 : 1 + SUBTITLE_COLUMNS]]
+    title = [
+        _shown(scope, record, n, language) for n in ([display] if display else []) + others[:1]
+    ]
+    rest = [_shown(scope, record, n, language) for n in others[1 : 1 + SUBTITLE_COLUMNS]]
     return {
         "sys_id": record["sys_id"],
         "title": " · ".join(t for t in title if t) or str(record["sys_id"]),
@@ -116,7 +126,7 @@ async def search(
                 "table": found.table.key,
                 "total": page.total,
                 "total_exact": page.total_exact,
-                "records": [_hit(found, r) for r in shown],
+                "records": [_hit(found, r, records.situation.language) for r in shown],
             }
         )
     return {"query": words, "groups": groups}

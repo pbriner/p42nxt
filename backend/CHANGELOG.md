@@ -2,6 +2,12 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.40.1
+
+- The search shows its lines in the person's language: translated names (a module's name read
+  `{'de': …, 'en': …}`), and no bare yes/no or raw data. Modules are named by their translated
+  name wherever they're referenced.
+
 ## 0.40.0
 
 - Hierarchies: a table names the field holding each record's parent (`Table(…,

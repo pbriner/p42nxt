@@ -286,3 +286,13 @@ async def test_over_http(people: People, upgraded: Settings) -> None:
     assert (default.json()["cards"], blue.json()["name"]) == ("raised", "blue")
     assert unknown.json()["name"] == "violet"
     assert (closed.status_code, scopes.status_code) == (401, 401)
+
+
+async def test_search_lines_read_in_the_persons_language(people: People) -> None:
+    async with acting(people.engine, people.admin) as records:
+        records.situation = replace(records.situation, language="de")
+        found = await search(records, "sys", scope="sys.module")
+    (line,) = [r for r in found["groups"][0]["records"] if "Kern" in r["title"]]
+    assert line["title"].startswith("Kern")  # its name, translated, not the raw texts
+    assert "{" not in line["title"] + line["subtitle"]
+    assert "True" not in line["subtitle"]  # yes/no alone says nothing in a line
