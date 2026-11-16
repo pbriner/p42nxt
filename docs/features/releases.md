@@ -178,6 +178,14 @@ running, succeeded, failed with the version before put back, failed, cancelled),
 before, and what the updater did. Only a version the signed index offers can be requested, one
 update at a time; until it starts, a request can only be cancelled. Administrators and the person
 who asked are told how it went (`sys.update_finished`).
+
+**Modules to install.** The check also lists the registry's modules this installation hasn't
+installed (kind **New module**, nothing under Installed), with the newest release that fits or
+what it needs first. One that fits offers **Install now** and **Install tonight**, asking for the
+authenticator code again and installed by the updater like an update, backup first. Modules
+removed here aren't offered: they come back by name (`module install <id>`). Administrators are
+notified once when a module is offered for the first time (`sys.new_module`); after installing
+it, they're told which roles it brings, to give to groups.
 Everyone signed in sees in the message band when an update is planned and while it runs
 (`screens.md`, Messages for everyone).
 

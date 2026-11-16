@@ -1658,6 +1658,11 @@
    "text": "Installiert"
   },
   {
+   "key": "sys.field|sys.module_update.kind|choice:new",
+   "english": "New module",
+   "text": "Neues Modul"
+  },
+  {
    "key": "sys.field|sys.module_update.kind|choice:normal",
    "english": "Update",
    "text": "Update"
@@ -4298,6 +4303,16 @@
    "text": "Ein Modul bringt Rollen"
   },
   {
+   "key": "sys.notification_kind|sys.new_module|description",
+   "english": "A module is offered in the registry that this installation hasn't installed yet.",
+   "text": "Im Verzeichnis wird ein Modul angeboten, das diese Installation noch nicht installiert hat."
+  },
+  {
+   "key": "sys.notification_kind|sys.new_module|label",
+   "english": "A module to install",
+   "text": "Ein Modul zum Installieren"
+  },
+  {
    "key": "sys.notification_kind|sys.update_finished|description",
    "english": "An update requested in the app has run: done, or failed (with the version before put back or not).",
    "text": "Ein in der App angefordertes Update ist gelaufen: fertig oder fehlgeschlagen (mit oder ohne Rückkehr zur Version davor)."
@@ -5031,6 +5046,21 @@
    "key": "sys.ui_action|sys.check|label",
    "english": "Check",
    "text": "Prüfen"
+  },
+  {
+   "key": "sys.ui_action|sys.install_now|confirm",
+   "english": "Install now? A backup is made first; the app is unavailable for a few minutes. Afterwards, give the module's roles to groups.",
+   "text": "Jetzt installieren? Zuerst wird eine Sicherung erstellt; die App ist einige Minuten nicht erreichbar. Danach die Rollen des Moduls Gruppen zuweisen."
+  },
+  {
+   "key": "sys.ui_action|sys.install_now|label",
+   "english": "Install now",
+   "text": "Jetzt installieren"
+  },
+  {
+   "key": "sys.ui_action|sys.install_tonight|label",
+   "english": "Install tonight",
+   "text": "Heute Nacht installieren"
   },
   {
    "key": "sys.ui_action|sys.mark_read|label",

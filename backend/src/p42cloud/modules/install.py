@@ -202,7 +202,7 @@ async def _record(conn: AsyncConnection, module: Module, protected: bool) -> Non
             ),
             values,
         )
-    if installed is not None and installed != module.version:
+    if installed != module.version:  # a new module's offer goes once it's installed
         await settle_updates(conn, module.id, module.version)
 
 

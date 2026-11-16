@@ -236,6 +236,48 @@ def _notes(passed: list[dict[str, Any]]) -> str:
     )
 
 
+def installable(
+    index: dict[str, Any],
+    installed: dict[str, Version],
+    requires: Mapping[str, Mapping[str, str]] | None = None,
+    removed: frozenset[str] = frozenset(),
+) -> list[Update]:
+    """The modules of the index not installed (nor removed: those come back by name): for each,
+    its newest release that fits, else its newest, saying what it needs. The core isn't one."""
+    requires = requires or {}
+    found: list[Update] = []
+    modules = cast(dict[str, list[dict[str, Any]]], index.get("modules", {}))
+    for module, releases in sorted(modules.items()):
+        if module in installed or module in removed or module == "sys" or not releases:
+            continue
+        ordered: list[dict[str, Any]] = []
+        for release in releases:
+            try:
+                Version(release["version"])
+            except InvalidVersion:
+                continue
+            ordered.append(release)
+        if not ordered:
+            continue
+        ordered.sort(key=lambda r: Version(r["version"]))
+        blocked = {r["version"]: _blockers(r, module, installed, requires) for r in ordered}
+        fitting = [r for r in ordered if not blocked[r["version"]]]
+        chosen = fitting[-1] if fitting else ordered[-1]
+        missing = blocked[chosen["version"]]
+        found.append(
+            Update(
+                module=module,
+                installed="",
+                available=chosen["version"],
+                security=False,
+                notes=str(chosen.get("notes", "")),
+                package=str(chosen.get("package", "")),
+                needs=f"needs {', '.join(missing)}" if missing else None,
+            )
+        )
+    return found
+
+
 def updates(
     index: dict[str, Any],
     installed: dict[str, Version],

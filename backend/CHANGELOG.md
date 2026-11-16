@@ -2,6 +2,13 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.41.0
+
+- Modules to install: the update check also offers the registry's modules not installed yet
+  (Available updates, kind New module), each with what it needs first; **Install now** and
+  **Install tonight** install one through the updater on the machine, backup first, like an
+  update. Administrators are notified once when a module is offered for the first time.
+
 ## 0.40.1
 
 - The search shows its lines in the person's language: translated names (a module's name read

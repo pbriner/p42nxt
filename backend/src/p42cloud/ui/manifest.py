@@ -330,7 +330,45 @@ async def _check(run: ActionRun) -> ActionResult:
     return ActionResult(message=await check(run.records, run.sys_id))
 
 
+# What fits: an update of an installed module, or a module to install.
+AN_UPDATE = {
+    "and": [
+        {"field": "fits", "op": "eq", "value": True},
+        {"field": "kind", "op": "ne", "value": "new"},
+    ]
+}
+A_NEW_MODULE = {
+    "and": [
+        {"field": "fits", "op": "eq", "value": True},
+        {"field": "kind", "op": "eq", "value": "new"},
+    ]
+}
+
 ACTIONS = (
+    UIAction(
+        "install_now",
+        "sys.module_update",
+        "Install now",
+        places=("form_button", "list_row"),
+        icon="add_circle",
+        operation="read",
+        condition=A_NEW_MODULE,
+        second_factor=True,
+        confirm="Install now? A backup is made first; the app is unavailable for a few minutes."
+        " Afterwards, give the module's roles to groups.",
+        handler=_update_now,
+    ),
+    UIAction(
+        "install_tonight",
+        "sys.module_update",
+        "Install tonight",
+        places=("form_button", "list_row"),
+        icon="bedtime",
+        operation="read",
+        condition=A_NEW_MODULE,
+        second_factor=True,
+        handler=_update_tonight,
+    ),
     UIAction(
         "try_again",
         "sys.event_delivery",
@@ -349,7 +387,7 @@ ACTIONS = (
         places=("form_button", "list_row"),
         icon="system_update_alt",
         operation="read",
-        condition={"field": "fits", "op": "eq", "value": True},
+        condition=AN_UPDATE,
         second_factor=True,
         confirm="Update now? A backup is made first; the app is unavailable for a few minutes.",
         handler=_update_now,
@@ -361,7 +399,7 @@ ACTIONS = (
         places=("form_button", "list_row"),
         icon="bedtime",
         operation="read",
-        condition={"field": "fits", "op": "eq", "value": True},
+        condition=AN_UPDATE,
         second_factor=True,
         handler=_update_tonight,
     ),

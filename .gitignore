@@ -12,3 +12,6 @@ node_modules/
 dist/
 .idea/
 .vscode/
+
+# The maintainer's scratch folder (CI logs and the like), never committed.
+temp/

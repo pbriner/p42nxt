@@ -57,11 +57,12 @@ MODULE_UPDATE = Table(
     {
         "module": String("Module name", max_length=16, required=True),
         "module_ref": Reference("Module", "sys.module", key="module"),
-        "installed": String("Installed", max_length=40, required=True),
+        # Empty for a module not installed yet (offered to install).
+        "installed": String("Installed", max_length=40),
         "available": String("Available", max_length=40, required=True),
         "kind": Choice(
             "Kind",
-            {"normal": "Update", "security": "Security update"},
+            {"normal": "Update", "security": "Security update", "new": "New module"},
             required=True,
             default="normal",
         ),

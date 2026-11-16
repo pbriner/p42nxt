@@ -343,3 +343,66 @@ def test_an_entry_whose_package_is_another_version_is_dropped() -> None:
     assert [e["version"] for e in kept["modules"]["dca"]] == ["0.4.0"]
     assert releases.wheel_version("p42cloud_dca-0.7.2-py3-none-any.whl") == "0.7.2"
     assert releases.wheel_version("ghcr.io/x/p42cloud@sha256:abc") is None
+
+
+def test_modules_not_installed_are_offered_to_install() -> None:
+    index = releases.empty_index()
+    _release(index, "sys", "0.41.0")
+    _release(index, "dca", "0.8.3")  # installed: an update, not an offer
+    _release(index, "hello", "0.7.0", depends_on={"sys": ">=0.40"})
+    _release(index, "costing", "0.1.0", depends_on={"sys": ">=0.41"})
+    _release(index, "gone", "1.0.0")  # removed here: brought back by name, not offered
+    found = releases.installable(
+        index,
+        {"sys": Version("0.40.0"), "dca": Version("0.8.3")},
+        {"sys": {}, "dca": {"sys": ">=0.38"}},
+        frozenset({"gone"}),
+    )
+    assert [(u.module, u.installed, u.available, u.fits) for u in found] == [
+        ("costing", "", "0.1.0", False),
+        ("hello", "", "0.7.0", True),
+    ]
+    assert found[0].needs == "needs sys >=0.41"
+
+
+async def test_a_module_offered_for_the_first_time_is_announced_once(owner: AsyncEngine) -> None:
+    index = releases.empty_index()
+    _release(index, "zzshop", "1.0.0", depends_on={"sys": ">=0.1"})
+
+    async def told() -> int:
+        async with owner_transaction(owner) as conn:
+            return int(
+                await conn.scalar(
+                    text(
+                        "SELECT count(*) FROM sys.notification WHERE kind = 'sys.new_module'"
+                        " AND title LIKE '%zzshop%'"
+                    )
+                )
+                or 0
+            )
+
+    with working_as(Context(channel="test")):
+        async with owner_transaction(owner) as conn:
+            admins = await conn.scalar(
+                text(
+                    "SELECT count(*) FROM sys.membership m JOIN sys.group_role gr"
+                    ' ON gr."group" = m."group" AND gr.deleted IS NULL JOIN sys.role r'
+                    " ON r.sys_id = gr.role AND r.name = 'sys.admin' WHERE m.deleted IS NULL"
+                )
+            )
+        await refresh(owner, _registry(index), "https://registry.test", KEYS)
+        first = await told()
+        await refresh(owner, _registry(index), "https://registry.test", KEYS)
+        again = await told()
+        async with owner_transaction(owner) as conn:
+            row = (
+                await conn.execute(
+                    text(
+                        "SELECT installed, available, kind, fits FROM sys.module_update"
+                        " WHERE module = 'zzshop' AND deleted IS NULL"
+                    )
+                )
+            ).one()
+    assert tuple(row) == (None, "1.0.0", "new", True)
+    assert first == again  # once, not at every check
+    assert (first > 0) == bool(admins)
