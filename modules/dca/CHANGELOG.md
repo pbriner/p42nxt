@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0
+
+- A plan names its Kraken connection (**Kraken connection**, on the form under Plan): one of its
+  owner's own, never anyone else's. A new plan takes its owner's only one; plans from before
+  keep trading through their owner's only connection until one is chosen. Real orders need the
+  plan's own connection to have passed its check, and the cycle trades through exactly that
+  account. So someone with several Kraken accounts runs a plan on each. Needs the core 0.37.3.
+
 ## 0.7.2
 
 - The module says its own version again: 0.6.0 to 0.7.1 still called themselves 0.5.0 inside,

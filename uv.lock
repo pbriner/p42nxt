@@ -564,7 +564,7 @@ wheels = [
 
 [[package]]
 name = "p42cloud"
-version = "0.37.2"
+version = "0.37.3"
 source = { editable = "backend" }
 dependencies = [
     { name = "argon2-cffi" },
@@ -615,7 +615,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-dca"
-version = "0.7.2"
+version = "0.8.0"
 source = { editable = "modules/dca" }
 dependencies = [
     { name = "p42cloud" },

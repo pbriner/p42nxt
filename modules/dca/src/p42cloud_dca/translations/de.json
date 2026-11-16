@@ -148,6 +148,16 @@
    "text": "Stunde (UTC, 0 bis 23)"
   },
   {
+   "key": "sys.field|dca.plan.connection|help",
+   "english": "Which of your Kraken accounts it trades through. Empty: your only one.",
+   "text": "Über welches Ihrer Kraken-Konten er handelt. Leer: Ihr einziges."
+  },
+  {
+   "key": "sys.field|dca.plan.connection|label",
+   "english": "Kraken connection",
+   "text": "Kraken-Verbindung"
+  },
+  {
    "key": "sys.field|dca.plan.cooldown_hours|label",
    "english": "Hours between extra buys",
    "text": "Stunden zwischen Zusatzkäufen"

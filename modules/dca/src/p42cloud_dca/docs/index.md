@@ -58,6 +58,8 @@ left. Inactive plans are checked too.
 
 1. Make sure your Kraken key can't withdraw money, and tick **My Kraken key can't withdraw**.
 2. Check your Kraken connection (Connections → **Check**).
+   With several Kraken accounts, make a connection for each and choose it on the plan
+   (**Kraken connection**). With one, plans use it without asking.
 3. Switch on **Real orders** on the plan.
 
 An administrator must also allow real orders for the whole installation (Settings → **Real DCA

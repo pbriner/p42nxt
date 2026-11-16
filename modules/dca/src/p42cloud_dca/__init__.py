@@ -47,6 +47,7 @@ from p42cloud.sdk import Decimal as Number
 
 from p42cloud_dca import cycle
 from p42cloud_dca.kraken import KRAKEN
+from p42cloud_dca.kraken import TYPE as KRAKEN_TYPE
 from p42cloud_dca.orders import PLACE_ORDER
 from p42cloud_dca.widgets import ROUTES, WIDGETS
 
@@ -96,6 +97,12 @@ PLAN = Table(
     {
         "name": String("Name", max_length=100, required=True),
         "owner": Reference("Owner", "sys.person", required=True),
+        # Which of its owner's Kraken accounts it trades through (their only one if not said).
+        "connection": Reference(
+            "Kraken connection",
+            "sys.connection",
+            help="Which of your Kraken accounts it trades through. Empty: your only one.",
+        ),
         "pair": Choice("Pair", PAIRS, required=True, default="xbtchf"),
         "mode": Choice(
             "Spread until",
@@ -212,6 +219,7 @@ ORDER = Table(
 
 PEOPLE_WRITE = (
     "name",
+    "connection",
     "pair",
     "mode",
     "amount",
@@ -338,15 +346,44 @@ async def _check_status(change: Change, current: dict[str, Any]) -> None:
     }
 
 
-async def _check_live(change: Change) -> None:
-    """Real orders need a Kraken connection that answered its check."""
+async def _kraken_connections(change: Change) -> list[dict[str, Any]]:
+    """The person's own Kraken connections (others' aren't there for them), oldest first."""
+    found = await Client.of(change).list(
+        "sys.connection",
+        where={"field": "type", "op": "eq", "value": KRAKEN_TYPE},
+        sort=["created"],
+        limit=20,
+    )
+    return list(found["records"])
+
+
+async def _check_connection(change: Change, merged: dict[str, Any]) -> None:
+    """A plan trades through one of its owner's own Kraken connections: theirs alone, not
+    anyone else's; their only one when not said."""
+    if _by_cycle(change):
+        return
+    values = change.values
+    if change.operation == "create" and not values.get("connection"):
+        mine = await _kraken_connections(change)
+        if len(mine) == 1:
+            values["connection"] = mine[0]["sys_id"]
+        return
+    if "connection" not in values or not values["connection"]:
+        return
+    mine = {str(c["sys_id"]) for c in await _kraken_connections(change)}
+    if str(values["connection"]) not in mine or merged.get("owner") not in (None, change.person):
+        raise _invalid("connection", "One of your own Kraken connections.")
+
+
+async def _check_live(change: Change, merged: dict[str, Any]) -> None:
+    """Real orders need the plan's Kraken connection, and its check to have passed."""
     if not change.values.get("live") or _by_cycle(change):
         return
-    found = await Client.of(change).list(
-        "sys.connection", where={"field": "type", "op": "eq", "value": "dca.kraken"}, limit=1
-    )
-    if not found["records"] or found["records"][0]["health"] != "ok":
-        raise _invalid("live", "Check your Kraken connection first (Connections → Check).")
+    mine = await _kraken_connections(change)
+    chosen = merged.get("connection")
+    found = [c for c in mine if str(c["sys_id"]) == str(chosen)] if chosen else mine[:1]
+    if not found or found[0]["health"] != "ok":
+        raise _invalid("live", "Check the plan's Kraken connection first (Connections → Check).")
 
 
 async def _check_plan(change: Change) -> None:
@@ -363,7 +400,8 @@ async def _check_plan(change: Change) -> None:
     merged = current | values
     _check_values(values, merged)
     await _check_status(change, current)
-    await _check_live(change)
+    await _check_connection(change, merged)
+    await _check_live(change, merged | values)
     if set(values) & set(TARGETS) and not _by_cycle(change):
         values["targets_hit"] = None  # checked afresh
     if set(values) & TIMING:
@@ -392,7 +430,7 @@ module = Module(
     name="Kraken DCA",
     # The package's version: one place to raise it (pyproject.toml).
     version=package_version("p42cloud-dca"),
-    depends_on={"sys": ">=0.37.2,<1"},
+    depends_on={"sys": ">=0.37.3,<1"},
     tables=(PLAN, TIER, ORDER),
     roles=(USER, KEEPER),
     hooks=(
@@ -468,7 +506,7 @@ module = Module(
         FormView(
             "dca.plan",
             (
-                FormSection("Plan", ("name", "pair", "amount", "active")),
+                FormSection("Plan", ("name", "connection", "pair", "amount", "active")),
                 FormSection("Real orders", ("live", "keys_checked", "status", "hold_reason")),
                 FormSection("When", ("mode", "deposit_day", "buy_hour", "end_date")),
                 FormSection("Limits", ("max_price", "monthly_limit")),

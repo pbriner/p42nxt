@@ -2,6 +2,11 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.37.3
+
+- A module asks for one connection in particular: `client.connection(type, owner=…,
+  connection=<id>)`, only of that owner and that type (else "no such connection").
+
 ## 0.37.2
 
 - Publishing a module refuses a package whose manifest says another version, and drops entries

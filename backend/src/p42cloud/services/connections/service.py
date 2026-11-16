@@ -283,9 +283,15 @@ def _may_use(records: Records, module: str, owner: uuid.UUID) -> bool:
 
 @asynccontextmanager
 async def connect(
-    records: Records, type_name: str, *, owner: uuid.UUID | None = None, label: str | None = None
+    records: Records,
+    type_name: str,
+    *,
+    owner: uuid.UUID | None = None,
+    label: str | None = None,
+    connection: uuid.UUID | None = None,
 ) -> AsyncGenerator[httpx.AsyncClient]:
-    """A ready client for someone's connection of a type (the person's own by default)."""
+    """A ready client for someone's connection of a type (the person's own by default); one
+    named connection of theirs when given (never another person's, nor of another type)."""
     module, kind = _type(type_name)
     who = owner or records.situation.person
     if kind.shared:
@@ -311,9 +317,10 @@ async def connect(
             text(
                 "SELECT sys_id, base_url FROM sys.connection WHERE owner = :o AND type = :t"
                 " AND deleted IS NULL AND (CAST(:l AS text) IS NULL OR label = :l)"
+                " AND (CAST(:c AS uuid) IS NULL OR sys_id = CAST(:c AS uuid))"
                 " ORDER BY created LIMIT 1"
             ),
-            {"o": who, "t": type_name, "l": label},
+            {"o": who, "t": type_name, "l": label, "c": connection},
         )
     ).first()
     if row is None:
