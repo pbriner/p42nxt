@@ -9,6 +9,7 @@ documentation, and its record with the version. A module is never downgraded.
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
@@ -37,6 +38,9 @@ from p42cloud.services.notifications.service import register as register_kinds
 from p42cloud.services.notifications.service import send, write_kinds
 from p42cloud.services.routes.service import register as register_routes
 from p42cloud.services.routes.service import write_routes
+from p42cloud.services.states.models import Flow
+from p42cloud.services.states.service import write_flows
+from p42cloud.ui.actions.models import UIAction
 from p42cloud.ui.actions.service import register as register_actions
 from p42cloud.ui.actions.service import write_actions
 from p42cloud.ui.forms.service import write_forms
@@ -93,6 +97,31 @@ def in_order(modules: list[Module]) -> list[Module]:
         placed.add(ready[0].id)
         waiting.remove(ready[0])
     return ordered
+
+
+def _move_buttons(flows: tuple[Flow, ...]) -> tuple[UIAction, ...]:
+    """Each transition as a button on the record's form, where the record is in its state."""
+    buttons: list[UIAction] = []
+    for flow in flows:
+        for t in flow.transitions:
+            here: Any = (
+                {"field": flow.field, "op": "eq", "value": t.from_state}
+                if t.from_state is not None
+                else {"field": flow.field, "op": "ne", "value": t.to_state}
+            )
+            buttons.append(
+                UIAction(
+                    f"move_{t.name}",
+                    flow.table,
+                    t.label,
+                    places=("form_button", "list_row"),
+                    icon=t.icon or "arrow_forward",
+                    condition=here if t.condition is None else {"and": [here, t.condition]},
+                    confirm=t.confirm,
+                    set={flow.field: t.to_state},
+                )
+            )
+    return tuple(buttons)
 
 
 def compose(modules: list[Module]) -> None:
@@ -325,7 +354,10 @@ async def install_modules(
             await write_docs(conn, module.id, module.docs)
             await write_views(conn, catalog, module.id, module.views)
             await write_forms(conn, catalog, module.id, module.forms)
-            await write_actions(conn, catalog, module.id, module.actions)
+            await write_flows(conn, catalog, module.id, module.flows)
+            await write_actions(
+                conn, catalog, module.id, (*module.actions, *_move_buttons(module.flows))
+            )
             await write_rules(conn, catalog, module.id, module.rules)
             await write_routes(conn, module.id, module.routes, {t.name for t in module.tables})
             await write_widgets(conn, catalog, module.id, module.widgets)

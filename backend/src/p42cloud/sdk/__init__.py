@@ -52,6 +52,7 @@ from p42cloud.services.events.models import EventRun, EventType, Subscription
 from p42cloud.services.jobs.models import Job, JobRun, Schedule
 from p42cloud.services.notifications.models import NotificationKind
 from p42cloud.services.routes.models import Route, RouteRequest
+from p42cloud.services.states.models import Flow, Transition
 from p42cloud.ui.actions.models import ActionInput, ActionResult, ActionRun, UIAction
 from p42cloud.ui.forms.models import FormSection, FormView, RelatedList
 from p42cloud.ui.navigation.models import Item, Section
@@ -81,6 +82,7 @@ __all__ = [
     "EventRun",
     "EventType",
     "FieldError",
+    "Flow",
     "FormRule",
     "FormSection",
     "FormView",
@@ -119,6 +121,7 @@ __all__ = [
     "Table",
     "TableHook",
     "Text",
+    "Transition",
     "TranslatedText",
     "UIAction",
     "Url",

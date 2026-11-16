@@ -34,6 +34,7 @@ from p42cloud.services.events.models import EventType, Subscription
 from p42cloud.services.jobs.models import Job, Schedule
 from p42cloud.services.notifications.models import NotificationKind
 from p42cloud.services.routes.models import Route
+from p42cloud.services.states.models import Flow
 from p42cloud.ui.actions.models import UIAction
 from p42cloud.ui.forms.models import FormView
 from p42cloud.ui.navigation.models import Entry
@@ -142,6 +143,8 @@ class Module:
     schedules: tuple[Schedule, ...] = ()
     connection_types: tuple[ConnectionType, ...] = ()
     calls: tuple[OutsideCall, ...] = ()
+    # States with allowed moves (a choice field of one of its tables): each move a button too.
+    flows: tuple[Flow, ...] = ()
     # What it tells other modules about, and what it listens for.
     events: tuple[EventType, ...] = ()
     subscriptions: tuple[Subscription, ...] = ()

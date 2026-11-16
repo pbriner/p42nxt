@@ -44,6 +44,7 @@ from p42cloud.services.maintenance import manifest as maintenance
 from p42cloud.services.notifications import manifest as notifications
 from p42cloud.services.notifications import service as notifications_service
 from p42cloud.services.routes import models as module_routes
+from p42cloud.services.states import manifest as states
 from p42cloud.services.update_requests import models as update_request_models
 from p42cloud.services.update_requests import service as update_requests
 from p42cloud.ui import manifest as ui
@@ -82,6 +83,7 @@ CORE = Module(
         *events.TABLES,
         *files.TABLES,
         *currencies.TABLES,
+        *states.TABLES,
         *notifications.TABLES,
         *module_routes.TABLES,
         *backup_models.TABLES,
@@ -102,6 +104,7 @@ CORE = Module(
         *notifications.HOOKS,
         *update_requests.HOOKS,
         *announcements.HOOKS,
+        *states.HOOKS,
     ),
     docs=DOCS if DOCS.is_dir() else None,
     translations=Path(__file__).parent.parent / "translations",

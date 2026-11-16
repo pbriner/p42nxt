@@ -156,3 +156,39 @@ async def test_readers_read_and_only_controllers_change(
             await client.create("costing.center", {"code": _code("z"), "name": "Z"})
     assert seen["name"] == "House"
     assert refused.value.status == 403
+
+
+async def test_an_order_is_done_then_settled_by_a_controller(
+    as_system: Acting, as_person: Acting
+) -> None:
+    async with as_system() as client:
+        role = await client.list(
+            "sys.role", where={"field": "name", "op": "eq", "value": "costing.controller"}
+        )
+        group = await client.create("sys.group", {"name": f"Ctl {uuid.uuid4().hex[:6]}"})
+        await client.create(
+            "sys.group_role", {"group": group["sys_id"], "role": role["records"][0]["sys_id"]}
+        )
+        person = await client.create("sys.person", {"name": f"Cora {uuid.uuid4().hex[:4]}"})
+        await client.create(
+            "sys.membership", {"group": group["sys_id"], "person": person["sys_id"]}
+        )
+    async with as_person(person["sys_id"]) as client:
+        house = await _center(client, "House", "profit")
+        order = await client.create(
+            "costing.order", {"code": _code("o"), "name": "Paint", "center": house["sys_id"]}
+        )
+        assert order["state"] == "open"
+        with pytest.raises(Problem) as skipped:
+            await client.update(
+                "costing.order", order["sys_id"], {"state": "settled"}, order["_etag"]
+            )
+        assert skipped.value.errors[0].message == "From Open it can't go to Settled."
+        done = await client.action("costing.order", order["sys_id"], "costing.move_finish")
+        assert done is not None
+        current = await client.get("costing.order", order["sys_id"])
+        assert current["state"] == "done"
+        await client.update(
+            "costing.order", order["sys_id"], {"state": "settled"}, current["_etag"]
+        )
+        assert (await client.get("costing.order", order["sys_id"]))["state"] == "settled"

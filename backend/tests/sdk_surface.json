@@ -736,6 +736,31 @@
    }
   ]
  },
+ "Flow": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "field",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "initial",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "transitions",
+    "required": true
+   }
+  ]
+ },
  "FormRule": {
   "methods": {},
   "params": [
@@ -1231,6 +1256,11 @@
    {
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "calls",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "flows",
     "required": false
    },
    {
@@ -1818,6 +1848,51 @@
    {
     "kind": "VAR_KEYWORD",
     "name": "common",
+    "required": false
+   }
+  ]
+ },
+ "Transition": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "name",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "from_state",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "to_state",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "roles",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "condition",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "icon",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "confirm",
     "required": false
    }
   ]

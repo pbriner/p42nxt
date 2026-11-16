@@ -88,6 +88,8 @@ ROLES = [
             Grant("sys.call_type", ("read",)),
             Grant("sys.outside_call", ("read",)),
             Grant("sys.event_type", ("read",)),
+            Grant("sys.state_flow", ("read",)),
+            Grant("sys.state_transition", ("read",)),
             Grant("sys.event_subscription", ("read",)),
             Grant("sys.event", ("read",)),
             Grant("sys.event_delivery", ("read",)),

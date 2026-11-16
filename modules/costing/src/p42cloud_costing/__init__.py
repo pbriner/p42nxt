@@ -18,6 +18,7 @@ from p42cloud.sdk import (
     Date,
     Decimal,
     FieldError,
+    Flow,
     FormSection,
     FormView,
     Grant,
@@ -34,6 +35,7 @@ from p42cloud.sdk import (
     Table,
     TableHook,
     Text,
+    Transition,
     package_version,
 )
 
@@ -281,7 +283,7 @@ module = Module(
     name="Costing",
     publisher="p42",
     version=package_version("p42cloud-costing"),
-    depends_on={"sys": ">=0.40,<1"},
+    depends_on={"sys": ">=0.42,<1"},
     tables=TABLES,
     roles=(CONTROLLER, READER),
     hooks=(
@@ -289,6 +291,26 @@ module = Module(
         TableHook("costing.order", before=_check_order),
         TableHook("costing.key", before=_check_key),
         TableHook("costing.key_share", before=_check_share),
+    ),
+    flows=(
+        Flow(
+            "costing.order",
+            "state",
+            initial="open",
+            transitions=(
+                Transition("finish", "Mark done", "open", "done", icon="task_alt"),
+                Transition("reopen", "Reopen", "done", "open", icon="undo"),
+                Transition(
+                    "settle",
+                    "Settle",
+                    "done",
+                    "settled",
+                    roles=("costing.controller",),
+                    icon="verified",
+                    confirm="Settle the order? Its costs are then final.",
+                ),
+            ),
+        ),
     ),
     docs=Path(__file__).parent / "docs",
     translations=Path(__file__).parent / "translations",

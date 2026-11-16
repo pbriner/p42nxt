@@ -2613,6 +2613,96 @@
    "text": "PKCE-Verifier"
   },
   {
+   "key": "sys.field|sys.state_flow.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.state_flow.field|label",
+   "english": "Field",
+   "text": "Feld"
+  },
+  {
+   "key": "sys.field|sys.state_flow.initial|label",
+   "english": "Starts in",
+   "text": "Beginnt in"
+  },
+  {
+   "key": "sys.field|sys.state_flow.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.state_flow.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.state_flow.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.state_flow.table|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.field|sys.state_transition.condition|label",
+   "english": "Only when",
+   "text": "Nur wenn"
+  },
+  {
+   "key": "sys.field|sys.state_transition.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.state_transition.flow_ref|label",
+   "english": "Flow",
+   "text": "Ablauf"
+  },
+  {
+   "key": "sys.field|sys.state_transition.flow|label",
+   "english": "Flow name",
+   "text": "Name des Ablaufs"
+  },
+  {
+   "key": "sys.field|sys.state_transition.from_state|label",
+   "english": "From",
+   "text": "Von"
+  },
+  {
+   "key": "sys.field|sys.state_transition.label|label",
+   "english": "Label",
+   "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.state_transition.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.state_transition.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.state_transition.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.state_transition.roles|label",
+   "english": "Only for roles",
+   "text": "Nur für Rollen"
+  },
+  {
+   "key": "sys.field|sys.state_transition.to_state|label",
+   "english": "To",
+   "text": "Nach"
+  },
+  {
    "key": "sys.field|sys.table.display_field|label",
    "english": "Display field",
    "text": "Anzeigefeld"
@@ -3573,6 +3663,16 @@
    "text": "Anmeldung über einen Anbieter"
   },
   {
+   "key": "sys.form_view|sys.state_flow|section:1",
+   "english": "State flow",
+   "text": "Statusablauf"
+  },
+  {
+   "key": "sys.form_view|sys.state_transition|section:1",
+   "english": "State transition",
+   "text": "Statuswechsel"
+  },
+  {
    "key": "sys.form_view|sys.table|section:1",
    "english": "Table",
    "text": "Tabelle"
@@ -3926,6 +4026,16 @@
    "key": "sys.list_view|sys.sign_in_flow|label",
    "english": "Sign-ins through providers",
    "text": "Anmeldungen über Anbieter"
+  },
+  {
+   "key": "sys.list_view|sys.state_flow|label",
+   "english": "State flows",
+   "text": "Statusabläufe"
+  },
+  {
+   "key": "sys.list_view|sys.state_transition|label",
+   "english": "State transitions",
+   "text": "Statuswechsel"
   },
   {
    "key": "sys.list_view|sys.table|label",
@@ -4941,6 +5051,26 @@
    "key": "sys.table|sys.sign_in_flow|label_plural",
    "english": "Sign-ins through providers",
    "text": "Anmeldungen über Anbieter"
+  },
+  {
+   "key": "sys.table|sys.state_flow|label",
+   "english": "State flow",
+   "text": "Statusablauf"
+  },
+  {
+   "key": "sys.table|sys.state_flow|label_plural",
+   "english": "State flows",
+   "text": "Statusabläufe"
+  },
+  {
+   "key": "sys.table|sys.state_transition|label",
+   "english": "State transition",
+   "text": "Statuswechsel"
+  },
+  {
+   "key": "sys.table|sys.state_transition|label_plural",
+   "english": "State transitions",
+   "text": "Statuswechsel"
   },
   {
    "key": "sys.table|sys.table|label",

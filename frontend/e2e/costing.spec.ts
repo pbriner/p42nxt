@@ -33,3 +33,25 @@ test('a cost center under a house shows the house as its profit center', async (
   // A record of a tree is named by its path.
   await expect(entry).toContainText(`House ${tag} › Heating ${tag}`);
 });
+
+test('an order moves along its flow by its buttons', async ({ page }, info) => {
+  const tag = `${info.project.name}-${Date.now() % 100000}`;
+  await page.goto('/');
+  const client = await api(page);
+  const house = await client.post('/api/v1/costing/center', {
+    code: `HO-${tag}`,
+    name: `House ${tag}`,
+    kind: 'profit',
+  });
+  const order = await client.post('/api/v1/costing/order', {
+    code: `O-${tag}`,
+    name: `Paint ${tag}`,
+    center: house.sys_id,
+  });
+  await page.goto(`/form/costing.order/${order.sys_id}`);
+  await expect(page.getByRole('button', { name: 'Reopen' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Mark done' }).click();
+  await expect(page.getByRole('button', { name: 'Reopen' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mark done' })).toHaveCount(0);
+  await noSidewaysScroll(page);
+});
