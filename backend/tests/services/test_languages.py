@@ -21,6 +21,7 @@ from p42cloud.modules.core import CORE
 from p42cloud.security.access.manifest import ADMINISTRATORS
 from p42cloud.security.tokens.service import make_token
 from p42cloud.services.languages import service as languages
+from p42cloud.ui.search.service import scopes
 from p42cloud.web.app import create_app
 from tests.security.helpers import acting
 
@@ -316,3 +317,9 @@ async def test_a_translation_changed_by_hand_shows_within_the_minute(
     finally:
         await app_engine.dispose()
     assert (await _label(owner))[LANG] == "Personne"
+
+
+async def test_translations_stay_out_of_the_search_everywhere(engine: AsyncEngine) -> None:
+    async with acting(engine, None) as records:
+        found = {s.table.key for s in await scopes(records)}
+    assert "sys.translation" not in found and "sys.person" in found

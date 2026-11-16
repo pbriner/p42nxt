@@ -68,6 +68,8 @@ VIEWS = (
         ("key", "language", "text", "origin", "module"),
         sort=("key",),
         search=("key", "text"),
+        # Searched in its own list only: in every language, they'd answer searches in another.
+        searchable=False,
     ),
     ListView(
         "sys.update_request",

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.2
+
+- The module says its own version again: 0.6.0 to 0.7.1 still called themselves 0.5.0 inside,
+  so they were published as 0.5.0 and installations never saw them. The version now comes from
+  the package, in one place. 0.7.2 brings everything since 0.5.0 (the checks before real buys,
+  Kraken client order IDs, German). Needs the core 0.37.2.
+
 ## 0.7.1
 
 - The same as 0.7.0, published again: 0.6.0 and 0.7.0 were left out of the registry's list, so

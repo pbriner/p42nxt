@@ -92,12 +92,19 @@ def publish(module_id: str, wheel: Path, index_path: Path, url: str) -> None:
     private = os.environ["P42_RELEASE_KEY"]
     module = next(m for m in discover() if m.id == module_id)
     log = releases.changelog((ROOT / "modules" / module_id / "CHANGELOG.md").read_text())
+    packaged = releases.wheel_version(wheel.name)
+    if packaged != module.version:
+        raise SystemExit(
+            f"{module_id}: the package is {packaged}, its manifest says {module.version}."
+            " Both must be the same version."
+        )
     if module.version not in log:
         raise SystemExit(f"No CHANGELOG.md entry for {module_id} {module.version}.")
     data = wheel.read_bytes()
     signature = releases.sign(private, data)
     wheel.with_name(wheel.name + ".sig").write_text(signature)
     index = json.loads(index_path.read_text()) if index_path.is_file() else releases.empty_index()
+    index = releases.drop_mismatched(index)
     index = releases.add_release(
         index,
         module_id,

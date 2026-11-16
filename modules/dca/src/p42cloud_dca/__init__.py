@@ -41,6 +41,7 @@ from p42cloud.sdk import (
     TableHook,
     Text,
     UIAction,
+    package_version,
 )
 from p42cloud.sdk import Decimal as Number
 
@@ -389,8 +390,9 @@ async def _check_tier(change: Change) -> None:
 module = Module(
     id="dca",
     name="Kraken DCA",
-    version="0.5.0",
-    depends_on={"sys": ">=0.37,<1"},
+    # The package's version: one place to raise it (pyproject.toml).
+    version=package_version("p42cloud-dca"),
+    depends_on={"sys": ">=0.37.2,<1"},
     tables=(PLAN, TIER, ORDER),
     roles=(USER, KEEPER),
     hooks=(

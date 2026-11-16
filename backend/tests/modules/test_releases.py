@@ -20,6 +20,7 @@ from p42cloud.kernel.db import create_engine, owner_transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.modules import release_tool, releases
 from p42cloud.modules.install import settle_updates
+from p42cloud.modules.registry import discover
 from p42cloud.modules.updates import refresh
 
 PRIVATE, PUBLIC = releases.new_key()
@@ -286,3 +287,21 @@ def test_signing_by_hand_refuses_a_key_the_platform_doesnt_trust(
     with pytest.raises(SystemExit, match="isn't a release key"):
         release_tool.sign_file(package)
     assert not package.with_name(f"{package.name}.sig").exists()
+
+
+def test_every_module_says_the_version_its_package_has() -> None:
+    """A manifest's version is what gets published: it must be the package's, or a release goes
+    out under an old version."""
+    for module in discover():
+        assert module.version == version(f"p42cloud-{module.id}"), module.id
+
+
+def test_an_entry_whose_package_is_another_version_is_dropped() -> None:
+    index = releases.empty_index()
+    for v, wheel in (("0.4.0", "p42cloud_dca-0.4.0"), ("0.5.0", "p42cloud_dca-0.7.1")):
+        _release(index, "dca", v)
+        index["modules"]["dca"][-1]["package"] = f"https://x.test/{wheel}-py3-none-any.whl"
+    kept = releases.drop_mismatched(index)
+    assert [e["version"] for e in kept["modules"]["dca"]] == ["0.4.0"]
+    assert releases.wheel_version("p42cloud_dca-0.7.2-py3-none-any.whl") == "0.7.2"
+    assert releases.wheel_version("ghcr.io/x/p42cloud@sha256:abc") is None
