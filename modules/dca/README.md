@@ -13,7 +13,7 @@ real orders, which the installation must allow too.
 
 | Module | Versions | What for |
 |---|---|---|
-| `sys` | `>=0.21,<1` | Always; connections, jobs, notifications, personal tables |
+| `sys` | `>=0.37.3,<1` | Always; connections (one in particular), jobs, notifications, personal tables |
 
 Core dependency: no
 
@@ -42,8 +42,8 @@ tiers, What it found; its tiers and orders as related lists.
 
 ## Workflows, approvals and jobs
 
-The job `dca.cycle` (schedule "DCA cycle", every 5 minutes): for each active plan, with its
-owner's Kraken connection, it reads the price, the pair's minimums and the free balance, spreads
+The job `dca.cycle` (schedule "DCA cycle", every 5 minutes): for each active plan, with the
+plan's Kraken connection (`connection`: one of its owner's own; empty: the owner's only one), it reads the price, the pair's minimums and the free balance, spreads
 the balance (less this period's dry runs) until the period ends, applies the price tiers, the max
 price and the monthly limit, and records a dry run when a buy is due. The planned next buy is
 kept until it's due; one missed by more than 48 hours is planned again instead. A plan that

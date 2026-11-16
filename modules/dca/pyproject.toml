@@ -1,6 +1,6 @@
 [project]
 name = "p42cloud-dca"
-version = "0.7.2"
+version = "0.8.0"
 description = "Kraken DCA: dollar cost averaging on your own Kraken account"
 requires-python = ">=3.14"
 license = "Apache-2.0"

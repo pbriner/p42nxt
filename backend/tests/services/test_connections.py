@@ -236,3 +236,29 @@ async def test_a_check_says_whether_a_connection_works(engine: AsyncEngine, type
         said_now = await check(records, made.sys_id)
     assert (said, seen.values["health"]) == ("Answers.", "ok")
     assert said_now == "Says no."
+
+
+async def test_one_connection_of_several_and_never_anothers(
+    engine: AsyncEngine, types: None
+) -> None:
+    anna, bob = await _people(engine)
+    made: dict[str, uuid.UUID] = {}
+    for who, label, token in ((anna, "First", "t1"), (anna, "Second", "t2"), (bob, "Bobs", "t3")):
+        async with acting(engine, who) as records:
+            row = await records.create(
+                "sys.connection", {"type": "sys.bearer_test", "label": label}
+            )
+            await records.create(
+                "sys.connection_secret",
+                {"connection": str(row.sys_id), "name": "token", "value": token},
+            )
+            made[label] = row.sys_id
+    SEEN.clear()
+    async with acting(engine, anna) as records:
+        async with connect(records, "sys.bearer_test", connection=made["Second"]) as http:
+            await http.get("/orders")
+        with pytest.raises(Problem) as not_hers:
+            async with connect(records, "sys.bearer_test", connection=made["Bobs"]):
+                pass
+    assert SEEN[-1].headers["Authorization"] == "Bearer t2"
+    assert not_hers.value.code == "no_connection"

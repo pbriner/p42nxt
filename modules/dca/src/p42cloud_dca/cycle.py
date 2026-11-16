@@ -26,6 +26,12 @@ MAX_MOVE = Decimal("0.10")  # further from yesterday's close: the market waits
 WAITING = "Waiting:"
 
 
+def _kraken(client: Client, plan: dict[str, Any]) -> Any:
+    """The plan's Kraken account: its connection (its owner's only one, for plans before it was
+    named)."""
+    return client.connection(kraken.TYPE, owner=plan["owner"], connection=plan.get("connection"))
+
+
 def _decimal(value: Any) -> Decimal | None:
     return None if value is None or value == "" else Decimal(str(value))
 
@@ -195,7 +201,7 @@ async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tup
     """One plan's check: what it says, and whether it bought."""
     pair = Pair(plan["pair"].upper())
     orders = await _orders(client, plan)
-    async with client.connection(kraken.TYPE, owner=plan["owner"]) as http:
+    async with _kraken(client, plan) as http:
         if plan["live"] or any(o["state"] in ("submitting", "unknown") for o in orders):
             waiting = await _settle(client, http, plan, orders, now)
             if waiting is not None:
@@ -286,7 +292,7 @@ async def _before_real_buy(
         sort=["placed_at"],
     )
     ours = {str(o[k]) for o in [*orders, *mine] for k in ("kraken_txid", "sys_id") if o[k]}
-    async with client.connection(kraken.TYPE, owner=plan["owner"]) as http:
+    async with _kraken(client, plan) as http:
         others = await kraken.others(http, pair.name, since, ours)
         ticker = await kraken.ticker(http, pair.name)
         close = await kraken.last_close(http, pair.name)
@@ -378,7 +384,7 @@ async def _value_price(client: Client, plan: dict[str, Any], pair: Pair, now: da
     last = _decimal(plan["last_price"])
     if last is not None and checked is not None and now - checked < timedelta(minutes=10):
         return last
-    async with client.connection(kraken.TYPE, owner=plan["owner"]) as http:
+    async with _kraken(client, plan) as http:
         return await kraken.price(http, pair.name)
 
 

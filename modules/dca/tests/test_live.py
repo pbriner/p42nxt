@@ -313,3 +313,29 @@ async def test_a_strange_market_makes_the_buy_wait(  # noqa: PLR0913, PLR0917 - 
     await run_job("dca.cycle")  # normal again: it buys
     (sending,) = await read(as_person, ivy, "dca.order", plan=plan["sys_id"])
     assert sending["state"] == "submitting"
+
+
+async def test_a_plan_trades_through_one_of_its_owners_own_connections(
+    as_system: Acting, as_person: Acting, kraken: LiveKraken
+) -> None:
+    ivy = await investor(as_system)
+    other = await investor(as_system)
+    await connect(as_person, ivy)
+    await connect(as_person, other)
+    plan = await new_plan(as_person, ivy)
+    async with as_person(ivy) as client:
+        (mine,) = (await client.list("sys.connection"))["records"]
+    assert plan["connection"] == mine["sys_id"]  # their only one, without saying
+    async with as_person(other) as client:
+        (theirs,) = (await client.list("sys.connection"))["records"]
+    with pytest.raises(Problem) as not_hers:
+        await new_plan(as_person, ivy, connection=theirs["sys_id"])
+    assert [e.field for e in not_hers.value.errors] == ["connection"]
+    # Real orders need the plan's own connection to have passed its check.
+    async with as_person(ivy) as client:
+        current = await client.get("dca.plan", plan["sys_id"])
+        with pytest.raises(Problem) as unchecked:
+            await client.update(
+                "dca.plan", plan["sys_id"], {"keys_checked": True, "live": True}, current["_etag"]
+            )
+    assert [e.field for e in unchecked.value.errors] == ["live"]

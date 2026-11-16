@@ -145,11 +145,20 @@ class Client:
 
     @asynccontextmanager
     async def connection(
-        self, type_name: str, *, owner: UUID | str | None = None, label: str | None = None
+        self,
+        type_name: str,
+        *,
+        owner: UUID | str | None = None,
+        label: str | None = None,
+        connection: UUID | str | None = None,
     ) -> AsyncGenerator[httpx.AsyncClient]:
         """A ready client for a connection of one of the module's types: the person's own, or
-        (in the module's jobs) the one of the person they work for. It knows the address and
+        (in the module's jobs) the one of the person they work for; one of theirs in particular
+        when `connection` names it (only theirs, and only of the type). It knows the address and
         signs in; the module never sees a secret."""
         who = self._id(owner) if owner is not None else None
-        async with connect(self._records, type_name, owner=who, label=label) as http:
+        which = self._id(connection) if connection is not None else None
+        async with connect(
+            self._records, type_name, owner=who, label=label, connection=which
+        ) as http:
             yield http
