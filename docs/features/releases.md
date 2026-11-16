@@ -100,10 +100,25 @@ Setting up the release key, once:
 
 `p42cloud module updates` reads the index from the setting **Release address** (`sys.registry_url`; for a GitHub repository:
 `https://github.com/<owner>/<repo>/releases/download/registry`), refuses it unless a trusted key
-signed it, and records, for every installed module with a newer release, the newest one
+signed it, and records, for every installed module with a newer release, one update
 (`sys.module_update`): installed and available version, normal or security, release notes, and
 whether it fits what's installed, or what must be updated first ("needs sys >=2.1"). Security
 updates come first. Only administrators see these records.
+
+An installation several releases behind updates in one step, straight to the release offered:
+
+- The release offered is the **newest that fits**; only if none fits, the newest, saying what
+  it needs. A release fits when what it depends on is installed in versions it accepts, and
+  every installed module accepts its version: a core an installed module isn't made for says
+  "needs a newer dca (dca accepts sys >=0.38,<1)".
+- Its notes are those of **every release on the way**, newest first; it's a security update if
+  any of them was.
+- Tables come from the declarations, and every data migration passed on the way runs in order.
+  Publishing a release that drops a data migration an earlier release had is refused, so an
+  installation skipping releases never misses one.
+- CI upgrades an installation of the oldest supported release and of the newest one, with
+  data, straight to the code being checked (`.github/scripts/upgrade-check.sh <tag>`), and
+  checks the database is safe, the audit log intact and the data still there.
 
 The installation only downloads the index; it sends nothing about itself. The release address is
 empty by default, and must use https in production.

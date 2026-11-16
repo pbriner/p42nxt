@@ -31,7 +31,10 @@ Docs describe what exists. A new module documents itself in its `README.md`, sta
 - **Modules import only `p42cloud.sdk`**, never each other. Another module's data goes through its
   API, with the SDK's in-process client. The engine never names a module.
 - **Declare tables, don't migrate them.** Tables and fields are declared in the manifest; the
-  engine builds the database from them. Migrations only move data.
+  engine builds the database from them. Migrations only move data, and stay in their module for
+  good (installations that skip releases still run them).
+- **The SDK only grows** within a major version: nothing a module uses is taken away or made
+  required (`tests/test_sdk_surface.py` checks it).
 - **Setup stays easy.** Every setting has a safe default; a change that needs manual setup steps
   isn't done. The fresh-install test must pass.
 - **Secure by default.** Check every change against the OWASP Top 10 (`docs/architecture.md`,

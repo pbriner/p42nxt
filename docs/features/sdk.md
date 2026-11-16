@@ -4,6 +4,12 @@
 may import. The platform's tests read every module's source and refuse any other import of the
 platform, any import of another module, and loading code by name (`importlib`, `__import__`).
 
+**The SDK only grows** within a major version of the core, so a module keeps working on every
+later core it accepts (`sys >=0.38,<1`). Nothing is taken away, renamed or moved, no parameter
+becomes required and no new one is required. `backend/tests/sdk_surface.json` records every
+name and the parameters of everything callable; a test refuses a change that breaks it, and asks
+for additions to be recorded (`P42_SDK_SURFACE=write uv run pytest tests/test_sdk_surface.py`).
+
 ## What it holds
 
 | Name | For |

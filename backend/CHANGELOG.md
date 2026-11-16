@@ -12,6 +12,12 @@ The core (`sys`): the engine and the platform's own features.
   events and deliveries are records administrators read under Automation.
 - The core publishes `sys.job_failed` and `sys.job_recovered` about a schedule.
 - `deliver_events()` in the SDK's test plugin.
+- Updates across several releases: the update offered is the newest release that fits (else the
+  newest, saying what it needs), with the notes of every release on the way; a core an
+  installed module doesn't accept doesn't fit ("needs a newer dca"). Publishing refuses a
+  release that drops an earlier release's data migration. The SDK only grows within a major
+  version: a test checks its names and parameters against the released ones. CI upgrades an
+  installation of an older release, with data, straight to the new code.
 
 ## 0.38.0
 

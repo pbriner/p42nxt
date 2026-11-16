@@ -17,7 +17,6 @@ from p42cloud.kernel.db import owner_transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.outgoing import safe_client
 from p42cloud.modules import releases
-from p42cloud.modules.install import states
 from p42cloud.modules.packages import download, hosts_for
 from p42cloud.services.jobs.models import JobRun
 
@@ -59,6 +58,21 @@ async def _write(conn: AsyncConnection, found: list[releases.Update]) -> None:
         )
 
 
+async def _installed(
+    conn: AsyncConnection,
+) -> tuple[dict[str, Version], dict[str, dict[str, str]]]:
+    """The installed modules' versions, and what each depends on."""
+    rows = list(
+        await conn.execute(
+            text("SELECT name, version, depends_on FROM sys.module WHERE deleted IS NULL")
+        )
+    )
+    return (
+        {r.name: Version(r.version) for r in rows},
+        {r.name: dict(r.depends_on or {}) for r in rows},
+    )
+
+
 async def refresh(
     engine: AsyncEngine,
     http: httpx.AsyncClient,
@@ -71,8 +85,9 @@ async def refresh(
             409, "no_registry", "No release address is set (Platform, Settings, Release address)."
         )
     index = await fetch_index(http, registry, keys)
-    installed = {name: s.version for name, s in (await states(engine)).items() if not s.removed}
-    found = releases.updates(index, installed)
+    async with engine.connect() as conn:
+        installed, requires = await _installed(conn)
+    found = releases.updates(index, installed, requires)
     async with owner_transaction(engine) as conn:
         await _write(conn, found)
     return found
@@ -85,15 +100,10 @@ async def check_updates(run: JobRun) -> str:
     registry = str(found_address or "") or get_settings().registry_url
     if registry is None:
         return "No release address is set (Settings): nothing to check."
-    installed = {
-        r.name: Version(r.version)
-        for r in await conn.execute(
-            text("SELECT name, version FROM sys.module WHERE deleted IS NULL")
-        )
-    }
+    installed, requires = await _installed(conn)
     async with safe_client(allowed_hosts=hosts_for(registry)) as http:
         index = await fetch_index(http, registry)
-    found = releases.updates(index, installed)
+    found = releases.updates(index, installed, requires)
     await _write(conn, found)
     security = sum(1 for u in found if u.security)
     return (

@@ -27,6 +27,7 @@ from typing import Any
 from packaging.version import InvalidVersion, Version
 
 from p42cloud.modules import releases
+from p42cloud.modules.core import CORE as CORE_MODULE
 from p42cloud.modules.core_release import IMAGE
 from p42cloud.modules.manifest import CORE
 from p42cloud.modules.registry import discover
@@ -107,16 +108,20 @@ def publish(module_id: str, wheel: Path, index_path: Path, url: str) -> None:
     wheel.with_name(wheel.name + ".sig").write_text(signature)
     index = json.loads(index_path.read_text()) if index_path.is_file() else releases.empty_index()
     index = releases.drop_mismatched(index)
-    index = releases.add_release(
-        index,
-        module_id,
-        module.version,
-        depends_on=dict(module.depends_on),
-        entry=log[module.version],
-        package=url,
-        digest=releases.sha256(data),
-        signature=signature,
-    )
+    try:
+        index = releases.add_release(
+            index,
+            module_id,
+            module.version,
+            depends_on=dict(module.depends_on),
+            entry=log[module.version],
+            package=url,
+            digest=releases.sha256(data),
+            signature=signature,
+            migrations=tuple(m.version for m in module.migrations),
+        )
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
     _write_index(index, index_path, private)
 
 
@@ -137,16 +142,20 @@ def publish_image(image: str, index_path: Path) -> None:
     if version not in log:
         raise SystemExit(f"No CHANGELOG.md entry for the core {version}.")
     index = json.loads(index_path.read_text()) if index_path.is_file() else releases.empty_index()
-    index = releases.add_release(
-        index,
-        CORE,
-        version,
-        depends_on={},
-        entry=log[version],
-        package=image,
-        digest=match["digest"],
-        signature=releases.sign(private, image.encode()),
-    )
+    try:
+        index = releases.add_release(
+            index,
+            CORE,
+            version,
+            depends_on={},
+            entry=log[version],
+            package=image,
+            digest=match["digest"],
+            signature=releases.sign(private, image.encode()),
+            migrations=tuple(m.version for m in CORE_MODULE.migrations),
+        )
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
     _write_index(index, index_path, private)
 
 
