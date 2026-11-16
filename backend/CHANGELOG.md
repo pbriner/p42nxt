@@ -15,6 +15,13 @@ The core (`sys`): the engine and the platform's own features.
   pictures, Office documents, plain text; never web pages or SVG. At most the setting Largest
   file (20 MB). Kept in the database, sealed with the master key, so backups hold them. Forms show
   a Files section.
+- Maintenance jobs: the audit log's coming months are prepared weekly (not only when the app
+  starts: an installation running for months without a restart would stop saving changes), and
+  its chain is checked for tampering weekly; a failure notifies administrators like any failed
+  scheduled job.
+- The navigator and the search show module names and categories in the person's language
+  (`sys.module` has them translated: `title`, `category_title`, `summary`, filled on every
+  install); a module's translations file carries them. Before, they stayed in English.
 
 ## 0.39.0
 

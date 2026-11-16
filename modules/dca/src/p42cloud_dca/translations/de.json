@@ -548,6 +548,21 @@
    "text": "Die Ziele eines Plans."
   },
   {
+   "key": "sys.module|dca|category_title",
+   "english": "Finance",
+   "text": "Finanzen"
+  },
+  {
+   "key": "sys.module|dca|summary",
+   "english": "Dollar cost averaging on your own Kraken account.",
+   "text": "Regelmässig kaufen mit dem eigenen Kraken-Konto (Durchschnittskosteneffekt)."
+  },
+  {
+   "key": "sys.module|dca|title",
+   "english": "Kraken DCA",
+   "text": "Kraken DCA"
+  },
+  {
    "key": "sys.nav_item|dca.dashboard|label",
    "english": "Dashboard",
    "text": "Dashboard"

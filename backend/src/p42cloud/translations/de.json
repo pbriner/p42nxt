@@ -1393,6 +1393,11 @@
    "text": "Person"
   },
   {
+   "key": "sys.field|sys.module.category_title|label",
+   "english": "Category shown",
+   "text": "Angezeigte Kategorie"
+  },
+  {
    "key": "sys.field|sys.module.category|label",
    "english": "Category",
    "text": "Kategorie"
@@ -1436,6 +1441,16 @@
    "key": "sys.field|sys.module.publisher|label",
    "english": "Publisher",
    "text": "Herausgeber"
+  },
+  {
+   "key": "sys.field|sys.module.summary|label",
+   "english": "Description shown",
+   "text": "Angezeigte Beschreibung"
+  },
+  {
+   "key": "sys.field|sys.module.title|label",
+   "english": "Name shown",
+   "text": "Angezeigter Name"
   },
   {
    "key": "sys.field|sys.module.version|label",
@@ -3458,6 +3473,16 @@
    "text": "Widget"
   },
   {
+   "key": "sys.job|sys.audit_check|label",
+   "english": "Check the audit log for tampering",
+   "text": "Das Prüfprotokoll auf Manipulation prüfen"
+  },
+  {
+   "key": "sys.job|sys.audit_months|label",
+   "english": "Prepare the audit log's coming months",
+   "text": "Die kommenden Monate des Prüfprotokolls vorbereiten"
+  },
+  {
    "key": "sys.job|sys.backup|label",
    "english": "Back up the database",
    "text": "Datenbank sichern"
@@ -3786,6 +3811,21 @@
    "key": "sys.list_view|sys.widget|label",
    "english": "Widgets",
    "text": "Widgets"
+  },
+  {
+   "key": "sys.module|sys|category_title",
+   "english": "Platform",
+   "text": "Plattform"
+  },
+  {
+   "key": "sys.module|sys|summary",
+   "english": "People, access, sign-in and the platform itself.",
+   "text": "Personen, Zugriff, Anmeldung und die Plattform selbst."
+  },
+  {
+   "key": "sys.module|sys|title",
+   "english": "Core",
+   "text": "Kern"
   },
   {
    "key": "sys.nav_item|sys.announcements|label",
@@ -4126,6 +4166,16 @@
    "key": "sys.role|sys.user|label",
    "english": "User",
    "text": "Benutzer"
+  },
+  {
+   "key": "sys.schedule|sys.audit_check|label",
+   "english": "Audit log check, weekly",
+   "text": "Prüfung des Prüfprotokolls, wöchentlich"
+  },
+  {
+   "key": "sys.schedule|sys.audit_months|label",
+   "english": "Audit log months, weekly",
+   "text": "Monate des Prüfprotokolls, wöchentlich"
   },
   {
    "key": "sys.schedule|sys.backup|label",

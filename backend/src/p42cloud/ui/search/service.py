@@ -38,7 +38,8 @@ async def scopes(records: Records) -> list[Scope]:
     rows = await records.conn.execute(
         text(
             'SELECT v.name, v.label, v."table", v.columns, v.search, v.filter, v.module,'
-            " m.label AS module_label FROM sys.list_view v JOIN sys.module m ON m.name = v.module"
+            " coalesce(m.title, jsonb_build_object('en', m.label)) AS module_label"
+            " FROM sys.list_view v JOIN sys.module m ON m.name = v.module"
             " WHERE v.deleted IS NULL AND v.searchable AND v.search IS NOT NULL"
             " AND m.deleted IS NULL AND m.enabled ORDER BY m.label, v.name"
         )
@@ -55,7 +56,7 @@ async def scopes(records: Records) -> list[Scope]:
                 row.name,
                 str(translated(row.label, language)),
                 row.module,
-                row.module_label,
+                str(translated(row.module_label, language)),
                 table,
                 list(row.columns),
                 list(row.search),

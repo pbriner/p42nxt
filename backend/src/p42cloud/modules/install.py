@@ -172,14 +172,20 @@ async def _record(conn: AsyncConnection, module: Module, protected: bool) -> Non
         "category": module.category,
         "icon": module.icon,
         "publisher": module.publisher,
+        # In English here; the translations in force go back on after the install.
+        "title": json.dumps({"en": module.name[:80]}),
+        "category_title": json.dumps({"en": module.category}),
+        "summary": json.dumps({"en": module.description[:255]}) if module.description else None,
     }
     if installed is None:
         await conn.execute(
             text(
                 "INSERT INTO sys.module"
                 " (name, label, version, depends_on, description, enabled, protected, category,"
-                " icon, publisher) VALUES (:id, :label, :version, CAST(:depends_on AS jsonb),"
-                " :description, true, :protected, :category, :icon, :publisher)"
+                " icon, publisher, title, category_title, summary) VALUES (:id, :label, :version,"
+                " CAST(:depends_on AS jsonb), :description, true, :protected, :category, :icon,"
+                " :publisher, CAST(:title AS jsonb), CAST(:category_title AS jsonb),"
+                " CAST(:summary AS jsonb))"
             ),
             values,
         )
@@ -189,7 +195,9 @@ async def _record(conn: AsyncConnection, module: Module, protected: bool) -> Non
                 "UPDATE sys.module SET label = :label, version = :version,"
                 " depends_on = CAST(:depends_on AS jsonb), description = :description,"
                 " protected = :protected, category = :category, icon = :icon, deleted = NULL,"
-                " publisher = :publisher"
+                " publisher = :publisher, title = CAST(:title AS jsonb),"
+                " category_title = CAST(:category_title AS jsonb),"
+                " summary = CAST(:summary AS jsonb)"
                 " WHERE name = :id"
             ),
             values,
@@ -331,8 +339,9 @@ async def install_modules(
             await write_navigation(conn, catalog, module.id, module.navigation)
             await write_themes(conn, module.id, module.themes)
             await settings.write(conn, module.id, module.settings)
-            await _ship_translations(conn, module)
+            # After its record: the module's own name and category are translated too.
             await _record(conn, module, module.id in protected)
+            await _ship_translations(conn, module)
             if state is None and module.id != CORE and module.roles:
                 await _announce_roles(conn, module)
             if state is not None and (not state.enabled or state.removed):

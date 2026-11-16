@@ -497,6 +497,24 @@ REVOKE ALL ON sys.file_data FROM PUBLIC;
 GRANT SELECT, INSERT ON sys.file_data TO p42_mod_sys;
 """
 
+# The audit log's months, prepared ahead by the core's weekly job and not only at an upgrade: an
+# installation running for months without one would otherwise stop saving changes. Only the
+# current month and up to twelve ahead, with the owner's rights.
+_AUDIT_MONTHS_AHEAD = """
+CREATE FUNCTION sys.p42_audit_months_ahead(months integer) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, sys AS $$
+BEGIN
+    IF months < 0 OR months > 12 THEN
+        RAISE EXCEPTION 'from 0 to 12 months ahead';
+    END IF;
+    PERFORM sys.p42_create_audit_partitions(
+        date_trunc('month', now())::date,
+        (date_trunc('month', now()) + make_interval(months => months))::date);
+END $$;
+REVOKE ALL ON FUNCTION sys.p42_audit_months_ahead(integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION sys.p42_audit_months_ahead(integer) TO p42_mod_sys;
+"""
+
 STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0001_context", _CONTEXT),
     ("0002_record_rules", _RECORD_RULES),
@@ -511,4 +529,5 @@ STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0011_links_both_ways", _LINKS_BOTH_WAYS),
     ("0012_trees", _TREES),
     ("0013_file_data", _FILE_DATA),
+    ("0014_audit_months_ahead", _AUDIT_MONTHS_AHEAD),
 )
