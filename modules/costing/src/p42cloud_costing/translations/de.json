@@ -1,0 +1,421 @@
+{
+ "language": "de",
+ "module": "costing",
+ "texts": [
+  {
+   "key": "sys.field|costing.center.active|label",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|costing.center.code|label",
+   "english": "Code",
+   "text": "Code"
+  },
+  {
+   "key": "sys.field|costing.center.description|label",
+   "english": "Description",
+   "text": "Beschreibung"
+  },
+  {
+   "key": "sys.field|costing.center.kind|choice:cost",
+   "english": "Cost center",
+   "text": "Kostenstelle"
+  },
+  {
+   "key": "sys.field|costing.center.kind|choice:profit",
+   "english": "Profit center",
+   "text": "Profitcenter"
+  },
+  {
+   "key": "sys.field|costing.center.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|costing.center.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|costing.center.parent|label",
+   "english": "Part of",
+   "text": "Teil von"
+  },
+  {
+   "key": "sys.field|costing.center.profit_center|label",
+   "english": "Profit center",
+   "text": "Profitcenter"
+  },
+  {
+   "key": "sys.field|costing.center.responsible|label",
+   "english": "Responsible",
+   "text": "Verantwortlich"
+  },
+  {
+   "key": "sys.field|costing.center.shared|label",
+   "english": "Shared: spread over others",
+   "text": "Gemeinsam: auf andere verteilt"
+  },
+  {
+   "key": "sys.field|costing.cost_type.active|label",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|costing.cost_type.chargeable|label",
+   "english": "May be charged on",
+   "text": "Weiterverrechenbar"
+  },
+  {
+   "key": "sys.field|costing.cost_type.code|label",
+   "english": "Code",
+   "text": "Code"
+  },
+  {
+   "key": "sys.field|costing.cost_type.group|label",
+   "english": "Group",
+   "text": "Gruppe"
+  },
+  {
+   "key": "sys.field|costing.cost_type.kind|choice:cost",
+   "english": "Cost",
+   "text": "Kosten"
+  },
+  {
+   "key": "sys.field|costing.cost_type.kind|choice:income",
+   "english": "Income",
+   "text": "Ertrag"
+  },
+  {
+   "key": "sys.field|costing.cost_type.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|costing.cost_type.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|costing.key.active|label",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|costing.key.center|label",
+   "english": "Spreads",
+   "text": "Verteilt"
+  },
+  {
+   "key": "sys.field|costing.key.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|costing.key.unit|choice:m2",
+   "english": "m²",
+   "text": "m²"
+  },
+  {
+   "key": "sys.field|costing.key.unit|choice:other",
+   "english": "Other",
+   "text": "Andere"
+  },
+  {
+   "key": "sys.field|costing.key.unit|choice:people",
+   "english": "People",
+   "text": "Personen"
+  },
+  {
+   "key": "sys.field|costing.key.unit|choice:percent",
+   "english": "Percent",
+   "text": "Prozent"
+  },
+  {
+   "key": "sys.field|costing.key.unit|choice:units",
+   "english": "Units",
+   "text": "Einheiten"
+  },
+  {
+   "key": "sys.field|costing.key.unit|label",
+   "english": "By",
+   "text": "Nach"
+  },
+  {
+   "key": "sys.field|costing.key_share.center|label",
+   "english": "To",
+   "text": "An"
+  },
+  {
+   "key": "sys.field|costing.key_share.key|label",
+   "english": "Key",
+   "text": "Schlüssel"
+  },
+  {
+   "key": "sys.field|costing.key_share.value|label",
+   "english": "Value",
+   "text": "Wert"
+  },
+  {
+   "key": "sys.field|costing.order.center|label",
+   "english": "Center",
+   "text": "Stelle"
+  },
+  {
+   "key": "sys.field|costing.order.code|label",
+   "english": "Code",
+   "text": "Code"
+  },
+  {
+   "key": "sys.field|costing.order.description|label",
+   "english": "Description",
+   "text": "Beschreibung"
+  },
+  {
+   "key": "sys.field|costing.order.end|label",
+   "english": "End",
+   "text": "Ende"
+  },
+  {
+   "key": "sys.field|costing.order.kind|choice:capex",
+   "english": "Adds value (CAPEX)",
+   "text": "Wertvermehrend (CAPEX)"
+  },
+  {
+   "key": "sys.field|costing.order.kind|choice:opex",
+   "english": "Upkeep or expense (OPEX)",
+   "text": "Unterhalt oder Aufwand (OPEX)"
+  },
+  {
+   "key": "sys.field|costing.order.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|costing.order.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|costing.order.responsible|label",
+   "english": "Responsible",
+   "text": "Verantwortlich"
+  },
+  {
+   "key": "sys.field|costing.order.start|label",
+   "english": "Start",
+   "text": "Beginn"
+  },
+  {
+   "key": "sys.field|costing.order.state|choice:done",
+   "english": "Done",
+   "text": "Erledigt"
+  },
+  {
+   "key": "sys.field|costing.order.state|choice:open",
+   "english": "Open",
+   "text": "Offen"
+  },
+  {
+   "key": "sys.field|costing.order.state|choice:settled",
+   "english": "Settled",
+   "text": "Abgerechnet"
+  },
+  {
+   "key": "sys.field|costing.order.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|costing.order.useful_life|label",
+   "english": "Written off over (years)",
+   "text": "Abgeschrieben über (Jahre)"
+  },
+  {
+   "key": "sys.form_view|costing.center|section:1",
+   "english": "Center",
+   "text": "Stelle"
+  },
+  {
+   "key": "sys.form_view|costing.center|section:2",
+   "english": "Responsibility",
+   "text": "Verantwortung"
+  },
+  {
+   "key": "sys.form_view|costing.cost_type|section:1",
+   "english": "Cost type",
+   "text": "Kostenart"
+  },
+  {
+   "key": "sys.form_view|costing.key_share|section:1",
+   "english": "Share",
+   "text": "Anteil"
+  },
+  {
+   "key": "sys.form_view|costing.key|section:1",
+   "english": "Spreading key",
+   "text": "Verteilschlüssel"
+  },
+  {
+   "key": "sys.form_view|costing.order|section:1",
+   "english": "Order",
+   "text": "Auftrag"
+  },
+  {
+   "key": "sys.form_view|costing.order|section:2",
+   "english": "When and who",
+   "text": "Wann und wer"
+  },
+  {
+   "key": "sys.list_view|costing.center|label",
+   "english": "Centers",
+   "text": "Stellen"
+  },
+  {
+   "key": "sys.list_view|costing.cost_type|label",
+   "english": "Cost types",
+   "text": "Kostenarten"
+  },
+  {
+   "key": "sys.list_view|costing.key_share|label",
+   "english": "Shares",
+   "text": "Anteile"
+  },
+  {
+   "key": "sys.list_view|costing.key|label",
+   "english": "Spreading keys",
+   "text": "Verteilschlüssel"
+  },
+  {
+   "key": "sys.list_view|costing.order|label",
+   "english": "Orders",
+   "text": "Aufträge"
+  },
+  {
+   "key": "sys.module|costing|category_title",
+   "english": "Finance",
+   "text": "Finanzen"
+  },
+  {
+   "key": "sys.module|costing|summary",
+   "english": "Profit and cost centers, cost types, orders and spreading keys.",
+   "text": "Profit- und Kostenstellen, Kostenarten, Aufträge und Verteilschlüssel."
+  },
+  {
+   "key": "sys.module|costing|title",
+   "english": "Costing",
+   "text": "Kostenrechnung"
+  },
+  {
+   "key": "sys.nav_item|costing.centers|label",
+   "english": "Centers",
+   "text": "Stellen"
+  },
+  {
+   "key": "sys.nav_item|costing.centers|section",
+   "english": "Cost structure",
+   "text": "Kostenstruktur"
+  },
+  {
+   "key": "sys.nav_item|costing.cost_types|label",
+   "english": "Cost types",
+   "text": "Kostenarten"
+  },
+  {
+   "key": "sys.nav_item|costing.cost_types|section",
+   "english": "Cost structure",
+   "text": "Kostenstruktur"
+  },
+  {
+   "key": "sys.nav_item|costing.keys|label",
+   "english": "Spreading keys",
+   "text": "Verteilschlüssel"
+  },
+  {
+   "key": "sys.nav_item|costing.keys|section",
+   "english": "Cost structure",
+   "text": "Kostenstruktur"
+  },
+  {
+   "key": "sys.nav_item|costing.orders|label",
+   "english": "Orders",
+   "text": "Aufträge"
+  },
+  {
+   "key": "sys.nav_item|costing.orders|section",
+   "english": "Cost structure",
+   "text": "Kostenstruktur"
+  },
+  {
+   "key": "sys.role|costing.controller|description",
+   "english": "Sets up the centers, cost types, orders and keys.",
+   "text": "Richtet Stellen, Kostenarten, Aufträge und Schlüssel ein."
+  },
+  {
+   "key": "sys.role|costing.controller|label",
+   "english": "Controller",
+   "text": "Controller"
+  },
+  {
+   "key": "sys.role|costing.reader|description",
+   "english": "Reads the cost structure: to book and plan against it.",
+   "text": "Liest die Kostenstruktur, um darauf zu buchen und zu planen."
+  },
+  {
+   "key": "sys.role|costing.reader|label",
+   "english": "Costing reader",
+   "text": "Leser Kostenrechnung"
+  },
+  {
+   "key": "sys.table|costing.center|label",
+   "english": "Center",
+   "text": "Stelle"
+  },
+  {
+   "key": "sys.table|costing.center|label_plural",
+   "english": "Centers",
+   "text": "Stellen"
+  },
+  {
+   "key": "sys.table|costing.cost_type|label",
+   "english": "Cost type",
+   "text": "Kostenart"
+  },
+  {
+   "key": "sys.table|costing.cost_type|label_plural",
+   "english": "Cost types",
+   "text": "Kostenarten"
+  },
+  {
+   "key": "sys.table|costing.key_share|label",
+   "english": "Share",
+   "text": "Anteil"
+  },
+  {
+   "key": "sys.table|costing.key_share|label_plural",
+   "english": "Shares",
+   "text": "Anteile"
+  },
+  {
+   "key": "sys.table|costing.key|label",
+   "english": "Spreading key",
+   "text": "Verteilschlüssel"
+  },
+  {
+   "key": "sys.table|costing.key|label_plural",
+   "english": "Spreading keys",
+   "text": "Verteilschlüssel"
+  },
+  {
+   "key": "sys.table|costing.order|label",
+   "english": "Order",
+   "text": "Auftrag"
+  },
+  {
+   "key": "sys.table|costing.order|label_plural",
+   "english": "Orders",
+   "text": "Aufträge"
+  }
+ ]
+}

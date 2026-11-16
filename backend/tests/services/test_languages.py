@@ -18,6 +18,8 @@ from p42cloud.kernel.db import create_engine, owner_transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.secrets import Sealer
 from p42cloud.modules.core import CORE
+from p42cloud.modules.install import install_modules
+from p42cloud.modules.registry import discover
 from p42cloud.security.access.manifest import ADMINISTRATORS
 from p42cloud.security.tokens.service import make_token
 from p42cloud.services.languages import service as languages
@@ -236,15 +238,15 @@ async def test_over_http_administrators_export_and_import(
     assert (await _label(owner))[LANG] == "Personne"
 
 
-@pytest.mark.parametrize("module", ["sys", "dca"])
-async def test_german_is_complete_for_the_core_and_dca(owner: AsyncEngine, module: str) -> None:
+@pytest.mark.parametrize("module", ["sys", "dca", "costing"])
+async def test_german_is_complete_for_the_core_and_our_modules(
+    owner: AsyncEngine, module: str
+) -> None:
+    if module != "sys":  # installed here, so every module's German is checked, not skipped
+        package = next(m for m in discover() if m.id == module)
+        with working_as(Context(channel="install")):
+            await install_modules(owner, [CORE, package])
     async with _owner(owner) as conn:
-        installed = await conn.scalar(
-            text("SELECT true FROM sys.module WHERE name = :m AND deleted IS NULL"),
-            {"m": module},
-        )
-        if not installed:
-            pytest.skip(f"{module} isn't installed in the test database")
         out = await languages.export(conn, await load_catalog(conn), "de", module)
     # Other tests register jobs, schedules and calls in the core's name: only what it declares
     # counts.

@@ -192,7 +192,7 @@ async def test_modules_depending_on_each_other_in_a_circle_are_refused(
 
 
 def test_module_packages_are_found() -> None:
-    assert [m.id for m in discover()] == ["dca", "hello"]
+    assert [m.id for m in discover()] == ["costing", "dca", "hello"]
 
 
 async def test_everyone_reads_the_documentation(app: AsyncEngine) -> None:

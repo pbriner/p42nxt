@@ -23,6 +23,6 @@ test('an exchange rate is entered with currencies picked from those offered', as
   );
   await page.getByRole('spinbutton', { name: 'Rate' }).fill('1.1325');
   await page.getByRole('button', { name: 'Create' }).click();
-  await expect(page.getByText('Created')).toBeVisible();
+  await expect(page.getByText('Exchange rate created')).toBeVisible();
   await noSidewaysScroll(page);
 });
