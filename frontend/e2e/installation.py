@@ -177,9 +177,18 @@ async def _prepare(
                     text("SELECT sys_id FROM sys.role WHERE name = :n"), {"n": name}
                 )
                 await records.create("sys.group_role", {"group": greeters, "role": role})
+            controllers = (await records.create("sys.group", {"name": "Controllers"})).sys_id
+            role = await conn.scalar(
+                text("SELECT sys_id FROM sys.role WHERE name = 'costing.controller'")
+            )
+            await records.create("sys.group_role", {"group": controllers, "role": role})
             people = {
                 "admin": await _person(
-                    records, sealer, "Ada Admin", "admin@e2e.test", [ADMINISTRATORS, greeters]
+                    records,
+                    sealer,
+                    "Ada Admin",
+                    "admin@e2e.test",
+                    [ADMINISTRATORS, greeters, controllers],
                 ),
                 "plain": await _person(records, sealer, "Pat Plain", "plain@e2e.test", [greeters]),
             }
