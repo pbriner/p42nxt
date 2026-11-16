@@ -339,3 +339,19 @@ async def test_a_plan_trades_through_one_of_its_owners_own_connections(
                 "dca.plan", plan["sys_id"], {"keys_checked": True, "live": True}, current["_etag"]
             )
     assert [e.field for e in unchecked.value.errors] == ["live"]
+
+
+async def test_a_plan_from_before_gets_its_connection_named_later(
+    as_system: Acting, as_person: Acting, kraken: LiveKraken
+) -> None:
+    ivy = await investor(as_system)
+    plan = await new_plan(as_person, ivy)  # no connection yet: none to name
+    assert plan["connection"] is None
+    await connect(as_person, ivy)
+    async with as_person(ivy) as client:
+        (mine,) = (await client.list("sys.connection"))["records"]
+        current = await client.get("dca.plan", plan["sys_id"])
+        named = await client.update(
+            "dca.plan", plan["sys_id"], {"connection": mine["sys_id"]}, current["_etag"]
+        )
+    assert named["connection"] == mine["sys_id"]
