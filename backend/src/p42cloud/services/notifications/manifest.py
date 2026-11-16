@@ -33,6 +33,11 @@ KINDS = (
         "A message administrators send as a notification, to everyone or to a group.",
     ),
     NotificationKind(
+        "new_module",
+        "A module to install",
+        "A module is offered in the registry that this installation hasn't installed yet.",
+    ),
+    NotificationKind(
         "module_roles",
         "A module brings roles",
         "After a module is installed: the roles it brings, to give to groups of people.",
