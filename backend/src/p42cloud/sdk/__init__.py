@@ -21,6 +21,7 @@ from p42cloud.data.types.any_record import AnyRecord
 from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.choice import Choice
 from p42cloud.data.types.color import Color
+from p42cloud.data.types.currency import Currency
 from p42cloud.data.types.date import Date
 from p42cloud.data.types.datetime import DateTime
 from p42cloud.data.types.decimal import Decimal
@@ -31,6 +32,7 @@ from p42cloud.data.types.icon import Icon
 from p42cloud.data.types.integer import Integer
 from p42cloud.data.types.json import Json
 from p42cloud.data.types.markdown import Markdown
+from p42cloud.data.types.money import Money
 from p42cloud.data.types.percent import Percent
 from p42cloud.data.types.phone import Phone
 from p42cloud.data.types.reference import Reference
@@ -70,6 +72,7 @@ __all__ = [
     "Client",
     "Color",
     "ConnectionType",
+    "Currency",
     "Date",
     "DateTime",
     "Decimal",
@@ -95,6 +98,7 @@ __all__ = [
     "Markdown",
     "Migration",
     "Module",
+    "Money",
     "NotificationKind",
     "OutsideCall",
     "Percent",

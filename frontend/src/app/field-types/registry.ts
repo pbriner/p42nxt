@@ -3,6 +3,7 @@ import { unit as anyrecord } from './any_record';
 import { unit as boolean } from './boolean';
 import { unit as choice } from './choice';
 import { unit as color } from './color';
+import { unit as currency } from './currency';
 import { unit as date } from './date';
 import { unit as datetime } from './datetime';
 import { unit as decimal } from './decimal';
@@ -13,6 +14,7 @@ import { unit as icon } from './icon';
 import { unit as integer } from './integer';
 import { unit as json } from './json';
 import { unit as markdown } from './markdown';
+import { unit as money } from './money';
 import { unit as percent } from './percent';
 import { unit as phone } from './phone';
 import { unit as reference } from './reference';
@@ -28,6 +30,7 @@ export const FIELD_TYPES: Record<string, FieldTypeUnit> = {
   boolean: boolean,
   choice: choice,
   color: color,
+  currency: currency,
   date: date,
   datetime: datetime,
   decimal: decimal,
@@ -38,6 +41,7 @@ export const FIELD_TYPES: Record<string, FieldTypeUnit> = {
   integer: integer,
   json: json,
   markdown: markdown,
+  money: money,
   percent: percent,
   phone: phone,
   reference: reference,

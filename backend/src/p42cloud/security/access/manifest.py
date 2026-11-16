@@ -78,6 +78,8 @@ ROLES = [
             Grant("sys.widget_audience", ALL),
             Grant("sys.announcement", ALL),
             Grant("sys.language", ALL),
+            Grant("sys.currency", ALL),
+            Grant("sys.exchange_rate", ALL),
             Grant("sys.translation", ALL),
             Grant("sys.job", ("read",)),
             Grant("sys.schedule", ("read",)),
@@ -123,6 +125,9 @@ ROLES = [
             Grant(SHARES, ALL, condition=MINE),
             Grant(SHARES, ("read",), condition={"field": "person", "op": "eq", "value": "@me"}),
             Grant("sys.language", ("read",)),
+            # The currencies and their rates, for amounts anywhere.
+            Grant("sys.currency", ("read",)),
+            Grant("sys.exchange_rate", ("read",)),
             # Messages for everyone, or for a group they're in.
             Grant(
                 "sys.announcement",

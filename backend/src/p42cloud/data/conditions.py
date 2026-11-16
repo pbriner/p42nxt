@@ -192,6 +192,8 @@ def value_of(f: FieldDef, raw: Any, situation: Situation) -> Any:
         return found.astimezone(situation.zone).date() if isinstance(found, datetime) else found
     if kind == "datetime":
         return moment(raw, situation)
+    if kind == "boolean" and raw in ("true", "false"):  # from a URL, where values are text
+        return raw == "true"
     return f.type.check(raw, f.field.options)
 
 

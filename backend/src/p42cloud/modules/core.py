@@ -3,10 +3,11 @@
 from importlib.metadata import version
 from pathlib import Path
 
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from p42cloud.data import installation, settings
 from p42cloud.data.access import SHARE
+from p42cloud.data.catalog import Catalog
 from p42cloud.data.external_ids import EXTERNAL_ID
 from p42cloud.modules import models as module_models
 from p42cloud.modules.install import compose as connect
@@ -32,6 +33,8 @@ from p42cloud.services.backups import models as backup_models
 from p42cloud.services.calls import models as calls
 from p42cloud.services.connections import models as connections
 from p42cloud.services.connections import service as connection_service
+from p42cloud.services.currencies import manifest as currencies
+from p42cloud.services.currencies.service import seed as seed_currencies
 from p42cloud.services.events import manifest as events
 from p42cloud.services.files import manifest as files
 from p42cloud.services.jobs import manifest as jobs
@@ -48,6 +51,13 @@ from p42cloud.ui import manifest as ui
 # The repository's docs/features, which is also where the image puts them: the same place
 # relative to this file in both.
 DOCS = Path(__file__).resolve().parents[4] / "docs" / "features"
+
+
+async def _seed(conn: AsyncConnection, catalog: Catalog) -> None:
+    """The core's starting records: groups and roles, and the common currencies."""
+    await access.seed(conn, catalog)
+    await seed_currencies(conn)
+
 
 CORE = Module(
     id=CORE_ID,
@@ -71,6 +81,7 @@ CORE = Module(
         *calls.TABLES,
         *events.TABLES,
         *files.TABLES,
+        *currencies.TABLES,
         *notifications.TABLES,
         *module_routes.TABLES,
         *backup_models.TABLES,
@@ -95,7 +106,7 @@ CORE = Module(
     docs=DOCS if DOCS.is_dir() else None,
     translations=Path(__file__).parent.parent / "translations",
     description="People, access, sign-in and the platform itself.",
-    seed=access.seed,
+    seed=_seed,
     migrations=(Migration("0.35.0", notifications_service.link_about),),
     settings=(
         settings.TIME_ZONE,
@@ -104,6 +115,7 @@ CORE = Module(
         *ui.SETTINGS,
         *backups.SETTINGS,
         *files.SETTINGS,
+        *currencies.SETTINGS,
     ),
     category="Platform",
     icon="settings",
@@ -121,6 +133,7 @@ CORE = Module(
         *backups.JOBS,
         *events.JOBS,
         *maintenance.JOBS,
+        *currencies.JOBS,
         Job("check_updates", "Check for module updates", check_updates, timeout=120),
     ),
     schedules=(
@@ -129,6 +142,7 @@ CORE = Module(
         *backups.SCHEDULES,
         *events.SCHEDULES,
         *maintenance.SCHEDULES,
+        *currencies.SCHEDULES,
         Schedule("check_updates", "Module updates, daily", "check_updates", "37 5 * * *"),
     ),
 )

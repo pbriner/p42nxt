@@ -22,6 +22,12 @@ The core (`sys`): the engine and the platform's own features.
 - The navigator and the search show module names and categories in the person's language
   (`sys.module` has them translated: `title`, `category_title`, `summary`, filled on every
   install); a module's translations file carries them. Before, they stayed in English.
+- Amounts with a currency: the field types `Currency` (a code) and `Money` (an exact amount in
+  the currency of a field of the record, or a fixed one), shown as `EUR 1'250.56`. Currencies
+  (`sys.currency`, the common ones built in) and exchange rates per day (`sys.exchange_rate`);
+  `client.convert()` converts with the latest rate on or before a day. The setting Main currency
+  (CHF), and a daily job loading the ECB's rates, off until switched on.
+- URL filters on yes/no fields work (`filter[active]=true`); before, they were always refused.
 
 ## 0.39.0
 

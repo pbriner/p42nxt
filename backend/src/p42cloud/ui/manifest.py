@@ -64,6 +64,13 @@ VIEWS = (
         search=("subject",),
     ),
     ListView("sys.language", ("name", "code", "offered"), sort=("code",)),
+    ListView("sys.currency", ("name", "label", "decimals", "active"), sort=("name",)),
+    ListView(
+        "sys.exchange_rate",
+        ("date", "currency", "base", "rate", "origin"),
+        sort=("-date", "currency"),
+        searchable=False,
+    ),
     ListView(
         "sys.translation",
         ("key", "language", "text", "origin", "module"),
@@ -190,6 +197,14 @@ NAVIGATION = (
             Item("update_requests", "Updates", "sys.update_request", icon="history"),
             Item("languages", "Languages", "sys.language", icon="translate"),
             Item("translations", "Translations", "sys.translation", icon="g_translate"),
+            Item("currencies", "Currencies", "sys.currency", icon="payments"),
+            Item(
+                "exchange_rates",
+                "Exchange rates",
+                "sys.exchange_rate",
+                icon="currency_exchange",
+                keywords=("fx", "rates"),
+            ),
             Item("tables", "Tables", "sys.table", icon="table"),
             Item("settings", "Settings", "sys.setting", icon="tune"),
         ),
