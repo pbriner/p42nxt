@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.1
+
+- Says who makes it (publisher `p42`), so installations take its updates only from that
+  publisher. Needs the core 0.38.
+
 ## 0.8.0
 
 - A plan names its Kraken connection (**Kraken connection**, on the form under Plan): one of its

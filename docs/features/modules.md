@@ -9,7 +9,7 @@ A module package exports one `Module`:
 
 ```python
 module = Module(
-    id="task", name="Tasks", version=package_version("p42cloud-task"),
+    id="task", name="Tasks", publisher="acme", version=package_version("p42cloud-task"),
     depends_on={"sys": ">=0.1,<1"},
     tables=(TASK,), roles=(EDITOR, READER),
     hooks=(TableHook("task.task", before=check_due_date),),
@@ -20,7 +20,8 @@ module = Module(
 
 | Part | Meaning |
 |---|---|
-| `id` | 2 to 16 of `a-z` and `0-9`, starting with a letter. It names the module's schema and database role. `u` is kept for admins' own tables, `search` for the search route |
+| `id` | 2 to 16 of `a-z` and `0-9`, starting with a letter. It names the module's schema and database role. Kept for the platform: `sys`, `u` (admins' own tables), `core`, `p42`, `admin`, `api` and others, and every first part of the core's own API addresses (`tables`, `people`, `languages` …) |
+| `publisher` | Who makes it: 2 to 31 of `a-z` and `0-9` (`p42` for the platform's own). Required to install a new module and to publish one; a module installed before publishers keeps loading and takes its publisher from its next update. A package is believed only when its own publisher's key signed it, and an installed module is updated only by its publisher |
 | `version` | The module's version (`1.4.0`): its package's, from `package_version("p42cloud-<id>")` (SDK), so it's raised in one place (`pyproject.toml`). A test refuses a manifest that says another version than its package |
 | `depends_on` | The modules it needs, with the versions it works with. Every module depends on `sys` |
 | `tables`, `roles` | Its tables and roles, declared (`tables.md`, `access.md`) |

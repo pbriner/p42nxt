@@ -37,7 +37,7 @@ async def _from_registry(
     module: str,
     installed: dict[str, Version],
     keys: tuple[str, ...],
-) -> tuple[bytes, str]:
+) -> tuple[bytes, str, str]:
     if source.registry is None:
         raise Problem(
             409, "no_registry", "No release address is set (Platform, Settings, Release address)."
@@ -49,19 +49,20 @@ async def _from_registry(
         raise Problem(409, "needs_first", f"Install or update first: {', '.join(missing)}.")
     data = await packages.download(http, str(release.get("package", "")))
     packages.check(release, data, keys)
-    return data, str(packages.version_of(release))
+    return data, str(release.get("signature", "")), str(packages.version_of(release))
 
 
-def _from_file(file: Path, keys: tuple[str, ...]) -> bytes:
+def _from_file(file: Path, keys: tuple[str, ...]) -> tuple[bytes, str]:
     signature = file.with_name(f"{file.name}.sig")
     if not file.is_file() or not signature.is_file():
         raise Problem(404, "no_package", f"{file} and its signature {signature.name} are needed.")
     data = file.read_bytes()
     if len(data) > packages.MAX_BYTES:
         raise Problem(422, "package_too_big", "The package is too big.")
-    if not releases.verify(data, signature.read_text().strip(), keys):
+    signed = signature.read_text().strip()
+    if not releases.verify(data, signed, keys):
         raise Problem(422, "unsigned_package", "No trusted key signed the package.")
-    return data
+    return data, signed
 
 
 async def install_package(  # noqa: PLR0913 - what, where to, from where, and the means
@@ -72,16 +73,18 @@ async def install_package(  # noqa: PLR0913 - what, where to, from where, and th
     http: httpx.AsyncClient,
     *,
     keys: tuple[str, ...] = releases.TRUSTED_KEYS,
+    publishers: dict[str, tuple[str, ...]] | None = None,
 ) -> list[str]:
-    """Installs or upgrades the module from its package; what changed."""
+    """Installs or upgrades the module from its package; what changed. The package's own
+    publisher must have signed it (not just any trusted publisher)."""
     if folder is None:
         raise Problem(409, "no_modules_folder", "No modules folder is set (P42_MODULES_DIR).")
     known = await states(engine)
     installed = {name: s.version for name, s in known.items() if not s.removed}
     if source.file is not None:
-        data, version = _from_file(source.file, keys), None
+        (data, signed), version = _from_file(source.file, keys), None
     else:
-        data, version = await _from_registry(http, source, module, installed, keys)
+        data, signed, version = await _from_registry(http, source, module, installed, keys)
     unpacked = packages.unpack(folder, module, data)
     try:
         unpacked.forget()
@@ -90,6 +93,14 @@ async def install_package(  # noqa: PLR0913 - what, where to, from where, and th
             raise Problem(422, "bad_package", f"The package doesn't hold the module {module}.")
         if version is not None and found[module].version != version:
             raise Problem(422, "bad_package", "The package's version isn't the registry's.")
+        publisher = found[module].publisher
+        theirs = (releases.PUBLISHERS if publishers is None else publishers).get(publisher, ())
+        if not releases.verify(data, signed, theirs):
+            raise Problem(
+                422,
+                "wrong_publisher",
+                f"The package says it's from {publisher!r}, whose key didn't sign it.",
+            )
         # Only this module joins: others found here but not installed stay out.
         chosen = [m for m in found.values() if m.id == module or m.id in installed]
         done = await install_modules(engine, [CORE, *chosen], bring_back=frozenset({module}))

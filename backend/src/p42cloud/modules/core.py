@@ -50,6 +50,7 @@ CORE = Module(
     id=CORE_ID,
     name="Core",
     version=version("p42cloud"),
+    publisher="p42",
     tables=(
         *people.TABLES,
         *access_models.TABLES,

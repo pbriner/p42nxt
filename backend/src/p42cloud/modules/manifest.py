@@ -61,7 +61,45 @@ MODULE_ID = re.compile(r"^[a-z][a-z0-9]{1,15}$")
 ICON = re.compile(r"^[a-z0-9_]{1,64}$")
 MAX_CATEGORY = 40
 CORE = "sys"
-RESERVED = frozenset({"u", "search"})  # admins' own tables; a route of its own
+PUBLISHER = re.compile(r"^[a-z][a-z0-9]{1,30}$")
+PLATFORM = "p42"  # the platform's own publisher: the core and its own modules
+# IDs no module may take: admins' own tables (`u`), the platform's names, and every first part of
+# the core's own API addresses (modules live at /api/v1/<id>/…; a test keeps this complete).
+RESERVED = frozenset(
+    {
+        "u",
+        "core",
+        "p42",
+        "p42cloud",
+        "api",
+        "admin",
+        "auth",
+        "app",
+        "apps",
+        "portal",
+        "public",
+        "static",
+        "docs",
+        "help",
+        "www",
+        "dashboards",
+        "health",
+        "installation",
+        "languages",
+        "mcp",
+        "me",
+        "meta",
+        "navigation",
+        "people",
+        "problems",
+        "search",
+        "setup",
+        "tables",
+        "theme",
+        "undo",
+        "verify",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -69,6 +107,10 @@ class Module:
     id: str
     name: str
     version: str
+    # Who makes it (`p42` for the platform's own): updates come only from them, and an ID one
+    # publisher has installed can't be taken by another. No default to claim; required to
+    # install a new module and to publish one.
+    publisher: str = ""
     # Other modules it needs, with the versions it works with: {"sys": ">=0.1,<1"}.
     depends_on: Mapping[str, str] = field(default_factory=dict[str, str])
     tables: tuple[Table, ...] = ()
@@ -111,13 +153,24 @@ class Module:
             return []
         return [FieldError("category", "bad_place", "A category of 1 to 40 characters, an icon.")]
 
+    def _name_problems(self) -> list[FieldError]:
+        if not MODULE_ID.match(self.id):
+            found = [FieldError("id", "bad_id", "2 to 16 of a-z and 0-9, starting with a letter.")]
+        elif self.id in RESERVED or (self.id == CORE and self.publisher != PLATFORM):
+            found = [FieldError("id", "reserved", f"{self.id!r} is kept for the platform.")]
+        else:
+            found = []
+        # Empty is allowed here: modules installed before publishers keep loading until their
+        # next update. A new install and publishing a release require one.
+        if self.publisher and not PUBLISHER.match(self.publisher):
+            found.append(
+                FieldError("publisher", "bad_publisher", "Who makes it: 2 to 31 of a-z and 0-9.")
+            )
+        return found
+
     def problems(self) -> list[FieldError]:
         """What's wrong with the manifest itself, before anything is installed."""
-        found: list[FieldError] = []
-        if not MODULE_ID.match(self.id) or self.id in RESERVED:
-            found.append(
-                FieldError("id", "bad_id", "2 to 16 of a-z and 0-9, starting with a letter.")
-            )
+        found: list[FieldError] = self._name_problems()
         try:
             Version(self.version)
         except InvalidVersion:

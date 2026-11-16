@@ -2,6 +2,19 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.38.0
+
+- A module says who makes it: `Module(publisher="…")`, required to install a new module and to
+  publish one (modules installed before keep loading). The platform trusts publishers,
+  each with its own release keys; a package is believed only when its own publisher's key signed
+  it. An installed module records its publisher (`sys.module.publisher`) and is updated only by
+  that publisher; a package with its ID from another publisher is refused. Modules installed
+  before take their publisher from their next update.
+- More IDs are kept for the platform: `core`, `p42`, `admin`, `api` and others, and every first
+  part of the core's own API addresses (`tables`, `people`, `languages` …), which a module at
+  `/api/v1/<id>/…` would otherwise shadow; a test keeps the list complete. `sys` is the
+  platform's alone.
+
 ## 0.37.3
 
 - A module asks for one connection in particular: `client.connection(type, owner=…,

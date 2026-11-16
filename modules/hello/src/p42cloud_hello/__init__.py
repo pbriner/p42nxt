@@ -35,6 +35,7 @@ from p42cloud.sdk import (
     TableHook,
     UIAction,
     Widget,
+    package_version,
 )
 
 GREETING = Table(
@@ -159,8 +160,9 @@ async def _words(request: RouteRequest) -> dict[str, object]:
 module = Module(
     id="hello",
     name="Hello",
-    version="0.6.0",
-    depends_on={"sys": ">=0.18,<1"},
+    publisher="p42",
+    version=package_version("p42cloud-hello"),
+    depends_on={"sys": ">=0.38,<1"},
     tables=(GREETING,),
     roles=(USER, KEEPER),
     hooks=(TableHook("hello.greeting", before=_before_saving),),

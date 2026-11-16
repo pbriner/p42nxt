@@ -1173,6 +1173,11 @@
    "text": "Teil des Kerns"
   },
   {
+   "key": "sys.field|sys.module.publisher|label",
+   "english": "Publisher",
+   "text": "Herausgeber"
+  },
+  {
    "key": "sys.field|sys.module.version|label",
    "english": "Version",
    "text": "Version"
