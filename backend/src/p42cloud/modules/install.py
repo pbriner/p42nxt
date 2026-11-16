@@ -297,6 +297,7 @@ async def install_modules(
     compose(ordered)
     protected = _core_dependencies(ordered)
     done: list[str] = []
+    upgraded = False
     for module in ordered:
         state = known.get(module.id)
         before = state.version if state is not None else None
@@ -338,11 +339,33 @@ async def install_modules(
                 await switch(conn, module.id, on=False)  # new tables and roles stay off too
         if before != module.parsed_version or (state is not None and state.removed):
             done.append(f"{module.id} {before or 'new'} → {module.version}")
-    # The modules wrote their texts in English: the translations in force go back on.
+            upgraded = upgraded or before is not None
+    await _finish(engine, upgraded=upgraded)
+    return done
+
+
+async def _finish(engine: AsyncEngine, *, upgraded: bool) -> None:
+    """The modules wrote their texts in English: the translations in force go back on. After
+    an update, the update check runs soon."""
     async with owner_transaction(engine) as conn:
         await languages.seed(conn)
         await languages.apply(conn, await load_catalog(conn))
-    return done
+        if upgraded:
+            await _check_updates_soon(conn)
+
+
+async def _check_updates_soon(conn: AsyncConnection) -> None:
+    """After an update, what fits may have changed (a module waiting for this core): the
+    update check runs now rather than at its daily time."""
+    await conn.execute(
+        text(
+            "INSERT INTO sys.job_run (job, schedule, state, trigger, attempt, not_before)"
+            " SELECT 'sys.check_updates', NULL, 'queued', 'update', 1, now()"
+            " WHERE EXISTS (SELECT 1 FROM sys.job WHERE name = 'sys.check_updates'"
+            " AND deleted IS NULL) AND NOT EXISTS (SELECT 1 FROM sys.job_run"
+            " WHERE job = 'sys.check_updates' AND state = 'queued' AND deleted IS NULL)"
+        )
+    )
 
 
 async def _ship_translations(conn: AsyncConnection, module: Module) -> None:

@@ -90,8 +90,14 @@ export function shown(
     case 'percent':
       return `${(Number(value) * 100).toLocaleString(language)} %`;
     case 'integer':
-    case 'decimal':
       return Number(value).toLocaleString(language);
+    case 'decimal': {
+      // As many decimals as the field keeps (the browser's default stops at 3, so 0.0001 BTC
+      // read as 0), without trailing zeros.
+      const scale = field?.options['scale'];
+      const digits = typeof scale === 'number' ? Math.min(Math.max(scale, 0), 20) : 20;
+      return Number(value).toLocaleString(language, { maximumFractionDigits: digits });
+    }
     case 'secret':
       return '••••••••';
     case 'translated_text':

@@ -18,6 +18,14 @@ test('a DCA plan is made in the form and says when it buys', async ({ page }, in
   await page.getByRole('spinbutton', { name: 'Deposit day (1 to 28)' }).fill('30');
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.locator('mat-hint.field-error', { hasText: 'From 1 to 28.' })).toBeVisible();
+
+  // Small amounts keep their decimals in lists (not rounded to 0).
+  await page.goto(`/list/dca.plan?q=${encodeURIComponent(name)}`);
+  // A table row on wider screens, a card on phones.
+  const entry = page
+    .getByRole('row', { name: new RegExp(name) })
+    .or(page.getByRole('listitem', { name }));
+  await expect(entry).toContainText('0.0001');
 });
 
 test('the DCA dashboard shows one plan at a time', async ({ page }, info) => {

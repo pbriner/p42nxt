@@ -98,7 +98,12 @@ JOB_RUN = Table(
         ),
         "trigger": Choice(
             "Started by",
-            {"schedule": "Its schedule", "manual": "Someone", "retry": "A retry"},
+            {
+                "schedule": "Its schedule",
+                "manual": "Someone",
+                "retry": "A retry",
+                "update": "An update",
+            },
             required=True,
             default="schedule",
         ),
