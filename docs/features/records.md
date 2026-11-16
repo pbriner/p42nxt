@@ -69,7 +69,7 @@ A condition is JSON: `{"field", "op", "value"}`, or a group `{"and": [...]}`, `{
 | Text, email, URL, phone, host name, colour, icon | `contains`, `not_contains`, `starts_with`, `ends_with`, `in`, `not_in` |
 | Translated text | as text, without `in` / `not_in` |
 | Numbers, durations, dates, dates and times | `lt`, `lte`, `gt`, `gte`, `between` (`[from, to]`, both included) |
-| Choices, references | `in`, `not_in` |
+| Choices, references | `in`, `not_in`; for references into a hierarchy also `within` |
 
 - **Text** comparisons ignore case and accents: `muller` finds `Müller`. Translated text is
   compared in the person's language, falling back to English.

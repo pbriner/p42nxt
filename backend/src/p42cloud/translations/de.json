@@ -2453,6 +2453,11 @@
    "text": "Besitzerfeld"
   },
   {
+   "key": "sys.field|sys.table.parent_field|label",
+   "english": "Parent field",
+   "text": "Feld für das übergeordnete Element"
+  },
+  {
    "key": "sys.field|sys.table.schema|label",
    "english": "Module",
    "text": "Modul"

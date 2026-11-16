@@ -433,6 +433,57 @@ END $$;
 REVOKE ALL ON FUNCTION sys.p42_link() FROM PUBLIC;
 """
 
+# Hierarchies (a table's `parent` field, its name the one argument): a record can't be under itself
+# or one of its own, nor deeper than 30; nor under a deleted record; a record with active records
+# under it isn't deleted. Moves in one table wait for each other, so two moves can't make a loop
+# together. Refusals name the field with a kind the records service turns into a field error
+# (records.py `refusal`): t a loop, k records under it, p a deleted parent.
+_TREES = """
+CREATE FUNCTION sys.p42_tree() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog, sys AS $$
+DECLARE
+    col text := TG_ARGV[0];
+    up uuid := (to_jsonb(NEW) ->> TG_ARGV[0])::uuid;
+    was uuid := CASE WHEN TG_OP = 'UPDATE' THEN (to_jsonb(OLD) ->> TG_ARGV[0])::uuid END;
+    depth integer := 0;
+    found boolean;
+BEGIN
+    IF TG_OP = 'UPDATE' AND NEW.deleted IS NOT NULL AND OLD.deleted IS NULL THEN
+        EXECUTE format('SELECT EXISTS (SELECT 1 FROM %s WHERE %I = $1 AND deleted IS NULL)',
+                       TG_RELID::regclass, col) INTO found USING NEW.sys_id;
+        IF found THEN
+            RAISE EXCEPTION 'records are under it'
+                USING ERRCODE = '23514', CONSTRAINT = 'p42_' || col || '_k';
+        END IF;
+        RETURN NEW;
+    END IF;
+    IF up IS NULL OR NEW.deleted IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
+    IF TG_OP = 'UPDATE' AND up IS NOT DISTINCT FROM was AND OLD.deleted IS NULL THEN
+        RETURN NEW;
+    END IF;
+    PERFORM pg_advisory_xact_lock(TG_RELID::bigint);
+    EXECUTE format('SELECT deleted IS NULL FROM %s WHERE sys_id = $1', TG_RELID::regclass)
+        INTO found USING up;
+    IF found IS DISTINCT FROM true THEN
+        RAISE EXCEPTION 'its parent is deleted'
+            USING ERRCODE = '23514', CONSTRAINT = 'p42_' || col || '_p';
+    END IF;
+    WHILE up IS NOT NULL LOOP
+        depth := depth + 1;
+        IF up = NEW.sys_id OR depth > 30 THEN
+            RAISE EXCEPTION 'a loop'
+                USING ERRCODE = '23514', CONSTRAINT = 'p42_' || col || '_t';
+        END IF;
+        EXECUTE format('SELECT %I FROM %s WHERE sys_id = $1', col, TG_RELID::regclass)
+            INTO up USING up;
+    END LOOP;
+    RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION sys.p42_tree() FROM PUBLIC;
+"""
+
 STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0001_context", _CONTEXT),
     ("0002_record_rules", _RECORD_RULES),
@@ -445,4 +496,5 @@ STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0009_security_events", _SECURITY_EVENTS),
     ("0010_links", _LINKS),
     ("0011_links_both_ways", _LINKS_BOTH_WAYS),
+    ("0012_trees", _TREES),
 )

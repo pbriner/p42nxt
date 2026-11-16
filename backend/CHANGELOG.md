@@ -2,6 +2,14 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.40.0
+
+- Hierarchies: a table names the field holding each record's parent (`Table(…,
+  parent="parent")`). The database refuses loops, a record under a removed one, and removing a
+  record with records under it. The filter `within` finds a record and everything under it, at
+  any depth. Records of a hierarchy are named by their path from the top
+  ("House › Ground floor › Heating"), in lists and pickers too.
+
 ## 0.39.0
 
 - Events: a module declares what it publishes (`EventType`) and what it does when another

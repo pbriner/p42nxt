@@ -34,7 +34,8 @@ OPERATORS: dict[str, frozenset[str]] = {
     "date": _ORDERED,
     "datetime": _ORDERED,
     "choice": _BASE | {"in", "not_in"},
-    "reference": _BASE | {"in", "not_in"},
+    # `within`: the record named, or one under it at any depth (a hierarchy's records).
+    "reference": _BASE | {"in", "not_in", "within"},
     "boolean": _BASE,
 }
 # Operators that also match records without a value (F-2), through references too.
@@ -274,6 +275,8 @@ class Filter:
         # A field they may not read can't be filtered on: that would reveal its values.
         readable = self.guard.field(table, alias, f.name) if self.guard else "true"
         if len(names) == 1:
+            if op == "within":
+                return f"COALESCE(({readable}) AND {self.within(table, alias, f, leaf)}, false)"
             return f"COALESCE(({readable}) AND {self.compare(alias, f, leaf)}, false)"
         target_key = f.type.references(f.field.options)
         target = self.catalog.table(target_key) if target_key else None
@@ -289,6 +292,31 @@ class Filter:
         found = f"{ref} IN (SELECT {inner}.sys_id FROM {source} {inner} WHERE {condition})"  # noqa: S608
         walked = f"({ref} IS NULL OR {found})" if op in KEEPS_EMPTY else found
         return f"COALESCE(({readable}) AND {walked}, false)"
+
+    def within(self, table: TableDef, alias: str, f: FieldDef, leaf: _Leaf) -> str:
+        """The reference names one of the records given, or one under them at any depth. The
+        records under them are found with the person's rights: they don't learn of others."""
+        key = table.key if f.name == "sys_id" else f.type.references(f.field.options)
+        tree = self.catalog.table(key) if key else None
+        if f.type.kind != "reference" or tree is None or tree.parent_field is None:
+            raise refuse(leaf.path, "not_a_tree", f"{leaf.path!r} doesn't point into a hierarchy.")
+        value: Any = leaf.value
+        raw: list[Any] = cast(list[Any], value) if isinstance(value, list) else [value]
+        try:
+            given = [self.query.bind(v) for v in self.values(f, "in", raw)]
+        except Invalid as error:
+            raise refuse(leaf.path, "bad_value", str(error)) from error
+        source = qualified(tree.schema, tree.name)
+        parent = ident(tree.parent_field)
+        # Names from the catalog, checked by ident(); the IDs are bound. Depth as the database
+        # allows a tree to be deep, so a broken one can't run on.
+        under = (
+            f"(WITH RECURSIVE t(id, depth) AS (SELECT sys_id, 0 FROM {source}"  # noqa: S608
+            f" WHERE sys_id IN ({', '.join(given)})"
+            f" UNION SELECT c.sys_id, t.depth + 1 FROM {source} c JOIN t ON c.{parent} = t.id"
+            f" WHERE t.depth < 30) SELECT id FROM t)"
+        )
+        return f"{alias}.{ident(f.name)} IN {under}"
 
     def compare(self, alias: str, f: FieldDef, leaf: _Leaf) -> str:
         path, op, raw = leaf.path, leaf.op, leaf.value

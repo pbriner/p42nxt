@@ -33,6 +33,9 @@ class Table:
     # The field that names a record where it's referenced (`name` or the first text field
     # if not given).
     display: str | None = None
+    # A hierarchy: this field (a reference to the same table, not required) names each
+    # record's parent; records without one are at the top. The database refuses loops.
+    parent: str | None = None
 
 
 def _field_problems(table: str, name: str, declared: Field) -> list[FieldError]:
@@ -90,8 +93,29 @@ def check(schema: str, tables: list[Table]) -> None:
             found.append(FieldError(declared.name, "duplicate", "Declared twice."))
         seen.add(declared.name)
         found += _table_problems(declared)
+        found += _parent_problems(schema, declared)
     if found:
         raise Problem(422, "invalid_declaration", "The tables can't be built.", errors=found)
+
+
+def _parent_problems(schema: str, declared: Table) -> list[FieldError]:
+    if declared.parent is None:
+        return []
+    parent = declared.fields.get(declared.parent)
+    if (
+        parent is None
+        or parent.type != "reference"
+        or parent.options.get("table") != f"{schema}.{declared.name}"
+        or parent.required
+    ):
+        return [
+            FieldError(
+                declared.name,
+                "bad_parent",
+                "The parent must be a reference to the same table, and not required.",
+            )
+        ]
+    return []
 
 
 def to_catalog(schema: str, tables: list[Table]) -> Catalog:
@@ -107,6 +131,7 @@ def to_catalog(schema: str, tables: list[Table]) -> Catalog:
             unique_together=t.unique_together,
             owner_field=t.owner,
             display_field=t.display,
+            parent_field=t.parent,
         )
         for t in tables
     ]

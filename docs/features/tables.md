@@ -118,6 +118,34 @@ with the same field types and the same rules as tables modules declare.
 A table names the field that names its records where they're referenced (`display=` in the
 declaration). Without one: `name` if the table has it, else its first text field.
 
+## Hierarchies
+
+A table whose records form a tree names the field that holds each record's parent:
+
+```python
+Table("center", "Cost center", {
+    "name": String("Name", max_length=80, required=True),
+    "parent": Reference("Part of", "costing.center"),
+}, parent="parent")
+```
+
+The parent field is a reference to the same table and not required: records without one are at
+the top. The table's record of `sys.table` names it (`parent_field`), and the table's description
+in the API says `parent`.
+
+- **The database keeps it a tree.** A record can't be under itself or one of its own, nor more
+  than 30 levels deep ("A record can't be under itself or one of its own"). It can't be put
+  under a removed record, and a record with active records under it isn't removed ("Records are
+  under it: move or remove them first"). Moves in one table wait for each other, so two at once
+  can't make a loop.
+- **`within`** filters a reference into a hierarchy (or a hierarchy's own `sys_id`) for one or
+  more records and everything under them, at any depth: `{"field": "center", "op": "within",
+  "value": "<id>"}`. What's under them is found with the person's rights.
+- **Paths.** Wherever a record of a hierarchy is named, it's named by its path from the top,
+  `House › Ground floor › Heating`, through the records above it the person may read. A record's
+  own name in lists (`_display`) is its path too, and `_path` holds it; the field keeps its own
+  value.
+
 ## Metadata tables
 
 | Table | Holds |

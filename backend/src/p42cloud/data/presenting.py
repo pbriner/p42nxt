@@ -15,6 +15,8 @@ from p42cloud.kernel.errors import Problem
 
 OPERATIONS = ("read", "create", "write", "delete", "restore")
 MAX_NAMED = 500  # the records named at once per table (one page)
+PATH_SEPARATOR = " \u203a "  # a single right angle quote between the names of a path
+MAX_TREE_DEPTH = 30  # as deep as the database lets a hierarchy be
 _PER_RECORD = ("write", "delete", "restore")
 
 
@@ -117,6 +119,8 @@ def describe(
         "label_plural": translated(table.label_plural, language),
         "display": table.display,
         "personal": table.owner_field is not None,
+        # A hierarchy: the field naming each record's parent.
+        "parent": table.parent_field,
         "operations": {op: bool(access.of(table.key, op)) for op in OPERATIONS},
         "fields": [_field(table, f, access, language) for f in [*table.active_fields(), *system]],
         "referenced_by": _referenced_by(catalog, table, access, language) if catalog else [],
@@ -138,25 +142,74 @@ async def named(
     target = catalog.table(target_key)
     if target is None or not ids or target.display is None:
         return {}
-    shown, language = target.display, records.situation.language
-    found: dict[UUID, tuple[Any, bool]] = {}
+    rows = await _readable(records, target, ids)
+    if target.parent_field is not None:
+        return {
+            i: (path, retired)
+            for i, (path, retired) in (await paths(records, target, rows)).items()
+        }
+    language = records.situation.language
+    return {
+        i: (translated(r.values.get(target.display), language), retired)
+        for i, (r, retired) in rows.items()
+    }
+
+
+async def _readable(
+    records: Records, target: TableDef, ids: set[UUID]
+) -> dict[UUID, tuple[Record, bool]]:
+    """The records of these IDs the person may read, active or retired."""
+    found: dict[UUID, tuple[Record, bool]] = {}
     for retired in (False, True):
         wanted = [str(i) for i in ids if i not in found]
         if not wanted:
             break
         try:
             page = await records.list(
-                target_key,
+                target.key,
                 where={"field": "sys_id", "op": "in", "value": wanted},
                 limit=min(len(wanted), MAX_NAMED),
                 count=False,
                 deleted=retired,
             )
-        except Problem:  # a table they may not read: no names
+        except Problem:  # a table they may not read: nothing
             return found
         for r in page.records:
-            found[r.sys_id] = (translated(r.values.get(shown), language), retired)
+            found[r.sys_id] = (r, retired)
     return found
+
+
+async def paths(
+    records: Records, tree: TableDef, rows: dict[UUID, tuple[Record, bool]]
+) -> dict[UUID, tuple[str, bool]]:
+    """Each record of a hierarchy named by its path from the top (the house, then its heating),
+    through the records above it the person may read: one they may not read ends the path
+    there, unnamed."""
+    shown, language = tree.display, records.situation.language
+    parent = str(tree.parent_field)
+    known: dict[UUID, Record] = {i: r for i, (r, _) in rows.items()}
+    for _ in range(MAX_TREE_DEPTH):
+        missing = {
+            p
+            for r in known.values()
+            if isinstance(p := r.values.get(parent), UUID) and p not in known
+        }
+        if not missing:
+            break
+        found = await _readable(records, tree, missing)
+        if not found:
+            break
+        known |= {i: r for i, (r, _) in found.items()}
+    named: dict[UUID, tuple[str, bool]] = {}
+    for record_id, (_, retired) in rows.items():
+        names: list[str] = []
+        at: UUID | None = record_id
+        while at is not None and at in known and len(names) < MAX_TREE_DEPTH:
+            names.append(str(translated(known[at].values.get(shown or ""), language) or ""))
+            up = known[at].values.get(parent)
+            at = up if isinstance(up, UUID) else None
+        named[record_id] = (PATH_SEPARATOR.join(reversed(names)), retired)
+    return named
 
 
 def _target(catalog: Catalog, table: TableDef, f: FieldDef, record: Record) -> str | None:
@@ -220,10 +273,19 @@ async def annotate(records: Records, table: TableDef, found: list[Record]) -> li
         key: await named(records, records.catalog, key, ids) for key, ids in references.items()
     }
     allowed = await records.may(table, [r.sys_id for r in found], _PER_RECORD)
+    own_paths = (
+        await paths(records, table, {r.sys_id: (r, False) for r in found})
+        if table.parent_field is not None and table.display is not None
+        else {}
+    )
     for record, body in zip(found, bodies, strict=True):
         display, state = _names_of(records.catalog, table, record, names, language)
         body["_display"] = display
         if state:
             body["_reference_state"] = state
         body["_access"] = allowed.get(record.sys_id, dict.fromkeys(_PER_RECORD, False))
+        if record.sys_id in own_paths and table.display is not None:
+            # Its name where it's shown is its path; the field itself keeps its own value.
+            body["_path"] = own_paths[record.sys_id][0]
+            display[table.display] = own_paths[record.sys_id][0]
     return bodies
