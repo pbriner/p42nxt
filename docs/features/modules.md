@@ -9,7 +9,7 @@ A module package exports one `Module`:
 
 ```python
 module = Module(
-    id="task", name="Tasks", version="1.4.0",
+    id="task", name="Tasks", version=package_version("p42cloud-task"),
     depends_on={"sys": ">=0.1,<1"},
     tables=(TASK,), roles=(EDITOR, READER),
     hooks=(TableHook("task.task", before=check_due_date),),
@@ -21,7 +21,7 @@ module = Module(
 | Part | Meaning |
 |---|---|
 | `id` | 2 to 16 of `a-z` and `0-9`, starting with a letter. It names the module's schema and database role. `u` is kept for admins' own tables, `search` for the search route |
-| `version` | The module's version (`1.4.0`) |
+| `version` | The module's version (`1.4.0`): its package's, from `package_version("p42cloud-<id>")` (SDK), so it's raised in one place (`pyproject.toml`). A test refuses a manifest that says another version than its package |
 | `depends_on` | The modules it needs, with the versions it works with. Every module depends on `sys` |
 | `tables`, `roles` | Its tables and roles, declared (`tables.md`, `access.md`) |
 | `hooks` | Code to run when its own tables' records change (`records.md`). A module hooks only its own tables |

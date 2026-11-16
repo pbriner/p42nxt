@@ -15,6 +15,7 @@ not this object. Only the hooks are code that runs.
 import re
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
+from importlib import metadata
 from pathlib import Path
 
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
@@ -168,3 +169,9 @@ class Module:
             raise Problem(
                 422, "invalid_module", f"The module {self.id!r} can't be installed.", errors=found
             )
+
+
+def package_version(distribution: str) -> str:
+    """A module's version as its package has it (`pyproject.toml`), for `Module(version=…)`: one
+    place to raise it, so the manifest can't say another version than the package."""
+    return metadata.version(distribution)

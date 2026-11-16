@@ -104,6 +104,26 @@ def empty_index() -> dict[str, Any]:
     return {"format": INDEX_FORMAT, "modules": {}}
 
 
+def wheel_version(name: str) -> str | None:
+    """The version in a wheel's file name (`p42cloud_dca-0.7.2-py3-none-any.whl`)."""
+    parts = name.split("-")
+    return parts[1] if name.endswith(".whl") and len(parts) >= 5 else None  # noqa: PLR2004
+
+
+def drop_mismatched(index: dict[str, Any]) -> dict[str, Any]:
+    """The index without entries whose package is another version than they say: a release
+    published under a wrong version must not be installed as that version."""
+    modules = cast(dict[str, list[dict[str, Any]]], index.get("modules") or {})
+    for module, entries in modules.items():
+        modules[module] = [
+            e
+            for e in entries
+            if (packaged := wheel_version(str(e.get("package", "")).rsplit("/", 1)[-1])) is None
+            or packaged == e["version"]
+        ]
+    return index
+
+
 def add_release(  # noqa: PLR0913 - one release, described in full
     index: dict[str, Any],
     module: str,

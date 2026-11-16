@@ -2,6 +2,17 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.37.2
+
+- Publishing a module refuses a package whose manifest says another version, and drops entries
+  from the index whose package is another version than they say. A module's manifest version
+  must be its package's (a test checks every module); the SDK's `package_version()` gives it
+  (`Module(version=package_version("p42cloud-<id>"))`).
+- Translations aren't in the search across everything any more (their texts in every
+  language answered searches in another); Platform → Translations still searches them.
+- Releases read the registry index through the API, not the cached download address, and stop
+  if it can't be read instead of starting an empty one.
+
 ## 0.37.1
 
 - A person's form has a **Sign-in** section for administrators: **Make invitation link** and

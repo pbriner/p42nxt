@@ -39,7 +39,7 @@ from p42cloud.data.types.text import Text
 from p42cloud.data.types.translated_text import TranslatedText
 from p42cloud.data.types.url import Url
 from p42cloud.kernel.errors import FieldError, Problem
-from p42cloud.modules.manifest import Migration, Module
+from p42cloud.modules.manifest import Migration, Module, package_version
 from p42cloud.sdk.client import Client
 from p42cloud.security.access.roles import Grant, Role
 from p42cloud.services.calls.models import CallRun, GaveUp, OutsideCall
@@ -114,4 +114,5 @@ __all__ = [
     "UIAction",
     "Url",
     "Widget",
+    "package_version",
 ]
