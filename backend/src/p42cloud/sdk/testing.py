@@ -61,12 +61,13 @@ _HOST = ADMIN_URL.rsplit("@", 1)[1].rsplit("/", 1)[0]
 type Acting = Callable[..., AbstractAsyncContextManager[Client]]
 
 
-def with_dependencies(modules: list[Module]) -> list[Module]:
+def with_dependencies(modules: list[Module], also: tuple[str, ...] = ()) -> list[Module]:
     """The modules and every module they depend on, from the module packages installed here: a
-    module's tests can't import another module, but get the ones it builds on installed too."""
+    module's tests can't import another module, but get the ones it builds on installed too.
+    `also`: modules to install as well, by ID, that it works with without needing them."""
     available = {m.id: m for m in discover()}
     found = {m.id: m for m in modules}
-    waiting = [other for m in modules for other in m.depends_on]
+    waiting = [*(other for m in modules for other in m.depends_on), *also]
     while waiting:
         other = waiting.pop()
         if other == "sys" or other in found:
@@ -85,7 +86,16 @@ def p42_modules() -> list[Module]:
 
 
 @pytest.fixture(scope="session")
-async def p42_installation(p42_modules: list[Module]) -> AsyncIterator[Settings]:
+def p42_also() -> tuple[str, ...]:
+    """Modules to install as well, by ID (with what they depend on); a module's tests override
+    this to test working with a module it doesn't need."""
+    return ()
+
+
+@pytest.fixture(scope="session")
+async def p42_installation(
+    p42_modules: list[Module], p42_also: tuple[str, ...]
+) -> AsyncIterator[Settings]:
     """A fresh database with the core and the modules installed; dropped at the end."""
     name = f"p42_test_{uuid.uuid4().hex[:8]}"
     admin = create_async_engine(ADMIN_URL, isolation_level="AUTOCOMMIT")
@@ -101,7 +111,7 @@ async def p42_installation(p42_modules: list[Module]) -> AsyncIterator[Settings]
         owner = create_engine(settings.owner_database_url)
         try:
             with working_as(Context(channel="install")):
-                await install_modules(owner, [CORE, *with_dependencies(p42_modules)])
+                await install_modules(owner, [CORE, *with_dependencies(p42_modules, p42_also)])
         finally:
             await owner.dispose()
         yield settings

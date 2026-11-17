@@ -1,0 +1,291 @@
+{
+ "language": "de",
+ "module": "budget",
+ "texts": [
+  {
+   "key": "sys.field|budget.line.amount|label",
+   "english": "Amount",
+   "text": "Betrag"
+  },
+  {
+   "key": "sys.field|budget.line.center|label",
+   "english": "Cost center",
+   "text": "Kostenstelle"
+  },
+  {
+   "key": "sys.field|budget.line.cost_type|label",
+   "english": "Cost type",
+   "text": "Kostenart"
+  },
+  {
+   "key": "sys.field|budget.line.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.field|budget.line.month|label",
+   "english": "Month",
+   "text": "Monat"
+  },
+  {
+   "key": "sys.field|budget.line.note|label",
+   "english": "Note",
+   "text": "Notiz"
+  },
+  {
+   "key": "sys.field|budget.line.version|label",
+   "english": "Version",
+   "text": "Version"
+  },
+  {
+   "key": "sys.field|budget.version.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.field|budget.version.kind|choice:budget",
+   "english": "Budget",
+   "text": "Budget"
+  },
+  {
+   "key": "sys.field|budget.version.kind|choice:forecast",
+   "english": "Forecast",
+   "text": "Prognose"
+  },
+  {
+   "key": "sys.field|budget.version.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|budget.version.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|budget.version.note|label",
+   "english": "Note",
+   "text": "Notiz"
+  },
+  {
+   "key": "sys.field|budget.version.state|choice:approved",
+   "english": "Approved",
+   "text": "Genehmigt"
+  },
+  {
+   "key": "sys.field|budget.version.state|choice:draft",
+   "english": "Draft",
+   "text": "Entwurf"
+  },
+  {
+   "key": "sys.field|budget.version.state|choice:locked",
+   "english": "Locked",
+   "text": "Gesperrt"
+  },
+  {
+   "key": "sys.field|budget.version.state|choice:submitted",
+   "english": "Submitted",
+   "text": "Eingereicht"
+  },
+  {
+   "key": "sys.field|budget.version.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|budget.version.year|label",
+   "english": "Year",
+   "text": "Jahr"
+  },
+  {
+   "key": "sys.form_view|budget.line|section:1",
+   "english": "Budget line",
+   "text": "Budgetposition"
+  },
+  {
+   "key": "sys.form_view|budget.version|section:1",
+   "english": "Version",
+   "text": "Version"
+  },
+  {
+   "key": "sys.form_view|budget.version|section:2",
+   "english": "Note",
+   "text": "Notiz"
+  },
+  {
+   "key": "sys.list_view|budget.line|label",
+   "english": "Budget lines",
+   "text": "Budgetpositionen"
+  },
+  {
+   "key": "sys.list_view|budget.version|label",
+   "english": "Budget versions",
+   "text": "Budgetversionen"
+  },
+  {
+   "key": "sys.module_route|budget GET /widget/plan_vs_actual|description",
+   "english": "Planned against spent per center.",
+   "text": "Geplant gegenüber ausgegeben pro Stelle."
+  },
+  {
+   "key": "sys.module_route|budget GET /widget/used|description",
+   "english": "How much of a version is spent.",
+   "text": "Wie viel einer Version verbraucht ist."
+  },
+  {
+   "key": "sys.module|budget|category_title",
+   "english": "Finance",
+   "text": "Finanzen"
+  },
+  {
+   "key": "sys.module|budget|summary",
+   "english": "Budget versions and their lines per cost center, cost type and month.",
+   "text": "Budgetversionen und ihre Positionen pro Kostenstelle, Kostenart und Monat."
+  },
+  {
+   "key": "sys.module|budget|title",
+   "english": "Budget",
+   "text": "Budget"
+  },
+  {
+   "key": "sys.nav_item|budget.dashboard|label",
+   "english": "Dashboard",
+   "text": "Übersicht"
+  },
+  {
+   "key": "sys.nav_item|budget.dashboard|section",
+   "english": "Budget",
+   "text": "Budget"
+  },
+  {
+   "key": "sys.nav_item|budget.lines|label",
+   "english": "Budget lines",
+   "text": "Budgetpositionen"
+  },
+  {
+   "key": "sys.nav_item|budget.lines|section",
+   "english": "Budget",
+   "text": "Budget"
+  },
+  {
+   "key": "sys.nav_item|budget.versions|label",
+   "english": "Budget versions",
+   "text": "Budgetversionen"
+  },
+  {
+   "key": "sys.nav_item|budget.versions|section",
+   "english": "Budget",
+   "text": "Budget"
+  },
+  {
+   "key": "sys.role|budget.controller|description",
+   "english": "Approves, sends back and locks budget versions.",
+   "text": "Genehmigt Budgetversionen, weist sie zurück und sperrt sie."
+  },
+  {
+   "key": "sys.role|budget.controller|label",
+   "english": "Budget controller",
+   "text": "Budget-Controller"
+  },
+  {
+   "key": "sys.role|budget.planner|description",
+   "english": "Drafts budget versions and their lines, and submits them.",
+   "text": "Erstellt Budgetversionen und ihre Positionen und reicht sie ein."
+  },
+  {
+   "key": "sys.role|budget.planner|label",
+   "english": "Planner",
+   "text": "Planung"
+  },
+  {
+   "key": "sys.role|budget.reader|description",
+   "english": "Reads budgets and how they compare to what was spent.",
+   "text": "Liest Budgets und den Vergleich mit den Ausgaben."
+  },
+  {
+   "key": "sys.role|budget.reader|label",
+   "english": "Budget reader",
+   "text": "Budget lesen"
+  },
+  {
+   "key": "sys.state_transition|budget.approve|label",
+   "english": "Approve",
+   "text": "Genehmigen"
+  },
+  {
+   "key": "sys.state_transition|budget.lock|label",
+   "english": "Lock",
+   "text": "Sperren"
+  },
+  {
+   "key": "sys.state_transition|budget.send_back|label",
+   "english": "Send back",
+   "text": "Zurückweisen"
+  },
+  {
+   "key": "sys.state_transition|budget.submit|label",
+   "english": "Submit",
+   "text": "Einreichen"
+  },
+  {
+   "key": "sys.table|budget.line|label",
+   "english": "Budget line",
+   "text": "Budgetposition"
+  },
+  {
+   "key": "sys.table|budget.line|label_plural",
+   "english": "Budget lines",
+   "text": "Budgetpositionen"
+  },
+  {
+   "key": "sys.table|budget.version|label",
+   "english": "Budget version",
+   "text": "Budgetversion"
+  },
+  {
+   "key": "sys.table|budget.version|label_plural",
+   "english": "Budget versions",
+   "text": "Budgetversionen"
+  },
+  {
+   "key": "sys.ui_action|budget.move_approve|label",
+   "english": "Approve",
+   "text": "Genehmigen"
+  },
+  {
+   "key": "sys.ui_action|budget.move_lock|confirm",
+   "english": "Lock the version? It can't change any more.",
+   "text": "Die Version sperren? Sie kann danach nicht mehr geändert werden."
+  },
+  {
+   "key": "sys.ui_action|budget.move_lock|label",
+   "english": "Lock",
+   "text": "Sperren"
+  },
+  {
+   "key": "sys.ui_action|budget.move_send_back|label",
+   "english": "Send back",
+   "text": "Zurückweisen"
+  },
+  {
+   "key": "sys.ui_action|budget.move_submit|label",
+   "english": "Submit",
+   "text": "Einreichen"
+  },
+  {
+   "key": "sys.ui_action|budget.spread|label",
+   "english": "Spread a year",
+   "text": "Ein Jahr verteilen"
+  },
+  {
+   "key": "sys.widget|budget.plan_vs_actual|title",
+   "english": "Plan used per cost center",
+   "text": "Verbrauch pro Kostenstelle"
+  },
+  {
+   "key": "sys.widget|budget.used|title",
+   "english": "Budget used",
+   "text": "Budget verbraucht"
+  }
+ ]
+}
