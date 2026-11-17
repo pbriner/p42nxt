@@ -77,6 +77,11 @@ A reference always reads as a name, never an ID: the target's name, linked to it
 name or ID. Records carry this as `_display` and, where it isn't simply named, `_reference_state`
 (`retired` or `hidden`).
 
+In a form being edited, a chosen reference's icon opens the record: a click shows it read only in a
+preview (its form view's fields, with **Open** for its own page; changes on the form stay as a
+draft), and Ctrl, Cmd or middle click opens it in a new tab. A record the person can't open has no
+link.
+
 ## UI actions
 
 A UI action is a button or menu entry that does something with a record. It is a record of
@@ -145,6 +150,8 @@ Widget("by_language", "By language", "chart", list="hello.greeting",
 | `sizes`, `size`, `refresh` | Allowed sizes (`s`, `wide`, `large`), the starting one; reload every so many seconds |
 | `shown` | For everyone who may read it: `available` (in the picker), `default` (placed), `mandatory` (always there) |
 | `source` | For what a list can't count or sum: a GET route of the module (below) |
+| `dated` | A chart grouped by something else than a date: the date field its time range applies to. A chart over a date or with `dated` offers the last 3 months, the last year or all of it |
+| `param` | A choice the page offers (below): `("center", "costing.center")` |
 
 All widgets form one catalog: every dashboard offers every widget the person may read (its own
 dashboard's first, grouped by module), so a module's widgets can be placed on the home dashboard
@@ -185,6 +192,12 @@ nothing to choose, the card says so. That's on the module's own dashboard. Elsew
 another module's) each placement keeps its own choice: the card offers the records, and the
 choice is saved with the placement (`{"widget": …, "size": …, "params": {"plan": <id>}}` in
 `sys.dashboard_layout.items`). Such a widget can be placed more than once, one per record.
+
+A figure or chart read from a list can take a choice too: `param=("center", "costing.center")`
+filters the widget's reference field `center` (pointing to that table) by the chosen record; in a
+tree (`hierarchies.md`) by the record and everything under it (`within`). While nothing is chosen
+it shows everything, and the page offers **All** first (the default, unless a source widget on
+the page needs a record). Opening a bar or the list keeps the choice and the time range.
 
 ## Each person's own
 

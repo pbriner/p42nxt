@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0
+
+- The cost dashboard offers a center at the top: every chart and figure then shows that center and
+  everything under it, so a profit center (a house) can be looked at alone. **All** shows
+  everything.
+- New charts, each for the last 3 months, the last year or all of it: running costs by profit
+  center, adding value (CAPEX) by profit center, adding value by order (each investment project),
+  costs by supplier. Needs the core 0.45.
+
 ## 0.2.0
 
 - Assets: what an order adding value (CAPEX) became, worth what its CAPEX bookings cost (in the

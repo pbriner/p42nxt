@@ -3168,6 +3168,11 @@
    "text": "Dashboard"
   },
   {
+   "key": "sys.field|sys.widget.dated|label",
+   "english": "Over time by",
+   "text": "Zeitraum nach"
+  },
+  {
    "key": "sys.field|sys.widget.field|label",
    "english": "Measured field",
    "text": "Gemessenes Feld"

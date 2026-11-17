@@ -385,7 +385,7 @@ module = Module(
     name="Finance",
     publisher="p42",
     version=package_version("p42cloud-finance"),
-    depends_on={"sys": ">=0.43,<1", "costing": ">=0.3,<1", "partners": ">=0.1,<1"},
+    depends_on={"sys": ">=0.45,<1", "costing": ">=0.3,<1", "partners": ">=0.1,<1"},
     tables=TABLES,
     roles=(BOOKKEEPER, READER),
     hooks=(

@@ -13,7 +13,9 @@ export interface WidgetDef {
   list: string | null;
   /** A module route answering the figure or the points (source widgets). */
   source: string | null;
-  /** A source widget about one record the person picks: its name in the query, and the table. */
+  /** A widget about one record the person picks: its name, and the table. A source widget gets
+   * it in the query and needs it; others filter their field of that name by it (in a tree: the
+   * record and everything under it) and show everything while nothing is picked. */
   param: string | null;
   param_table: string | null;
   table: string | null;
@@ -29,6 +31,8 @@ export interface WidgetDef {
   filled: boolean;
   target: string | null;
   trend: string | null;
+  /** A date field: the chart offers the last 3 months, the last year or all of it. */
+  dated: string | null;
   sizes: Size[];
   size: Size;
   refresh: number | null;

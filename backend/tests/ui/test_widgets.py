@@ -3,6 +3,7 @@
 import uuid
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
+from typing import Any
 
 import pytest
 from sqlalchemy import text
@@ -70,6 +71,10 @@ async def test_totals_count_only_what_one_may_read(world: World) -> None:
     assert closed.value.status == 403
 
 
+def _chart(**more: Any) -> Widget:
+    return Widget("x", "X", "chart", list="sys.person", group="kind", chart="bar", **more)
+
+
 @pytest.mark.parametrize(
     ("widget", "code"),
     [
@@ -80,6 +85,14 @@ async def test_totals_count_only_what_one_may_read(world: World) -> None:
         (Widget("x", "X", "figure", list="sys.person", size="huge"), "bad_size"),
         (Widget("x", "X", "text"), "no_text"),
         (Widget("x", "X", "text", text="Hi", dashboard="hello"), "bad_dashboard"),
+        (_chart(dated="name"), "bad_field"),  # a time range over a date field
+        (Widget("x", "X", "figure", list="sys.person", dated="created"), "bad_dated"),
+        (_chart(param=("name", "sys.person")), "bad_param"),  # a reference to filter by
+        (_chart(param=("created_by", "sys.group")), "bad_param"),  # to that table
+        (
+            Widget("x", "X", "list", list="sys.person", param=("created_by", "sys.person")),
+            "bad_param",
+        ),
     ],
 )
 async def test_widgets_are_checked(owner_engine: AsyncEngine, widget: Widget, code: str) -> None:
@@ -87,6 +100,24 @@ async def test_widgets_are_checked(owner_engine: AsyncEngine, widget: Widget, co
         async with owner_transaction(owner_engine) as conn:
             await write_widgets(conn, await load_catalog(conn), "sys", (widget,))
     assert code in [e.code for e in refused.value.errors]
+
+
+class _Undo(Exception):
+    pass
+
+
+async def test_a_chart_may_take_a_choice_and_a_time_range(owner_engine: AsyncEngine) -> None:
+    chart = _chart(param=("created_by", "sys.person"), dated="created")
+    with working_as(Context(channel="upgrade")), pytest.raises(_Undo):
+        async with owner_transaction(owner_engine) as conn:
+            await write_widgets(conn, await load_catalog(conn), "sys", (chart,))
+            row = (
+                await conn.execute(
+                    text("SELECT param, param_table, dated FROM sys.widget WHERE name = 'sys.x'")
+                )
+            ).one()
+            assert tuple(row) == ("created_by", "sys.person", "created")
+            raise _Undo  # nothing kept
 
 
 async def test_a_dashboard_starts_with_the_defaults_and_keeps_mandatory_widgets(

@@ -50,8 +50,13 @@ than the **book value** left.
 ## Dashboard
 
 Finance → **Dashboard**: the result of each profit center this year (income less running costs),
-costs by cost type, by cost center and by month, what was spent adding value this year, and the
-invoices not paid yet.
+running costs and what was spent adding value per profit center, adding value per order (each
+investment project), costs per supplier, costs by cost type, by cost center and by month, what was
+spent adding value this year, and the invoices not paid yet.
+
+Pick a **center** at the top to see only that center and everything under it: a profit center
+such as a house with all its cost centers, or a single cost center. **All** shows everything.
+Charts with **3 months**, **1 year** and **All** show that time span.
 
 ## Who may do what
 
