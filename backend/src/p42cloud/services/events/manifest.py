@@ -15,6 +15,11 @@ EVENTS = (
         description="A schedule's job failed after its last try.",
     ),
     EventType(
+        "comment_added",
+        "A comment is added",
+        description="Someone commented on a record (about the record; data: the comment's ID).",
+    ),
+    EventType(
         "job_recovered",
         "A scheduled job works again",
         about="sys.schedule",

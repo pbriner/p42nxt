@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0
+
+- Centers and orders have comments: a conversation kept with the record. Needs the core 0.43.
+
 ## 0.2.0
 
 - An order's state follows its flow: open, then done (Mark done), back to open (Reopen), or

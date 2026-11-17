@@ -65,6 +65,7 @@ CENTER = Table(
     label_plural="Centers",
     display="name",
     parent="parent",
+    comments=True,
 )
 
 COST_TYPE = Table(
@@ -112,6 +113,7 @@ ORDER = Table(
     label_plural="Orders",
     display="name",
     files=True,
+    comments=True,
 )
 
 KEY = Table(
@@ -283,7 +285,7 @@ module = Module(
     name="Costing",
     publisher="p42",
     version=package_version("p42cloud-costing"),
-    depends_on={"sys": ">=0.42,<1"},
+    depends_on={"sys": ">=0.43,<1"},
     tables=TABLES,
     roles=(CONTROLLER, READER),
     hooks=(

@@ -93,6 +93,8 @@ ROLES = [
             Grant("sys.event_subscription", ("read",)),
             Grant("sys.event", ("read",)),
             Grant("sys.event_delivery", ("read",)),
+            # Which comments there are, on which records (read through their records otherwise).
+            Grant("sys.comment", ("read",)),
             # Which files there are; their contents only through their records' rights.
             Grant("sys.file", ("read",), fields=("name", "type", "size", "record_table", "about")),
             Grant("sys.notification_kind", ("read",)),

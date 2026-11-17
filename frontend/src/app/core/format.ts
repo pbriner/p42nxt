@@ -40,6 +40,8 @@ export interface TableInfo {
   parent: string | null;
   /** Files may be attached to its records. */
   files: boolean;
+  /** Its records have a conversation. */
+  comments: boolean;
   operations: Record<string, boolean>;
   fields: FieldInfo[];
   /** Tables pointing to this one, through fields the person may read. */

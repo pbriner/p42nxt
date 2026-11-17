@@ -55,3 +55,28 @@ test('an order moves along its flow by its buttons', async ({ page }, info) => {
   await expect(page.getByRole('button', { name: 'Mark done' })).toHaveCount(0);
   await noSidewaysScroll(page);
 });
+
+test('an order has a conversation, kept as plain text', async ({ page }, info) => {
+  const tag = `${info.project.name}-${Date.now() % 100000}`;
+  await page.goto('/');
+  const client = await api(page);
+  const house = await client.post('/api/v1/costing/center', {
+    code: `HC-${tag}`,
+    name: `House ${tag}`,
+    kind: 'profit',
+  });
+  const order = await client.post('/api/v1/costing/order', {
+    code: `C-${tag}`,
+    name: `Roof ${tag}`,
+    center: house.sys_id,
+  });
+  await page.goto(`/form/costing.order/${order.sys_id}`);
+  const comments = page.locator('app-record-comments');
+  await expect(comments.getByText('No comments yet.')).toBeVisible();
+  await comments.getByLabel('Write a comment').fill('<b>Offer</b> from the roofer is in.');
+  await comments.getByRole('button', { name: 'Comment', exact: true }).click();
+  await expect(comments.getByText('<b>Offer</b> from the roofer is in.')).toBeVisible();
+  await comments.getByRole('button', { name: 'Remove my comment' }).click();
+  await expect(comments.getByText('No comments yet.')).toBeVisible();
+  await noSidewaysScroll(page);
+});

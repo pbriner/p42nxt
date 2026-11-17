@@ -81,6 +81,7 @@ RESERVED = frozenset(
         "portal",
         "public",
         "static",
+        "comments",
         "docs",
         "files",
         "help",

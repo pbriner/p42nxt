@@ -38,6 +38,8 @@ class Table:
     parent: str | None = None
     # Files may be attached to its records (receipts, contracts), by those who may change them.
     files: bool = False
+    # Its records have a conversation: whoever may read one may comment on it.
+    comments: bool = False
 
 
 def _field_problems(table: str, name: str, declared: Field) -> list[FieldError]:
@@ -150,6 +152,7 @@ def to_catalog(schema: str, tables: list[Table]) -> Catalog:
             display_field=t.display,
             parent_field=t.parent,
             files=t.files,
+            comments=t.comments,
         )
         for t in tables
     ]

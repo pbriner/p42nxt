@@ -83,6 +83,16 @@
    "text": "US-Dollar"
   },
   {
+   "key": "sys.event_type|sys.comment_added|description",
+   "english": "Someone commented on a record (about the record; data: the comment's ID).",
+   "text": "Jemand hat einen Datensatz kommentiert (über den Datensatz; Daten: die ID des Kommentars)."
+  },
+  {
+   "key": "sys.event_type|sys.comment_added|label",
+   "english": "A comment is added",
+   "text": "Ein Kommentar kommt hinzu"
+  },
+  {
    "key": "sys.event_type|sys.job_failed|description",
    "english": "A schedule's job failed after its last try.",
    "text": "Der Job eines Zeitplans ist nach seinem letzten Versuch fehlgeschlagen."
@@ -306,6 +316,26 @@
    "key": "sys.field|sys.channel_state.polled|label",
    "english": "Last asked",
    "text": "Zuletzt gefragt"
+  },
+  {
+   "key": "sys.field|sys.comment.about|label",
+   "english": "On",
+   "text": "Zu"
+  },
+  {
+   "key": "sys.field|sys.comment.record_id|label",
+   "english": "On record",
+   "text": "Zu Datensatz"
+  },
+  {
+   "key": "sys.field|sys.comment.record_table|label",
+   "english": "On table",
+   "text": "Zu Tabelle"
+  },
+  {
+   "key": "sys.field|sys.comment.text|label",
+   "english": "Text",
+   "text": "Text"
   },
   {
    "key": "sys.field|sys.connection.base_url|help",
@@ -2703,6 +2733,11 @@
    "text": "Nach"
   },
   {
+   "key": "sys.field|sys.table.comments|label",
+   "english": "Comments can be added",
+   "text": "Kommentare möglich"
+  },
+  {
    "key": "sys.field|sys.table.display_field|label",
    "english": "Display field",
    "text": "Anzeigefeld"
@@ -3413,6 +3448,11 @@
    "text": "Kanalstatus"
   },
   {
+   "key": "sys.form_view|sys.comment|section:1",
+   "english": "Comment",
+   "text": "Kommentar"
+  },
+  {
    "key": "sys.form_view|sys.connection_secret|section:1",
    "english": "Connection secret",
    "text": "Verbindungsgeheimnis"
@@ -3776,6 +3816,11 @@
    "key": "sys.list_view|sys.channel_state|label",
    "english": "Channel states",
    "text": "Kanalstatus"
+  },
+  {
+   "key": "sys.list_view|sys.comment|label",
+   "english": "Comments",
+   "text": "Kommentare"
   },
   {
    "key": "sys.list_view|sys.connection_secret|label",
@@ -4551,6 +4596,16 @@
    "key": "sys.table|sys.channel_state|label_plural",
    "english": "Channel states",
    "text": "Kanalstatus"
+  },
+  {
+   "key": "sys.table|sys.comment|label",
+   "english": "Comment",
+   "text": "Kommentar"
+  },
+  {
+   "key": "sys.table|sys.comment|label_plural",
+   "english": "Comments",
+   "text": "Kommentare"
   },
   {
    "key": "sys.table|sys.connection_secret|label",

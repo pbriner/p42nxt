@@ -1815,6 +1815,11 @@
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "files",
     "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "comments",
+    "required": false
    }
   ]
  },

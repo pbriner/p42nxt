@@ -2,6 +2,13 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.43.0
+
+- Comments on records: a table allows them (`Table(…, comments=True)`); whoever may read a record
+  reads its comments and may add one, only the author removes one (it's marked, the history
+  keeps it). Plain text, never shown as HTML. Each comment is published (`sys.comment_added`).
+  Forms show a Comments section (`/api/v1/<module>/<table>/<id>/comments`).
+
 ## 0.42.0
 
 - States with allowed moves: a module declares a flow for a choice field (`Flow(table, field,
