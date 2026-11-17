@@ -3,6 +3,66 @@
  "module": "finance",
  "texts": [
   {
+   "key": "sys.field|finance.asset.book_value|label",
+   "english": "Book value",
+   "text": "Buchwert"
+  },
+  {
+   "key": "sys.field|finance.asset.center|label",
+   "english": "Cost center",
+   "text": "Kostenstelle"
+  },
+  {
+   "key": "sys.field|finance.asset.cost_type|label",
+   "english": "Booked as",
+   "text": "Gebucht als"
+  },
+  {
+   "key": "sys.field|finance.asset.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.field|finance.asset.in_use|label",
+   "english": "In use from",
+   "text": "In Betrieb seit"
+  },
+  {
+   "key": "sys.field|finance.asset.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|finance.asset.note|label",
+   "english": "Note",
+   "text": "Notiz"
+  },
+  {
+   "key": "sys.field|finance.asset.order|label",
+   "english": "Order (adds value)",
+   "text": "Auftrag (wertvermehrend)"
+  },
+  {
+   "key": "sys.field|finance.asset.useful_life|label",
+   "english": "Written off over (years)",
+   "text": "Abgeschrieben über (Jahre)"
+  },
+  {
+   "key": "sys.field|finance.asset.value|label",
+   "english": "Value",
+   "text": "Wert"
+  },
+  {
+   "key": "sys.field|finance.asset.written_off|label",
+   "english": "Written off",
+   "text": "Abgeschrieben"
+  },
+  {
+   "key": "sys.field|finance.asset.yearly|label",
+   "english": "Each year",
+   "text": "Pro Jahr"
+  },
+  {
    "key": "sys.field|finance.booking.amount_main|label",
    "english": "In the main currency",
    "text": "In der Hauptwährung"
@@ -203,6 +263,46 @@
    "text": "Text"
   },
   {
+   "key": "sys.field|finance.write_off.amount|label",
+   "english": "Amount",
+   "text": "Betrag"
+  },
+  {
+   "key": "sys.field|finance.write_off.asset|label",
+   "english": "Asset",
+   "text": "Anlage"
+  },
+  {
+   "key": "sys.field|finance.write_off.booking|label",
+   "english": "Booking",
+   "text": "Buchung"
+  },
+  {
+   "key": "sys.field|finance.write_off.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.field|finance.write_off.year|label",
+   "english": "Year",
+   "text": "Jahr"
+  },
+  {
+   "key": "sys.form_view|finance.asset|section:1",
+   "english": "Asset",
+   "text": "Anlage"
+  },
+  {
+   "key": "sys.form_view|finance.asset|section:2",
+   "english": "Worked out",
+   "text": "Berechnet"
+  },
+  {
+   "key": "sys.form_view|finance.asset|section:3",
+   "english": "Note",
+   "text": "Notiz"
+  },
+  {
    "key": "sys.form_view|finance.booking|section:1",
    "english": "Booking",
    "text": "Buchung"
@@ -253,6 +353,16 @@
    "text": "Notiz"
   },
   {
+   "key": "sys.form_view|finance.write_off|section:1",
+   "english": "Write-off",
+   "text": "Abschreibung"
+  },
+  {
+   "key": "sys.list_view|finance.asset|label",
+   "english": "Assets",
+   "text": "Anlagen"
+  },
+  {
    "key": "sys.list_view|finance.booking|label",
    "english": "Bookings",
    "text": "Buchungen"
@@ -273,6 +383,16 @@
    "text": "Nebenkostenabrechnungen"
   },
   {
+   "key": "sys.list_view|finance.write_off|label",
+   "english": "Write-offs",
+   "text": "Abschreibungen"
+  },
+  {
+   "key": "sys.module_route|finance GET /widget/results|description",
+   "english": "Results per profit center this year.",
+   "text": "Ergebnisse pro Profitcenter in diesem Jahr."
+  },
+  {
    "key": "sys.module|finance|category_title",
    "english": "Finance",
    "text": "Finanzen"
@@ -288,12 +408,32 @@
    "text": "Finanzen"
   },
   {
+   "key": "sys.nav_item|finance.assets|label",
+   "english": "Assets",
+   "text": "Anlagen"
+  },
+  {
+   "key": "sys.nav_item|finance.assets|section",
+   "english": "Finance",
+   "text": "Finanzen"
+  },
+  {
    "key": "sys.nav_item|finance.bookings|label",
    "english": "Bookings",
    "text": "Buchungen"
   },
   {
    "key": "sys.nav_item|finance.bookings|section",
+   "english": "Finance",
+   "text": "Finanzen"
+  },
+  {
+   "key": "sys.nav_item|finance.dashboard|label",
+   "english": "Dashboard",
+   "text": "Übersicht"
+  },
+  {
+   "key": "sys.nav_item|finance.dashboard|section",
    "english": "Finance",
    "text": "Finanzen"
   },
@@ -343,6 +483,16 @@
    "text": "Abschliessen"
   },
   {
+   "key": "sys.table|finance.asset|label",
+   "english": "Asset",
+   "text": "Anlage"
+  },
+  {
+   "key": "sys.table|finance.asset|label_plural",
+   "english": "Assets",
+   "text": "Anlagen"
+  },
+  {
    "key": "sys.table|finance.booking|label",
    "english": "Booking",
    "text": "Buchung"
@@ -383,6 +533,16 @@
    "text": "Nebenkostenabrechnungen"
   },
   {
+   "key": "sys.table|finance.write_off|label",
+   "english": "Write-off",
+   "text": "Abschreibung"
+  },
+  {
+   "key": "sys.table|finance.write_off|label_plural",
+   "english": "Write-offs",
+   "text": "Abschreibungen"
+  },
+  {
    "key": "sys.ui_action|finance.move_finalize|confirm",
    "english": "Make the statement final? It isn't worked out again afterwards.",
    "text": "Die Abrechnung abschliessen? Sie wird danach nicht mehr neu berechnet."
@@ -396,6 +556,41 @@
    "key": "sys.ui_action|finance.work_out|label",
    "english": "Work out",
    "text": "Berechnen"
+  },
+  {
+   "key": "sys.ui_action|finance.write_off|label",
+   "english": "Write off a year",
+   "text": "Ein Jahr abschreiben"
+  },
+  {
+   "key": "sys.widget|finance.capex|title",
+   "english": "Adding value this year",
+   "text": "Wertvermehrend dieses Jahr"
+  },
+  {
+   "key": "sys.widget|finance.costs_by_center|title",
+   "english": "Costs by cost center",
+   "text": "Kosten nach Kostenstelle"
+  },
+  {
+   "key": "sys.widget|finance.costs_by_month|title",
+   "english": "Costs by month",
+   "text": "Kosten nach Monat"
+  },
+  {
+   "key": "sys.widget|finance.costs_by_type|title",
+   "english": "Costs by cost type",
+   "text": "Kosten nach Kostenart"
+  },
+  {
+   "key": "sys.widget|finance.results|title",
+   "english": "Result by profit center",
+   "text": "Ergebnis nach Profitcenter"
+  },
+  {
+   "key": "sys.widget|finance.unpaid|title",
+   "english": "Unpaid invoices",
+   "text": "Offene Rechnungen"
   }
  ]
 }

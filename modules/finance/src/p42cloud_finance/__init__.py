@@ -47,6 +47,8 @@ from p42cloud.sdk import (
     package_version,
 )
 
+from p42cloud_finance import assets, dashboard
+
 ALL = ("read", "create", "write", "delete", "restore")
 
 BOOKING = Table(
@@ -139,7 +141,7 @@ STATEMENT_LINE = Table(
     display="text",
 )
 
-TABLES = (BOOKING, RENTAL, STATEMENT, STATEMENT_LINE)
+TABLES = (BOOKING, RENTAL, STATEMENT, STATEMENT_LINE, *assets.TABLES)
 OWN = tuple(f"finance.{t.name}" for t in TABLES)
 
 BOOKKEEPER = Role(
@@ -390,6 +392,7 @@ module = Module(
         TableHook("finance.booking", before=_check_booking),
         TableHook("finance.rental", before=_check_rental),
         TableHook("finance.statement", before=_check_statement),
+        TableHook("finance.asset", before=assets.check_asset),
     ),
     flows=(
         Flow(
@@ -418,7 +421,10 @@ module = Module(
             condition={"field": "state", "op": "eq", "value": "draft"},
             handler=_work_out,
         ),
+        *assets.ACTIONS,
     ),
+    routes=dashboard.ROUTES,
+    widgets=dashboard.WIDGETS,
     docs=Path(__file__).parent / "docs",
     translations=Path(__file__).parent / "translations",
     description="Bookings with their invoices, rentals and running-cost statements.",
@@ -432,6 +438,18 @@ module = Module(
             search=("text", "invoice_number"),
         ),
         ListView("finance.rental", ("contract", "center", "active"), sort=("contract",)),
+        ListView(
+            "finance.asset",
+            ("name", "order", "center", "in_use", "value", "written_off", "book_value"),
+            sort=("name",),
+            search=("name",),
+        ),
+        ListView(
+            "finance.write_off",
+            ("asset", "year", "amount"),
+            sort=("asset", "year"),
+            searchable=False,
+        ),
         ListView(
             "finance.statement",
             ("rental", "start", "end", "state", "costs", "advances", "due"),
@@ -458,6 +476,26 @@ module = Module(
         ),
         FormView("finance.rental", (FormSection("Rental", ("contract", "center", "active")),)),
         FormView(
+            "finance.asset",
+            (
+                FormSection("Asset", ("name", "order", "in_use", "cost_type")),
+                FormSection(
+                    "Worked out",
+                    (
+                        "center",
+                        "useful_life",
+                        "currency",
+                        "value",
+                        "yearly",
+                        "written_off",
+                        "book_value",
+                    ),
+                ),
+                FormSection("Note", ("note",), columns=1),
+            ),
+            related=(RelatedList("finance.write_off", "asset"),),
+        ),
+        FormView(
             "finance.statement",
             (
                 FormSection("Statement", ("rental", "start", "end", "state")),
@@ -471,8 +509,16 @@ module = Module(
         Section(
             "Finance",
             (
+                Item(
+                    "dashboard",
+                    "Dashboard",
+                    kind="page",
+                    path="/dashboard/finance",
+                    icon="monitoring",
+                ),
                 Item("bookings", "Bookings", "finance.booking", icon="receipt_long"),
                 Item("rentals", "Rentals", "finance.rental", icon="apartment"),
+                Item("assets", "Assets", "finance.asset", icon="domain"),
                 Item(
                     "statements",
                     "Running-cost statements",

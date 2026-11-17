@@ -664,7 +664,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-finance"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "modules/finance" }
 dependencies = [
     { name = "p42cloud" },

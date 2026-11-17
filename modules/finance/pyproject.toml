@@ -1,6 +1,6 @@
 [project]
 name = "p42cloud-finance"
-version = "0.1.0"
+version = "0.2.0"
 description = "Partners: suppliers, customers and tenants, their contacts and contracts"
 requires-python = ">=3.14"
 license = "Apache-2.0"
