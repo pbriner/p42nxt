@@ -8,6 +8,8 @@ The core (`sys`): the engine and the platform's own features.
   reads its comments and may add one, only the author removes one (it's marked, the history
   keeps it). Plain text, never shown as HTML. Each comment is published (`sys.comment_added`).
   Forms show a Comments section (`/api/v1/<module>/<table>/<id>/comments`).
+- The SDK's test plugin installs the modules a module depends on (found among the module
+  packages installed), so a module's tests can build on others without importing them.
 
 ## 0.42.0
 

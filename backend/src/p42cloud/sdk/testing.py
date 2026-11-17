@@ -9,7 +9,8 @@ In the module's `tests/conftest.py`:
         return [module]
 
 Each test session gets its own database, set up the way the installer does it, with the core
-and these modules installed. `as_system()` and `as_person(id)` give a `Client` for one request
+and these modules installed, and the modules they depend on (found among the module packages
+installed in the workspace). `as_system()` and `as_person(id)` give a `Client` for one request
 (committed at the end); `run_job(name)` runs a job as the worker would and returns its state and
 what it said; `call_route(person, method, address)` calls a module route as that person;
 `stand_in(type, answer)` answers for an outside system; `deliver_calls()` sends the outside
@@ -41,6 +42,7 @@ from p42cloud.kernel.setup import set_up_database
 from p42cloud.modules.core import CORE
 from p42cloud.modules.install import install_modules
 from p42cloud.modules.manifest import Module
+from p42cloud.modules.registry import discover
 from p42cloud.sdk.client import Client
 from p42cloud.security.access.service import access_for
 from p42cloud.services.calls.service import deliver
@@ -57,6 +59,23 @@ _SERVER = ADMIN_URL.rsplit("/", 1)[0]
 _HOST = ADMIN_URL.rsplit("@", 1)[1].rsplit("/", 1)[0]
 
 type Acting = Callable[..., AbstractAsyncContextManager[Client]]
+
+
+def with_dependencies(modules: list[Module]) -> list[Module]:
+    """The modules and every module they depend on, from the module packages installed here: a
+    module's tests can't import another module, but get the ones it builds on installed too."""
+    available = {m.id: m for m in discover()}
+    found = {m.id: m for m in modules}
+    waiting = [other for m in modules for other in m.depends_on]
+    while waiting:
+        other = waiting.pop()
+        if other == "sys" or other in found:
+            continue
+        if other not in available:
+            raise RuntimeError(f"{other} is needed but its package isn't installed here.")
+        found[other] = available[other]
+        waiting += list(available[other].depends_on)
+    return list(found.values())
 
 
 @pytest.fixture(scope="session")
@@ -82,7 +101,7 @@ async def p42_installation(p42_modules: list[Module]) -> AsyncIterator[Settings]
         owner = create_engine(settings.owner_database_url)
         try:
             with working_as(Context(channel="install")):
-                await install_modules(owner, [CORE, *p42_modules])
+                await install_modules(owner, [CORE, *with_dependencies(p42_modules)])
         finally:
             await owner.dispose()
         yield settings

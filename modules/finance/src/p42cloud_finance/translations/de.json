@@ -1,0 +1,401 @@
+{
+ "language": "de",
+ "module": "finance",
+ "texts": [
+  {
+   "key": "sys.field|finance.booking.amount_main|label",
+   "english": "In the main currency",
+   "text": "In der Hauptwährung"
+  },
+  {
+   "key": "sys.field|finance.booking.amount|label",
+   "english": "Amount",
+   "text": "Betrag"
+  },
+  {
+   "key": "sys.field|finance.booking.capex|label",
+   "english": "Adds value (CAPEX)",
+   "text": "Wertvermehrend (CAPEX)"
+  },
+  {
+   "key": "sys.field|finance.booking.center|label",
+   "english": "Cost center",
+   "text": "Kostenstelle"
+  },
+  {
+   "key": "sys.field|finance.booking.cost_type|label",
+   "english": "Cost type",
+   "text": "Kostenart"
+  },
+  {
+   "key": "sys.field|finance.booking.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.field|finance.booking.date|label",
+   "english": "Date",
+   "text": "Datum"
+  },
+  {
+   "key": "sys.field|finance.booking.invoice_number|label",
+   "english": "Invoice number",
+   "text": "Rechnungsnummer"
+  },
+  {
+   "key": "sys.field|finance.booking.kind|choice:cost",
+   "english": "Cost",
+   "text": "Kosten"
+  },
+  {
+   "key": "sys.field|finance.booking.kind|choice:income",
+   "english": "Income",
+   "text": "Ertrag"
+  },
+  {
+   "key": "sys.field|finance.booking.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|finance.booking.main_currency|label",
+   "english": "Main currency",
+   "text": "Hauptwährung"
+  },
+  {
+   "key": "sys.field|finance.booking.note|label",
+   "english": "Note",
+   "text": "Notiz"
+  },
+  {
+   "key": "sys.field|finance.booking.order|label",
+   "english": "Order",
+   "text": "Auftrag"
+  },
+  {
+   "key": "sys.field|finance.booking.paid|label",
+   "english": "Paid on",
+   "text": "Bezahlt am"
+  },
+  {
+   "key": "sys.field|finance.booking.partner|label",
+   "english": "Partner",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.field|finance.booking.profit_center|label",
+   "english": "Profit center",
+   "text": "Profitcenter"
+  },
+  {
+   "key": "sys.field|finance.booking.text|label",
+   "english": "Text",
+   "text": "Text"
+  },
+  {
+   "key": "sys.field|finance.rental.active|label",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|finance.rental.center|label",
+   "english": "Flat",
+   "text": "Wohnung"
+  },
+  {
+   "key": "sys.field|finance.rental.contract|label",
+   "english": "Lease",
+   "text": "Mietvertrag"
+  },
+  {
+   "key": "sys.field|finance.statement.advances|label",
+   "english": "Advances paid",
+   "text": "Bezahlte Akonti"
+  },
+  {
+   "key": "sys.field|finance.statement.costs|label",
+   "english": "Running costs",
+   "text": "Nebenkosten"
+  },
+  {
+   "key": "sys.field|finance.statement.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.field|finance.statement.due|label",
+   "english": "To pay (or refund, if negative)",
+   "text": "Zu bezahlen (negativ: Rückerstattung)"
+  },
+  {
+   "key": "sys.field|finance.statement.end|label",
+   "english": "To",
+   "text": "Bis"
+  },
+  {
+   "key": "sys.field|finance.statement.note|label",
+   "english": "Note",
+   "text": "Notiz"
+  },
+  {
+   "key": "sys.field|finance.statement.rental|label",
+   "english": "Rental",
+   "text": "Mietverhältnis"
+  },
+  {
+   "key": "sys.field|finance.statement.start|label",
+   "english": "From",
+   "text": "Von"
+  },
+  {
+   "key": "sys.field|finance.statement.state|choice:draft",
+   "english": "Draft",
+   "text": "Entwurf"
+  },
+  {
+   "key": "sys.field|finance.statement.state|choice:final",
+   "english": "Final",
+   "text": "Endgültig"
+  },
+  {
+   "key": "sys.field|finance.statement.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|finance.statement_line.amount|label",
+   "english": "Amount",
+   "text": "Betrag"
+  },
+  {
+   "key": "sys.field|finance.statement_line.cost_type|label",
+   "english": "Cost type",
+   "text": "Kostenart"
+  },
+  {
+   "key": "sys.field|finance.statement_line.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.field|finance.statement_line.kind|choice:advance",
+   "english": "Advance",
+   "text": "Akonto"
+  },
+  {
+   "key": "sys.field|finance.statement_line.kind|choice:cost",
+   "english": "Running cost",
+   "text": "Nebenkosten"
+  },
+  {
+   "key": "sys.field|finance.statement_line.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|finance.statement_line.statement|label",
+   "english": "Statement",
+   "text": "Abrechnung"
+  },
+  {
+   "key": "sys.field|finance.statement_line.text|label",
+   "english": "Text",
+   "text": "Text"
+  },
+  {
+   "key": "sys.form_view|finance.booking|section:1",
+   "english": "Booking",
+   "text": "Buchung"
+  },
+  {
+   "key": "sys.form_view|finance.booking|section:2",
+   "english": "Amount",
+   "text": "Betrag"
+  },
+  {
+   "key": "sys.form_view|finance.booking|section:3",
+   "english": "Booked on",
+   "text": "Gebucht auf"
+  },
+  {
+   "key": "sys.form_view|finance.booking|section:4",
+   "english": "Worked out",
+   "text": "Berechnet"
+  },
+  {
+   "key": "sys.form_view|finance.booking|section:5",
+   "english": "Note",
+   "text": "Notiz"
+  },
+  {
+   "key": "sys.form_view|finance.rental|section:1",
+   "english": "Rental",
+   "text": "Mietverhältnis"
+  },
+  {
+   "key": "sys.form_view|finance.statement_line|section:1",
+   "english": "Statement line",
+   "text": "Abrechnungsposition"
+  },
+  {
+   "key": "sys.form_view|finance.statement|section:1",
+   "english": "Statement",
+   "text": "Abrechnung"
+  },
+  {
+   "key": "sys.form_view|finance.statement|section:2",
+   "english": "Result",
+   "text": "Ergebnis"
+  },
+  {
+   "key": "sys.form_view|finance.statement|section:3",
+   "english": "Note",
+   "text": "Notiz"
+  },
+  {
+   "key": "sys.list_view|finance.booking|label",
+   "english": "Bookings",
+   "text": "Buchungen"
+  },
+  {
+   "key": "sys.list_view|finance.rental|label",
+   "english": "Rentals",
+   "text": "Mietverhältnisse"
+  },
+  {
+   "key": "sys.list_view|finance.statement_line|label",
+   "english": "Statement lines",
+   "text": "Abrechnungspositionen"
+  },
+  {
+   "key": "sys.list_view|finance.statement|label",
+   "english": "Running-cost statements",
+   "text": "Nebenkostenabrechnungen"
+  },
+  {
+   "key": "sys.module|finance|category_title",
+   "english": "Finance",
+   "text": "Finanzen"
+  },
+  {
+   "key": "sys.module|finance|summary",
+   "english": "Bookings with their invoices, rentals and running-cost statements.",
+   "text": "Buchungen mit ihren Rechnungen, Mietverhältnisse und Nebenkostenabrechnungen."
+  },
+  {
+   "key": "sys.module|finance|title",
+   "english": "Finance",
+   "text": "Finanzen"
+  },
+  {
+   "key": "sys.nav_item|finance.bookings|label",
+   "english": "Bookings",
+   "text": "Buchungen"
+  },
+  {
+   "key": "sys.nav_item|finance.bookings|section",
+   "english": "Finance",
+   "text": "Finanzen"
+  },
+  {
+   "key": "sys.nav_item|finance.rentals|label",
+   "english": "Rentals",
+   "text": "Mietverhältnisse"
+  },
+  {
+   "key": "sys.nav_item|finance.rentals|section",
+   "english": "Finance",
+   "text": "Finanzen"
+  },
+  {
+   "key": "sys.nav_item|finance.statements|label",
+   "english": "Running-cost statements",
+   "text": "Nebenkostenabrechnungen"
+  },
+  {
+   "key": "sys.nav_item|finance.statements|section",
+   "english": "Finance",
+   "text": "Finanzen"
+  },
+  {
+   "key": "sys.role|finance.bookkeeper|description",
+   "english": "Books costs and income, keeps rentals, works out running-cost statements.",
+   "text": "Bucht Kosten und Erträge, pflegt Mietverhältnisse, erstellt Nebenkostenabrechnungen."
+  },
+  {
+   "key": "sys.role|finance.bookkeeper|label",
+   "english": "Bookkeeper",
+   "text": "Buchhaltung"
+  },
+  {
+   "key": "sys.role|finance.reader|description",
+   "english": "Reads bookings, rentals and statements.",
+   "text": "Liest Buchungen, Mietverhältnisse und Abrechnungen."
+  },
+  {
+   "key": "sys.role|finance.reader|label",
+   "english": "Finance reader",
+   "text": "Finanzen lesen"
+  },
+  {
+   "key": "sys.state_transition|finance.finalize|label",
+   "english": "Make final",
+   "text": "Abschliessen"
+  },
+  {
+   "key": "sys.table|finance.booking|label",
+   "english": "Booking",
+   "text": "Buchung"
+  },
+  {
+   "key": "sys.table|finance.booking|label_plural",
+   "english": "Bookings",
+   "text": "Buchungen"
+  },
+  {
+   "key": "sys.table|finance.rental|label",
+   "english": "Rental",
+   "text": "Mietverhältnis"
+  },
+  {
+   "key": "sys.table|finance.rental|label_plural",
+   "english": "Rentals",
+   "text": "Mietverhältnisse"
+  },
+  {
+   "key": "sys.table|finance.statement_line|label",
+   "english": "Statement line",
+   "text": "Abrechnungsposition"
+  },
+  {
+   "key": "sys.table|finance.statement_line|label_plural",
+   "english": "Statement lines",
+   "text": "Abrechnungspositionen"
+  },
+  {
+   "key": "sys.table|finance.statement|label",
+   "english": "Running-cost statement",
+   "text": "Nebenkostenabrechnung"
+  },
+  {
+   "key": "sys.table|finance.statement|label_plural",
+   "english": "Running-cost statements",
+   "text": "Nebenkostenabrechnungen"
+  },
+  {
+   "key": "sys.ui_action|finance.move_finalize|confirm",
+   "english": "Make the statement final? It isn't worked out again afterwards.",
+   "text": "Die Abrechnung abschliessen? Sie wird danach nicht mehr neu berechnet."
+  },
+  {
+   "key": "sys.ui_action|finance.move_finalize|label",
+   "english": "Make final",
+   "text": "Abschliessen"
+  },
+  {
+   "key": "sys.ui_action|finance.work_out|label",
+   "english": "Work out",
+   "text": "Berechnen"
+  }
+ ]
+}
