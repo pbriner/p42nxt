@@ -12,6 +12,7 @@ members = [
     "p42cloud-costing",
     "p42cloud-dca",
     "p42cloud-hello",
+    "p42cloud-partners",
 ]
 
 [[package]]
@@ -664,6 +665,29 @@ dev = [
 name = "p42cloud-hello"
 version = "0.7.0"
 source = { editable = "modules/hello" }
+dependencies = [
+    { name = "p42cloud" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "p42cloud", editable = "backend" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+]
+
+[[package]]
+name = "p42cloud-partners"
+version = "0.1.0"
+source = { editable = "modules/partners" }
 dependencies = [
     { name = "p42cloud" },
 ]

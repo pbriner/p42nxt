@@ -1,0 +1,431 @@
+{
+ "language": "de",
+ "module": "partners",
+ "texts": [
+  {
+   "key": "sys.field|partners.contact.email|label",
+   "english": "Email",
+   "text": "E-Mail"
+  },
+  {
+   "key": "sys.field|partners.contact.main|label",
+   "english": "Main contact",
+   "text": "Hauptkontakt"
+  },
+  {
+   "key": "sys.field|partners.contact.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|partners.contact.partner|label",
+   "english": "Partner",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.field|partners.contact.phone|label",
+   "english": "Phone",
+   "text": "Telefon"
+  },
+  {
+   "key": "sys.field|partners.contact.role|label",
+   "english": "Role",
+   "text": "Funktion"
+  },
+  {
+   "key": "sys.field|partners.contract.advance|label",
+   "english": "Advance for running costs",
+   "text": "Akonto Nebenkosten"
+  },
+  {
+   "key": "sys.field|partners.contract.amount|label",
+   "english": "Amount",
+   "text": "Betrag"
+  },
+  {
+   "key": "sys.field|partners.contract.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.field|partners.contract.description|label",
+   "english": "What it covers",
+   "text": "Was er umfasst"
+  },
+  {
+   "key": "sys.field|partners.contract.end|label",
+   "english": "End",
+   "text": "Ende"
+  },
+  {
+   "key": "sys.field|partners.contract.kind|choice:insurance",
+   "english": "Insurance",
+   "text": "Versicherung"
+  },
+  {
+   "key": "sys.field|partners.contract.kind|choice:lease",
+   "english": "Lease",
+   "text": "Mietvertrag"
+  },
+  {
+   "key": "sys.field|partners.contract.kind|choice:other",
+   "english": "Other",
+   "text": "Andere"
+  },
+  {
+   "key": "sys.field|partners.contract.kind|choice:service",
+   "english": "Service",
+   "text": "Dienstleistung"
+  },
+  {
+   "key": "sys.field|partners.contract.kind|choice:supply",
+   "english": "Supply",
+   "text": "Lieferung"
+  },
+  {
+   "key": "sys.field|partners.contract.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|partners.contract.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|partners.contract.notice_months|label",
+   "english": "Notice (months)",
+   "text": "Kündigungsfrist (Monate)"
+  },
+  {
+   "key": "sys.field|partners.contract.partner|label",
+   "english": "Partner",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.field|partners.contract.period|choice:month",
+   "english": "Monthly",
+   "text": "Monatlich"
+  },
+  {
+   "key": "sys.field|partners.contract.period|choice:once",
+   "english": "Once",
+   "text": "Einmalig"
+  },
+  {
+   "key": "sys.field|partners.contract.period|choice:quarter",
+   "english": "Quarterly",
+   "text": "Vierteljährlich"
+  },
+  {
+   "key": "sys.field|partners.contract.period|choice:year",
+   "english": "Yearly",
+   "text": "Jährlich"
+  },
+  {
+   "key": "sys.field|partners.contract.period|label",
+   "english": "Every",
+   "text": "Zahlung"
+  },
+  {
+   "key": "sys.field|partners.contract.start|label",
+   "english": "Start",
+   "text": "Beginn"
+  },
+  {
+   "key": "sys.field|partners.contract.state|choice:active",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|partners.contract.state|choice:draft",
+   "english": "Draft",
+   "text": "Entwurf"
+  },
+  {
+   "key": "sys.field|partners.contract.state|choice:ended",
+   "english": "Ended",
+   "text": "Beendet"
+  },
+  {
+   "key": "sys.field|partners.contract.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|partners.partner.active|label",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|partners.partner.city|label",
+   "english": "City",
+   "text": "Ort"
+  },
+  {
+   "key": "sys.field|partners.partner.country|label",
+   "english": "Country",
+   "text": "Land"
+  },
+  {
+   "key": "sys.field|partners.partner.customer|label",
+   "english": "Customer",
+   "text": "Kunde"
+  },
+  {
+   "key": "sys.field|partners.partner.email|label",
+   "english": "Email",
+   "text": "E-Mail"
+  },
+  {
+   "key": "sys.field|partners.partner.iban|label",
+   "english": "IBAN",
+   "text": "IBAN"
+  },
+  {
+   "key": "sys.field|partners.partner.kind|choice:company",
+   "english": "Company",
+   "text": "Firma"
+  },
+  {
+   "key": "sys.field|partners.partner.kind|choice:person",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|partners.partner.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|partners.partner.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|partners.partner.notes|label",
+   "english": "Notes",
+   "text": "Notizen"
+  },
+  {
+   "key": "sys.field|partners.partner.phone|label",
+   "english": "Phone",
+   "text": "Telefon"
+  },
+  {
+   "key": "sys.field|partners.partner.postal_code|label",
+   "english": "Postal code",
+   "text": "PLZ"
+  },
+  {
+   "key": "sys.field|partners.partner.street|label",
+   "english": "Street",
+   "text": "Strasse"
+  },
+  {
+   "key": "sys.field|partners.partner.supplier|label",
+   "english": "Supplier",
+   "text": "Lieferant"
+  },
+  {
+   "key": "sys.field|partners.partner.tenant|label",
+   "english": "Tenant",
+   "text": "Mieter"
+  },
+  {
+   "key": "sys.field|partners.partner.vat_number|label",
+   "english": "VAT number",
+   "text": "MWST-Nummer"
+  },
+  {
+   "key": "sys.field|partners.partner.website|label",
+   "english": "Website",
+   "text": "Website"
+  },
+  {
+   "key": "sys.form_view|partners.contact|section:1",
+   "english": "Contact person",
+   "text": "Kontaktperson"
+  },
+  {
+   "key": "sys.form_view|partners.contract|section:1",
+   "english": "Contract",
+   "text": "Vertrag"
+  },
+  {
+   "key": "sys.form_view|partners.contract|section:2",
+   "english": "Period",
+   "text": "Laufzeit"
+  },
+  {
+   "key": "sys.form_view|partners.contract|section:3",
+   "english": "Amounts",
+   "text": "Beträge"
+  },
+  {
+   "key": "sys.form_view|partners.contract|section:4",
+   "english": "What it covers",
+   "text": "Was er umfasst"
+  },
+  {
+   "key": "sys.form_view|partners.partner|section:1",
+   "english": "Partner",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.form_view|partners.partner|section:2",
+   "english": "Contact",
+   "text": "Kontakt"
+  },
+  {
+   "key": "sys.form_view|partners.partner|section:3",
+   "english": "Address",
+   "text": "Adresse"
+  },
+  {
+   "key": "sys.form_view|partners.partner|section:4",
+   "english": "Payment and tax",
+   "text": "Zahlung und Steuern"
+  },
+  {
+   "key": "sys.form_view|partners.partner|section:5",
+   "english": "Notes",
+   "text": "Notizen"
+  },
+  {
+   "key": "sys.list_view|partners.contact|label",
+   "english": "Contact persons",
+   "text": "Kontaktpersonen"
+  },
+  {
+   "key": "sys.list_view|partners.contract|label",
+   "english": "Contracts",
+   "text": "Verträge"
+  },
+  {
+   "key": "sys.list_view|partners.partner|label",
+   "english": "Partners",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.module|partners|category_title",
+   "english": "Partners",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.module|partners|summary",
+   "english": "Suppliers, customers and tenants, their contact persons and contracts.",
+   "text": "Lieferanten, Kunden und Mieter, ihre Kontaktpersonen und Verträge."
+  },
+  {
+   "key": "sys.module|partners|title",
+   "english": "Partners",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.nav_item|partners.contacts|label",
+   "english": "Contact persons",
+   "text": "Kontaktpersonen"
+  },
+  {
+   "key": "sys.nav_item|partners.contacts|section",
+   "english": "Partners",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.nav_item|partners.contracts|label",
+   "english": "Contracts",
+   "text": "Verträge"
+  },
+  {
+   "key": "sys.nav_item|partners.contracts|section",
+   "english": "Partners",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.nav_item|partners.partners|label",
+   "english": "Partners",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.nav_item|partners.partners|section",
+   "english": "Partners",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.role|partners.manager|description",
+   "english": "Keeps partners, their contact persons and contracts.",
+   "text": "Pflegt Partner, ihre Kontaktpersonen und Verträge."
+  },
+  {
+   "key": "sys.role|partners.manager|label",
+   "english": "Partner manager",
+   "text": "Partnerverwaltung"
+  },
+  {
+   "key": "sys.role|partners.reader|description",
+   "english": "Reads partners and contracts: to book and plan with them.",
+   "text": "Liest Partner und Verträge, um damit zu buchen und zu planen."
+  },
+  {
+   "key": "sys.role|partners.reader|label",
+   "english": "Partner reader",
+   "text": "Partner lesen"
+  },
+  {
+   "key": "sys.state_transition|partners.activate|label",
+   "english": "Put in force",
+   "text": "In Kraft setzen"
+  },
+  {
+   "key": "sys.state_transition|partners.end_contract|label",
+   "english": "End",
+   "text": "Beenden"
+  },
+  {
+   "key": "sys.table|partners.contact|label",
+   "english": "Contact person",
+   "text": "Kontaktperson"
+  },
+  {
+   "key": "sys.table|partners.contact|label_plural",
+   "english": "Contact persons",
+   "text": "Kontaktpersonen"
+  },
+  {
+   "key": "sys.table|partners.contract|label",
+   "english": "Contract",
+   "text": "Vertrag"
+  },
+  {
+   "key": "sys.table|partners.contract|label_plural",
+   "english": "Contracts",
+   "text": "Verträge"
+  },
+  {
+   "key": "sys.table|partners.partner|label",
+   "english": "Partner",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.table|partners.partner|label_plural",
+   "english": "Partners",
+   "text": "Partner"
+  },
+  {
+   "key": "sys.ui_action|partners.move_activate|label",
+   "english": "Put in force",
+   "text": "In Kraft setzen"
+  },
+  {
+   "key": "sys.ui_action|partners.move_end_contract|confirm",
+   "english": "End the contract? It stays on record.",
+   "text": "Den Vertrag beenden? Er bleibt erhalten."
+  },
+  {
+   "key": "sys.ui_action|partners.move_end_contract|label",
+   "english": "End",
+   "text": "Beenden"
+  }
+ ]
+}

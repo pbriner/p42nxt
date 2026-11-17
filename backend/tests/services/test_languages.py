@@ -238,7 +238,7 @@ async def test_over_http_administrators_export_and_import(
     assert (await _label(owner))[LANG] == "Personne"
 
 
-@pytest.mark.parametrize("module", ["sys", "dca", "costing"])
+@pytest.mark.parametrize("module", ["sys", "dca", "costing", "partners"])
 async def test_german_is_complete_for_the_core_and_our_modules(
     owner: AsyncEngine, module: str
 ) -> None:
