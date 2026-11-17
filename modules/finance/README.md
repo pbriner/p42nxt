@@ -1,6 +1,6 @@
 # Finance (`finance`)
 
-Version: 0.1.0 · Last updated: 2026-11-17
+Version: 0.2.0 · Last updated: 2026-11-17
 
 ## Purpose
 
@@ -25,6 +25,8 @@ Core dependency: no
 | `finance.rental` | A lease for a flat | contract (a lease), center (a cost center), active | |
 | `finance.statement` | A running-cost statement | rental, start, end, state; worked out: currency, costs, advances, due | Flow draft → final; files and comments |
 | `finance.statement_line` | One line of it | statement, kind (cost, advance), cost_type, text, currency, amount | Written by Work out |
+| `finance.asset` | What a CAPEX order became | name, order, in_use, cost_type; worked out: center, useful_life, currency, value, yearly, written_off, book_value | Comments |
+| `finance.write_off` | One year's write-off | asset, year, currency, amount, booking | Unique per asset and year |
 
 ## Roles and access
 
@@ -35,17 +37,19 @@ Core dependency: no
 
 ## Views, navigation and dashboards
 
-Lists and forms for bookings, rentals and statements (a statement's form lists its lines); the
-navigator's section "Finance".
+Lists and forms for bookings, rentals, statements (with their lines) and assets (with their
+write-offs); the navigator's section "Finance". The dashboard `finance`: result by profit center
+(a route), costs by cost type, cost center and month, adding value this year, unpaid invoices.
 
 ## Workflows, approvals and jobs
 
 A statement: draft → final (Make final). The action **Work out** (drafts only) writes its lines
-and totals. No jobs.
+and totals. The action **Write off a year** on an asset books its depreciation. No jobs.
 
 ## API
 
-Only the records API and the action `finance.work_out`.
+The records API, the actions `finance.work_out` and `finance.write_off`, and the route
+`GET /api/v1/finance/widget/results` (income less running costs this year per profit center).
 
 ## Outside systems
 

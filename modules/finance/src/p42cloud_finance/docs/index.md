@@ -36,6 +36,23 @@ A statement covers a rental and a period. **Work out** collects:
 The result is **to pay** (or to refund, if negative). Working it out again replaces its lines.
 **Make final** when it's sent: then it isn't worked out again.
 
+## Assets
+
+What an order **adding value** became: a roof, a heating, new software. An asset names its order,
+when it came **into use**, and the cost type its depreciation is booked as. Its **value** is what
+the order's CAPEX bookings cost (in the main currency), written off evenly over the order's useful
+life: the **yearly** amount.
+
+**Write off a year** books that year's depreciation as an ordinary cost on the asset's cost center
+(on 31 December), so results show it: a part year by the months in use, once per year, never more
+than the **book value** left.
+
+## Dashboard
+
+Finance → **Dashboard**: the result of each profit center this year (income less running costs),
+costs by cost type, by cost center and by month, what was spent adding value this year, and the
+invoices not paid yet.
+
 ## Who may do what
 
 - **Bookkeeper**: books, keeps rentals, works out statements; reads Costing and Partners.
