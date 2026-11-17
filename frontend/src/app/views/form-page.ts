@@ -22,6 +22,7 @@ import { firstValueFrom } from 'rxjs';
 import { ActionDef, Actions } from '../core/actions';
 import { Api, Problem, describe } from '../core/api';
 import { FieldInfo, TableInfo, shown, textIn } from '../core/format';
+import { FormView, formViewOf } from '../core/form-views';
 import { I18n } from '../core/i18n';
 import { FormRule, Rules, effects } from '../core/rules';
 import { Session } from '../core/session';
@@ -41,18 +42,6 @@ import { FieldDisplay } from './field-display';
 import { Related, RelatedTabs } from './related-tabs';
 
 type Values = Record<string, unknown>;
-
-interface FormSection {
-  title: unknown;
-  fields: string[];
-  columns: number;
-}
-
-interface FormView {
-  sections: FormSection[];
-  related: { table: string; field: string }[] | null;
-  related_auto: boolean;
-}
 
 interface Conflict {
   current: Values;
@@ -315,28 +304,8 @@ export class FormPage {
     return values;
   }
 
-  private async formOf(info: TableInfo): Promise<FormView> {
-    try {
-      const { data } = await this.api.get<{ records: FormView[] }>('/api/v1/sys/form_view', {
-        query: { 'filter[name]': info.table, count: false },
-      });
-      if (data.records[0]) {
-        return data.records[0];
-      }
-    } catch {
-      // Made from the fields below.
-    }
-    return {
-      sections: [
-        {
-          title: info.label,
-          fields: info.fields.filter((f) => !f.system).map((f) => f.name),
-          columns: 2,
-        },
-      ],
-      related: null,
-      related_auto: true,
-    };
+  private formOf(info: TableInfo): Promise<FormView> {
+    return formViewOf(this.api, info);
   }
 
   protected visible(field: FieldInfo): boolean {

@@ -39,7 +39,10 @@ Core dependency: no
 
 Lists and forms for bookings, rentals, statements (with their lines) and assets (with their
 write-offs); the navigator's section "Finance". The dashboard `finance`: result by profit center
-(a route), costs by cost type, cost center and month, adding value this year, unpaid invoices.
+(a route), running costs and adding value by profit center, adding value by order, costs by
+supplier (these four with a time range), costs by cost type, cost center and month, adding value
+this year, unpaid invoices. The list widgets take the page's center (`param=("center",
+"costing.center")`): that center and everything under it.
 
 ## Workflows, approvals and jobs
 

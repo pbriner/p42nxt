@@ -2,6 +2,17 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.45.0
+
+- A chart grouped by something other than a date can name a date field (`Widget(dated=…)`): it
+  then offers the last 3 months, the last year or all of it, like a chart over time.
+- A widget's choice (`Widget(param=…)`) also works for figures and charts read from a list: the
+  chosen record filters the widget's reference field of that name, and in a tree the record and
+  everything under it. While nothing is chosen they show everything; the page offers **All**.
+  Opening a chart's bar or the list keeps the choice and the time range.
+- In a form being edited, a chosen reference's icon opens that record: a click shows it in a
+  preview (read only, **Open** goes to its page), Ctrl, Cmd or middle click opens it in a new tab.
+
 ## 0.44.0
 
 - A module's record offers **Give its roles to Administrators**: the roles the group Administrators

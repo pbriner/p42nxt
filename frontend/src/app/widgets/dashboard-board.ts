@@ -80,14 +80,16 @@ export class DashboardBoard {
   /** What this module's own widgets need chosen (a plan): offered above them, kept in the
    * address. Other widgets about a record keep their own choice (`perItem`). */
   protected readonly choices = computed(() => {
-    const found = new Map<string, string>();
+    const found = new Map<string, { table: string; optional: boolean }>();
     for (const item of this.items()) {
       const w = this.def(item.widget);
       if (w?.param && w.param_table && this.onPage(w)) {
-        found.set(w.param, w.param_table);
+        // Everything is shown while nothing is picked, unless a source widget needs a record.
+        const optional = (found.get(w.param)?.optional ?? true) && !w.source;
+        found.set(w.param, { table: w.param_table, optional });
       }
     }
-    return [...found].map(([param, table]) => ({ param, table }));
+    return [...found].map(([param, c]) => ({ param, ...c }));
   });
   /** The records offered per table: for the choices above, and for each card's own. */
   protected readonly options = signal<Record<string, { label: string; records: Named[] }>>({});
@@ -101,11 +103,12 @@ export class DashboardBoard {
     }
     return [...found].sort();
   });
-  /** The chosen records: from the address, else the first one offered. */
+  /** The chosen records: from the address, else the first one offered (or all of them). */
   protected readonly params = computed(() => {
     const chosen: Record<string, string> = {};
-    for (const { param, table } of this.choices()) {
-      const value = this.query()?.get(param) ?? this.options()[table]?.records[0]?.sys_id;
+    for (const { param, table, optional } of this.choices()) {
+      const value =
+        this.query()?.get(param) ?? (optional ? null : this.options()[table]?.records[0]?.sys_id);
       if (value) {
         chosen[param] = value;
       }
@@ -154,7 +157,7 @@ export class DashboardBoard {
   protected async pickFor(index: number, w: WidgetDef, value: string): Promise<void> {
     const update = (all: Placed[]): Placed[] =>
       all.map((item, i) =>
-        i === index ? { ...item, params: { ...item.params, [w.param!]: value } } : item,
+        i === index ? { ...item, params: this.withChoice(item.params, w.param!, value) } : item,
       );
     if (this.editing()) {
       this.draft.update(update);
@@ -177,9 +180,19 @@ export class DashboardBoard {
     }
   }
 
+  private withChoice(
+    params: Record<string, string> | undefined,
+    param: string,
+    value: string,
+  ): Record<string, string> {
+    const { [param]: _old, ...rest } = params ?? {};
+    return value ? { ...rest, [param]: value } : rest;
+  }
+
+  /** `''`: all of them (the choice leaves the address). */
   protected choose(param: string, value: string): void {
     void this.router.navigate([], {
-      queryParams: { [param]: value },
+      queryParams: { [param]: value || null },
       queryParamsHandling: 'merge',
     });
   }

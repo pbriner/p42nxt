@@ -578,6 +578,11 @@
    "text": "Kosten nach Monat"
   },
   {
+   "key": "sys.widget|finance.costs_by_partner|title",
+   "english": "Costs by supplier",
+   "text": "Kosten nach Lieferant"
+  },
+  {
    "key": "sys.widget|finance.costs_by_type|title",
    "english": "Costs by cost type",
    "text": "Kosten nach Kostenart"
@@ -588,9 +593,24 @@
    "text": "Ergebnis nach Profitcenter"
   },
   {
+   "key": "sys.widget|finance.running_by_profit_center|title",
+   "english": "Running costs by profit center",
+   "text": "Laufende Kosten nach Profitcenter"
+  },
+  {
    "key": "sys.widget|finance.unpaid|title",
    "english": "Unpaid invoices",
    "text": "Offene Rechnungen"
+  },
+  {
+   "key": "sys.widget|finance.value_by_order|title",
+   "english": "Adding value by order",
+   "text": "Wertvermehrend nach Auftrag"
+  },
+  {
+   "key": "sys.widget|finance.value_by_profit_center|title",
+   "english": "Adding value by profit center",
+   "text": "Wertvermehrend nach Profitcenter"
   }
  ]
 }

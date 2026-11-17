@@ -26,7 +26,10 @@
         @if (options()[choice.table]; as offered) {
           <mat-form-field appearance="outline" class="choice">
             <mat-label>{{ offered.label }}</mat-label>
-            <mat-select [value]="params()[choice.param]" (selectionChange)="choose(choice.param, $event.value)">
+            <mat-select [value]="params()[choice.param] ?? ''" (selectionChange)="choose(choice.param, $event.value)">
+              @if (choice.optional) {
+                <mat-option value="">{{ i18n.t('dash.all') }}</mat-option>
+              }
               @for (record of offered.records; track record.sys_id) {
                 <mat-option [value]="record.sys_id">{{ record.name }}</mat-option>
               }
@@ -135,10 +138,13 @@
             <mat-form-field appearance="outline" class="own-choice" subscriptSizing="dynamic">
               <mat-label>{{ offered.label }}</mat-label>
               <mat-select
-                [value]="item.params?.[w.param!]"
+                [value]="item.params?.[w.param!] ?? ''"
                 [aria-label]="i18n.t('dash.choice_for', { what: offered.label, title: w.title })"
                 (selectionChange)="pickFor(i, w, $event.value)"
               >
+                @if (!w.source) {
+                  <mat-option value="">{{ i18n.t('dash.all') }}</mat-option>
+                }
                 @for (record of offered.records; track record.sys_id) {
                   <mat-option [value]="record.sys_id">{{ record.name }}</mat-option>
                 }

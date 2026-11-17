@@ -80,6 +80,8 @@ export class WidgetCard {
   protected readonly range = signal<Range>('all');
   protected readonly answer = signal<SourceAnswer | null>(null);
   private viewFilter: unknown = null;
+  /** The page's choice as a condition on the widget's field (none while nothing is picked). */
+  private chosen: unknown = null;
   private viewSort: string | null = null;
 
   protected readonly accent = computed(() => `var(--chart-${this.widget().accent ?? 1})`);
@@ -87,8 +89,13 @@ export class WidgetCard {
     if (this.widget().source) {
       return false;
     }
-    const f = this.table()?.fields.find((x) => x.name === this.widget().group);
-    return f?.kind === 'date' || f?.kind === 'datetime';
+    return this.rangeField() !== null;
+  });
+  /** The date field the time range applies to: the chart's own dates, else its `dated`. */
+  private readonly rangeField = computed(() => {
+    const w = this.widget();
+    const f = this.table()?.fields.find((x) => x.name === w.group);
+    return f?.kind === 'date' || f?.kind === 'datetime' ? w.group : w.dated;
   });
   protected readonly subtitle = computed(() => {
     const w = this.widget();
@@ -149,6 +156,7 @@ export class WidgetCard {
       this.table.set(info);
       this.viewFilter = view?.filter ?? null;
       this.viewSort = view?.sort?.join(',') ?? null;
+      this.chosen = await this.choice(w);
       if (w.source) {
         await this.fromSource(w);
       } else if (w.kind === 'figure') {
@@ -165,8 +173,20 @@ export class WidgetCard {
     }
   }
 
+  /** A widget that isn't a source filters its field by the page's choice: in a tree, the
+   * chosen record and everything under it. */
+  private async choice(w: WidgetDef): Promise<unknown> {
+    const value = w.param && !w.source ? this.params()[w.param] : null;
+    if (!value) {
+      return null;
+    }
+    const target = await this.tables.describe(w.param_table!);
+    const tree = target.parent !== null;
+    return { field: w.param, op: tree ? 'within' : 'eq', value };
+  }
+
   private where(w: WidgetDef, ...more: unknown[]): string | null {
-    const all = and(this.viewFilter, w.filter, ...more);
+    const all = and(this.viewFilter, w.filter, this.chosen, ...more);
     return all ? JSON.stringify(all) : null;
   }
 
@@ -224,13 +244,14 @@ export class WidgetCard {
     const since = RANGES[this.range()];
     const field = info.fields.find((f) => f.name === w.group);
     const dated = field?.kind === 'date' || field?.kind === 'datetime';
+    const over = this.rangeField();
     const totals = await this.dashboards.totals(w.table!, {
       measure: w.measure,
       field: w.field,
       group: w.group,
       period: w.period,
       limit: LIMITS[kind],
-      where: this.where(w, dated && since ? { field: w.group, op: 'gte', value: since } : null),
+      where: this.where(w, over && since ? { field: over, op: 'gte', value: since } : null),
     });
     // Colours follow the entity: a choice's place in its list, else the key's order.
     const order =
@@ -319,7 +340,7 @@ export class WidgetCard {
       const [where, search] = link.split('?');
       return { commands: [where!], query: Object.fromEntries(new URLSearchParams(search ?? '')) };
     }
-    return { commands: ['/list', w.list ?? ''], query: filterQuery(w.filter) };
+    return { commands: ['/list', w.list ?? ''], query: filterQuery(and(w.filter, this.chosen)) };
   }
 
   protected open(point: Point): void {
@@ -327,7 +348,14 @@ export class WidgetCard {
     if (!point.link || !w.group) {
       return;
     }
-    const filter = and(w.filter, { field: w.group, op: 'eq', value: point.key });
+    const since = RANGES[this.range()];
+    const over = this.rangeField();
+    const filter = and(
+      w.filter,
+      this.chosen,
+      over && since && over !== w.group ? { field: over, op: 'gte', value: since } : null,
+      { field: w.group, op: 'eq', value: point.key },
+    );
     void this.router.navigate(['/list', w.list ?? ''], { queryParams: filterQuery(filter) });
   }
 

@@ -1,6 +1,7 @@
 import { Component, effect, inject, input, model, signal, untracked } from '@angular/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
@@ -22,9 +23,21 @@ const ICONS: Record<string, string> = {
   template: `
     <mat-form-field appearance="outline" class="field" [class.mat-form-field-invalid]="!!error()">
       <mat-label>{{ field().label }}</mat-label>
-      <span matIconPrefix class="material-symbols-outlined prefix" aria-hidden="true">{{
-        icon()
-      }}</span>
+      @if (opens()) {
+        <a
+          matIconPrefix
+          class="material-symbols-outlined prefix opens"
+          [href]="'/form/' + field().options.table + '/' + value()"
+          [attr.aria-label]="i18n.t('ref.open', { what: field().label, name: text() })"
+          [title]="i18n.t('ref.open', { what: field().label, name: text() })"
+          (click)="preview($event)"
+          >{{ icon() }}</a
+        >
+      } @else {
+        <span matIconPrefix class="material-symbols-outlined prefix" aria-hidden="true">{{
+          icon()
+        }}</span>
+      }
       <input
         matInput
         [required]="field().required"
@@ -70,11 +83,21 @@ const ICONS: Record<string, string> = {
       padding: 0 4px 0 12px;
       color: var(--mat-sys-on-surface-variant);
     }
+    .opens {
+      color: var(--mat-sys-primary);
+      text-decoration: none;
+      cursor: pointer;
+      border-radius: var(--app-radius-small);
+    }
+    .opens:focus-visible {
+      outline: 2px solid var(--mat-sys-primary);
+    }
   `,
 })
 export class ReferenceEditor implements FieldEditor {
   protected readonly i18n = inject(I18n);
   private readonly tables = inject(Tables);
+  private readonly dialog = inject(MatDialog);
   readonly field = input.required<FieldInfo>();
   readonly value = model<unknown>(null);
   readonly error = input<string | null>(null);
@@ -111,6 +134,27 @@ export class ReferenceEditor implements FieldEditor {
       this.name = name;
       this.text.set(name);
     }
+  }
+
+  /** A record is chosen, and the person may open it. */
+  protected opens(): boolean {
+    return !!this.value() && this.shown() !== this.i18n.t('ref.hidden');
+  }
+
+  /** A plain click previews it here; with a modifier the browser opens it (a new tab). */
+  protected async preview(event: MouseEvent): Promise<void> {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    event.preventDefault();
+    // Loaded when first used: the preview shows fields, which are this editor's neighbours.
+    const { RecordPreview } = await import('../../views/record-preview');
+    this.dialog.open(RecordPreview, {
+      data: { table: String(this.field().options.table), id: String(this.value()) },
+      width: '720px',
+      maxWidth: '100vw',
+      autoFocus: 'dialog',
+    });
   }
 
   protected icon(): string {

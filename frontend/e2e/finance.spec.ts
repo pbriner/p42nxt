@@ -104,6 +104,15 @@ test('an asset is written off a year, and the dashboard shows the costs', async 
     })
   ).sys_id;
 
+  // A referenced record opens as a preview, and from there on its own page.
+  await page.goto(`/form/costing.order/${order}`);
+  await page.getByRole('link', { name: `Open Center: House ${tag}` }).click();
+  const preview = await opened(page);
+  await expect(preview.getByRole('heading', { name: `Center House ${tag}` })).toBeVisible();
+  await expect(preview.getByText(`AH-${tag}`)).toBeVisible();
+  await preview.getByRole('button', { name: 'Open', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/form/costing.center/${house}`));
+
   await page.goto(`/form/finance.asset/${asset}`);
   await page.getByRole('button', { name: 'Write off a year' }).click();
   const dialog = await opened(page);
@@ -114,5 +123,13 @@ test('an asset is written off a year, and the dashboard shows the costs', async 
   await page.goto('/dashboard/finance');
   await expect(page.getByText('Result by profit center')).toBeVisible();
   await expect(page.getByText('Costs by cost type')).toBeVisible();
+  // One center at a time: the house and what's under it; the investment shows under its order.
+  const center = page.getByRole('combobox', { name: 'Center' });
+  await expect(center).toContainText('All');
+  await page.goto(`/dashboard/finance?center=${house}`); // the choice lives in the address
+  const byOrder = page.locator('mat-card', { hasText: 'Adding value by order' });
+  await expect(byOrder.getByText(`Roof ${tag}`)).toBeVisible();
+  await byOrder.getByRole('button', { name: '3M' }).click();
+  await expect(byOrder.getByText(`Roof ${tag}`)).toHaveCount(0); // booked in January 2026
   await noSidewaysScroll(page);
 });

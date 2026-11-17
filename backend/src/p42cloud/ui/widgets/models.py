@@ -58,6 +58,8 @@ WIDGET = Table(
         "target": Decimal("Target"),
         # A date field: a 12-month sparkline under the figure.
         "trend": String("Trend by", max_length=63),
+        # A date field: the chart offers the last 3 months, the last year or all of it.
+        "dated": String("Over time by", max_length=63),
         "sizes": Json("Sizes", required=True),
         "size": Choice("Size", {"s": "Small", "wide": "Wide", "large": "Large"}, required=True),
         "refresh": Integer("Refresh (seconds)"),
@@ -116,8 +118,10 @@ class Widget:
     # For what a list can't count or sum: a GET route of the module (/widget/profit) answers
     # the figure or the points. The list still decides who may see the widget.
     source: str | None = None
-    # A source widget about one record the person picks (a plan): its name in the query and the
-    # table it's picked from, `("plan", "dca.plan")`. The page offers the choice.
+    # A widget about one record the person picks: its name and the table it's picked from,
+    # `("plan", "dca.plan")`. The page offers the choice. A source widget gets it in the query
+    # and needs it; any other widget filters its reference field of that name by it (in a tree:
+    # the record and everything under it), and shows everything while nothing is picked.
     param: tuple[str, str] | None = None
     filter: Any = None
     measure: Literal["count", "sum", "avg", "min", "max"] = "count"
@@ -135,3 +139,6 @@ class Widget:
     size: str = "s"
     refresh: int | None = None
     shown: Literal["available", "default", "mandatory"] = "default"
+    # A date field of a chart grouped by something else: the chart offers the last 3 months,
+    # the last year or all of it (a chart grouped by a date offers it anyway).
+    dated: str | None = None

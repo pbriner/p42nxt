@@ -41,6 +41,7 @@ def _field_problems(
             "A field to group by.",
         ),
         (widget.trend, ("date", "datetime"), "A date field for the trend."),
+        (widget.dated, ("date", "datetime"), "A date field for the time range."),
     )
     for name, kinds, message in checks:
         if name is None:
@@ -53,6 +54,13 @@ def _field_problems(
             Filter(catalog, Situation(uuid.UUID(int=0)), Query()).sql(table, "t", widget.filter)
         except Problem as problem:
             found += [FieldError(where, e.code, e.message) for e in problem.errors]
+    if widget.param is not None:
+        name, target = widget.param
+        f = field_of(table, name)
+        if f is None or f.type.kind != "reference" or f.field.options.get("table") != target:
+            found.append(
+                FieldError(where, "bad_param", f"{name}: a reference to {target} to filter by.")
+            )
     return found
 
 
@@ -81,12 +89,8 @@ def _source_problems(
     found: list[FieldError] = []
     if widget.param is not None:
         name, table = widget.param
-        if widget.source is None or not WIDGET_NAME.match(name) or catalog.table(table) is None:
-            found.append(
-                FieldError(where, "bad_param", "A source widget's choice: a name and a table.")
-            )
-    if widget.source is None:
-        return found
+        if not WIDGET_NAME.match(name) or catalog.table(table) is None:
+            found.append(FieldError(where, "bad_param", "A choice: a name and a table."))
     if widget.kind not in ("figure", "chart"):
         found.append(FieldError(where, "bad_source", "Only figures and charts have a source."))
     elif widget.source not in sources:
@@ -103,7 +107,7 @@ def _problems(
 ) -> list[FieldError]:
     where = f"widgets.{widget.name}"
     found = _shape_problems(where, module, widget)
-    if widget.source is not None or widget.param is not None:
+    if widget.source is not None:
         return found + _source_problems(catalog, views, module, widget, sources)
     if widget.kind == "text":
         if widget.text is None:
@@ -112,6 +116,10 @@ def _problems(
     table_key = views.get(widget.list) if widget.list is not None else None
     if table_key is None:
         return [*found, FieldError(where, "unknown_view", f"No list view {widget.list!r}.")]
+    if widget.param is not None and widget.kind == "list":
+        found.append(FieldError(where, "bad_param", "Only figures and charts filter by a choice."))
+    if widget.dated is not None and widget.kind != "chart":
+        found.append(FieldError(where, "bad_dated", "Only charts offer a time range."))
     if widget.kind == "chart" and (widget.group is None or widget.chart is None):
         found.append(
             FieldError(where, "no_group", "A chart groups by a field, as a kind of chart.")
@@ -168,6 +176,7 @@ async def write_widgets(
             "filled": w.filled,
             "target": w.target,
             "trend": w.trend,
+            "dated": w.dated,
             "sizes": list(w.sizes),
             "size": w.size,
             "refresh": w.refresh,
@@ -206,6 +215,7 @@ def _definition(row: Any, table: str | None, language: str, shown: str) -> dict[
         "filled": row.filled,
         "target": str(row.target) if row.target is not None else None,
         "trend": row.trend,
+        "dated": row.dated,
         "sizes": row.sizes,
         "size": row.size,
         "refresh": row.refresh,

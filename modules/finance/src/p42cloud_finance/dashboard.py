@@ -1,5 +1,7 @@
-"""The cost dashboard: results per profit center, costs by type, center and month, CAPEX, and
-unpaid invoices. Lists sum what they can; the result (income less costs) needs a route."""
+"""The cost dashboard: results per profit center, running costs and what adds value per profit
+center, costs by type, center, month and supplier, investments by order, unpaid invoices. Lists
+sum what they can; the result (income less costs) needs a route. The page offers a center: the
+list widgets then show it and everything under it (a profit center with its cost centers)."""
 
 from decimal import Decimal as Exact
 from typing import Any
@@ -9,6 +11,8 @@ from p42cloud.sdk import Client, Route, RouteRequest, Widget
 THIS_YEAR = {"field": "date", "op": "gte", "value": "@start_of_year"}
 COSTS = {"field": "kind", "op": "eq", "value": "cost"}
 RUNNING = {"field": "capex", "op": "eq", "value": False}
+VALUE = {"field": "capex", "op": "eq", "value": True}
+CENTER = ("center", "costing.center")
 
 
 async def _results(request: RouteRequest) -> dict[str, Any]:
@@ -59,11 +63,76 @@ WIDGETS = (
         size="wide",
     ),
     Widget(
+        "running_by_profit_center",
+        "Running costs by profit center",
+        "chart",
+        dashboard="finance",
+        list="finance.booking",
+        param=CENTER,
+        filter={"and": [COSTS, RUNNING]},
+        measure="sum",
+        field="amount_main",
+        group="profit_center",
+        chart="bar",
+        dated="date",
+        icon="receipt_long",
+    ),
+    Widget(
+        "value_by_profit_center",
+        "Adding value by profit center",
+        "chart",
+        dashboard="finance",
+        list="finance.booking",
+        param=CENTER,
+        filter=VALUE,
+        measure="sum",
+        field="amount_main",
+        group="profit_center",
+        chart="bar",
+        dated="date",
+        accent=3,
+        icon="construction",
+    ),
+    Widget(
+        "value_by_order",
+        "Adding value by order",
+        "chart",
+        dashboard="finance",
+        list="finance.booking",
+        param=CENTER,
+        filter=VALUE,
+        measure="sum",
+        field="amount_main",
+        group="order",
+        chart="bar",
+        dated="date",
+        accent=3,
+        icon="handyman",
+        sizes=("s", "wide", "large"),
+        size="wide",
+    ),
+    Widget(
+        "costs_by_partner",
+        "Costs by supplier",
+        "chart",
+        dashboard="finance",
+        list="finance.booking",
+        param=CENTER,
+        filter=COSTS,
+        measure="sum",
+        field="amount_main",
+        group="partner",
+        chart="bar",
+        dated="date",
+        icon="storefront",
+    ),
+    Widget(
         "costs_by_type",
         "Costs by cost type",
         "chart",
         dashboard="finance",
         list="finance.booking",
+        param=CENTER,
         filter={"and": [THIS_YEAR, COSTS, RUNNING]},
         measure="sum",
         field="amount_main",
@@ -77,6 +146,7 @@ WIDGETS = (
         "chart",
         dashboard="finance",
         list="finance.booking",
+        param=CENTER,
         filter={"and": [THIS_YEAR, COSTS, RUNNING]},
         measure="sum",
         field="amount_main",
@@ -90,6 +160,7 @@ WIDGETS = (
         "chart",
         dashboard="finance",
         list="finance.booking",
+        param=CENTER,
         filter={"and": [{"field": "date", "op": "gte", "value": "@today-12m"}, COSTS, RUNNING]},
         measure="sum",
         field="amount_main",
@@ -106,7 +177,8 @@ WIDGETS = (
         "figure",
         dashboard="finance",
         list="finance.booking",
-        filter={"and": [THIS_YEAR, {"field": "capex", "op": "eq", "value": True}]},
+        param=CENTER,
+        filter={"and": [THIS_YEAR, VALUE]},
         measure="sum",
         field="amount_main",
         icon="construction",
@@ -117,6 +189,7 @@ WIDGETS = (
         "figure",
         dashboard="finance",
         list="finance.booking",
+        param=CENTER,
         filter={"and": [COSTS, {"field": "paid", "op": "empty"}]},
         icon="pending_actions",
     ),
