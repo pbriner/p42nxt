@@ -5288,6 +5288,16 @@
    "text": "Fortgesetzt."
   },
   {
+   "key": "sys.ui_action|sys.roles_to_administrators|confirm",
+   "english": "Give the module's roles to the group Administrators?",
+   "text": "Die Rollen des Moduls der Gruppe Administratoren geben?"
+  },
+  {
+   "key": "sys.ui_action|sys.roles_to_administrators|label",
+   "english": "Give its roles to Administrators",
+   "text": "Rollen den Administratoren geben"
+  },
+  {
    "key": "sys.ui_action|sys.run_now|label",
    "english": "Run now",
    "text": "Jetzt ausführen"

@@ -422,6 +422,12 @@ async def _ship_translations(conn: AsyncConnection, module: Module) -> None:
         await languages.ship(conn, catalog, module.id, languages.check_language(file.stem), given)
 
 
+async def _module_id(conn: AsyncConnection, module: str) -> str:
+    return str(
+        await conn.scalar(text("SELECT sys_id FROM sys.module WHERE name = :m"), {"m": module})
+    )
+
+
 async def _announce_roles(conn: AsyncConnection, module: Module) -> None:
     """Administrators hear which roles a new module brings: nobody holds them yet."""
     names = ", ".join(r.label for r in module.roles)
@@ -431,10 +437,11 @@ async def _announce_roles(conn: AsyncConnection, module: Module) -> None:
         f"{module.name} is installed: give its roles to groups",
         roles=("sys.admin",),
         message=(
-            f"Its roles: {names}. Nobody holds them yet: give the ones people need to groups"
-            " (People and access, Groups). Its jobs have theirs already."
+            f"Its roles: {names}. Nobody holds them yet: on the module, Give its roles to"
+            " Administrators, or give the ones people need to groups (People and access,"
+            " Groups). Its jobs have theirs already."
         ),
-        link=f"/list/sys.role?filter%5Bmodule%5D={module.id}",
+        link=f"/form/sys.module/{await _module_id(conn, module.id)}",
     )
 
 

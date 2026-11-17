@@ -2,6 +2,13 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.44.0
+
+- A module's record offers **Give its roles to Administrators**: the roles the group Administrators
+  doesn't hold yet are given to it at once (with the second factor again, by those who may give
+  roles to groups), so a module just installed is usable. The notice after installing a module
+  links to its record.
+
 ## 0.43.0
 
 - Comments on records: a table allows them (`Table(…, comments=True)`); whoever may read a record

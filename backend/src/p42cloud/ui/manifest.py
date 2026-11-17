@@ -3,7 +3,11 @@
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
+from sqlalchemy import text
+
 from p42cloud.data.settings import value
+from p42cloud.kernel.db import switch_role
+from p42cloud.security.access.manifest import ADMINISTRATORS
 from p42cloud.services.connections.service import check
 from p42cloud.services.events.service import try_again
 from p42cloud.services.jobs.service import queue
@@ -325,6 +329,32 @@ async def _try_again(run: ActionRun) -> ActionResult:
     return ActionResult(message="It will be tried again shortly.")
 
 
+async def _roles_to_administrators(run: ActionRun) -> ActionResult:
+    """Gives the module's roles to the group Administrators, those it doesn't hold yet: a module
+    just installed is usable at once. Through the records service, so only those who may give
+    roles to groups can, and the rules against handing out more than one holds apply."""
+    module = str(run.record["name"])
+    conn = run.records.conn
+    await switch_role(conn, "sys")
+    roles = list(
+        (
+            await conn.execute(
+                text(
+                    "SELECT r.sys_id FROM sys.role r WHERE r.module = :m AND NOT r.custom"
+                    " AND r.deleted IS NULL AND NOT EXISTS (SELECT 1 FROM sys.group_role gr"
+                    ' WHERE gr."group" = :g AND gr.role = r.sys_id AND gr.deleted IS NULL)'
+                ),
+                {"m": module, "g": ADMINISTRATORS},
+            )
+        ).scalars()
+    )
+    for role in roles:
+        await run.records.create("sys.group_role", {"group": ADMINISTRATORS, "role": role})
+    if not roles:
+        return ActionResult(message="Administrators hold all its roles already.")
+    return ActionResult(message=f"Administrators hold its roles now ({len(roles)}).")
+
+
 async def _check(run: ActionRun) -> ActionResult:
     """Whether the connection works: the type's check, through the safe client."""
     return ActionResult(message=await check(run.records, run.sys_id))
@@ -345,6 +375,18 @@ A_NEW_MODULE = {
 }
 
 ACTIONS = (
+    UIAction(
+        "roles_to_administrators",
+        "sys.module",
+        "Give its roles to Administrators",
+        places=("form_button",),
+        icon="admin_panel_settings",
+        operation="read",
+        condition={"field": "name", "op": "ne", "value": "sys"},
+        second_factor=True,
+        confirm="Give the module's roles to the group Administrators?",
+        handler=_roles_to_administrators,
+    ),
     UIAction(
         "install_now",
         "sys.module_update",
