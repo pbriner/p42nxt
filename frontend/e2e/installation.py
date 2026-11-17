@@ -178,7 +178,12 @@ async def _prepare(
                 )
                 await records.create("sys.group_role", {"group": greeters, "role": role})
             controllers = (await records.create("sys.group", {"name": "Controllers"})).sys_id
-            for name in ("costing.controller", "partners.manager", "finance.bookkeeper"):
+            for name in (
+                "costing.controller",
+                "partners.manager",
+                "finance.bookkeeper",
+                "budget.controller",
+            ):
                 role = await conn.scalar(
                     text("SELECT sys_id FROM sys.role WHERE name = :n"), {"n": name}
                 )

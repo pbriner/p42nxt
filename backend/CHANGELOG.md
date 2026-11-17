@@ -8,6 +8,8 @@ The core (`sys`): the engine and the platform's own features.
   doesn't hold yet are given to it at once (with the second factor again, by those who may give
   roles to groups), so a module just installed is usable. The notice after installing a module
   links to its record.
+- The SDK's test plugin installs modules a module works with but doesn't need, when its tests name
+  them (`p42_also`).
 
 ## 0.43.0
 

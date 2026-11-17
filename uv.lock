@@ -9,6 +9,7 @@ resolution-markers = [
 [manifest]
 members = [
     "p42cloud",
+    "p42cloud-budget",
     "p42cloud-costing",
     "p42cloud-dca",
     "p42cloud-finance",
@@ -614,6 +615,29 @@ dev = [
     { name = "pytest", specifier = ">=8.3" },
     { name = "pytest-asyncio", specifier = ">=0.24" },
     { name = "ruff", specifier = ">=0.8" },
+]
+
+[[package]]
+name = "p42cloud-budget"
+version = "0.1.0"
+source = { editable = "modules/budget" }
+dependencies = [
+    { name = "p42cloud" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "p42cloud", editable = "backend" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
 ]
 
 [[package]]
