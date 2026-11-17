@@ -25,8 +25,9 @@ from p42cloud.modules.manifest import Module
 from p42cloud.modules.registry import discover
 from p42cloud.security.access.manifest import ADMINISTRATORS
 from p42cloud.security.access.roles import Grant, Role
+from p42cloud.ui.actions import service as actions
 from tests.conftest import ADMIN_URL
-from tests.security.helpers import acting
+from tests.security.helpers import acting, role_id
 
 
 @pytest.fixture(scope="module")
@@ -231,13 +232,16 @@ async def test_administrators_hear_which_roles_a_new_module_brings(
         owner, _module(module_id, _docs(tmp_path, {"index.md": "# X\n"}), version="1.0.1")
     )
     async with acting(app, None) as records:
+        module = await records.conn.scalar(
+            text("SELECT sys_id FROM sys.module WHERE name = :m"), {"m": module_id}
+        )
         told = list(
             await records.conn.execute(
                 text(
                     "SELECT title, message, link FROM sys.notification"
-                    " WHERE kind = 'sys.module_roles' AND link LIKE :l"
+                    " WHERE kind = 'sys.module_roles' AND link = :l"
                 ),
-                {"l": f"%{module_id}"},
+                {"l": f"/form/sys.module/{module}"},  # the module, with its button
             )
         )
     assert admins and len(told) == admins  # once each, on the install only, not the upgrade
@@ -302,3 +306,68 @@ async def test_an_update_checks_for_updates_again_soon(
     await _install(owner, _module(module_id, docs, version="1.0.1"))
     await _install(owner, _module(module_id, docs, version="1.0.2"))
     assert await queued() == 1  # once, however many updates came before the worker
+
+
+async def test_a_modules_roles_are_given_to_administrators_with_one_button(
+    owner: AsyncEngine,
+    app: AsyncEngine,
+    new_module: Callable[[], Awaitable[str]],
+    tmp_path: Path,
+) -> None:
+    module_id = await new_module()
+    await _install(owner, _module(module_id, _docs(tmp_path, {"index.md": "# X\n"})))
+    async with acting(app, None) as records:
+        module = (
+            (
+                await records.list(
+                    "sys.module", where={"field": "name", "op": "eq", "value": module_id}
+                )
+            )
+            .records[0]
+            .sys_id
+        )
+        admin = await records.create("sys.person", {"name": f"Admin {module_id}"})
+        await records.create("sys.membership", {"group": ADMINISTRATORS, "person": admin.sys_id})
+        # Someone who runs the platform but doesn't give out rights.
+        plain_admin = await records.create("sys.person", {"name": f"Operator {module_id}"})
+        operators = await records.create("sys.group", {"name": f"Operators {module_id}"})
+        await records.create(
+            "sys.group_role",
+            {"group": operators.sys_id, "role": await role_id(records, "sys.admin")},
+        )
+        await records.create(
+            "sys.membership", {"group": operators.sys_id, "person": plain_admin.sys_id}
+        )
+    with pytest.raises(Problem) as refused:
+        async with acting(app, plain_admin.sys_id) as records:
+            await actions.run(
+                records, "sys.module", "sys.roles_to_administrators", module, given={}
+            )
+    assert refused.value.status == 403
+    async with acting(app, admin.sys_id) as records:
+        said = await actions.run(
+            records, "sys.module", "sys.roles_to_administrators", module, given={}
+        )
+    async with acting(app, admin.sys_id) as records:
+        again = await actions.run(
+            records, "sys.module", "sys.roles_to_administrators", module, given={}
+        )
+        held = await records.conn.scalar(
+            text(
+                "SELECT count(*) FROM sys.group_role gr JOIN sys.role r ON r.sys_id = gr.role"
+                ' WHERE gr."group" = :g AND r.module = :m AND gr.deleted IS NULL'
+            ),
+            {"g": ADMINISTRATORS, "m": module_id},
+        )
+    # Administrators are shared by every test: they hold the core's roles only again.
+    async with acting(app, None) as records:
+        given = await records.list(
+            "sys.group_role", where={"field": "group", "op": "eq", "value": str(ADMINISTRATORS)}
+        )
+        for row in given.records:
+            role = await records.read("sys.role", row.values["role"])
+            if role.values["module"] == module_id:
+                await records.delete("sys.group_role", row.sys_id, row.etag)
+    assert "Administrators hold its roles now (1)" in str(said)
+    assert "hold all its roles already" in str(again)
+    assert held == 1

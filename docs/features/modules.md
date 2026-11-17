@@ -78,6 +78,15 @@ A migration stays in its module for good: an installation that skips releases ru
 passes. Publishing a release without one an earlier release had is refused. Fields a module no
 longer declares keep their columns, so an old migration still finds what it moves.
 
+## Its roles
+
+A new module's roles are held by nobody: administrators are notified with the roles it brings,
+linked to the module's record. There, **Give its roles to Administrators** gives the group
+Administrators every role of the module it doesn't hold yet, asking for the second factor again.
+Only those who may give roles to groups can (the access administrator's rights; the rules
+against handing out rights one doesn't hold apply). Others are given to groups as usual (People
+and access, Groups).
+
 ## Switching off and removing
 
 `p42cloud module list | on <id> | off <id> | remove <id> | install <id>`. Nothing is ever
