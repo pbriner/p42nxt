@@ -1,6 +1,6 @@
 [project]
 name = "p42cloud-costing"
-version = "0.2.0"
+version = "0.3.0"
 description = "Costing: profit and cost centers, cost types, orders and spreading keys"
 requires-python = ">=3.14"
 license = "Apache-2.0"

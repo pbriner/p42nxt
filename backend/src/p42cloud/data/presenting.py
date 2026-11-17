@@ -123,6 +123,8 @@ def describe(
         "parent": table.parent_field,
         # Files may be attached to its records.
         "files": table.files,
+        # Its records have a conversation.
+        "comments": table.comments,
         "operations": {op: bool(access.of(table.key, op)) for op in OPERATIONS},
         "fields": [_field(table, f, access, language) for f in [*table.active_fields(), *system]],
         "referenced_by": _referenced_by(catalog, table, access, language) if catalog else [],

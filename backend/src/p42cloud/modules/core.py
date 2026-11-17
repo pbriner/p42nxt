@@ -31,6 +31,7 @@ from p42cloud.services.announcements import service as announcements
 from p42cloud.services.backups import manifest as backups
 from p42cloud.services.backups import models as backup_models
 from p42cloud.services.calls import models as calls
+from p42cloud.services.comments import manifest as comments
 from p42cloud.services.connections import models as connections
 from p42cloud.services.connections import service as connection_service
 from p42cloud.services.currencies import manifest as currencies
@@ -82,6 +83,7 @@ CORE = Module(
         *calls.TABLES,
         *events.TABLES,
         *files.TABLES,
+        *comments.TABLES,
         *currencies.TABLES,
         *states.TABLES,
         *notifications.TABLES,

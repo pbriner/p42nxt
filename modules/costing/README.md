@@ -1,6 +1,6 @@
 # Costing (`costing`)
 
-Version: 0.2.0 · Last updated: 2026-11-16
+Version: 0.3.0 · Last updated: 2026-11-16
 
 ## Purpose
 
@@ -12,7 +12,7 @@ and by Finance and Budget through the API.
 
 | Module | Versions | What for |
 |---|---|---|
-| `sys` | `>=0.42,<1` | Hierarchies, files, the SDK |
+| `sys` | `>=0.43,<1` | Hierarchies, files, the SDK |
 
 Core dependency: no
 
@@ -20,9 +20,9 @@ Core dependency: no
 
 | Table | What a record is | Main fields | Notes |
 |---|---|---|---|
-| `costing.center` | A profit or cost center | code, name, kind, parent, profit_center, responsible, shared, active | A hierarchy (`parent`); `profit_center` is worked out, never typed |
+| `costing.center` | A profit or cost center | code, name, kind, parent, profit_center, responsible, shared, active | A hierarchy (`parent`); `profit_center` is worked out, never typed; comments |
 | `costing.cost_type` | A kind of cost or income | code, name, group, kind, chargeable, active | |
-| `costing.order` | A piece of work | code, name, kind (capex, opex), center, state, start, end, useful_life | Files attached; CAPEX needs `useful_life` |
+| `costing.order` | A piece of work | code, name, kind (capex, opex), center, state, start, end, useful_life | Files and comments; CAPEX needs `useful_life` |
 | `costing.key` | How a shared center is spread | name, center, unit, active | The center must be shared |
 | `costing.key_share` | One center's share in a key | key, center, value | Unique per key and center; to a cost center other than the spread one |
 
