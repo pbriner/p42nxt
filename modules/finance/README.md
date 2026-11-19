@@ -28,6 +28,10 @@ Core dependency: no
 | `finance.asset` | What a CAPEX order became | name, order, in_use, cost_type; worked out: center, useful_life, currency, value, yearly, written_off, book_value | Comments |
 | `finance.write_off` | One year's write-off | asset, year, currency, amount, booking | Unique per asset and year |
 
+A partner, cost center, cost type, order, lease or rental that bookings, statements or assets
+use can't be deleted. Deleting a statement deletes its lines, deleting an asset its write-offs
+(after a confirmation listing them; restoring brings them back).
+
 ## Roles and access
 
 | Role | Can | Record conditions / personal data |

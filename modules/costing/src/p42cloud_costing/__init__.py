@@ -95,7 +95,7 @@ ORDER = Table(
             required=True,
             default="opex",
         ),
-        "center": Reference("Center", "costing.center", required=True),
+        "center": Reference("Center", "costing.center", required=True, on_delete="restrict"),
         "state": Choice(
             "State",
             {"open": "Open", "done": "Done", "settled": "Settled"},
@@ -121,7 +121,7 @@ KEY = Table(
     "Spreading key",
     {
         "name": String("Name", max_length=120, required=True),
-        "center": Reference("Spreads", "costing.center", required=True),
+        "center": Reference("Spreads", "costing.center", required=True, on_delete="restrict"),
         "unit": Choice(
             "By",
             {
@@ -144,8 +144,8 @@ KEY_SHARE = Table(
     "key_share",
     "Share",
     {
-        "key": Reference("Key", "costing.key", required=True),
-        "center": Reference("To", "costing.center", required=True),
+        "key": Reference("Key", "costing.key", required=True, on_delete="cascade"),
+        "center": Reference("To", "costing.center", required=True, on_delete="restrict"),
         "value": Decimal("Value", precision=18, scale=4, required=True),
     },
     label_plural="Shares",
@@ -285,7 +285,7 @@ module = Module(
     name="Costing",
     publisher="p42",
     version=package_version("p42cloud-costing"),
-    depends_on={"sys": ">=0.43,<1"},
+    depends_on={"sys": ">=0.46,<1"},
     tables=TABLES,
     roles=(CONTROLLER, READER),
     hooks=(

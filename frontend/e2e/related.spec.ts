@@ -91,9 +91,12 @@ test('a new record from a related list shows the record it belongs to by name', 
   await page.goto(`/form/sys.group/${group.sys_id}`);
   await page.getByRole('tab', { name: /Memberships/ }).click();
   await page.getByRole('link', { name: 'New' }).click();
-  await expect(page.getByRole('heading', { name: 'New Membership' })).toBeVisible();
-  const field = page.getByRole('combobox', { name: 'Group' });
-  await expect(field).toHaveValue(name); // its name, not its ID
+  // In a dialog, on the group's form: the group is set, by its name, and can't change.
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('heading', { name: 'New Membership' })).toBeVisible();
+  await expect(dialog.getByText(name, { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('combobox', { name: 'Group' })).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/form/sys.group/${group.sys_id}$`));
 });
 
 test('a long related list turns its pages', async ({ page }, info) => {

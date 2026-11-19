@@ -34,6 +34,7 @@ def test_every_type_is_found_by_name() -> None:
         "json",
         "markdown",
         "money",
+        "number",
         "percent",
         "phone",
         "reference",

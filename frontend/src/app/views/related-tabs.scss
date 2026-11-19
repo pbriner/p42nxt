@@ -34,7 +34,124 @@
 .list-head {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
   margin: 12px 0 8px;
+}
+
+.search {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 320px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 18px;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+  background: var(--mat-sys-surface);
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 1px;
+  }
+}
+
+.sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+
+  .material-symbols-outlined {
+    font-size: 16px;
+  }
+}
+
+.actions {
+  width: 48px;
+  text-align: right;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Phone: each row a card, each value under its column's name; the headers stay as a row of
+// sort buttons.
+@media (max-width: 599px) {
+  thead {
+    display: block;
+    margin-bottom: 8px;
+
+    tr {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 16px;
+    }
+
+    th {
+      height: auto;
+      padding: 4px 0;
+      border: 0;
+
+      &.actions {
+        display: none;
+      }
+    }
+  }
+
+  table,
+  tbody,
+  tbody tr,
+  td {
+    display: block;
+    width: 100%;
+  }
+
+  tbody tr {
+    position: relative;
+    padding: 8px 48px 8px 8px;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--app-radius);
+    margin-bottom: 8px;
+  }
+
+  td {
+    height: auto;
+    padding: 2px 0;
+    border: 0;
+
+    &::before {
+      content: attr(data-label);
+      display: block;
+      font: var(--mat-sys-label-small);
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    &.actions {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: auto;
+
+      &::before {
+        content: none;
+      }
+    }
+  }
 }
 
 .scroll {

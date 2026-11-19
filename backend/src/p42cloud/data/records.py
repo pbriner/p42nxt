@@ -22,7 +22,15 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from p42cloud.data.access import Rules, forbidden
 from p42cloud.data.catalog import Catalog, FieldDef, TableDef
-from p42cloud.data.conditions import SYSTEM_FIELDS, Filter, Query, Situation, column, field_of
+from p42cloud.data.conditions import (
+    SYSTEM_FIELDS,
+    Filter,
+    Query,
+    Situation,
+    column,
+    default_of,
+    field_of,
+)
 from p42cloud.data.hooks import HOOKS, Change
 from p42cloud.data.paging import Sort, after_cursor, cursor
 from p42cloud.data.schema import METADATA_TABLES
@@ -33,6 +41,8 @@ from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import FieldError, Problem
 
 DEFAULT_LIMIT, MAX_LIMIT = 50, 500
+# Records one delete may take along (cascade) or change (clear); more: delete in parts.
+MAX_DELETION = 1000
 MAX_SORT = 5
 EXACT_TOTAL = 10_000
 
@@ -53,6 +63,49 @@ class Page:
     next: str | None  # the cursor of the following page; None on the last one
     total: int | None = None  # None if not counted
     total_exact: bool = True  # False: more than EXACT_TOTAL
+
+
+@dataclass(frozen=True)
+class Pointing:
+    """The active records of one table pointing through one field to records being deleted."""
+
+    table: TableDef
+    field: FieldDef
+    ids: list[UUID]
+
+
+@dataclass
+class Deletion:
+    """What deleting a record does to the records pointing to it, by what their field declares
+    (types/reference.py `ON_DELETE`): deleted with it, emptied, refusing it, or kept pointing."""
+
+    cascade: list[Pointing]  # by level: a level's records point to the one before
+    clear: list[Pointing]
+    blocked: list[Pointing]
+    kept: list[Pointing]
+
+    @property
+    def changes(self) -> int:
+        return sum(len(p.ids) for p in (*self.cascade, *self.clear))
+
+    @property
+    def fingerprint(self) -> str:
+        """Names what the delete changes: a confirmation made on another set doesn't match."""
+        changed = sorted(f"{p.table.key}:{i}" for p in (*self.cascade, *self.clear) for i in p.ids)
+        return hashlib.sha256("|".join(changed).encode()).hexdigest()[:16]
+
+
+def _in_use(pointing: Pointing) -> FieldError:
+    if pointing.table.parent_field == pointing.field.name:
+        return FieldError(pointing.field.name, "has_children", _UNDER_IT)
+    return FieldError(
+        f"{pointing.table.key}.{pointing.field.name}",
+        "in_use",
+        f"{len(pointing.ids)} of {pointing.table.key} still point to it.",
+    )
+
+
+_UNDER_IT = "Records are under it: move or remove them first."
 
 
 def _invalid(errors: list[FieldError]) -> Problem:
@@ -77,8 +130,10 @@ def refusal(error: DBAPIError) -> Problem | None:
         ("23514", "r"): ("required", "This field is required."),
         ("23514", "c"): ("invalid", "This value isn't allowed here."),
         ("23514", "t"): ("loop", "A record can't be under itself or one of its own."),
-        ("23514", "k"): ("has_children", "Records are under it: move or remove them first."),
+        ("23514", "k"): ("has_children", _UNDER_IT),
+        ("23503", "u"): ("in_use", "Other records still point to it."),
         ("23514", "p"): ("parent_removed", "It can't be under a removed record."),
+        ("23514", "n"): ("read_only", "A record number never changes."),
     }.get((str(state), kind[:1]))
     if found is None:
         return None
@@ -254,10 +309,11 @@ class Records:
 
     def _misnamed(self, table: TableDef, given: dict[str, Any]) -> list[FieldError]:
         active = {f.name for f in table.active_fields()}
+        given_by_database = {f.name for f in table.active_fields() if f.type.generated}
         retired = {f.name for f in table.fields if f.retired}
         errors: list[FieldError] = []
         for name in given:
-            if name in SYSTEM_FIELDS:
+            if name in SYSTEM_FIELDS or name in given_by_database:
                 errors.append(FieldError(name, "read_only", "Set by the database."))
             elif name in retired:
                 errors.append(FieldError(name, "read_only", "The field is retired."))
@@ -295,11 +351,7 @@ class Records:
         Creating fills in defaults and needs every required field.
         """
         errors = self._misnamed(table, given)
-        wanted = dict(given)
-        if creating:
-            for f in table.active_fields():
-                if f.name not in wanted and f.field.default is not None:
-                    wanted[f.name] = f.field.default
+        wanted = self._with_defaults(table, given) if creating else dict(given)
         checked: dict[str, Any] = {}
         # A name field a picked link fills in (reference.py `key=`): the database writes it.
         filled = {
@@ -320,6 +372,14 @@ class Records:
         if errors:
             raise _invalid(errors)
         return checked
+
+    def _with_defaults(self, table: TableDef, given: dict[str, Any]) -> dict[str, Any]:
+        """The values of a new record, with the defaults of the fields not given."""
+        wanted = dict(given)
+        for f in table.active_fields():
+            if f.name not in wanted and f.field.default is not None:
+                wanted[f.name] = default_of(f, self.situation)
+        return wanted
 
     def _bind(self, table: TableDef, values: dict[str, Any], query: Query) -> dict[str, str]:
         """Each value as a bound parameter; JSON values cast to jsonb."""
@@ -364,7 +424,12 @@ class Records:
         table = await self._table(key, write=True)
         if not self.access.of(table.key, "create"):
             raise forbidden(table.key)
-        change = Change(self, table, "create", None, await self._names(table, dict(values)))
+        named = await self._names(table, dict(values))
+        # Hooks see the defaults: a record made with one is the same as one sent with it.
+        change = Change(
+            self, table, "create", None, self._with_defaults(table, named), frozenset(named)
+        )
+        await HOOKS.run("fill", change)
         await HOOKS.run("before", change)
         checked = self._checked(table, change.values, creating=True)
         query = Query()
@@ -397,7 +462,9 @@ class Records:
         self._fresh(table, record, if_match)
         if record.values["deleted"] is not None:
             raise Problem(409, "deleted", "The record is deleted; restore it first.")
-        change = Change(self, table, "write", sys_id, await self._names(table, dict(values)))
+        named = await self._names(table, dict(values))
+        change = Change(self, table, "write", sys_id, named, frozenset(named))
+        await HOOKS.run("fill", change)
         await HOOKS.run("before", change)
         checked = self._checked(table, change.values, creating=False)
         if not checked:
@@ -414,29 +481,83 @@ class Records:
         await HOOKS.run("after", change)
         return await self._row(table, sys_id)
 
-    async def delete(self, key: str, sys_id: UUID, if_match: str | None) -> Record:
-        """Soft deletion: the record stays, marked deleted (who and when set by the database)."""
+    async def delete(
+        self, key: str, sys_id: UUID, if_match: str | None, confirm: str | None = None
+    ) -> Record:
+        """Soft deletion: the record stays, marked deleted (who and when set by the database).
+        Records pointing to it go as their field declares (`deletion`): refused while one says
+        restrict; else lines are deleted with it and links emptied. With `confirm` (the API
+        always sends one), only the deletion its fingerprint names."""
         table = await self._table(key, write=True)
         record = await self._row(table, sys_id, lock=True)
         self._fresh(table, record, if_match)
         if record.values["deleted"] is not None:
             raise Problem(409, "deleted", "The record is already deleted.")
         await self._check(table, sys_id, "delete", [])
+        plan = await self.deletion(key, sys_id)
+        if plan.blocked:
+            raise Problem(
+                409,
+                "in_use",
+                "Other records still point to it: change or delete them first.",
+                errors=[_in_use(p) for p in plan.blocked],
+            )
+        if confirm is not None and plan.changes and confirm != plan.fingerprint:
+            raise Problem(
+                409,
+                "confirm",
+                "Deleting it changes other records: check them, then confirm.",
+                extra={"fingerprint": plan.fingerprint},
+            )
+        for level in reversed(plan.cascade):  # the records furthest away first
+            for i in level.ids:
+                await self._delete_one(await self._table(level.table.key, write=True), i)
+        for emptied in plan.clear:
+            await self._table(emptied.table.key, write=True)
+            await self._write(
+                f"UPDATE {qualified(emptied.table.schema, emptied.table.name)}"  # noqa: S608
+                f" SET {ident(emptied.field.name)} = NULL"
+                " WHERE sys_id = ANY(CAST(:ids AS uuid[]))",
+                {"ids": [str(i) for i in emptied.ids]},
+            )
+        await self._delete_one(await self._table(key, write=True), sys_id)
+        return await self._row(table, sys_id)
+
+    async def _delete_one(self, table: TableDef, sys_id: UUID) -> None:
+        await self._check(table, sys_id, "delete", [])
         change = Change(self, table, "delete", sys_id)
         await HOOKS.run("before", change)
         await self._write(
             f"UPDATE {qualified(table.schema, table.name)} SET deleted = now()"  # noqa: S608
-            " WHERE sys_id = :id",
+            " WHERE sys_id = :id AND deleted IS NULL",
             {"id": sys_id},
         )
         await HOOKS.run("after", change)
-        return await self._row(table, sys_id)
 
     async def restore(self, key: str, sys_id: UUID) -> Record:
+        """Back, with the records deleted with it (the same delete); not those deleted before."""
         table = await self._table(key, write=True)
         record = await self._row(table, sys_id, lock=True)
-        if record.values["deleted"] is None:
+        deleted = record.values["deleted"]
+        if deleted is None:
             raise Problem(409, "not_deleted", "The record isn't deleted.")
+        await self._restore_one(table, sys_id)
+        level: list[tuple[TableDef, UUID]] = [(table, sys_id)]
+        for _ in range(MAX_DELETION):
+            if not level:
+                break
+            below: list[tuple[TableDef, UUID]] = []
+            for t, i in level:
+                for source, f in self._pointing_fields(t):
+                    if f.field.options.get("on_delete") != "cascade":
+                        continue
+                    for child in await self._pointing(source, f, [i], deleted_at=deleted):
+                        await self._restore_one(await self._table(source.key, write=True), child)
+                        below.append((source, child))
+            level = below
+        return await self._row(await self._table(key), sys_id)
+
+    async def _restore_one(self, table: TableDef, sys_id: UUID) -> None:
         await self._check(table, sys_id, "restore", [])
         change = Change(self, table, "restore", sys_id)
         await HOOKS.run("before", change)
@@ -446,7 +567,74 @@ class Records:
             {"id": sys_id},
         )
         await HOOKS.run("after", change)
-        return await self._row(table, sys_id)
+
+    # ---- what a delete does to the records pointing to it ----
+
+    def _pointing_fields(self, table: TableDef) -> list[tuple[TableDef, FieldDef]]:
+        """The references to this table, of every table that's in use."""
+        return [
+            (source, f)
+            for source in sorted(self.catalog.tables.values(), key=lambda t: t.key)
+            if not source.retired and not source.switched_off
+            for f in source.active_fields()
+            if f.field.type == "reference" and f.field.options.get("table") == table.key
+        ]
+
+    async def _pointing(
+        self, source: TableDef, f: FieldDef, ids: list[UUID], *, deleted_at: Any = None
+    ) -> list[UUID]:
+        """The records of `source` pointing to these: active ones, or with `deleted_at` those
+        deleted at that moment (in the same delete). All of them, readable or not: a record the
+        person can't see still counts."""
+        await switch_role(self.conn, source.schema)
+        state = "deleted = :at" if deleted_at is not None else "deleted IS NULL"
+        found = await self.conn.execute(
+            text(
+                f"SELECT sys_id FROM {qualified(source.schema, source.name)}"  # noqa: S608
+                f" WHERE {ident(f.name)} = ANY(CAST(:ids AS uuid[])) AND {state}"
+                " ORDER BY created, sys_id LIMIT :most"
+            ),
+            {"ids": [str(i) for i in ids], "at": deleted_at, "most": MAX_DELETION + 1},
+        )
+        return list(found.scalars())
+
+    async def deletion(self, key: str, sys_id: UUID) -> Deletion:
+        """What deleting this record would do, without doing it."""
+        table = await self._table(key)
+        plan = Deletion([], [], [], [])
+        going: set[tuple[str, UUID]] = {(table.key, sys_id)}
+        level: dict[str, tuple[TableDef, list[UUID]]] = {table.key: (table, [sys_id])}
+        while level:
+            below: dict[str, tuple[TableDef, list[UUID]]] = {}
+            for t, ids in level.values():
+                for source, f in self._pointing_fields(t):
+                    found = [
+                        i
+                        for i in await self._pointing(source, f, ids)
+                        if (source.key, i) not in going
+                    ]
+                    if not found:
+                        continue
+                    # A hierarchy's records under it already refuse the delete (p42_tree).
+                    tree = source.key == t.key and source.parent_field == f.name
+                    kind = f.field.options.get("on_delete") or ("restrict" if tree else "keep")
+                    {
+                        "restrict": plan.blocked,
+                        "cascade": plan.cascade,
+                        "clear": plan.clear,
+                    }.get(kind, plan.kept).append(Pointing(source, f, found))
+                    if kind == "cascade":
+                        going |= {(source.key, i) for i in found}
+                        below.setdefault(source.key, (source, []))[1].extend(found)
+            if plan.changes > MAX_DELETION:
+                raise Problem(
+                    409,
+                    "too_many",
+                    f"Deleting it would change more than {MAX_DELETION} records: delete in parts.",
+                )
+            level = below
+        await self._table(key)
+        return plan
 
     # ---- lists ----
 

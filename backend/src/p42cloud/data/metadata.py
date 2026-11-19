@@ -17,7 +17,7 @@ from p42cloud.data.catalog import load_catalog
 from p42cloud.data.declarations import Table, check, to_catalog
 from p42cloud.data.schema import apply
 from p42cloud.data.types import FIELD_TYPES, Field
-from p42cloud.data.types.base import READ_ONLY
+from p42cloud.data.types.base import BEHAVIOUR
 from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.integer import Integer
 from p42cloud.data.types.json import Json
@@ -173,9 +173,9 @@ async def _write_table(conn: AsyncConnection, schema: str, declared: Table) -> u
 
 
 def _refuse_loss(where: str, old: Field, new: Field) -> None:
-    # How forms show a field (read_only) never touches its values: not a change of type.
-    old = replace(old, options={k: v for k, v in old.options.items() if k != READ_ONLY})
-    new = replace(new, options={k: v for k, v in new.options.items() if k != READ_ONLY})
+    # How the app treats a field (read_only, on_delete) never touches its values.
+    old = replace(old, options={k: v for k, v in old.options.items() if k not in BEHAVIOUR})
+    new = replace(new, options={k: v for k, v in new.options.items() if k not in BEHAVIOUR})
     if (old.type, old.options) == (new.type, new.options):
         return
     if not FIELD_TYPES[new.type].keeps_values(old, new):

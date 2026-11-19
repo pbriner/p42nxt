@@ -57,10 +57,12 @@ BOOKING = Table(
     {
         "date": Date("Date", required=True),
         "text": String("Text", max_length=200, required=True),
-        "partner": Reference("Partner", "partners.partner"),
-        "cost_type": Reference("Cost type", "costing.cost_type", required=True),
-        "center": Reference("Cost center", "costing.center"),
-        "order": Reference("Order", "costing.order"),
+        "partner": Reference("Partner", "partners.partner", on_delete="restrict"),
+        "cost_type": Reference(
+            "Cost type", "costing.cost_type", required=True, on_delete="restrict"
+        ),
+        "center": Reference("Cost center", "costing.center", on_delete="restrict"),
+        "order": Reference("Order", "costing.order", on_delete="restrict"),
         "currency": Currency("Currency", required=True, default="CHF"),
         "amount": Money("Amount", currency_field="currency", required=True),
         "invoice_number": String("Invoice number", max_length=60),
@@ -90,8 +92,8 @@ RENTAL = Table(
     "rental",
     "Rental",
     {
-        "contract": Reference("Lease", "partners.contract", required=True),
-        "center": Reference("Flat", "costing.center", required=True),
+        "contract": Reference("Lease", "partners.contract", required=True, on_delete="restrict"),
+        "center": Reference("Flat", "costing.center", required=True, on_delete="restrict"),
         "active": Boolean("Active", required=True, default=True),
     },
     label_plural="Rentals",
@@ -102,7 +104,7 @@ STATEMENT = Table(
     "statement",
     "Running-cost statement",
     {
-        "rental": Reference("Rental", "finance.rental", required=True),
+        "rental": Reference("Rental", "finance.rental", required=True, on_delete="restrict"),
         "start": Date("From", required=True),
         "end": Date("To", required=True),
         "state": Choice(
@@ -128,11 +130,13 @@ STATEMENT_LINE = Table(
     "statement_line",
     "Statement line",
     {
-        "statement": Reference("Statement", "finance.statement", required=True),
+        "statement": Reference(
+            "Statement", "finance.statement", required=True, on_delete="cascade"
+        ),
         "kind": Choice(
             "Kind", {"cost": "Running cost", "advance": "Advance"}, required=True, default="cost"
         ),
-        "cost_type": Reference("Cost type", "costing.cost_type"),
+        "cost_type": Reference("Cost type", "costing.cost_type", on_delete="restrict"),
         "text": String("Text", max_length=200, required=True),
         "currency": Currency("Currency", required=True),
         "amount": Money("Amount", currency_field="currency", required=True),
@@ -385,7 +389,7 @@ module = Module(
     name="Finance",
     publisher="p42",
     version=package_version("p42cloud-finance"),
-    depends_on={"sys": ">=0.45,<1", "costing": ">=0.3,<1", "partners": ">=0.1,<1"},
+    depends_on={"sys": ">=0.46,<1", "costing": ">=0.3,<1", "partners": ">=0.1,<1"},
     tables=TABLES,
     roles=(BOOKKEEPER, READER),
     hooks=(

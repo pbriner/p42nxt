@@ -32,8 +32,16 @@
 <ng-template #content let-list>
   <div class="list">
     <div class="list-head">
+      <input
+        class="search"
+        type="search"
+        [value]="list.search"
+        [placeholder]="i18n.t('related.search')"
+        [attr.aria-label]="i18n.t('related.search_in', { list: list.related.label })"
+        (input)="search($any($event.target).value)"
+      />
       @if (list.info.operations['create']) {
-        <a mat-stroked-button [routerLink]="['/form', list.related.table, 'new']" [queryParams]="prefill(list.related)">
+        <a mat-stroked-button [href]="newLink(list.related)" (click)="add(list.related, $event)">
           <span class="material-symbols-outlined" aria-hidden="true">add</span>{{ i18n.t('list.new') }}
         </a>
       }
@@ -44,19 +52,35 @@
           <thead>
             <tr>
               @for (c of list.columns; track c) {
-                <th scope="col">{{ field(list.info, c)?.label ?? c }}</th>
+                <th scope="col" [attr.aria-sort]="sorted(list, c) ?? 'none'">
+                  @if (field(list.info, c)?.kind) {
+                    <button type="button" class="sort" (click)="sortBy(c)">
+                      {{ field(list.info, c)?.label ?? c }}
+                      @if (sorted(list, c); as way) {
+                        <span class="material-symbols-outlined" aria-hidden="true">{{
+                          way === 'ascending' ? 'arrow_upward' : 'arrow_downward'
+                        }}</span>
+                      }
+                    </button>
+                  } @else {
+                    {{ field(list.info, c)?.label ?? c }}
+                  }
+                </th>
               }
+              <th scope="col" class="actions">
+                <span class="visually-hidden">{{ i18n.t('related.actions') }}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             @for (row of list.rows; track row['sys_id']) {
               <tr
                 tabindex="0"
-                (click)="openRow(list.related.table, row)"
-                (keydown.enter)="openRow(list.related.table, row)"
+                (click)="openRow(list.related, row, $event)"
+                (keydown.enter)="openRow(list.related, row)"
               >
                 @for (c of list.columns; track c) {
-                  <td>
+                  <td [attr.data-label]="field(list.info, c)?.label ?? c">
                     @if (linkOf(list.info, row, c); as link) {
                       <a
                         [routerLink]="link"
@@ -69,6 +93,23 @@
                     }
                   </td>
                 }
+                <td class="actions">
+                  @if (may(row, 'delete')) {
+                    <button
+                      mat-icon-button
+                      type="button"
+                      [attr.aria-label]="
+                        i18n.t('related.delete', {
+                          name: list.info.display ? value(list.info, row, list.info.display) : '',
+                        })
+                      "
+                      (click)="$event.stopPropagation(); remove(list, row)"
+                      (keydown.enter)="$event.stopPropagation()"
+                    >
+                      <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                    </button>
+                  }
+                </td>
               </tr>
             }
           </tbody>

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1
+
+- A partner, cost center, cost type, order, lease or rental that bookings, statements or assets
+  use can't be deleted. Deleting a statement deletes its lines, and deleting an asset its
+  write-offs, after a confirmation that lists them; restoring brings them back. Needs the core
+  0.46.
+
 ## 0.3.0
 
 - The cost dashboard offers a center at the top: every chart and figure then shows that center and

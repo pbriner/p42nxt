@@ -17,7 +17,6 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 
 import { ActionDef, Actions } from '../core/actions';
 import { Api, Problem, describe } from '../core/api';
@@ -37,7 +36,7 @@ import { PersonSignIn } from './person-sign-in';
 import { RecordComments } from './record-comments';
 import { RecordFiles } from './record-files';
 import { RecordHistory } from './record-history';
-import { ConfirmDialog } from './confirm-dialog';
+import { askToDelete } from './delete-dialog';
 import { FieldDisplay } from './field-display';
 import { Related, RelatedTabs } from './related-tabs';
 
@@ -601,20 +600,21 @@ export class FormPage {
 
   protected async remove(): Promise<void> {
     const name = this.name() || this.info()!.label;
-    const ref = this.dialog.open(ConfirmDialog, {
-      data: {
-        title: this.i18n.t('list.delete_title', { item: this.info()!.label.toLowerCase() }),
-        text: this.i18n.t('list.delete_text', { name }),
-        action: this.i18n.t('list.delete'),
-      },
+    const confirm = await askToDelete(this.dialog, {
+      table: this.table(),
+      id: this.id(),
+      item: this.info()!.label,
+      name,
     });
-    if (!(await firstValueFrom(ref.afterClosed()))) {
+    if (confirm === null) {
       return;
     }
     try {
       const table = this.table();
       const id = this.id();
-      await this.api.delete(path(table, id), String(this.original()['_etag']));
+      await this.api.delete(path(table, id), String(this.original()['_etag']), {
+        query: { confirm },
+      });
       this.clearDraft();
       await this.back();
       const undo = this.snack.open(

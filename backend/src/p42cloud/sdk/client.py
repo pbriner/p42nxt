@@ -84,8 +84,12 @@ class Client:
         changed = await self._records.update(table, self._id(sys_id), values, etag)
         return self._json(table, changed)
 
-    async def delete(self, table: str, sys_id: UUID | str, etag: str) -> Json:
-        return self._json(table, await self._records.delete(table, self._id(sys_id), etag))
+    async def delete(
+        self, table: str, sys_id: UUID | str, etag: str, confirm: str | None = None
+    ) -> Json:
+        """Records pointing to it go as their fields declare; `confirm` (a deletion preview's
+        fingerprint) makes sure only what was checked changes."""
+        return self._json(table, await self._records.delete(table, self._id(sys_id), etag, confirm))
 
     async def restore(self, table: str, sys_id: UUID | str) -> Json:
         return self._json(table, await self._records.restore(table, self._id(sys_id)))

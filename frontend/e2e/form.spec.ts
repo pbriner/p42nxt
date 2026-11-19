@@ -24,7 +24,9 @@ test('a record opens from its list, and changes are saved', async ({ page }, inf
   await save.click();
   await expect(page.getByText('Saved', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: `Person ${name} changed` })).toBeVisible();
-  await expect(page.getByText(/Created .* by /)).toBeVisible();
+  // Named, never the "—" of an unknown person.
+  await expect(page.getByText(/Created .* by [^—\s]/)).toBeVisible();
+  await expect(page.getByText(/Updated .* by [^—\s]/)).toBeVisible();
 });
 
 test('a new record is created and opens', async ({ page }, info) => {

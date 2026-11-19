@@ -78,7 +78,7 @@ CONTACT = Table(
     "contact",
     "Contact person",
     {
-        "partner": Reference("Partner", "partners.partner", required=True),
+        "partner": Reference("Partner", "partners.partner", required=True, on_delete="cascade"),
         "name": String("Name", max_length=160, required=True, personal=True),
         "role": String("Role", max_length=80),
         "email": Email("Email", personal=True),
@@ -95,7 +95,7 @@ CONTRACT = Table(
     "contract",
     "Contract",
     {
-        "partner": Reference("Partner", "partners.partner", required=True),
+        "partner": Reference("Partner", "partners.partner", required=True, on_delete="restrict"),
         "name": String("Name", max_length=160, required=True),
         "kind": Choice(
             "Kind",
@@ -209,7 +209,7 @@ module = Module(
     name="Partners",
     publisher="p42",
     version=package_version("p42cloud-partners"),
-    depends_on={"sys": ">=0.43,<1"},
+    depends_on={"sys": ">=0.46,<1"},
     tables=TABLES,
     roles=(MANAGER, READER),
     hooks=(

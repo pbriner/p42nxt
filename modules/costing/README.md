@@ -26,6 +26,9 @@ Core dependency: no
 | `costing.key` | How a shared center is spread | name, center, unit, active | The center must be shared |
 | `costing.key_share` | One center's share in a key | key, center, value | Unique per key and center; to a cost center other than the spread one |
 
+A center used by an order, a key or a key's share can't be deleted; deleting a key deletes its
+shares with it (after a confirmation listing them).
+
 ## Roles and access
 
 | Role | Can | Record conditions / personal data |

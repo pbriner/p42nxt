@@ -65,7 +65,11 @@ async def _list_tables(records: Records, given: Json) -> Any:
 async def _describe(records: Records, given: Json) -> Any:
     key = _table(records, given, "read")
     return describe(
-        records.catalog.tables[key], records.access, records.situation.language, records.catalog
+        records.catalog.tables[key],
+        records.access,
+        records.situation.language,
+        records.catalog,
+        records.situation,
     )
 
 
@@ -107,7 +111,7 @@ async def _update(records: Records, given: Json) -> Any:
 
 async def _delete(records: Records, given: Json) -> Any:
     key = _table(records, given, "delete")
-    gone = await records.delete(key, _id(given), given.get("etag"))
+    gone = await records.delete(key, _id(given), given.get("etag"), str(given.get("confirm") or ""))
     return records.to_json(records.catalog.tables[key], gone)
 
 
@@ -222,9 +226,15 @@ TOOLS = (
     Tool(
         "delete_record",
         "Delete a record",
-        "Deletes a record (it can be restored); needs the version you read.",
+        "Deletes a record (it can be restored); needs the version you read. If that deletes or"
+        " empties other records too, it's refused with a fingerprint: tell the person what else"
+        " changes and, once they agree, send it again with that fingerprint as confirm.",
         "delete",
-        {"id": _ID, "etag": _ETAG},
+        {
+            "id": _ID,
+            "etag": _ETAG,
+            "confirm": {"type": "string", "description": "The fingerprint of the refusal."},
+        },
         ("table", "id", "etag"),
         _delete,
         read_only=False,

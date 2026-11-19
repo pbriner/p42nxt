@@ -568,7 +568,7 @@ wheels = [
 
 [[package]]
 name = "p42cloud"
-version = "0.45.0"
+version = "0.46.0"
 source = { editable = "backend" }
 dependencies = [
     { name = "argon2-cffi" },
@@ -619,7 +619,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-budget"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "modules/budget" }
 dependencies = [
     { name = "p42cloud" },
@@ -642,7 +642,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-costing"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "modules/costing" }
 dependencies = [
     { name = "p42cloud" },
@@ -688,7 +688,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-finance"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "modules/finance" }
 dependencies = [
     { name = "p42cloud" },
@@ -734,7 +734,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-partners"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "modules/partners" }
 dependencies = [
     { name = "p42cloud" },

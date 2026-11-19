@@ -25,6 +25,9 @@ Core dependency: no
 | `budget.version` | A budget or forecast for a year | name, year, kind, state, currency, note | A state flow; comments |
 | `budget.line` | One planned amount | version, center, cost_type, month, currency (the version's), amount, note | Unique per version, center, cost type and month; only in drafts; only on cost centers |
 
+Deleting a version deletes its lines with it (after a confirmation listing them; restoring the
+version brings them back). A cost center or cost type with budget lines can't be deleted.
+
 ## Roles and access
 
 | Role | Can | Record conditions / personal data |

@@ -23,6 +23,10 @@ FORM_RULE = Table(
         "hide": Json("Hide"),
         "required": Json("Required"),
         "read_only": Json("Read-only"),
+        # Field → value, set on a new record (or when the condition's fields change) where the
+        # field is still empty: "Agrola → cost center Lebensmittel". Values may be words
+        # (@me, @today+14d).
+        "fill": Json("Fill when empty"),
         "custom": Boolean("Made by an administrator", required=True, default=False),
     },
     label_plural="Form rules",
@@ -50,11 +54,14 @@ RULE_OPERATORS = frozenset(
     }
 )
 RULE_VARIABLES = frozenset({"@me"})
+# A rule that only fills is applied on the server alone, so it may also use patterns.
+FILL_OPERATORS = RULE_OPERATORS | {"matches"}
 
 
 @dataclass(frozen=True)
 class FormRule:
-    """While `condition` holds (None: always), these fields hide, are required or read-only.
+    """While `condition` holds (None: always), these fields hide, are required or read-only,
+    and empty ones are filled (`fill`, on the server when the record is saved).
 
     A rule only ever hides or locks more: what roles allow to read or change stays the limit.
     """
@@ -65,3 +72,4 @@ class FormRule:
     hide: tuple[str, ...] = ()
     required: tuple[str, ...] = ()
     read_only: tuple[str, ...] = ()
+    fill: dict[str, Any] | None = None

@@ -178,6 +178,11 @@
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "values",
     "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "sent",
+    "required": false
    }
   ]
  },
@@ -322,6 +327,11 @@
      "kind": "POSITIONAL_OR_KEYWORD",
      "name": "etag",
      "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "confirm",
+     "required": false
     }
    ],
    "get": [
@@ -792,6 +802,11 @@
    {
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "read_only",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "fill",
     "required": false
    }
   ]
@@ -1349,6 +1364,30 @@
    }
   ]
  },
+ "Number": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "prefix",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "digits",
+    "required": false
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
+    "required": false
+   }
+  ]
+ },
  "OutsideCall": {
   "methods": {},
   "params": [
@@ -1496,6 +1535,11 @@
    {
     "kind": "KEYWORD_ONLY",
     "name": "match",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "on_delete",
     "required": false
    },
    {
@@ -1839,6 +1883,11 @@
    {
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "after",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "fill",
     "required": false
    }
   ]

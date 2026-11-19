@@ -33,9 +33,13 @@ ASSET = Table(
     "Asset",
     {
         "name": String("Name", max_length=160, required=True),
-        "order": Reference("Order (adds value)", "costing.order", required=True),
+        "order": Reference(
+            "Order (adds value)", "costing.order", required=True, on_delete="restrict"
+        ),
         "in_use": Date("In use from", required=True),
-        "cost_type": Reference("Booked as", "costing.cost_type", required=True),
+        "cost_type": Reference(
+            "Booked as", "costing.cost_type", required=True, on_delete="restrict"
+        ),
         "note": Text("Note"),
         # Worked out from the order and its bookings, and by the write-offs.
         "center": Reference("Cost center", "costing.center", read_only=True),
@@ -55,7 +59,7 @@ WRITE_OFF = Table(
     "write_off",
     "Write-off",
     {
-        "asset": Reference("Asset", "finance.asset", required=True),
+        "asset": Reference("Asset", "finance.asset", required=True, on_delete="cascade"),
         "year": Integer("Year", required=True),
         "currency": Currency("Currency", required=True),
         "amount": Money("Amount", currency_field="currency", required=True),

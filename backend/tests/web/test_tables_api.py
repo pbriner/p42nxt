@@ -184,7 +184,9 @@ async def test_a_table_is_described_for_each_person(world: World) -> None:
     assert any(f["name"] == "sys_id" and f["system"] for f in for_reader["fields"])
 
 
-async def test_records_name_their_references_and_say_what_may_be_done(world: World) -> None:
+async def test_records_name_their_references_and_people_and_say_what_may_be_done(
+    world: World,
+) -> None:
     key = f"u.{world.table}"
     async with acting(world.engine, world.editor) as records:
         made = await records.create(
@@ -195,7 +197,13 @@ async def test_records_name_their_references_and_say_what_may_be_done(world: Wor
             (body,) = await annotate(
                 records, records.catalog.tables[key], [await records.read(key, made.sys_id)]
             )
-        assert body["_display"] == {"state": "Done", "assignee": f"Reader {world.table}"}
+        # Who made and changed it is named too: the form says "Created … by <name>".
+        assert body["_display"] == {
+            "state": "Done",
+            "assignee": f"Reader {world.table}",
+            "created_by": f"Editor {world.table}",
+            "updated_by": f"Editor {world.table}",
+        }
         assert body["_access"] == {"write": may, "delete": may, "restore": may}
 
 

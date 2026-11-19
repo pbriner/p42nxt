@@ -72,19 +72,26 @@ administrator, modules, safety; then the administrator sets up their second fact
   - **Unsaved changes** stay in the browser tab: leaving by accident and coming back offers them
     again (secrets excepted). Closing the tab with changes asks first.
   - **Required fields** and the API's refusals show at their fields.
-  - **Delete** asks first and can be undone; a deleted record says so and can be restored.
+  - **Delete** asks first and can be undone; a deleted record says so and can be restored. The
+    question lists what else the delete changes: records deleted with it, references emptied,
+    records that keep pointing to it. When records still need it, there's no Delete, only a link
+    to those records.
   - **Related**: a tab per kind of record pointing here, with its count. **Related lists…**
     opens a slushbucket: the available lists on one side, the shown ones on the other, moved
     across (buttons, double click, dragging) and put in order; a filter on each side. What a
     person chooses, and the tab open last, is kept for them per form, on the server; **Reset to
-    default** shows the declared lists, then those with records, again. "New" in a tab makes a
-    record that already points back. In a related list's rows, references link to their
-    records (on a group's memberships, the person).
+    default** shows the declared lists, then those with records, again. A tab searches its
+    text columns and sorts by a column (a header click: up, down, as the view sorts). **New**
+    opens the new record in a dialog, already pointing back (shown, not changeable); clicking a
+    row opens it in a dialog too; saving stays on the form. Ctrl or Cmd click opens the page
+    instead. Each row may be deleted (asked first, with Undo). On a phone, rows are cards. In a
+    related list's rows, references link to their records (on a group's memberships, the
+    person).
   - **Actions**: the record's buttons, and more under ⋮, shown only when the server offers
     them for this record; they may ask first or ask for something. Lists offer them on chosen
     records and in a record's right-click menu.
   - **Form rules** hide fields, require them or lock them as the values change.
-  - Who made and last changed the record, and when.
+  - Who made and last changed the record, by name, and when.
 - **Profile**: light, dark or like the system; the colour theme; the language (English, German,
   or like the browser); records per page. Each is saved as soon as it changes.
 - A page that doesn't exist says so; a list the person may not see says they have no access.

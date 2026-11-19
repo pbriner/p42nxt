@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+- Deleting a budget version deletes its lines with it, after a confirmation that lists them;
+  restoring the version brings them back. A cost center or cost type with budget lines can't be
+  deleted. Needs the core 0.46.
+
 ## 0.1.0
 
 - Budget versions (budget or forecast for a year) going from draft to submitted, approved and

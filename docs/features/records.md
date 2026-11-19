@@ -13,10 +13,10 @@ ever written by that module's role. What each person may read and change comes f
 |---|---|
 | `read` | One record, deleted or not |
 | `list` | One page of records (below) |
-| `create` | Checks every value, fills in defaults, needs every required field |
+| `create` | Checks every value, fills in defaults (before hooks), needs every required field |
 | `update` | Changes the given fields; needs the record's ETag |
-| `delete` | Soft deletion; needs the ETag. The database sets who and when |
-| `restore` | Clears the deletion |
+| `delete` | Soft deletion; needs the ETag. The database sets who and when. Records pointing to it go as their reference declares (below) |
+| `restore` | Clears the deletion, and that of the records deleted with it |
 
 - **Values are checked by their field types**, and all problems come back at once as field errors
   (422). Unknown fields, system fields and retired fields are refused.
@@ -33,13 +33,33 @@ ever written by that module's role. What each person may read and change comes f
 - Values are returned as stored. As JSON, exact numbers and times are text: `"199.50"`,
   `"2026-11-13"`, `"P1DT2H"`.
 
+## Deleting with links
+
+What deleting a record does to the records pointing to it follows each reference's `on_delete`
+(`tables.md`): they block it (`restrict`), go with it (`cascade`, again for the records pointing
+to those), have the reference emptied (`clear`), or keep pointing to it.
+
+- `GET /api/v1/<module>/<table>/<id>/deletion` shows it without doing it: per table and field,
+  `cascade`, `clear`, `blocked` and `kept`, each with how many records, the first ten the person
+  may read (named) and whether they may delete them all; and a `fingerprint`.
+- A delete while anything blocks is refused (409 `in_use`, a field error per reference). A
+  record under it in a hierarchy blocks it too (`has_children`).
+- A delete that deletes or empties other records needs `?confirm=<fingerprint>`; without it, or
+  when the records changed since, it's refused (409 `confirm`, with the current fingerprint).
+  Module code deleting through the SDK confirms by itself, or passes a fingerprint.
+- The person needs the right to delete each record deleted with it; each one runs its table's
+  hooks. At most 1,000 records change in one delete.
+- Records deleted with it are restored with it; those deleted before stay deleted. Emptied
+  references stay empty.
+
 ## Hooks
 
 Features register hooks for a table's changes (`data/hooks.py`). One run *before* a change sees
 the values about to be written; it may refuse the change or add values the system sets itself
 (those don't need the person's rights). One run *after* works in the same transaction, so the
-change and its follow-ups succeed or fail together. Changes made with SQL outside the records
-service don't run hooks.
+change and its follow-ups succeed or fail together. A hook for every table may also *fill*
+values: it runs before the tables' own before hooks, on creates and changes (form rules'
+"fill when empty"). Changes made with SQL outside the records service don't run hooks.
 
 ## Lists
 
@@ -66,7 +86,7 @@ A condition is JSON: `{"field", "op", "value"}`, or a group `{"and": [...]}`, `{
 | Fields | Operators |
 |---|---|
 | Every filterable field | `eq`, `ne`, `empty`, `not_empty` |
-| Text, email, URL, phone, host name, colour, icon | `contains`, `not_contains`, `starts_with`, `ends_with`, `in`, `not_in` |
+| Text, email, URL, phone, host name, colour, icon | `contains`, `not_contains`, `starts_with`, `ends_with`, `in`, `not_in`, `matches` |
 | Translated text | as text, without `in` / `not_in` |
 | Numbers, durations, dates, dates and times | `lt`, `lte`, `gt`, `gte`, `between` (`[from, to]`, both included) |
 | Choices, references | `in`, `not_in`; for references into a hierarchy also `within` |
@@ -82,6 +102,8 @@ A condition is JSON: `{"field", "op", "value"}`, or a group `{"and": [...]}`, `{
   and `@start_of_week`, `@end_of_month` (also `quarter` and `year`). A date and time needs a time
   zone. Days are UTC for now.
 - **`@me`** is the person the list is for.
+- **`matches`**: a regular expression, case ignored (`agrola|top ?shop`). At most 200 characters,
+  without back-references (`\1`), so matching stays fast.
 - System fields can be filtered and sorted too: `created`, `created_by`, `updated`, `updated_by`,
   `source`, `deleted`, `deleted_by`, `sys_id`.
 - Markdown and JSON fields can't be filtered.

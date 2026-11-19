@@ -4,7 +4,8 @@
     POST   /api/v1/<module>/<table>                 a new record
     GET    /api/v1/<module>/<table>/<id>            one record (its version in ETag)
     PATCH  /api/v1/<module>/<table>/<id>            change fields (needs If-Match)
-    DELETE /api/v1/<module>/<table>/<id>            soft deletion (needs If-Match)
+    GET    /api/v1/<module>/<table>/<id>/deletion   what deleting it would do to other records
+    DELETE /api/v1/<module>/<table>/<id>            soft deletion (needs If-Match; `confirm`)
     POST   /api/v1/<module>/<table>/<id>/restore    restore
 
 Filters come as `filter[field][op]=value` (all ANDed; lists comma-separated) and as
@@ -22,7 +23,7 @@ from uuid import UUID
 from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
 
 from p42cloud.data.history import MAX_ENTRIES, history
-from p42cloud.data.presenting import annotate
+from p42cloud.data.presenting import annotate, deletion_preview
 from p42cloud.kernel.errors import Problem
 from p42cloud.ui.actions.service import available
 from p42cloud.web.caller import Caller, language, who
@@ -195,6 +196,21 @@ async def change_record(
     return _one(response, found)
 
 
+@router.get("/{module}/{table}/{sys_id}/deletion")
+@requires(SIGNED_IN)
+async def record_deletion(
+    module: str, table: str, sys_id: UUID, request: Request, caller: Who
+) -> dict[str, Any]:
+    """What deleting the record would do, changing nothing: the records deleted with it
+    (`cascade`), emptied (`clear`), refusing it (`blocked`) or kept pointing to it (`kept`).
+    A delete that changes other records needs this `fingerprint` as `confirm`."""
+    services: Services = request.app.state.services
+    key = _key(module, table)
+    async with services.records(caller.context(language(request))) as records:
+        await records.read(key, sys_id)
+        return await deletion_preview(records, key, sys_id)
+
+
 @router.delete("/{module}/{table}/{sys_id}")
 @requires(SIGNED_IN)
 async def delete_record(
@@ -205,11 +221,14 @@ async def delete_record(
     response: Response,
     caller: Who,
     if_match: Annotated[str | None, Header()] = None,
+    confirm: Annotated[str | None, Query(max_length=64)] = None,
 ) -> dict[str, Any]:
+    """Refused (409 `confirm`) when it would change other records and `confirm` isn't the
+    fingerprint of its deletion preview, and (409 `in_use`) while records it refuses point to it."""
     services: Services = request.app.state.services
     key = _key(module, table)
     async with services.records(caller.context(language(request))) as records:
-        gone = await records.delete(key, sys_id, if_match)
+        gone = await records.delete(key, sys_id, if_match, confirm or "")
         found = records.to_json(records.catalog.tables[key], gone)
     return _one(response, found)
 
