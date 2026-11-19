@@ -130,6 +130,14 @@ what a person may read or change is still decided by their roles. Conditions use
 own fields with these operators: `eq`, `ne`, `in`, `not_in`, `empty`, `not_empty`, `contains`,
 `not_contains`, `starts_with`, `ends_with`, `lt`, `lte`, `gt`, `gte`, `between`, and `@me`.
 
+A rule may also **fill** fields that are still empty (`fill={"category": "food"}`; values may be
+words like `@me`, `@today+14d`): on the server, when a record is created, or changed in a field
+its condition looks at, and before the table's own hooks, so they see the value. A value sent is
+never overwritten. A rule that only fills may also use `matches` (a regular expression). An
+administrator makes such rules as records too (`custom`), with a reference's ID as its value
+("bookings whose text matches `agrola` get the cost center Food"); they're checked like a
+module's.
+
 ## Widgets and dashboards
 
 Home and each module have a dashboard of widgets. A widget is a record of `sys.widget`; its data

@@ -66,7 +66,7 @@ async def _check_request(change: Change) -> None:
     if change.operation in ("delete", "restore"):
         raise Problem(409, "kept", "Update requests are kept; cancel one instead.")
     if change.operation == "create":
-        unknown = set(change.values) - {"target", "version", "not_before"}
+        unknown = set(change.sent) - {"target", "version", "not_before"}
         if unknown:
             raise Problem(409, "set_by_updater", "Only what to update, to which version, and when.")
         await _check_offered(

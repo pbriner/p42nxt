@@ -33,6 +33,7 @@ from p42cloud.data.types.integer import Integer
 from p42cloud.data.types.json import Json
 from p42cloud.data.types.markdown import Markdown
 from p42cloud.data.types.money import Money
+from p42cloud.data.types.number import Number
 from p42cloud.data.types.percent import Percent
 from p42cloud.data.types.phone import Phone
 from p42cloud.data.types.reference import Reference
@@ -102,6 +103,7 @@ __all__ = [
     "Module",
     "Money",
     "NotificationKind",
+    "Number",
     "OutsideCall",
     "Percent",
     "Phone",

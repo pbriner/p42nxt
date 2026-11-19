@@ -23,6 +23,9 @@ Core dependency: no
 | `partners.contact` | A contact person | partner, name, role, email, phone, main | Personal data |
 | `partners.contract` | A contract | partner, name, kind, state, start, end, notice_months, currency, amount, period, advance | Files and comments; a state flow |
 
+Deleting a partner deletes its contact persons with it (after a confirmation listing them); a
+partner with contracts can't be deleted.
+
 ## Roles and access
 
 | Role | Can | Record conditions / personal data |

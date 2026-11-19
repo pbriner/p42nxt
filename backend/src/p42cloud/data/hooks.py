@@ -27,8 +27,12 @@ class Change:
     table: TableDef
     operation: str  # create, write, delete, restore
     sys_id: UUID | None  # None before a create
-    # The values given (create, write); a before hook may add or change them.
+    # The values given (create, write), with a new record's defaults; a before hook may add or
+    # change them.
     values: dict[str, Any] = field(default_factory=dict[str, Any])
+    # The fields the caller sent, without the defaults (what a check of "only these may be
+    # set" looks at). Empty where not known.
+    sent: frozenset[str] = frozenset()
 
     @property
     def person(self) -> UUID:
@@ -49,12 +53,16 @@ class TableHook:
     table: str
     before: Hook | None = None
     after: Hook | None = None
+    # Runs before every table's own before hooks, on create and write: fills values (form
+    # rules' "fill when empty"), so those hooks see them. Only for EVERY_TABLE.
+    fill: Hook | None = None
 
 
 @dataclass
 class Hooks:
     before: dict[str, list[Hook]] = field(default_factory=dict[str, list[Hook]])
     after: dict[str, list[Hook]] = field(default_factory=dict[str, list[Hook]])
+    fill: list[Hook] = field(default_factory=list[Hook])
 
     def on(self, table: str, *, before: Hook | None = None, after: Hook | None = None) -> None:
         """Registers hooks for a table's changes; registering the same one again does nothing."""
@@ -63,9 +71,12 @@ class Hooks:
                 registry[table].append(hook)
 
     async def run(self, when: str, change: Change) -> None:
-        registry = self.before if when == "before" else self.after
-        # A table's own hooks first, then those for every table (EVERY_TABLE).
-        hooks = [*registry.get(change.table.key, []), *registry.get(EVERY_TABLE, [])]
+        if when == "fill":
+            hooks = list(self.fill)
+        else:
+            registry = self.before if when == "before" else self.after
+            # A table's own hooks first, then those for every table (EVERY_TABLE).
+            hooks = [*registry.get(change.table.key, []), *registry.get(EVERY_TABLE, [])]
         for hook in hooks:
             await hook(change)
         if hooks:  # hooks may work as another module; the change goes on as the table's
@@ -74,6 +85,8 @@ class Hooks:
     def add(self, *declared: TableHook) -> None:
         for hook in declared:
             self.on(hook.table, before=hook.before, after=hook.after)
+            if hook.fill is not None and hook.fill not in self.fill:
+                self.fill.append(hook.fill)
 
 
 HOOKS = Hooks()

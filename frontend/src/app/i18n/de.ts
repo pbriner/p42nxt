@@ -236,6 +236,16 @@ export const DE: Record<TextKey, string> = {
   'list.edit': 'Bearbeiten',
   'list.open': 'Öffnen',
   'list.delete': 'Löschen',
+  'delete.blocked':
+    '{name} kann nicht gelöscht werden: Diese Datensätze verweisen noch darauf. Ändern oder löschen Sie sie zuerst.',
+  'delete.also': 'Ebenfalls gelöscht',
+  'delete.not_yours': 'Sie dürfen diese nicht löschen',
+  'delete.emptied': 'Geleert',
+  'delete.emptied_in': '{field} in {what}',
+  'delete.kept': 'Verweisen weiter darauf, als gelöscht angezeigt',
+  'delete.restore':
+    'Beim Wiederherstellen kommt zurück, was mitgelöscht wurde; geleerte Felder bleiben leer.',
+  'delete.more': 'und {count} weitere',
   'list.delete_title': '{item} löschen?',
   'list.delete_text': '{name} wird gelöscht.',
   'list.deleted': '{name} gelöscht',
@@ -326,6 +336,11 @@ export const DE: Record<TextKey, string> = {
   'secrets.none': 'Diese Art Verbindung braucht keine Schlüssel.',
   'secrets.after_create':
     'Nach dem Erstellen werden hier die Schlüssel abgefragt, die diese Verbindung braucht.',
+  'related.search': 'Suchen',
+  'related.search_in': '{list} durchsuchen',
+  'related.actions': 'Aktionen',
+  'related.delete': '{name} löschen',
+  'related.new_title': 'Neu: {item}',
   'related.range': '{first}–{last} von {total}',
   'related.previous': 'Vorherige Seite',
   'related.next': 'Nächste Seite',

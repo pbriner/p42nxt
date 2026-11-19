@@ -33,6 +33,7 @@ import { ProblemState } from '../pages/problem-state';
 import { ActionRunner } from './action-runner';
 import { ColumnsDialog, ColumnsRequest } from './columns-dialog';
 import { ConfirmDialog } from './confirm-dialog';
+import { askToDelete } from './delete-dialog';
 import { FilterDialog, FilterRequest } from './filter-dialog';
 import { SaveView, SaveViewDialog } from './save-view-dialog';
 import { Update, UpdateDialog, UpdateRequest } from './update-dialog';
@@ -548,17 +549,18 @@ export class ListPage {
 
   protected async remove(row: Row): Promise<void> {
     const name = this.rowName(row);
-    const sure = await this.confirm(
-      this.i18n.t('list.delete_title', { item: this.item() }),
-      this.i18n.t('list.delete_text', { name }),
-      this.i18n.t('list.delete'),
-    );
-    if (!sure) {
+    const table = this.view()!.table;
+    const confirm = await askToDelete(this.dialog, {
+      table,
+      id: row.sys_id,
+      item: this.table()?.label ?? '',
+      name,
+    });
+    if (confirm === null) {
       return;
     }
     await this.run(async () => {
-      const table = this.view()!.table;
-      await this.api.delete(path(table, row.sys_id), row._etag);
+      await this.api.delete(path(table, row.sys_id), row._etag, { query: { confirm } });
       await this.load();
       const undo = this.snack.open(
         this.i18n.t('list.deleted', { name }),

@@ -2,6 +2,33 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.46.0
+
+- Forms say who created and last changed a record ("Created … by Anna"), not "by —": records
+  name their creator, last editor and, once deleted, who deleted them.
+- Record numbers: a field type `number` (`Number("Invoice", prefix="INV", digits=7)` gives
+  INV-0000001). The database gives each new record the next number; nobody types or changes one,
+  and a number is never given twice, not even after a delete. Records there when the field is
+  added are numbered in the order they were made.
+- Deleting with links: a reference declares what happens when the record it points to is deleted
+  (`Reference(…, on_delete=…)`): `restrict` refuses the delete while active records point to it,
+  `cascade` deletes them with it (and restoring brings back exactly those), `clear` empties the
+  reference. Without it, references keep pointing to the deleted record, as before.
+  `GET /api/v1/<module>/<table>/<id>/deletion` shows what a delete would do; a delete that
+  changes other records needs its `fingerprint` as `confirm`, and you need the right to delete
+  each record it takes along. The database refuses a restricted delete too. Forms ask before
+  deleting with the list of what else changes, or show what still needs the record.
+- Defaults by word, worked out on each create: `@me`, `@today`, `@today+14d`, `@now`. Hooks now
+  see a new record's defaults; `Change.sent` names the fields the caller sent.
+- Form rules can fill fields that are still empty (`FormRule(…, fill={…})`), on the server and
+  before the table's own hooks; such rules may use `matches`. Administrators make them as records
+  too ("text matches agrola → cost center Food"), checked like a module's.
+- The filter language has `matches`: a regular expression, case ignored (at most 200
+  characters, no back-references).
+- Related lists in a form: search, sort by a column, delete a row (with Undo); **New** and a
+  row open in a dialog, so saving stays on the form (Ctrl or Cmd click opens the page). On a
+  phone, rows are cards.
+
 ## 0.45.0
 
 - A chart grouped by something other than a date can name a date field (`Widget(dated=…)`): it

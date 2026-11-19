@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1
+
+- A cost center in use by an order, a key or a key's share can't be deleted; deleting a key
+  deletes its shares with it, after a confirmation that lists them. Needs the core 0.46.
+
 ## 0.3.0
 
 - Centers and orders have comments: a conversation kept with the record. Needs the core 0.43.

@@ -15,6 +15,7 @@ import { unit as integer } from './integer';
 import { unit as json } from './json';
 import { unit as markdown } from './markdown';
 import { unit as money } from './money';
+import { unit as number } from './number';
 import { unit as percent } from './percent';
 import { unit as phone } from './phone';
 import { unit as reference } from './reference';
@@ -42,6 +43,7 @@ export const FIELD_TYPES: Record<string, FieldTypeUnit> = {
   json: json,
   markdown: markdown,
   money: money,
+  number: number,
   percent: percent,
   phone: phone,
   reference: reference,

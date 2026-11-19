@@ -12,6 +12,8 @@ from typing import Any, ClassVar, TypedDict
 from p42cloud.data.sql import ident, literal
 
 READ_ONLY = "read_only"  # an option every field type may have
+# Options that say how the app treats a field, never what its values are: changing one keeps them.
+BEHAVIOUR = frozenset({READ_ONLY, "on_delete"})
 
 
 class Invalid(ValueError):
@@ -67,6 +69,8 @@ class FieldType:
     # How lists filter and sort it (conditions.py): text, translated, number, date, datetime,
     # choice, reference or boolean. None: not filterable or sortable.
     kind: ClassVar[str | None] = None
+    # Filled by the database (a record number): never sent, never changed.
+    generated: ClassVar[bool] = False
 
     def to_json(self, value: Any) -> Any:
         """The stored value as JSON: exact numbers and times as text, never floats."""

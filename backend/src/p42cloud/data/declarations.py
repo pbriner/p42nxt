@@ -10,8 +10,10 @@ records, never from the declaration.
 """
 
 from dataclasses import dataclass, field
+from uuid import UUID
 
 from p42cloud.data.catalog import Catalog, FieldDef, TableDef
+from p42cloud.data.conditions import Situation, is_dynamic, value_of
 from p42cloud.data.engine_steps import SYSTEM_FIELDS
 from p42cloud.data.sql import NAME, SCHEMA
 from p42cloud.data.types import FIELD_TYPES, Field, Invalid
@@ -53,12 +55,24 @@ def _field_problems(table: str, name: str, declared: Field) -> list[FieldError]:
     found = [FieldError(where, "bad_option", m) for m in field_type.option_problems(own)]
     if not isinstance(declared.options.get(READ_ONLY, False), bool):
         found.append(FieldError(where, "bad_option", "read_only is true or false."))
+    if declared.options.get("on_delete") == "clear" and declared.required:
+        found.append(FieldError(where, "bad_option", "A required reference can't be cleared."))
     if not found and declared.default is not None:
         try:
-            field_type.check(declared.default, declared.options)
+            _check_default(name, declared)
         except Invalid as error:
             found.append(FieldError(where, "bad_default", str(error)))
     return found
+
+
+def _check_default(name: str, declared: Field) -> None:
+    f = FieldDef(name, declared, 0)
+    if not is_dynamic(f, declared.default):
+        f.type.check(declared.default, declared.options)
+        return
+    if declared.default == "@me" and declared.options.get("table") != "sys.person":
+        raise Invalid("@me fills in a reference to a person.")
+    value_of(f, declared.default, Situation(UUID(int=0)))
 
 
 def _table_problems(declared: Table) -> list[FieldError]:

@@ -17,6 +17,13 @@ FIELD = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 MATCH = re.compile(r"^[a-z][a-z0-9_]{0,39}(\.[a-z][a-z0-9_]{0,39}){0,2}$")
 
 
+# What happens to the records pointing here when the record they point to is deleted (records.py
+# `deletion`). keep (none given): they keep pointing to it, shown as deleted; restrict: the
+# delete is refused while active records point to it; cascade: deleted with it (lines that belong
+# to it), and restored with it; clear: the reference is emptied.
+ON_DELETE = ("restrict", "cascade", "clear")
+
+
 class ReferenceType(FieldType):
     name = "reference"
     label = "Reference"
@@ -26,7 +33,7 @@ class ReferenceType(FieldType):
         return None if value is None else str(value)
 
     def option_problems(self, options: dict[str, Any]) -> list[str]:
-        own = ("table", "key", "match")
+        own = ("table", "key", "match", "on_delete")
         found = super().option_problems({k: v for k, v in options.items() if k not in own})
         table = options.get("table")
         if not isinstance(table, str) or not TABLE.match(table):
@@ -38,6 +45,9 @@ class ReferenceType(FieldType):
             key is None or not isinstance(match, str) or not MATCH.match(match)
         ):
             found.append("match must name the target's key fields (like name), with a key.")
+        on_delete = options.get("on_delete")
+        if on_delete is not None and on_delete not in ON_DELETE:
+            found.append("on_delete is restrict, cascade or clear.")
         return found
 
     def column_type(self, options: dict[str, Any]) -> str:
@@ -64,10 +74,14 @@ def Reference(
     *,
     key: str | None = None,
     match: str = "name",
+    on_delete: str | None = None,
     **common: Unpack[Common],
 ) -> Field:
-    """`key`: the field naming the target by its `match` (the database fills the link)."""
+    """`key`: the field naming the target by its `match` (the database fills the link).
+    `on_delete`: restrict, cascade or clear (`ON_DELETE`); none keeps the reference."""
     options: dict[str, Any] = {"table": table}
     if key is not None:
         options |= {"key": key, "match": match}
+    if on_delete is not None:
+        options["on_delete"] = on_delete
     return declare("reference", label, options, common)

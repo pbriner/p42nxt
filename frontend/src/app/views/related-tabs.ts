@@ -2,15 +2,18 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { Api } from '../core/api';
+import { Api, describe } from '../core/api';
 import { FieldInfo, TableInfo, shown } from '../core/format';
 import { I18n } from '../core/i18n';
 import { ListViews } from '../core/list-views';
 import { Tables, path } from '../core/tables';
+import { askToDelete } from './delete-dialog';
+import { RecordDialog, RecordOf } from './record-dialog';
 import { RelatedListsDialog } from './related-lists-dialog';
 
 export interface Related {
@@ -34,9 +37,14 @@ interface Opened {
   next: string | null;
   before: (string | null)[];
   page: number;
+  /** A column to sort by (`-` first: descending), and the words searched for. */
+  sort: string | null;
+  search: string;
 }
 
 const MAX_ROWS = 20;
+// Fields a search looks in: those read as text.
+const SEARCHED = new Set(['text', 'translated']);
 const LAYOUTS = '/api/v1/sys/related_layout';
 
 /** The person's own choice for a form (a personal record). */
@@ -61,9 +69,12 @@ export class RelatedTabs {
   private readonly views = inject(ListViews);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
+  private readonly snack = inject(MatSnackBar);
   readonly table = input.required<string>();
   readonly id = input.required<string>();
   readonly lists = input.required<Related[]>();
+  /** The record these lists belong to, by name: a new line shows it. */
+  readonly name = input<string>('');
 
   protected readonly counts = signal(new Map<string, number | null>());
   private readonly layout = signal<Layout | null>(null);
@@ -101,7 +112,8 @@ export class RelatedTabs {
     };
   }
 
-  private async countAll(lists: Related[], id: string): Promise<void> {
+  /** Counts every list; then opens the one chosen before (or `stay`, after a change in it). */
+  private async countAll(lists: Related[], id: string, stay?: Related): Promise<void> {
     const counts = new Map<string, number | null>();
     await Promise.all(
       lists.map(async (r) => {
@@ -116,6 +128,9 @@ export class RelatedTabs {
       }),
     );
     this.counts.set(counts);
+    if (stay) {
+      return;
+    }
     await this.loadLayout();
     const last = this.layout()?.last;
     this.choose(
@@ -195,11 +210,17 @@ export class RelatedTabs {
     this.choose(0, false);
   }
 
+  /** The latest load: an earlier one finishing later doesn't replace what it shows. */
+  private loads = 0;
+
   private async open(
     related: Related,
     after: string | null = null,
     before: (string | null)[] = [],
+    sort: string | null = null,
+    search = '',
   ): Promise<void> {
+    const load = ++this.loads;
     const [info, view] = await Promise.all([
       this.tables.describe(related.table),
       this.views.view(related.table).catch(() => null),
@@ -207,6 +228,14 @@ export class RelatedTabs {
     const columns = (view?.columns ?? [info.display ?? 'sys_id']).filter(
       (c) => c !== related.field && info.fields.find((f) => f.name === c)?.read,
     );
+    const words = search.trim();
+    const searched = columns.filter((c) => SEARCHED.has(this.field(info, c)?.kind ?? ''));
+    const where =
+      words && searched.length
+        ? JSON.stringify({
+            or: searched.map((c) => ({ field: c, op: 'contains', value: words })),
+          })
+        : null;
     const { data } = await this.api.get<{
       records: Record<string, unknown>[];
       next: string | null;
@@ -214,11 +243,15 @@ export class RelatedTabs {
       query: {
         ...this.filters(related, this.id()),
         limit: MAX_ROWS,
-        sort: view?.sort?.join(',') ?? '-updated',
+        sort: sort ?? view?.sort?.join(',') ?? '-updated',
         count: false,
         after,
+        where,
       },
     });
+    if (load !== this.loads) {
+      return;
+    }
     this.opened.set({
       related,
       info,
@@ -228,7 +261,130 @@ export class RelatedTabs {
       next: data.next ?? null,
       before,
       page: before.length,
+      sort,
+      search,
     });
+  }
+
+  /** The open list again, from its first page: sorted, searched, or after a change. */
+  private async again(changes: { sort?: string | null; search?: string } = {}): Promise<void> {
+    const list = this.opened();
+    if (!list) {
+      return;
+    }
+    await this.open(
+      list.related,
+      null,
+      [],
+      changes.sort !== undefined ? changes.sort : list.sort,
+      changes.search ?? list.search,
+    );
+  }
+
+  /** A header click: by this column, then the other way round, then as the view sorts. */
+  protected async sortBy(column: string): Promise<void> {
+    const now = this.opened()?.sort;
+    const next = now === column ? `-${column}` : now === `-${column}` ? null : column;
+    await this.again({ sort: next });
+  }
+
+  protected sorted(list: Opened, column: string): 'ascending' | 'descending' | null {
+    return list.sort === column ? 'ascending' : list.sort === `-${column}` ? 'descending' : null;
+  }
+
+  private searching: ReturnType<typeof setTimeout> | undefined;
+
+  protected search(words: string): void {
+    clearTimeout(this.searching);
+    this.searching = setTimeout(() => void this.again({ search: words }), 300);
+  }
+
+  /** A modified click (new tab, new window) goes to the page itself. */
+  private modified(event?: MouseEvent | KeyboardEvent): boolean {
+    return !!event && (event.ctrlKey || event.metaKey || event.shiftKey);
+  }
+
+  private pageOf(commands: string[], query: Record<string, string> = {}): void {
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(commands, { queryParams: query }),
+    );
+    window.open(url, '_blank', 'noopener');
+  }
+
+  /** The page for a new line: where a modified or middle click goes. */
+  protected newLink(related: Related): string {
+    return this.router.serializeUrl(
+      this.router.createUrlTree(['/form', related.table, 'new'], {
+        queryParams: this.prefill(related),
+      }),
+    );
+  }
+
+  /** A new line here, in a dialog: it already belongs to this record. A modified click leaves
+   * the link to the browser (a new tab). */
+  protected async add(related: Related, event: MouseEvent): Promise<void> {
+    if (this.modified(event)) {
+      return;
+    }
+    event.preventDefault();
+    await this.edit(related, null);
+  }
+
+  private async edit(related: Related, id: string | null): Promise<void> {
+    const fixed = this.prefill(related);
+    const data: RecordOf = {
+      table: related.table,
+      id,
+      fixed,
+      fixedNames: { [related.field]: this.name() },
+    };
+    const ref = this.dialog.open<RecordDialog, RecordOf, boolean>(RecordDialog, {
+      data,
+      width: '720px',
+      maxWidth: '100vw',
+    });
+    if (await firstValueFrom(ref.afterClosed())) {
+      // Read again first: rows keep the version a next change or delete is made on.
+      await this.countAll(this.lists(), this.id(), related);
+      await this.again();
+      const label = (await this.tables.describe(related.table)).label;
+      this.snack.open(
+        id ? this.i18n.t('form.saved') : this.i18n.t('form.created', { label }),
+        undefined,
+        { duration: 2500 },
+      );
+    }
+  }
+
+  protected async remove(list: Opened, row: Record<string, unknown>): Promise<void> {
+    const table = list.related.table;
+    const id = String(row['sys_id']);
+    const display = list.info.display;
+    const name = display ? this.value(list.info, row, display) : id;
+    const confirm = await askToDelete(this.dialog, { table, id, item: list.info.label, name });
+    if (confirm === null) {
+      return;
+    }
+    try {
+      await this.api.delete(path(table, id), String(row['_etag']), { query: { confirm } });
+    } catch (error) {
+      this.snack.open(describe(error), this.i18n.t('common.close'));
+      return;
+    }
+    await this.countAll(this.lists(), this.id(), list.related);
+    await this.again();
+    const undo = this.snack.open(this.i18n.t('list.deleted', { name }), this.i18n.t('list.undo'), {
+      duration: 6000,
+    });
+    undo.onAction().subscribe(async () => {
+      await this.api.post(`${path(table, id)}/restore`);
+      await this.countAll(this.lists(), this.id(), list.related);
+      await this.again();
+    });
+  }
+
+  protected may(row: Record<string, unknown>, operation: string): boolean {
+    return !!(row['_access'] as Record<string, boolean> | undefined)?.[operation];
   }
 
   /** The next page of the open list, or the one before. */
@@ -277,8 +433,14 @@ export class RelatedTabs {
     return { [related.field]: this.id(), ...related.also };
   }
 
-  protected openRow(table: string, row: Record<string, unknown>): void {
-    void this.router.navigate(['/form', table, String(row['sys_id'])]);
+  /** A row opens in a dialog; with Ctrl or Cmd, its page. */
+  protected openRow(related: Related, row: Record<string, unknown>, event?: MouseEvent): void {
+    const id = String(row['sys_id']);
+    if (this.modified(event)) {
+      this.pageOf(['/form', related.table, id]);
+      return;
+    }
+    void this.edit(related, id);
   }
 
   protected count(r: Related): string {

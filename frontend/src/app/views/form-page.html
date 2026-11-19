@@ -188,7 +188,7 @@
     }
 
     @if (!creating() && !deleted()) {
-      <app-related-tabs [table]="table.table" [id]="id()" [lists]="related()" />
+      <app-related-tabs [table]="table.table" [id]="id()" [lists]="related()" [name]="name()" />
     }
     @if (table.comments && !creating() && !deleted()) {
       <app-record-comments [table]="table.table" [id]="id()" />

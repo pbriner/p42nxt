@@ -24,6 +24,12 @@ problem is reported at once.
 
 Options every field takes: `required`, `unique`, `default`, `help`, `personal` (personal data).
 
+A default may be a word, worked out on each create: `@me` (a reference to `sys.person`: who
+creates the record), `@today`, `@today+14d` (`d`, `w`, `m`, `y`) and the period words of the
+filter language for dates, `@now` and `@now+2h` for dates and times. Hooks see defaults; the
+table's description gives a default worked out for the person asking, and the word as
+`default_rule`.
+
 ## Field types
 
 One file per type in `backend/src/p42cloud/data/types/`. Each type decides the column, the checks
@@ -43,7 +49,8 @@ the database makes, how a value is checked and stored, and which changes keep ev
 | `Boolean` | `boolean` | |
 | `Date`, `DateTime`, `Duration` | `date`, `timestamptz`, `interval` | A date and time needs a time zone and is stored in UTC. Durations are ISO 8601 without years or months (`P1DT2H30M`) |
 | `Choice(values, tones=)` | `text` | One of the declared values (`a-z`, `0-9`, `_`), each with a label. `tones` makes some stand out in lists: `primary`, `tertiary`, `error` or `muted` (struck through), in the theme's colours |
-| `Reference(table)` | `uuid` | The record exists (foreign key, indexed). `key=` fills it from another field instead (below) |
+| `Reference(table, on_delete=)` | `uuid` | The record exists (foreign key, indexed). `key=` fills it from another field instead (below); `on_delete` says what deleting the target does (below) |
+| `Number(prefix=, digits=)` | `text` | A record number from the database (below) |
 | `AnyRecord(table_field=)` | `uuid` | A record of any table; `table_field` names the field saying which (a reference to `sys.table`, or a table's name), and gives the linked record a related list |
 | `Json` | `jsonb` | Valid JSON |
 
@@ -66,6 +73,23 @@ records service looks the name up first, so the table's checks see it, and a req
 satisfied by its picked link. Forms show the link and hide the name. Records there already are linked when the reference is added. Like any
 reference, it gives the target's form a related list.
 
+### What deleting the target does
+
+`on_delete` on a reference: `restrict` refuses deleting the record it points to while active
+records point to it; `cascade` deletes them with it (lines that belong to it), and restoring it
+brings back exactly those; `clear` empties the reference (not on a required field). Without it,
+the reference keeps pointing to the deleted record, shown as deleted. Changing it changes no
+value. `records.md` has the preview and the confirmation.
+
+### Record numbers
+
+`Number("Invoice", prefix="INV", digits=7)` gives INV-0000001, INV-0000002 … (no prefix: just
+digits; past its digits a number grows). The database gives each new record the next number
+from a counter of its own (per field), whatever was sent; nobody types or changes one (the API
+refuses it, and so does the database). A number is never given twice, not even after a delete:
+it's unique among all records, deleted ones too. Records there when the field is added are
+numbered in the order they were made.
+
 ### Read-only fields
 
 `read_only=True` on a field (any type) marks what the platform or the module sets: a check's
@@ -80,6 +104,8 @@ health comes from its check only).
 - **Unique**: among active records. A deleted record's value can be used again.
 - Choices, formats and references are checked by the database too, so they hold for SQL outside
   the app.
+- **References that refuse a delete** (`on_delete="restrict"`) and **record numbers** hold for
+  SQL outside the app too.
 
 ## Changing a table
 

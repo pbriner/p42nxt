@@ -80,9 +80,11 @@ LINE = Table(
     "line",
     "Budget line",
     {
-        "version": Reference("Version", "budget.version", required=True),
-        "center": Reference("Cost center", "costing.center", required=True),
-        "cost_type": Reference("Cost type", "costing.cost_type", required=True),
+        "version": Reference("Version", "budget.version", required=True, on_delete="cascade"),
+        "center": Reference("Cost center", "costing.center", required=True, on_delete="restrict"),
+        "cost_type": Reference(
+            "Cost type", "costing.cost_type", required=True, on_delete="restrict"
+        ),
         "month": Integer("Month", required=True),
         "currency": Currency("Currency", read_only=True),
         "amount": Money("Amount", currency_field="currency", required=True),
@@ -351,7 +353,7 @@ module = Module(
     name="Budget",
     publisher="p42",
     version=package_version("p42cloud-budget"),
-    depends_on={"sys": ">=0.43,<1", "costing": ">=0.3,<1"},
+    depends_on={"sys": ">=0.46,<1", "costing": ">=0.3,<1"},
     tables=TABLES,
     roles=(PLANNER, CONTROLLER, READER),
     hooks=(

@@ -1,9 +1,11 @@
 """Tables: described for the caller (every table), and built by administrators (their own)."""
 
 from typing import Annotated, Any
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Body, Depends, Request
 
+from p42cloud.data.conditions import Situation
 from p42cloud.data.presenting import describe
 from p42cloud.kernel.context import working_as
 from p42cloud.kernel.errors import Problem
@@ -28,7 +30,11 @@ async def describe_table(module: str, table: str, request: Request, caller: Who)
     found = catalog.table(f"{module}.{table}")
     if found is None or found.switched_off or found.retired:
         raise Problem(404, "no_table", "There's no such table.", detail=f"{module}.{table}")
-    return describe(found, caller.access, language(request), catalog)
+    context = caller.context(language(request))
+    situation = Situation(
+        context.person_id, context.language, context.access.groups, zone=ZoneInfo(context.zone)
+    )
+    return describe(found, caller.access, language(request), catalog, situation)
 
 
 @router.post("/tables")

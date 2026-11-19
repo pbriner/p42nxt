@@ -164,12 +164,8 @@ def _wanted(catalog: Catalog, table: TableDef) -> tuple[dict[str, str], dict[str
                 " (sys_id)",
             )
             index((f.name,), "i", f"INDEX {{name}} ON {{table}} ({column})")
-        if f.field.unique:
-            index(
-                (f.name,),
-                "u",
-                f"UNIQUE INDEX {{name}} ON {{table}} ({column}) WHERE deleted IS NULL",
-            )
+        if (unique := _unique(f)) is not None:
+            index((f.name,), "u", unique)
     active = {f.name for f in table.active_fields()}
     for together in table.unique_together:
         if set(together) <= active:
@@ -180,6 +176,16 @@ def _wanted(catalog: Catalog, table: TableDef) -> tuple[dict[str, str], dict[str
                 f"UNIQUE INDEX {{name}} ON {{table}} ({columns}) WHERE deleted IS NULL",
             )
     return constraints, indexes
+
+
+def _unique(f: FieldDef) -> str | None:
+    column = ident(f.name)
+    if f.type.generated:
+        # Never given twice: deleted records keep theirs.
+        return f"UNIQUE INDEX {{name}} ON {{table}} ({column})"
+    if f.field.unique:
+        return f"UNIQUE INDEX {{name}} ON {{table}} ({column}) WHERE deleted IS NULL"
+    return None
 
 
 _VARCHAR = re.compile(r"^character varying\((\d+)\)$")
@@ -229,6 +235,109 @@ def _links(table: TableDef) -> tuple[str, ...]:
         schema, name = str(f.field.options["table"]).split(".", 1)
         found += [f.name, key, qualified(schema, name), str(f.field.options["match"])]
     return tuple(found)
+
+
+def _counter(table: TableDef, column: str) -> str:
+    """A record number's counter: named for the table and field forever, so a field removed and
+    declared again goes on counting."""
+    return qualified(table.schema, _name(table, column, "n", "counter"))
+
+
+def _numbers(table: TableDef) -> tuple[str, ...]:
+    """The number trigger's arguments: per record number, four (types/number.py)."""
+    found: list[str] = []
+    for f in table.active_fields():
+        if f.type.generated:
+            options = f.field.options
+            found += [
+                f.name,
+                _counter(table, f.name),
+                # '-' for none: the database keeps no empty trigger arguments.
+                str(options.get("prefix") or "-"),
+                str(options["digits"]),
+            ]
+    return tuple(found)
+
+
+def _number_steps(table: TableDef, before: tuple[str, ...]) -> list[Step]:
+    """The number trigger (again, if its fields changed); new counters; the records there
+    already numbered in the order they were made."""
+    wanted = _numbers(table)
+    if wanted == before:
+        return []
+    name = qualified(table.schema, table.name)
+    steps = [Step(f"DROP TRIGGER IF EXISTS p42_number ON {name}", f"Stop numbering {table.key}")]
+    if not wanted:
+        return steps
+    old = {before[i] for i in range(0, len(before), 4)}
+    for i in range(0, len(wanted), 4):
+        if wanted[i] not in old:
+            steps.append(
+                Step(
+                    f"CREATE SEQUENCE IF NOT EXISTS {wanted[i + 1]}",
+                    f"Count the numbers of {table.key}.{wanted[i]}",
+                )
+            )
+    arguments = ", ".join(literal(a) for a in wanted)
+    steps.append(
+        Step(
+            f"CREATE TRIGGER p42_number BEFORE INSERT OR UPDATE ON {name}"
+            f" FOR EACH ROW EXECUTE FUNCTION sys.p42_number({arguments})",
+            f"Number {table.key}'s records",
+        )
+    )
+    for i in range(0, len(wanted), 4):
+        column = ident(wanted[i])
+        if wanted[i] in old:
+            continue
+        # One by one, oldest first: a single UPDATE doesn't promise an order.
+        each = (
+            f"FOR r IN SELECT sys_id FROM {name} WHERE {column} IS NULL"  # noqa: S608 - checked names only
+            f" ORDER BY created, sys_id LOOP UPDATE {name} SET {column} = NULL"
+            " WHERE sys_id = r.sys_id; END LOOP;"
+        )
+        steps.append(
+            Step(
+                f"DO $$ DECLARE r record; BEGIN {each} END $$",
+                f"Number the records of {table.key} there already ({wanted[i]})",
+            )
+        )
+    return steps
+
+
+def _restricting(catalog: Catalog, table: TableDef) -> tuple[str, ...]:
+    """The in-use trigger's arguments: per reference to this table that refuses its delete, its
+    table and column."""
+    found: list[str] = []
+    for source in sorted(catalog.tables.values(), key=lambda t: t.key):
+        if source.retired:
+            continue
+        for f in source.active_fields():
+            options = f.field.options
+            if (f.field.type, options.get("table"), options.get("on_delete")) == (
+                "reference",
+                table.key,
+                "restrict",
+            ):
+                found += [qualified(source.schema, source.name), f.name]
+    return tuple(found)
+
+
+def _in_use_steps(table: TableDef, wanted: tuple[str, ...], before: tuple[str, ...]) -> list[Step]:
+    if wanted == before:
+        return []
+    name = qualified(table.schema, table.name)
+    steps = [Step(f"DROP TRIGGER IF EXISTS p42_in_use ON {name}", f"Stop guarding {table.key}")]
+    if wanted:
+        arguments = ", ".join(literal(a) for a in wanted)
+        steps.append(
+            Step(
+                f"CREATE TRIGGER p42_in_use BEFORE UPDATE OF deleted ON {name}"
+                f" FOR EACH ROW EXECUTE FUNCTION sys.p42_in_use({arguments})",
+                f"Keep {table.key}'s records while others need them",
+            )
+        )
+    return steps
 
 
 def _tree_steps(table: TableDef, before: tuple[str, ...]) -> list[Step]:
@@ -301,7 +410,7 @@ def _create(table: TableDef, wanted_role: str) -> list[Step]:
     ]
     if table.key in METADATA_TABLES:
         steps.append(_announce(table))
-    return steps + _link_steps(table, ()) + _tree_steps(table, ())
+    return steps + _link_steps(table, ()) + _tree_steps(table, ()) + _number_steps(table, ())
 
 
 def _announce(table: TableDef) -> Step:
@@ -371,6 +480,7 @@ def _change(table: TableDef, existing: Existing) -> list[Step]:
         steps
         + _link_steps(table, existing.triggers.get("p42_link", ()))
         + _tree_steps(table, existing.triggers.get("p42_tree", ()))
+        + _number_steps(table, existing.triggers.get("p42_number", ()))
     )
 
 
@@ -408,6 +518,9 @@ def plan(catalog: Catalog, database: Database) -> list[Step]:
             existing = Existing()
         else:
             building += _change(table, existing)
+        building += _in_use_steps(
+            table, _restricting(catalog, table), existing.triggers.get("p42_in_use", ())
+        )
         name = qualified(table.schema, table.name)
         constraints, indexes = _wanted(catalog, table)
         for old in sorted(existing.constraints - constraints.keys()):

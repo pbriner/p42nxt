@@ -8,8 +8,8 @@ from typing import Any
 from uuid import UUID
 
 from p42cloud.data.catalog import Catalog, FieldDef, TableDef
-from p42cloud.data.conditions import SYSTEM_FIELDS
-from p42cloud.data.records import Record, Records
+from p42cloud.data.conditions import SYSTEM_FIELDS, Situation, default_of, is_dynamic
+from p42cloud.data.records import Pointing, Record, Records
 from p42cloud.kernel.context import Access
 from p42cloud.kernel.errors import Problem
 
@@ -36,8 +36,21 @@ def _covers(access: Access, table: TableDef, operation: str, name: str) -> bool:
     )
 
 
-def _field(table: TableDef, f: FieldDef, access: Access, language: str) -> dict[str, Any]:
+def _default(f: FieldDef, situation: Situation | None) -> Any:
+    raw = f.field.default
+    if raw is None:
+        return None
+    if is_dynamic(f, raw):
+        # Worked out for the person asking (today, them), so a form can show it; the word too.
+        return None if situation is None else f.type.to_json(default_of(f, situation))
+    return f.type.to_json(raw)
+
+
+def _field(
+    table: TableDef, f: FieldDef, access: Access, language: str, situation: Situation | None
+) -> dict[str, Any]:
     system = f.name in SYSTEM_FIELDS
+    fixed = system or f.type.generated
     described: dict[str, Any] = {
         "name": f.name,
         "type": f.field.type,
@@ -45,11 +58,13 @@ def _field(table: TableDef, f: FieldDef, access: Access, language: str) -> dict[
         "help": translated(f.field.help, language),
         "required": f.field.required,
         "unique": f.field.unique,
-        "default": f.type.to_json(f.field.default) if f.field.default is not None else None,
+        "default": _default(f, situation),
+        # A default named by a word (`@me`, `@today+14d`): worked out on each create.
+        "default_rule": f.field.default if is_dynamic(f, f.field.default) else None,
         "system": system,
         "read": _covers(access, table, "read", f.name),
-        "create": not system and _covers(access, table, "create", f.name),
-        "write": not system and _covers(access, table, "write", f.name),
+        "create": not fixed and _covers(access, table, "create", f.name),
+        "write": not fixed and _covers(access, table, "write", f.name),
         "filter": f.type.kind is not None,
         # Which operators apply (the filter language's kinds); None: not filtered or sorted.
         "kind": f.type.kind,
@@ -106,7 +121,11 @@ def _also(table: TableDef, f: FieldDef, fields: dict[str, FieldDef]) -> dict[str
 
 
 def describe(
-    table: TableDef, access: Access, language: str, catalog: Catalog | None = None
+    table: TableDef,
+    access: Access,
+    language: str,
+    catalog: Catalog | None = None,
+    situation: Situation | None = None,
 ) -> dict[str, Any]:
     """The table as one person sees it: labels in their language, what they may do, and (with
     the catalog) which tables point to it."""
@@ -126,7 +145,9 @@ def describe(
         # Its records have a conversation.
         "comments": table.comments,
         "operations": {op: bool(access.of(table.key, op)) for op in OPERATIONS},
-        "fields": [_field(table, f, access, language) for f in [*table.active_fields(), *system]],
+        "fields": [
+            _field(table, f, access, language, situation) for f in [*table.active_fields(), *system]
+        ],
         "referenced_by": _referenced_by(catalog, table, access, language) if catalog else [],
     }
 
@@ -262,6 +283,67 @@ def _names_of(
     return display, state
 
 
+_PERSON = "sys.person"
+_BY_PERSON = ("created_by", "updated_by", "deleted_by")
+
+
+def _people(found: list[Record]) -> set[UUID]:
+    return {v for r in found for name in _BY_PERSON if isinstance(v := r.values.get(name), UUID)}
+
+
+def _who(record: Record, people: dict[UUID, tuple[Any, bool]]) -> dict[str, Any]:
+    """Who made, changed or deleted it, named: system fields, so not among the table's own
+    references."""
+    return {
+        name: people[person][0]
+        for name in _BY_PERSON
+        if isinstance(person := record.values.get(name), UUID) and person in people
+    }
+
+
+PREVIEW_RECORDS = 10  # named per group in a delete's preview
+
+
+async def deletion_preview(records: Records, key: str, sys_id: UUID) -> dict[str, Any]:
+    """What deleting this record would do, for the person to confirm: per table and field, how
+    many records and the first of them they may read, named. `fingerprint` confirms it."""
+    plan = await records.deletion(key, sys_id)
+    language = records.situation.language
+
+    async def group(p: Pointing) -> dict[str, Any]:
+        names = await named(records, records.catalog, p.table.key, set(p.ids[:PREVIEW_RECORDS]))
+        allowed = await records.may(p.table, p.ids, ("delete",))
+        return {
+            "table": p.table.key,
+            "label": translated(p.table.label_plural or p.table.label, language),
+            "label_one": translated(p.table.label, language),
+            "field": p.field.name,
+            "field_label": translated(p.field.field.label, language),
+            "count": len(p.ids),
+            "records": [
+                {"sys_id": str(i), "name": names[i][0]}
+                for i in p.ids[:PREVIEW_RECORDS]
+                if i in names
+            ],
+            # Each one must be deletable by the person too, or the delete is refused.
+            "may_delete": all(allowed.get(i, {}).get("delete", False) for i in p.ids),
+        }
+
+    return {
+        "fingerprint": plan.fingerprint,
+        "changes": plan.changes,
+        **{
+            kind: [await group(p) for p in found]
+            for kind, found in (
+                ("cascade", plan.cascade),
+                ("clear", plan.clear),
+                ("blocked", plan.blocked),
+                ("kept", plan.kept),
+            )
+        },
+    }
+
+
 async def annotate(records: Records, table: TableDef, found: list[Record]) -> list[dict[str, Any]]:
     """The records as JSON, each with `_display` (references and choices named) and `_access`
     (what the person may do with it)."""
@@ -273,6 +355,8 @@ async def annotate(records: Records, table: TableDef, found: list[Record]) -> li
             target = _target(records.catalog, table, f, r)
             if target is not None and isinstance(r.values.get(f.name), UUID):
                 references.setdefault(target, set()).add(r.values[f.name])
+    if people := _people(found):
+        references.setdefault(_PERSON, set()).update(people)
     names = {
         key: await named(records, records.catalog, key, ids) for key, ids in references.items()
     }
@@ -284,6 +368,7 @@ async def annotate(records: Records, table: TableDef, found: list[Record]) -> li
     )
     for record, body in zip(found, bodies, strict=True):
         display, state = _names_of(records.catalog, table, record, names, language)
+        display |= _who(record, names.get(_PERSON, {}))
         body["_display"] = display
         if state:
             body["_reference_state"] = state

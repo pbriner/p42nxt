@@ -15,7 +15,7 @@ for additions to be recorded (`P42_SDK_SURFACE=write uv run pytest tests/test_sd
 | Name | For |
 |---|---|
 | `Module`, `Migration` | The manifest and data migrations (`modules.md`) |
-| `Table` and the field types (`String`, `Decimal`, `Money`, `Currency`, `Reference` …) | Declaring tables (`tables.md`); `Client.convert()` converts amounts (`currencies.md`) |
+| `Table` and the field types (`String`, `Decimal`, `Money`, `Currency`, `Reference`, `Number` …) | Declaring tables (`tables.md`); `Client.convert()` converts amounts (`currencies.md`) |
 | `Role`, `Grant` | Declaring roles (`access.md`) |
 | `Section`, `Item`, `ListView`, `FormView`, `FormSection`, `RelatedList` | Declaring navigation, list views and forms (`screens.md`) |
 | `Job`, `Schedule`, `JobRun` | Declaring jobs and when they run (`jobs.md`) |

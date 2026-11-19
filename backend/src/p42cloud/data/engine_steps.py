@@ -515,6 +515,68 @@ REVOKE ALL ON FUNCTION sys.p42_audit_months_ahead(integer) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.p42_audit_months_ahead(integer) TO p42_mod_sys;
 """
 
+# Record numbers (types/number.py), four arguments per field: its column, its counter, its prefix
+# ('-' for none) and its digits. A new record always gets the next number, whatever was sent; a
+# record without one yet (the field is new) gets it on its next change; a number never changes
+# (kind n). Run as the owner, so the counter needs no grant.
+_NUMBERS = """
+CREATE FUNCTION sys.p42_number() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog, sys AS $$
+DECLARE
+    i integer := 0;
+    fresh jsonb := to_jsonb(NEW);
+    before jsonb := CASE WHEN TG_OP = 'UPDATE' THEN to_jsonb(OLD) ELSE '{}'::jsonb END;
+    n bigint;
+    given text;
+    patch jsonb := '{}'::jsonb;
+BEGIN
+    WHILE i < TG_NARGS LOOP
+        IF TG_OP = 'INSERT' OR before ->> TG_ARGV[i] IS NULL THEN
+            n := nextval(TG_ARGV[i + 1]::regclass);
+            given := lpad(n::text, greatest(TG_ARGV[i + 3]::integer, length(n::text)), '0');
+            IF TG_ARGV[i + 2] <> '-' THEN
+                given := TG_ARGV[i + 2] || '-' || given;
+            END IF;
+            patch := patch || jsonb_build_object(TG_ARGV[i], given);
+        ELSIF fresh ->> TG_ARGV[i] IS DISTINCT FROM before ->> TG_ARGV[i] THEN
+            RAISE EXCEPTION 'a record number never changes'
+                USING ERRCODE = '23514', CONSTRAINT = 'p42_' || TG_ARGV[i] || '_n';
+        END IF;
+        i := i + 4;
+    END LOOP;
+    NEW := jsonb_populate_record(NEW, patch);
+    RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION sys.p42_number() FROM PUBLIC;
+"""
+
+# A record others still point to through a reference declaring on_delete="restrict" isn't deleted
+# (kind u), however it's written; two arguments per such reference: its table and its column.
+# The records service refuses first, with what points to it; this is the backstop.
+_IN_USE = """
+CREATE FUNCTION sys.p42_in_use() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog, sys AS $$
+DECLARE
+    i integer := 0;
+    found boolean;
+BEGIN
+    IF NEW.deleted IS NULL OR OLD.deleted IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
+    WHILE i < TG_NARGS LOOP
+        EXECUTE format('SELECT EXISTS (SELECT 1 FROM %s WHERE %I = $1 AND deleted IS NULL)',
+                       TG_ARGV[i]::regclass, TG_ARGV[i + 1]) INTO found USING NEW.sys_id;
+        IF found THEN
+            RAISE EXCEPTION 'records still point to it'
+                USING ERRCODE = '23503', CONSTRAINT = 'p42_deleted_u';
+        END IF;
+        i := i + 2;
+    END LOOP;
+    RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION sys.p42_in_use() FROM PUBLIC;
+"""
+
 STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0001_context", _CONTEXT),
     ("0002_record_rules", _RECORD_RULES),
@@ -530,4 +592,6 @@ STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0012_trees", _TREES),
     ("0013_file_data", _FILE_DATA),
     ("0014_audit_months_ahead", _AUDIT_MONTHS_AHEAD),
+    ("0015_record_numbers", _NUMBERS),
+    ("0016_in_use", _IN_USE),
 )

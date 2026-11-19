@@ -1023,6 +1023,11 @@
    "text": "Von einem Administrator erstellt"
   },
   {
+   "key": "sys.field|sys.form_rule.fill|label",
+   "english": "Fill when empty",
+   "text": "Füllen, wenn leer"
+  },
+  {
    "key": "sys.field|sys.form_rule.hide|label",
    "english": "Hide",
    "text": "Ausblenden"

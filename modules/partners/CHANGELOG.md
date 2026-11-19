@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Deleting a partner deletes its contacts with it, after a confirmation that lists them; a
+  partner with contracts can't be deleted. Needs the core 0.46.
+
 ## 0.1.0
 
 - Partners (companies and people; suppliers, customers, tenants), with address, email, phone,

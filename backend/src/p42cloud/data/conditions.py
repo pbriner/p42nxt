@@ -28,7 +28,8 @@ MAX_WALK = 3
 _BASE = frozenset({"eq", "ne", "empty", "not_empty"})
 _ORDERED = _BASE | {"lt", "lte", "gt", "gte", "between"}
 OPERATORS: dict[str, frozenset[str]] = {
-    "text": _BASE | {"contains", "not_contains", "starts_with", "ends_with", "in", "not_in"},
+    "text": _BASE
+    | {"contains", "not_contains", "starts_with", "ends_with", "in", "not_in", "matches"},
     "translated": _BASE | {"contains", "not_contains", "starts_with", "ends_with"},
     "number": _ORDERED,
     "date": _ORDERED,
@@ -41,6 +42,26 @@ OPERATORS: dict[str, frozenset[str]] = {
 # Operators that also match records without a value (F-2), through references too.
 KEEPS_EMPTY = frozenset({"ne", "not_in", "not_contains", "empty"})
 _LIST_OPERATORS = frozenset({"in", "not_in"})
+# `matches`: a regular expression, case ignored. Short and without back-references, so the
+# database's matcher stays fast whatever the text.
+MAX_PATTERN = 200
+_BACK_REFERENCE = re.compile(r"\\[1-9]")
+
+
+def checked_pattern(raw: Any) -> str:
+    """A `matches` value, checked: refused rather than slow or wrong."""
+    if not isinstance(raw, str) or not raw:
+        raise Invalid("A pattern is text.")
+    if len(raw) > MAX_PATTERN:
+        raise Invalid(f"A pattern has at most {MAX_PATTERN} characters.")
+    if _BACK_REFERENCE.search(raw):
+        raise Invalid("A pattern can't refer back to what it matched (like \\1).")
+    try:
+        re.compile(raw)
+    except re.error as error:
+        raise Invalid(f"Not a pattern: {error}.") from error
+    return raw
+
 
 SYSTEM_FIELDS: dict[str, Field] = {
     "sys_id": Field("reference", {"en": "ID"}, {"table": "-"}),
@@ -195,6 +216,20 @@ def value_of(f: FieldDef, raw: Any, situation: Situation) -> Any:
     if kind == "boolean" and raw in ("true", "false"):  # from a URL, where values are text
         return raw == "true"
     return f.type.check(raw, f.field.options)
+
+
+DYNAMIC_KINDS = frozenset({"reference", "date", "datetime"})
+
+
+def is_dynamic(f: FieldDef, raw: Any) -> bool:
+    """A default named by a word (`@me`, `@today+14d`, `@now`), worked out on each create."""
+    return isinstance(raw, str) and raw.startswith("@") and f.type.kind in DYNAMIC_KINDS
+
+
+def default_of(f: FieldDef, situation: Situation) -> Any:
+    """A field's default for a record made now, by this person."""
+    raw = f.field.default
+    return value_of(f, raw, situation) if is_dynamic(f, raw) else raw
 
 
 # ---- building ----
@@ -359,6 +394,8 @@ class Filter:
         def norm(sql: str) -> str:
             return f"sys.unaccent('sys.unaccent'::regdictionary, lower({sql}))"
 
+        if op == "matches":
+            return f"({x} IS NOT NULL AND {x} ~* {self.query.bind(checked_pattern(raw))})"
         values = self.values(f, op, raw)
         if op in _LIST_OPERATORS:
             listed = ", ".join(norm(self.query.bind(v)) for v in values)
