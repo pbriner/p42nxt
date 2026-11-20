@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-import { api, noSidewaysScroll, opened, storage } from './helpers';
+import { api, choose, noSidewaysScroll, opened, storage } from './helpers';
 
 test.use({ storageState: storage('admin') });
 
-test('a year is spread, and the version is submitted, approved and locked', async ({
+test('a line with a rhythm fills its year, and the version is approved and locked', async ({
   page,
 }, info) => {
   const tag = `${info.project.name.slice(0, 3)}${Date.now() % 100000}`;
@@ -13,20 +13,32 @@ test('a year is spread, and the version is submitted, approved and locked', asyn
   const house = (
     await client.post('/api/v1/costing/center', { code: `BH${tag}`, name: 'House', kind: 'profit' })
   ).sys_id;
-  await client.post('/api/v1/costing/center', { code: `BG${tag}`, name: 'Garden', parent: house });
-  await client.post('/api/v1/costing/cost_type', { code: `BC${tag}`, name: 'Gardening' });
+  await client.post('/api/v1/costing/center', {
+    code: `BG${tag}`,
+    name: `Garden ${tag}`,
+    parent: house,
+  });
+  await client.post('/api/v1/costing/cost_type', { code: `BC${tag}`, name: `Gardening ${tag}` });
   const version = (
     await client.post('/api/v1/budget/version', { name: `Budget ${tag}`, year: 2027 })
   ).sys_id;
 
   await page.goto(`/form/budget.version/${version}`);
-  await page.getByRole('button', { name: 'Spread a year' }).click();
+  await page.getByRole('tab', { name: /Budget lines/ }).click();
+  await page.getByRole('link', { name: 'New' }).click();
   const dialog = await opened(page);
-  await dialog.getByLabel('Cost center (code)').fill(`BG${tag}`);
-  await dialog.getByLabel('Cost type (code)').fill(`BC${tag}`);
-  await dialog.getByLabel('Amount for the year').fill('1200');
-  await dialog.getByRole('button', { name: 'Spread a year' }).click();
-  await expect(page.getByText('1,200.00 spread over the year: 100.00 a month.')).toBeVisible();
+  const center = dialog.getByRole('combobox', { name: 'Cost center' });
+  await center.fill(`Garden ${tag}`);
+  await page.getByRole('option', { name: new RegExp(`Garden ${tag}`) }).click();
+  const costType = dialog.getByRole('combobox', { name: 'Cost type' });
+  await costType.fill(`Gardening ${tag}`);
+  await page.getByRole('option', { name: new RegExp(`Gardening ${tag}`) }).click();
+  await choose(page, dialog.getByRole('combobox', { name: 'Rhythm' }), 'Quarterly');
+  await dialog.getByRole('spinbutton', { name: 'Amount', exact: true }).fill('500');
+  await dialog.getByRole('button', { name: 'Create' }).click();
+  await expect(dialog).toBeHidden();
+  // Four quarters: the year total is worked out.
+  await expect(page.getByText('2,000.00').first()).toBeVisible();
 
   for (const [move, next] of [
     ['Submit', 'Approve'],
@@ -40,6 +52,6 @@ test('a year is spread, and the version is submitted, approved and locked', asyn
     .getByRole('dialog')
     .getByRole('button', { name: /Lock|Confirm|OK|Yes/ })
     .click();
-  await expect(page.getByRole('button', { name: 'Spread a year' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Lock' })).toHaveCount(0);
   await noSidewaysScroll(page);
 });

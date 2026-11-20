@@ -619,7 +619,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-budget"
-version = "0.1.1"
+version = "0.2.0"
 source = { editable = "modules/budget" }
 dependencies = [
     { name = "p42cloud" },

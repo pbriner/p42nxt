@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0
+
+- A budget line is one cost center and cost type of a version, with a **rhythm**: monthly,
+  quarterly, yearly (spread over the months), once or by hand, an amount and the month it starts
+  in. Its months follow from the rhythm and show in the line's form; by hand, they're typed
+  there. Each line shows its year total, and the dashboard compares those with what was spent.
+- **Spread a year** is gone: the rhythm "yearly" does the same.
+- The lines of 0.1 (one per month) are moved on the upgrade: one line per cost center and cost
+  type, monthly when its twelve months are equal, else by hand with the months kept. Lines are
+  now at `/api/v1/budget/plan_line`, their months at `/api/v1/budget/month`.
+
 ## 0.1.1
 
 - Deleting a budget version deletes its lines with it, after a confirmation that lists them;

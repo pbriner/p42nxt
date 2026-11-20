@@ -1,5 +1,6 @@
 """Budget on its own installation (with Costing, and Finance for the actuals): versions and their
-flow, lines only in drafts, spreading a year, plan against actual."""
+flow, lines with a rhythm filling their months, only in drafts, moving the old lines, plan against
+actual."""
 
 import uuid
 from collections.abc import Awaitable, Callable
@@ -8,6 +9,10 @@ from typing import Any
 
 import pytest
 from p42cloud.sdk import Client, Problem
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
+
+from p42cloud_budget import move_lines
 
 Acting = Callable[..., AbstractAsyncContextManager[Client]]
 CallRoute = Callable[..., Awaitable[Any]]
@@ -44,6 +49,25 @@ async def _setup(client: Client) -> dict[str, Any]:
     return made
 
 
+async def _line(client: Client, version: str, made: dict[str, Any], **values: Any) -> Any:
+    return await client.create(
+        "budget.plan_line",
+        {
+            "version": version,
+            "center": made["Heating"]["sys_id"],
+            "cost_type": made["energy"]["sys_id"],
+        }
+        | values,
+    )
+
+
+async def _months(client: Client, line: Any) -> dict[int, str]:
+    found = await client.list(
+        "budget.month", where={"field": "line", "op": "eq", "value": line["sys_id"]}, limit=20
+    )
+    return {int(r["month"]): r["amount"] for r in found["records"]}
+
+
 async def test_a_version_is_submitted_approved_and_locked_by_a_controller(
     as_system: Acting, as_person: Acting
 ) -> None:
@@ -65,74 +89,141 @@ async def test_a_version_is_submitted_approved_and_locked_by_a_controller(
         assert (await client.get("budget.version", version["sys_id"]))["state"] == "locked"
 
 
-async def test_a_year_is_spread_and_lines_change_only_in_drafts(as_system: Acting) -> None:
+@pytest.mark.parametrize(
+    ("rhythm", "amount", "start", "months", "total"),
+    [
+        ("monthly", "30", 4, dict.fromkeys(range(4, 13), "30.00"), "270.00"),
+        ("quarterly", "500", 2, dict.fromkeys((2, 5, 8, 11), "500.00"), "2000.00"),
+        ("yearly", "1000", 1, dict.fromkeys(range(1, 12), "83.33") | {12: "83.37"}, "1000.00"),
+        ("once", "750", 9, {9: "750.00"}, "750.00"),
+    ],
+)
+async def test_a_rhythm_fills_the_months(  # noqa: PLR0913, PLR0917 - the cases
+    as_system: Acting, rhythm: str, amount: str, start: int, months: dict[int, str], total: str
+) -> None:
     async with as_system() as client:
         made = await _setup(client)
         version = await client.create("budget.version", {"name": "Plan", "year": 2027})
-        said = await client.action(
-            "budget.version",
-            version["sys_id"],
-            "budget.spread",
-            {
-                "center": made["Heating"]["code"],
-                "cost_type": made["energy"]["code"],
-                "amount": "1000",
-            },
+        line = await _line(
+            client, version["sys_id"], made, rhythm=rhythm, amount=amount, from_month=start
         )
-        lines = await client.list(
-            "budget.line",
-            where={"field": "version", "op": "eq", "value": version["sys_id"]},
-            limit=20,
+        assert await _months(client, line) == months
+    assert line["year_total"] == total
+
+
+async def test_months_follow_their_line_unless_typed_by_hand(as_system: Acting) -> None:
+    async with as_system() as client:
+        made = await _setup(client)
+        version = await client.create("budget.version", {"name": "Plan", "year": 2027})
+        line = await _line(client, version["sys_id"], made, amount="100")
+        # Quarterly from July: the other months go, the year total follows.
+        line = await client.update(
+            "budget.plan_line",
+            line["sys_id"],
+            {"rhythm": "quarterly", "from_month": 7},
+            line["_etag"],
         )
-        amounts = sorted((int(r["month"]), r["amount"]) for r in lines["records"])
-        assert amounts[0] == (1, "83.33") and amounts[11] == (12, "83.37")  # cents left in December
-        assert sum(float(a) for _, a in amounts) == pytest.approx(1000)
-        assert "83.33 a month" in said["message"]
-        # Spreading again replaces, doesn't add.
-        await client.action(
-            "budget.version",
-            version["sys_id"],
-            "budget.spread",
-            {
-                "center": made["Heating"]["code"],
-                "cost_type": made["energy"]["code"],
-                "amount": "1200",
-            },
+        assert await _months(client, line) == {7: "100.00", 10: "100.00"}
+        assert line["year_total"] == "200.00"
+        # By hand: the months stay and are typed; the year total adds them up.
+        line = await client.update(
+            "budget.plan_line", line["sys_id"], {"rhythm": "by_hand"}, line["_etag"]
         )
-        again = await client.list(
-            "budget.line",
-            where={"field": "version", "op": "eq", "value": version["sys_id"]},
-            limit=20,
-        )
-        assert len(again["records"]) == 12 and again["records"][0]["amount"] == "100.00"
+        await client.create("budget.month", {"line": line["sys_id"], "month": 12, "amount": "50"})
+        assert (await client.get("budget.plan_line", line["sys_id"]))["year_total"] == "250.00"
+    with pytest.raises(Problem) as typed:  # a rhythm's months aren't typed
+        async with as_system() as client:
+            other = await client.create("costing.cost_type", {"code": _code("WA"), "name": "Water"})
+            monthly = await _line(
+                client, version["sys_id"], made, cost_type=other["sys_id"], amount="10"
+            )
+            await client.create(
+                "budget.month", {"line": monthly["sys_id"], "month": 1, "amount": "99"}
+            )
+    assert [e.field for e in typed.value.errors] == ["amount"]
+    with pytest.raises(Problem) as twice:  # one line per cost center and cost type
+        async with as_system() as client:
+            await _line(client, version["sys_id"], made, amount="1")
+    assert [e.code for e in twice.value.errors] == ["not_unique"]
+
+
+async def test_lines_change_only_in_drafts_and_on_cost_centers(as_system: Acting) -> None:
+    async with as_system() as client:
+        made = await _setup(client)
+        version = await client.create("budget.version", {"name": "Plan", "year": 2027})
+        await _line(client, version["sys_id"], made, amount="10")
         await client.action("budget.version", version["sys_id"], "budget.move_submit")
     with pytest.raises(Problem) as refused:
         async with as_system() as client:
-            await client.create(
-                "budget.line",
-                {
-                    "version": version["sys_id"],
-                    "center": made["Garden"]["sys_id"],
-                    "cost_type": made["energy"]["sys_id"],
-                    "month": 1,
-                    "amount": "5",
-                },
+            await _line(
+                client, version["sys_id"], made, center=made["Garden"]["sys_id"], amount="5"
             )
     assert [e.field for e in refused.value.errors] == ["version"]
-    with pytest.raises(Problem) as on_profit:
-        async with as_system() as client:
-            draft = await client.create("budget.version", {"name": "Other", "year": 2027})
-            await client.create(
-                "budget.line",
-                {
-                    "version": draft["sys_id"],
-                    "center": made["house"]["sys_id"],
-                    "cost_type": made["energy"]["sys_id"],
-                    "month": 1,
-                    "amount": "5",
-                },
+    wrong_ones: list[tuple[dict[str, Any], str]] = [
+        ({"center": made["house"]["sys_id"], "amount": "5"}, "center"),
+        ({"amount": "5", "from_month": 13}, "from_month"),
+        ({}, "amount"),
+        ({"amount": "5", "year_total": "1"}, "year_total"),
+    ]
+    for wrong, field in wrong_ones:
+        with pytest.raises(Problem) as invalid:
+            async with as_system() as client:
+                draft = await client.create("budget.version", {"name": "Other", "year": 2027})
+                await _line(client, draft["sys_id"], made, **wrong)
+        assert [e.field for e in invalid.value.errors] == [field]
+
+
+async def test_the_lines_of_0_1_are_moved(as_system: Acting, p42_installation: Any) -> None:
+    """A stand-in for 0.1's table (its lines stay there, retired): equal months become a
+    monthly line, the others are typed by hand."""
+    async with as_system() as client:
+        made = await _setup(client)
+        version = await client.create("budget.version", {"name": "Old", "year": 2026})
+    heating, garden = made["Heating"]["sys_id"], made["Garden"]["sys_id"]
+    old = [(heating, m, "100", "Oil" if m == 1 else None) for m in range(1, 13)]
+    old += [(garden, 3, "40", "Seeds"), (garden, 6, "60", "Seeds")]
+    owner = create_async_engine(p42_installation.owner_database_url)
+    try:
+        async with owner.begin() as conn:
+            await conn.execute(
+                text(
+                    "CREATE TABLE budget.line (version uuid, center uuid, cost_type uuid,"
+                    " month integer, amount numeric, currency text, note text,"
+                    " deleted timestamptz)"
+                )
             )
-    assert [e.field for e in on_profit.value.errors] == ["center"]
+            for center, month, amount, note in old:
+                await conn.execute(
+                    text("INSERT INTO budget.line VALUES (:v, :c, :t, :m, :a, 'CHF', :n, NULL)"),
+                    {
+                        "v": version["sys_id"],
+                        "c": center,
+                        "t": made["energy"]["sys_id"],
+                        "m": month,
+                        "a": amount,
+                        "n": note,
+                    },
+                )
+            await move_lines(conn)
+            await conn.execute(text("DROP TABLE budget.line"))
+    finally:
+        await owner.dispose()
+    async with as_system() as client:
+        lines = await client.list(
+            "budget.plan_line",
+            where={"field": "version", "op": "eq", "value": version["sys_id"]},
+        )
+        found = {
+            str(r["center"]): (r["rhythm"], r["amount"], r["year_total"], r["note"])
+            for r in lines["records"]
+        }
+        by_hand = next(r for r in lines["records"] if str(r["center"]) == garden)
+        months = await _months(client, by_hand)
+    assert found == {
+        heating: ("monthly", "100.00", "1200.00", "Oil"),
+        garden: ("by_hand", None, "100.00", "Seeds"),
+    }
+    assert months == {3: "40.00", 6: "60.00"}
 
 
 async def test_plan_against_what_finance_booked(as_system: Acting, call_route: CallRoute) -> None:
@@ -150,16 +241,7 @@ async def test_plan_against_what_finance_booked(as_system: Acting, call_route: C
         )
         await client.create("sys.membership", {"group": group["sys_id"], "person": reader})
         version = await client.create("budget.version", {"name": "Plan 2026", "year": 2026})
-        await client.action(
-            "budget.version",
-            version["sys_id"],
-            "budget.spread",
-            {
-                "center": made["Heating"]["code"],
-                "cost_type": made["energy"]["code"],
-                "amount": "4000",
-            },
-        )
+        await _line(client, version["sys_id"], made, rhythm="yearly", amount="4000")
         await client.create(
             "finance.booking",
             {
