@@ -3,39 +3,94 @@
  "module": "budget",
  "texts": [
   {
-   "key": "sys.field|budget.line.amount|label",
+   "key": "sys.field|budget.month.amount|label",
    "english": "Amount",
    "text": "Betrag"
   },
   {
-   "key": "sys.field|budget.line.center|label",
-   "english": "Cost center",
-   "text": "Kostenstelle"
-  },
-  {
-   "key": "sys.field|budget.line.cost_type|label",
-   "english": "Cost type",
-   "text": "Kostenart"
-  },
-  {
-   "key": "sys.field|budget.line.currency|label",
+   "key": "sys.field|budget.month.currency|label",
    "english": "Currency",
    "text": "Währung"
   },
   {
-   "key": "sys.field|budget.line.month|label",
+   "key": "sys.field|budget.month.line|label",
+   "english": "Budget line",
+   "text": "Budgetposition"
+  },
+  {
+   "key": "sys.field|budget.month.month|label",
    "english": "Month",
    "text": "Monat"
   },
   {
-   "key": "sys.field|budget.line.note|label",
+   "key": "sys.field|budget.plan_line.amount|label",
+   "english": "Amount",
+   "text": "Betrag"
+  },
+  {
+   "key": "sys.field|budget.plan_line.center|label",
+   "english": "Cost center",
+   "text": "Kostenstelle"
+  },
+  {
+   "key": "sys.field|budget.plan_line.cost_type|label",
+   "english": "Cost type",
+   "text": "Kostenart"
+  },
+  {
+   "key": "sys.field|budget.plan_line.currency|label",
+   "english": "Currency",
+   "text": "Währung"
+  },
+  {
+   "key": "sys.field|budget.plan_line.from_month|label",
+   "english": "From month",
+   "text": "Ab Monat"
+  },
+  {
+   "key": "sys.field|budget.plan_line.note|label",
    "english": "Note",
    "text": "Notiz"
   },
   {
-   "key": "sys.field|budget.line.version|label",
+   "key": "sys.field|budget.plan_line.rhythm|choice:by_hand",
+   "english": "By hand",
+   "text": "Von Hand"
+  },
+  {
+   "key": "sys.field|budget.plan_line.rhythm|choice:monthly",
+   "english": "Monthly",
+   "text": "Monatlich"
+  },
+  {
+   "key": "sys.field|budget.plan_line.rhythm|choice:once",
+   "english": "Once",
+   "text": "Einmalig"
+  },
+  {
+   "key": "sys.field|budget.plan_line.rhythm|choice:quarterly",
+   "english": "Quarterly",
+   "text": "Vierteljährlich"
+  },
+  {
+   "key": "sys.field|budget.plan_line.rhythm|choice:yearly",
+   "english": "Yearly, spread over the months",
+   "text": "Jährlich, auf die Monate verteilt"
+  },
+  {
+   "key": "sys.field|budget.plan_line.rhythm|label",
+   "english": "Rhythm",
+   "text": "Rhythmus"
+  },
+  {
+   "key": "sys.field|budget.plan_line.version|label",
    "english": "Version",
    "text": "Version"
+  },
+  {
+   "key": "sys.field|budget.plan_line.year_total|label",
+   "english": "Year total",
+   "text": "Jahrestotal"
   },
   {
    "key": "sys.field|budget.version.currency|label",
@@ -98,9 +153,19 @@
    "text": "Jahr"
   },
   {
-   "key": "sys.form_view|budget.line|section:1",
+   "key": "sys.form_view|budget.month|section:1",
+   "english": "Budget month",
+   "text": "Budgetmonat"
+  },
+  {
+   "key": "sys.form_view|budget.plan_line|section:1",
    "english": "Budget line",
    "text": "Budgetposition"
+  },
+  {
+   "key": "sys.form_view|budget.plan_line|section:2",
+   "english": "Amount",
+   "text": "Betrag"
   },
   {
    "key": "sys.form_view|budget.version|section:1",
@@ -113,7 +178,12 @@
    "text": "Notiz"
   },
   {
-   "key": "sys.list_view|budget.line|label",
+   "key": "sys.list_view|budget.month|label",
+   "english": "Budget months",
+   "text": "Budgetmonate"
+  },
+  {
+   "key": "sys.list_view|budget.plan_line|label",
    "english": "Budget lines",
    "text": "Budgetpositionen"
   },
@@ -139,8 +209,8 @@
   },
   {
    "key": "sys.module|budget|summary",
-   "english": "Budget versions and their lines per cost center, cost type and month.",
-   "text": "Budgetversionen und ihre Positionen pro Kostenstelle, Kostenart und Monat."
+   "english": "Budget versions and their lines per cost center and cost type, with a rhythm.",
+   "text": "Budgetversionen und ihre Positionen pro Kostenstelle und Kostenart, mit einem Rhythmus."
   },
   {
    "key": "sys.module|budget|title",
@@ -228,12 +298,22 @@
    "text": "Einreichen"
   },
   {
-   "key": "sys.table|budget.line|label",
+   "key": "sys.table|budget.month|label",
+   "english": "Budget month",
+   "text": "Budgetmonat"
+  },
+  {
+   "key": "sys.table|budget.month|label_plural",
+   "english": "Budget months",
+   "text": "Budgetmonate"
+  },
+  {
+   "key": "sys.table|budget.plan_line|label",
    "english": "Budget line",
    "text": "Budgetposition"
   },
   {
-   "key": "sys.table|budget.line|label_plural",
+   "key": "sys.table|budget.plan_line|label_plural",
    "english": "Budget lines",
    "text": "Budgetpositionen"
   },
@@ -271,11 +351,6 @@
    "key": "sys.ui_action|budget.move_submit|label",
    "english": "Submit",
    "text": "Einreichen"
-  },
-  {
-   "key": "sys.ui_action|budget.spread|label",
-   "english": "Spread a year",
-   "text": "Ein Jahr verteilen"
   },
   {
    "key": "sys.widget|budget.plan_vs_actual|title",

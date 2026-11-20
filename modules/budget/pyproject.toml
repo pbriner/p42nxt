@@ -1,7 +1,7 @@
 [project]
 name = "p42cloud-budget"
-version = "0.1.1"
-description = "Partners: suppliers, customers and tenants, their contacts and contracts"
+version = "0.2.0"
+description = "Budget: versions and their lines per cost center and cost type, with a rhythm"
 requires-python = ">=3.14"
 license = "Apache-2.0"
 dependencies = ["p42cloud"]

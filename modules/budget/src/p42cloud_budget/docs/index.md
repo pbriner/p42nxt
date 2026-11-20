@@ -1,6 +1,6 @@
 # Budget
 
-What's planned per cost center, cost type and month, and how it compares to what was spent.
+What's planned per cost center and cost type, and how it compares to what was spent.
 
 ## Versions
 
@@ -17,12 +17,21 @@ Changes during the year go into a forecast version; an approved budget stays as 
 
 ## Lines
 
-A line is one cost center, one cost type and one month, with its amount (in its version's
-currency). Only cost centers are planned on, and only a draft version's lines change.
+A line is one cost center and one cost type of a version, in the version's currency. Only cost
+centers are planned on, and only a draft version's lines change. Its **rhythm** says how the
+amount fills the months, starting with **From month** (January if not given):
 
-**Spread a year** (on a draft version) asks for a cost center's and a cost type's codes and an
-amount for the year, and fills in the twelve months evenly (the cents left over in December);
-months planned before are replaced.
+| Rhythm | The amount | Example |
+|---|---|---|
+| Monthly | Every month | Communication, 30 a month |
+| Quarterly | Every three months | Insurance, 500 in January, April, July and October |
+| Yearly, spread over the months | For the year, spread evenly (the cents left over in December) | Energy, 4,000 a year |
+| Once | Once, in that month | A new boiler, 7,500 in September |
+| By hand | Not used: you type each month | Heating, more in winter |
+
+The line's form shows its months and its **year total**. Changing the rhythm, the amount or the
+month it starts in rewrites the months. With **By hand**, the months stay as they are and you add
+or change them in the line's form; the year total adds them up.
 
 ## Dashboard
 

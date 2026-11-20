@@ -1,19 +1,17 @@
-"""Budget: what's planned per cost center, cost type and month, and how it compares to what was
-spent.
+"""Budget: what's planned per cost center and cost type, with a rhythm that fills the months, and
+how it compares to what was spent.
 
 A version (the budget for a year, a forecast) is drafted, submitted, approved and locked; its
 lines only change while it's a draft. Actual costs come from Finance's bookings when Finance is
 installed: Budget works without it, and then shows plans only.
 """
 
+from contextvars import ContextVar
 from decimal import Decimal as Exact
 from pathlib import Path
 from typing import Any
 
 from p42cloud.sdk import (
-    ActionInput,
-    ActionResult,
-    ActionRun,
     Change,
     Choice,
     Client,
@@ -26,6 +24,7 @@ from p42cloud.sdk import (
     Integer,
     Item,
     ListView,
+    Migration,
     Module,
     Money,
     Problem,
@@ -40,10 +39,11 @@ from p42cloud.sdk import (
     TableHook,
     Text,
     Transition,
-    UIAction,
     Widget,
     package_version,
 )
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 ALL = ("read", "create", "write", "delete", "restore")
 
@@ -76,8 +76,15 @@ VERSION = Table(
     comments=True,
 )
 
+RHYTHMS = {
+    "monthly": "Monthly",
+    "quarterly": "Quarterly",
+    "yearly": "Yearly, spread over the months",
+    "once": "Once",
+    "by_hand": "By hand",
+}
 LINE = Table(
-    "line",
+    "plan_line",
     "Budget line",
     {
         "version": Reference("Version", "budget.version", required=True, on_delete="cascade"),
@@ -85,17 +92,33 @@ LINE = Table(
         "cost_type": Reference(
             "Cost type", "costing.cost_type", required=True, on_delete="restrict"
         ),
-        "month": Integer("Month", required=True),
+        "rhythm": Choice("Rhythm", RHYTHMS, required=True, default="monthly"),
         "currency": Currency("Currency", read_only=True),
-        "amount": Money("Amount", currency_field="currency", required=True),
+        # Each time (monthly, quarterly, once), or for the whole year (yearly); not by hand.
+        "amount": Money("Amount", currency_field="currency"),
+        "from_month": Integer("From month", required=True, default=1),
+        "year_total": Money("Year total", currency_field="currency", read_only=True),
         "note": String("Note", max_length=200),
     },
     label_plural="Budget lines",
-    unique_together=(("version", "center", "cost_type", "month"),),
+    unique_together=(("version", "center", "cost_type"),),
     display="note",
 )
 
-TABLES = (VERSION, LINE)
+MONTH = Table(
+    "month",
+    "Budget month",
+    {
+        "line": Reference("Budget line", "budget.plan_line", required=True, on_delete="cascade"),
+        "month": Integer("Month", required=True),
+        "currency": Currency("Currency", read_only=True),
+        "amount": Money("Amount", currency_field="currency", required=True),
+    },
+    label_plural="Budget months",
+    unique_together=(("line", "month"),),
+)
+
+TABLES = (VERSION, LINE, MONTH)
 OWN = tuple(f"budget.{t.name}" for t in TABLES)
 
 PLANNER = Role(
@@ -131,6 +154,12 @@ def _invalid(field: str, message: str) -> Problem:
     )
 
 
+# Set while Budget's own hooks write months and totals: what people may not write directly.
+_OWN_WRITES: ContextVar[bool] = ContextVar("budget_own_writes", default=False)
+CENT = Exact("0.01")
+RHYTHM_FIELDS = frozenset({"rhythm", "amount", "from_month"})
+
+
 async def _check_version(change: Change) -> None:
     if change.operation in ("delete", "restore"):
         return
@@ -139,87 +168,198 @@ async def _check_version(change: Change) -> None:
         raise _invalid("year", "A year from 2000 to 2100.")
 
 
+def months_of(rhythm: str, amount: Exact, start: int) -> dict[int, Exact]:
+    """The months a rhythm fills, with their amounts; by hand fills none."""
+    if rhythm == "monthly":
+        return dict.fromkeys(range(start, 13), amount)
+    if rhythm == "quarterly":
+        return dict.fromkeys(range(start, 13, 3), amount)
+    if rhythm == "once":
+        return {start: amount}
+    if rhythm == "yearly":  # evenly, the cents left over in the last month
+        months = list(range(start, 13))
+        each = (amount / len(months)).quantize(CENT)
+        spread = dict.fromkeys(months, each)
+        spread[12] = amount - each * (len(months) - 1)
+        return spread
+    return {}
+
+
+async def _months(client: Client, line: str) -> list[dict[str, Any]]:
+    found = await client.list(
+        "budget.month", where={"field": "line", "op": "eq", "value": line}, limit=50
+    )
+    return found["records"]
+
+
+async def _draft(client: Client, version: str) -> dict[str, Any]:
+    found = await client.get("budget.version", version)
+    if found["state"] != "draft":
+        raise _invalid("version", "Only a draft version's lines change.")
+    return found
+
+
 async def _check_line(change: Change) -> None:
-    """A line belongs to a draft version, a cost center and a month; it takes its version's
-    currency."""
+    """A line belongs to a draft version and a cost center; it takes its version's currency, and
+    its year total follows from its rhythm (by hand: from its months)."""
     client = Client.of(change)
     current = (
-        await client.get("budget.line", change.sys_id)
+        await client.get("budget.plan_line", change.sys_id)
         if change.operation != "create" and change.sys_id is not None
         else {}
     )
     merged = current | change.values
-    version = await client.get("budget.version", str(merged["version"]))
-    if version["state"] != "draft":
-        raise _invalid("version", "Only a draft version's lines change.")
+    version = await _draft(client, str(merged["version"]))
     if change.operation in ("delete", "restore"):
         return
     if "version" in change.values and current and str(current["version"]) != str(merged["version"]):
         raise _invalid("version", "A line stays in its version.")
-    month = int(merged["month"])
-    if not 1 <= month <= 12:  # noqa: PLR2004
-        raise _invalid("month", "A month from 1 to 12.")
+    if "year_total" in change.sent and not _OWN_WRITES.get():
+        raise _invalid("year_total", "Worked out from the months.")
+    start = int(merged["from_month"])
+    if not 1 <= start <= 12:  # noqa: PLR2004
+        raise _invalid("from_month", "A month from 1 to 12.")
     center = await client.get("costing.center", str(merged["center"]))
     if center["kind"] != "cost":
         raise _invalid("center", "Plan on cost centers.")
     change.values["currency"] = version["currency"]
+    if change.operation == "create" or set(change.values) & RHYTHM_FIELDS:
+        change.values["year_total"] = await _total(client, merged, change.sys_id)
 
 
-async def _by_code(client: Client, table: str, code: str, what: str) -> str:
-    found = await client.list(
-        table, where={"field": "code", "op": "eq", "value": code.strip()}, limit=1
-    )
-    if not found["records"]:
-        raise Problem(404, "not_found", f"There's no {what} with the code {code.strip()!r}.")
-    return str(found["records"][0]["sys_id"])
+async def _total(client: Client, line: dict[str, Any], sys_id: Any) -> Exact:
+    if line["rhythm"] == "by_hand":
+        months = await _months(client, str(sys_id)) if sys_id is not None else []
+        return sum((Exact(str(m["amount"])) for m in months), Exact(0))
+    if line.get("amount") is None:
+        raise _invalid("amount", "How much, each time or for the year.")
+    amount = Exact(str(line["amount"]).replace("'", "")).quantize(CENT)
+    return sum(months_of(line["rhythm"], amount, int(line["from_month"])).values(), Exact(0))
 
 
-async def _spread(run: ActionRun) -> ActionResult:
-    """A yearly amount for a cost center and cost type, spread evenly over the twelve months
-    (the cents left over in December); months already planned are replaced."""
-    client = Client(run.records)
-    if run.record["state"] != "draft":
-        raise Problem(409, "not_draft", "Only a draft version's lines change.")
+async def _fill_months(change: Change) -> None:
+    """After a line is saved: its months as its rhythm says (by hand: left as they are)."""
+    if change.operation not in ("create", "write") or change.sys_id is None:
+        return
+    if change.operation == "write" and not set(change.values) & RHYTHM_FIELDS:
+        return
+    client = Client.of(change)
+    line = await client.get("budget.plan_line", change.sys_id)
+    if line["rhythm"] == "by_hand":
+        return
+    amount = Exact(str(line["amount"])).quantize(CENT)
+    wanted = months_of(line["rhythm"], amount, int(line["from_month"]))
+    token = _OWN_WRITES.set(True)
     try:
-        yearly = Exact(str(run.inputs["amount"]).replace("'", "")).quantize(Exact("0.01"))
-    except ArithmeticError as error:
-        raise Problem(422, "validation", "The amount is a number, like 12000.") from error
-    center = await _by_code(client, "costing.center", str(run.inputs["center"]), "cost center")
-    cost_type = await _by_code(
-        client, "costing.cost_type", str(run.inputs["cost_type"]), "cost type"
-    )
-    monthly = (yearly / 12).quantize(Exact("0.01"))
-    existing = await client.list(
-        "budget.line",
-        where={
-            "and": [
-                {"field": "version", "op": "eq", "value": str(run.sys_id)},
-                {"field": "center", "op": "eq", "value": center},
-                {"field": "cost_type", "op": "eq", "value": cost_type},
-            ]
-        },
-        limit=50,
-    )
-    by_month = {int(r["month"]): r for r in existing["records"]}
-    for month in range(1, 13):
-        amount = monthly if month < 12 else yearly - monthly * 11  # noqa: PLR2004
-        if month in by_month:
-            line = by_month[month]
-            await client.update(
-                "budget.line", line["sys_id"], {"amount": str(amount)}, line["_etag"]
-            )
-        else:
+        for month in await _months(client, str(change.sys_id)):
+            number = int(month["month"])
+            if number not in wanted:
+                await client.delete("budget.month", month["sys_id"], month["_etag"])
+                continue
+            value = wanted.pop(number)
+            if Exact(str(month["amount"])) != value:
+                await client.update(
+                    "budget.month", month["sys_id"], {"amount": str(value)}, month["_etag"]
+                )
+        for number, value in sorted(wanted.items()):
             await client.create(
-                "budget.line",
+                "budget.month",
+                {"line": str(change.sys_id), "month": number, "amount": str(value)},
+            )
+    finally:
+        _OWN_WRITES.reset(token)
+
+
+async def _check_month(change: Change) -> None:
+    """A month is typed only on a line planned by hand; the others follow their line."""
+    client = Client.of(change)
+    current = (
+        await client.get("budget.month", change.sys_id)
+        if change.operation != "create" and change.sys_id is not None
+        else {}
+    )
+    merged = current | change.values
+    line = await client.get("budget.plan_line", str(merged["line"]))
+    version = await _draft(client, str(line["version"]))
+    if change.operation in ("delete", "restore"):
+        return
+    if "line" in change.values and current and str(current["line"]) != str(merged["line"]):
+        raise _invalid("line", "A month stays with its line.")
+    if line["rhythm"] != "by_hand" and not _OWN_WRITES.get():
+        raise _invalid("amount", "Set by the line's rhythm: choose By hand to type the months.")
+    month = int(merged["month"])
+    if not 1 <= month <= 12:  # noqa: PLR2004
+        raise _invalid("month", "A month from 1 to 12.")
+    change.values["currency"] = version["currency"]
+
+
+async def _add_up(change: Change) -> None:
+    """After a month typed by hand changes: its line's year total."""
+    if _OWN_WRITES.get() or change.sys_id is None:
+        return
+    client = Client.of(change)
+    month = await client.get("budget.month", change.sys_id)
+    line = await client.get("budget.plan_line", str(month["line"]))
+    if line.get("deleted"):  # restored or deleted together with its line
+        return
+    total = sum(
+        (Exact(str(m["amount"])) for m in await _months(client, str(line["sys_id"]))), Exact(0)
+    )
+    token = _OWN_WRITES.set(True)
+    try:
+        await client.update(
+            "budget.plan_line", line["sys_id"], {"year_total": str(total)}, line["_etag"]
+        )
+    finally:
+        _OWN_WRITES.reset(token)
+
+
+async def move_lines(conn: AsyncConnection) -> None:
+    """0.1 planned one line per month: each cost center and cost type of a version becomes one
+    line, monthly when its twelve months are equal, else by hand with the months kept. The 0.1
+    lines stay where they were (retired with their table)."""
+    rows = (
+        await conn.execute(
+            text(
+                "SELECT version, center, cost_type, month, amount, currency, note"
+                " FROM budget.line WHERE deleted IS NULL ORDER BY version, center, cost_type, month"
+            )
+        )
+    ).all()
+    groups: dict[tuple[Any, Any, Any], list[Any]] = {}
+    for row in rows:
+        groups.setdefault((row.version, row.center, row.cost_type), []).append(row)
+    for (version, center, cost_type), months in groups.items():
+        amounts = {int(r.month): Exact(r.amount) for r in months}
+        even = len(amounts) == 12 and len(set(amounts.values())) == 1  # noqa: PLR2004
+        notes = "; ".join(dict.fromkeys(r.note for r in months if r.note))[:200] or None
+        line = (
+            await conn.execute(
+                text(
+                    "INSERT INTO budget.plan_line (version, center, cost_type, rhythm, amount,"
+                    " from_month, currency, year_total, note) VALUES (:version, :center,"
+                    " :cost_type, :rhythm, :amount, 1, :currency, :total, :note) RETURNING sys_id"
+                ),
                 {
-                    "version": str(run.sys_id),
+                    "version": version,
                     "center": center,
                     "cost_type": cost_type,
-                    "month": month,
-                    "amount": str(amount),
+                    "rhythm": "monthly" if even else "by_hand",
+                    "amount": amounts[1] if even else None,
+                    "currency": months[0].currency,
+                    "total": sum(amounts.values(), Exact(0)),
+                    "note": notes,
                 },
             )
-    return ActionResult(message=f"{yearly:,.2f} spread over the year: {monthly:,.2f} a month.")
+        ).scalar_one()
+        for month, amount in amounts.items():
+            await conn.execute(
+                text(
+                    "INSERT INTO budget.month (line, month, currency, amount)"
+                    " VALUES (:line, :month, :currency, :amount)"
+                ),
+                {"line": line, "month": month, "currency": months[0].currency, "amount": amount},
+            )
 
 
 async def _all(client: Client, table: str, where: Any) -> list[dict[str, Any]]:
@@ -240,10 +380,10 @@ async def compared(client: Client, version_id: str) -> list[dict[str, Any]]:
     year = int(version["year"])
     planned: dict[str, Exact] = {}
     for line in await _all(
-        client, "budget.line", {"field": "version", "op": "eq", "value": version_id}
+        client, "budget.plan_line", {"field": "version", "op": "eq", "value": version_id}
     ):
         planned[str(line["center"])] = planned.get(str(line["center"]), Exact(0)) + Exact(
-            str(line["amount"])
+            str(line["year_total"] or 0)
         )
     spent: dict[str, Exact] = {}
     try:
@@ -358,7 +498,8 @@ module = Module(
     roles=(PLANNER, CONTROLLER, READER),
     hooks=(
         TableHook("budget.version", before=_check_version),
-        TableHook("budget.line", before=_check_line),
+        TableHook("budget.plan_line", before=_check_line, after=_fill_months),
+        TableHook("budget.month", before=_check_month, after=_add_up),
     ),
     flows=(
         Flow(
@@ -390,27 +531,12 @@ module = Module(
             ),
         ),
     ),
-    actions=(
-        UIAction(
-            "spread",
-            "budget.version",
-            "Spread a year",
-            places=("form_button",),
-            icon="calendar_month",
-            condition={"field": "state", "op": "eq", "value": "draft"},
-            inputs=(
-                ActionInput("center", "Cost center (code)", options={"max_length": 20}),
-                ActionInput("cost_type", "Cost type (code)", options={"max_length": 20}),
-                ActionInput("amount", "Amount for the year", options={"max_length": 20}),
-            ),
-            handler=_spread,
-        ),
-    ),
+    migrations=(Migration("0.2.0", move_lines),),
     routes=ROUTES,
     widgets=WIDGETS,
     docs=Path(__file__).parent / "docs",
     translations=Path(__file__).parent / "translations",
-    description="Budget versions and their lines per cost center, cost type and month.",
+    description="Budget versions and their lines per cost center and cost type, with a rhythm.",
     category="Finance",
     icon="savings",
     views=(
@@ -418,9 +544,15 @@ module = Module(
             "budget.version", ("name", "year", "kind", "state", "currency"), sort=("-year", "name")
         ),
         ListView(
-            "budget.line",
-            ("version", "center", "cost_type", "month", "amount", "note"),
-            sort=("version", "center", "cost_type", "month"),
+            "budget.plan_line",
+            ("version", "center", "cost_type", "rhythm", "amount", "from_month", "year_total"),
+            sort=("version", "center", "cost_type"),
+            searchable=False,
+        ),
+        ListView(
+            "budget.month",
+            ("line", "month", "amount"),
+            sort=("line", "month"),
             searchable=False,
         ),
     ),
@@ -431,15 +563,19 @@ module = Module(
                 FormSection("Version", ("name", "year", "kind", "state", "currency")),
                 FormSection("Note", ("note",), columns=1),
             ),
-            related=(RelatedList("budget.line", "version"),),
+            related=(RelatedList("budget.plan_line", "version"),),
         ),
         FormView(
-            "budget.line",
+            "budget.plan_line",
             (
-                FormSection(
-                    "Budget line", ("version", "center", "cost_type", "month", "amount", "note")
-                ),
+                FormSection("Budget line", ("version", "center", "cost_type", "note")),
+                FormSection("Amount", ("rhythm", "amount", "from_month", "currency", "year_total")),
             ),
+            related=(RelatedList("budget.month", "line"),),
+        ),
+        FormView(
+            "budget.month",
+            (FormSection("Budget month", ("line", "month", "amount", "currency")),),
         ),
     ),
     navigation=(
@@ -454,7 +590,7 @@ module = Module(
                     icon="monitoring",
                 ),
                 Item("versions", "Budget versions", "budget.version", icon="savings"),
-                Item("lines", "Budget lines", "budget.line", icon="table_rows"),
+                Item("lines", "Budget lines", "budget.plan_line", icon="table_rows"),
             ),
         ),
     ),
