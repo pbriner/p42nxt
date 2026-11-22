@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.4
+
+- A buy that costs more than the free balance on Kraken (often a price tier's bigger amount)
+  buys what the balance covers, keeping 1 % free for the fee and the price moving, instead of
+  being refused by Kraken and putting the plan on hold. Below Kraken's minimum it's skipped.
+- A plan that is on hold, waits for an order or may not place real orders still keeps its
+  price up to date at every check. Before, only the check time moved, so the dashboard showed
+  an old price as the current one.
+
 ## 0.8.3
 
 - Its name, category and description in German, for the navigator and the search (they

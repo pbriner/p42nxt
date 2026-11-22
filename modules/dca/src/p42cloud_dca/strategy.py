@@ -12,6 +12,9 @@ from typing import Literal
 
 STALE = timedelta(hours=48)  # a planned buy missed by longer is planned again, not made
 DEFAULT_COOLDOWN = Decimal(24)
+# Kept free when a buy is cut to the balance: the fee, and the price moving before the market
+# order fills, so Kraken doesn't refuse it for want of money.
+MARGIN = Decimal("0.01")
 
 
 def _boundary(year: int, month: int, day: int, hour: int) -> datetime:
@@ -148,6 +151,15 @@ class Decision:
     message: str
 
 
+def _covered(amount: Decimal, price: Decimal, balance: Decimal | None) -> tuple[Decimal, str]:
+    """The amount the free balance pays for (the margin kept free), and what to say if it's cut."""
+    if balance is None or amount * price * (1 + MARGIN) <= balance:
+        return amount, ""
+    if balance <= 0 or price <= 0:
+        return Decimal(0), ""
+    return balance / (price * (1 + MARGIN)), f" Only {balance:.2f} left."
+
+
 def decide(  # noqa: PLR0911, PLR0913 - one rule after another, by keyword
     *,
     now: datetime,
@@ -162,9 +174,11 @@ def decide(  # noqa: PLR0911, PLR0913 - one rule after another, by keyword
     max_price: Decimal | None,
     monthly_limit: Decimal | None,
     spent: Decimal,
+    balance: Decimal | None = None,
 ) -> Decision:
     """The planned next buy is kept until it's due (sticky), so the time people see is the time
-    it buys; an extra buy happens when a tier asks for more than the base, once cooled down."""
+    it buys; an extra buy happens when a tier asks for more than the base, once cooled down. A
+    buy the free balance doesn't cover buys what the balance does."""
     if planned is not None and now - planned > STALE:
         return Decision(
             "wait",
@@ -196,6 +210,9 @@ def decide(  # noqa: PLR0911, PLR0913 - one rule after another, by keyword
         return Decision(
             "skip", strategy, Decimal(0), after, f"Skipped: the tier for {change} % says skip."
         )
+    amount, left = _covered(amount, price, balance)
+    if amount <= 0:
+        return Decision("skip", strategy, Decimal(0), after, "Skipped: no balance on Kraken.")
     amount = volume(amount, market)
     if amount < market.ordermin:
         return Decision(
@@ -203,7 +220,7 @@ def decide(  # noqa: PLR0911, PLR0913 - one rule after another, by keyword
             strategy,
             amount,
             after,
-            f"Skipped: {amount} is below Kraken's minimum {market.ordermin}.",
+            f"Skipped: {amount} is below Kraken's minimum {market.ordermin}." + left,
         )
     if max_price is not None and price > max_price:
         return Decision(
@@ -220,7 +237,7 @@ def decide(  # noqa: PLR0911, PLR0913 - one rule after another, by keyword
             strategy,
             amount,
             after,
-            f"Skipped: {cost:.2f} is below Kraken's smallest order cost {market.costmin}.",
+            f"Skipped: {cost:.2f} is below Kraken's smallest order cost {market.costmin}." + left,
         )
     if monthly_limit is not None and spent + cost > monthly_limit:
         return Decision(
@@ -230,4 +247,4 @@ def decide(  # noqa: PLR0911, PLR0913 - one rule after another, by keyword
             after,
             f"Skipped: {cost:.2f} would pass the monthly limit ({spent:.2f} spent).",
         )
-    return Decision("buy", strategy, amount, after, "")
+    return Decision("buy", strategy, amount, after, left.strip())

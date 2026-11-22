@@ -116,6 +116,8 @@ async def _buy(  # noqa: PLR0913 - what's bought, for whom, at what price, when
     cost = _cents(decision.amount * price)
     cur = pair.currency
     said = f"{decision.amount} {pair.asset} at {price:.2f} {cur} ({cost} {cur})"
+    if decision.message:  # bought less than asked: why
+        said += f" ({decision.message.rstrip('.')}, so less than planned)"
     order = await client.create(
         "dca.order",
         {
@@ -205,11 +207,12 @@ async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tup
         if plan["live"] or any(o["state"] in ("submitting", "unknown") for o in orders):
             waiting = await _settle(client, http, plan, orders, now)
             if waiting is not None:
-                return await _say(client, plan, waiting, now), False
+                return await _say(client, plan, waiting, now, await _price(http, pair)), False
         if plan["status"] == "hold":
-            return await _say(client, plan, f"On hold: {plan['hold_reason']}", now), False
+            said = f"On hold: {plan['hold_reason']}"
+            return await _say(client, plan, said, now, await _price(http, pair)), False
         if plan["live"] and (stopped := await _real_orders_stopped(client)):
-            return await _say(client, plan, stopped, now), False
+            return await _say(client, plan, stopped, now, await _price(http, pair)), False
         price = await kraken.price(http, pair.name)
         market = await kraken.market(http, pair.name)
         free = await kraken.free_balance(http, pair.currency)
@@ -248,13 +251,14 @@ async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tup
         max_price=_decimal(plan["max_price"]),
         monthly_limit=limit,
         spent=spent,
+        balance=free if plan["live"] else free - spent,
     )
     message = decision.message
     bought = False
     if decision.action == "buy" and plan["live"]:
         stopped = await _before_real_buy(client, plan, pair, orders, now)
         if stopped is not None:
-            return stopped, False
+            return await _say(client, plan, stopped, now, price), False
     if decision.action == "buy":
         message = await _buy(client, plan, pair, decision, price=price, now=now)
         bought = True
@@ -336,14 +340,28 @@ def _market_wrong(ticker: kraken.Ticker, close: Decimal | None) -> str | None:
     return None
 
 
-async def _say(client: Client, plan: dict[str, Any], message: str, now: datetime) -> str:
+async def _price(http: httpx.AsyncClient, pair: Pair) -> Decimal | None:
+    """The price for a check that stops early; one Kraken can't give doesn't stop it."""
+    try:
+        return await kraken.price(http, pair.name)
+    except KrakenError, httpx.HTTPError:
+        return None
+
+
+async def _say(
+    client: Client,
+    plan: dict[str, Any],
+    message: str,
+    now: datetime,
+    price: Decimal | None = None,
+) -> str:
+    """What a check found. Its price goes with it: a check time without its price would pass an
+    old price off as the current one."""
+    values = {"last_message": message[:MAX_MESSAGE], "last_check": now.isoformat()}
+    if price is not None:
+        values["last_price"] = str(price)
     current = await client.get("dca.plan", plan["sys_id"])
-    await client.update(
-        "dca.plan",
-        plan["sys_id"],
-        {"last_message": message[:MAX_MESSAGE], "last_check": now.isoformat()},
-        current["_etag"],
-    )
+    await client.update("dca.plan", plan["sys_id"], values, current["_etag"])
     return message
 
 

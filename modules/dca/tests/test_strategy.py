@@ -204,3 +204,24 @@ def test_a_due_buy_is_skipped_for_good_reasons(changes: dict[str, object], says:
 def test_volumes_go_down_to_the_pairs_decimals() -> None:
     eth = Market(ordermin=D("0.002"), lot_decimals=4)
     assert strategy.volume(D("0.0123456"), eth) == D("0.0123")
+
+
+def test_a_buy_the_balance_doesnt_cover_buys_what_it_does() -> None:
+    bigger = strategy.TierChoice(D("0.002"), D(-6), TIERS[1])
+    planned = NOW + timedelta(hours=10)
+    # The tier asks for 160.00; 101.00 buys 0.00125 at 80,000 with the margin kept free.
+    cut = _decide(dynamic=True, choice=bigger, planned=planned, balance=D(101))
+    assert (cut.action, cut.amount, cut.message) == ("buy", D("0.00125"), "Only 101.00 left.")
+    assert cut.amount * D(80000) * (1 + strategy.MARGIN) <= D(101)
+    enough = _decide(dynamic=True, choice=bigger, planned=planned, balance=D(1000))
+    assert (enough.amount, enough.message) == (D("0.002"), "")
+
+
+def test_too_little_balance_skips() -> None:
+    due = NOW - timedelta(minutes=1)
+    little = _decide(planned=due, balance=D(3))
+    assert little.action == "skip"
+    assert little.message == (
+        "Skipped: 0.00003712 is below Kraken's minimum 0.00005. Only 3.00 left."
+    )
+    assert _decide(planned=due, balance=D(0)).message == "Skipped: no balance on Kraken."
