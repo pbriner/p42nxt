@@ -27,6 +27,10 @@ is spread evenly until the period ends, so the last buy lands on the deposit day
 date. **Next buy** shows when the next one is due, and **Last said** what the last check found.
 Changing the plan plans again at the next check; saving never buys.
 
+If a buy (or a tier's bigger amount) costs more than the free balance, it buys what the
+balance covers, keeping 1 % free for the fee and the price moving. If even that is below
+Kraken's minimum, the buy is skipped.
+
 ## Price tiers
 
 Turn on **Price tiers** and add tiers to the plan: a price change against your last buy (or your

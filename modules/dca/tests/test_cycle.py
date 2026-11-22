@@ -78,6 +78,32 @@ async def test_a_plan_is_planned_then_buys_a_dry_run_when_due(
     assert after["last_message"].startswith("Dry run: would have bought 0.00100000 BTC")
 
 
+async def test_a_due_buy_buys_what_the_balance_covers(
+    as_system: Acting, as_person: Acting, run_job: RunJob, kraken: Kraken
+) -> None:
+    ivy = await investor(as_system)
+    await connect(as_person, ivy)
+    plan = await new_plan(as_person, ivy)
+    await run_job("dca.cycle")
+    (planned,) = await read(as_person, ivy, "dca.plan", sys_id=plan["sys_id"])
+    async with as_system() as client:  # its time has come, but the money has gone
+        await client.update(
+            "dca.plan",
+            plan["sys_id"],
+            {"next_buy": (datetime.now(UTC) - timedelta(minutes=1)).isoformat()},
+            planned["_etag"],
+        )
+    kraken.free = "50.0"
+    await run_job("dca.cycle")
+    (order,) = await read(as_person, ivy, "dca.order", plan=plan["sys_id"])
+    (after,) = await read(as_person, ivy, "dca.plan", sys_id=plan["sys_id"])
+    assert (Decimal(order["amount"]), Decimal(order["cost"])) == (Decimal("0.00061881"), 49.5)
+    assert after["last_message"] == (
+        "Dry run: would have bought 0.00061881 BTC at 80000.00 CHF (49.50 CHF)"
+        " (Only 50.00 left, so less than planned)."
+    )
+
+
 async def test_private_calls_are_signed_the_kraken_way(
     as_system: Acting, as_person: Acting, run_job: RunJob, kraken: Kraken
 ) -> None:
@@ -91,6 +117,33 @@ async def test_private_calls_are_signed_the_kraken_way(
     sign(again, {"api_key": "key", "api_secret": "c2VjcmV0"})
     assert again.headers["API-Sign"] == private[-1].headers["API-Sign"]
     assert "nonce" in parse_qs(private[-1].content.decode())
+
+
+async def test_a_plan_on_hold_still_follows_the_price(
+    as_system: Acting, as_person: Acting, run_job: RunJob, kraken: Kraken
+) -> None:
+    ivy = await investor(as_system)
+    await connect(as_person, ivy)
+    plan = await new_plan(as_person, ivy)
+    await run_job("dca.cycle")
+    (checked,) = await read(as_person, ivy, "dca.plan", sys_id=plan["sys_id"])
+    async with as_system() as client:
+        await client.update(
+            "dca.plan",
+            plan["sys_id"],
+            {"status": "hold", "hold_reason": "Kraken refused the order."},
+            checked["_etag"],
+        )
+    kraken.price = "72500.0"
+    await run_job("dca.cycle")
+    (held,) = await read(as_person, ivy, "dca.plan", sys_id=plan["sys_id"])
+    assert held["last_message"] == "On hold: Kraken refused the order."
+    assert Decimal(held["last_price"]) == Decimal(72500)
+    kraken.down = True  # no price: the check still says why it holds
+    await run_job("dca.cycle")
+    (still,) = await read(as_person, ivy, "dca.plan", sys_id=plan["sys_id"])
+    assert still["last_message"] == "On hold: Kraken refused the order."
+    assert Decimal(still["last_price"]) == Decimal(72500)
 
 
 async def test_a_problem_is_told_once(

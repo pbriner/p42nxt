@@ -45,7 +45,9 @@ tiers, What it found; its tiers and orders as related lists.
 The job `dca.cycle` (schedule "DCA cycle", every 5 minutes): for each active plan, with the
 plan's Kraken connection (`connection`: one of its owner's own; empty: the owner's only one), it reads the price, the pair's minimums and the free balance, spreads
 the balance (less this period's dry runs) until the period ends, applies the price tiers, the max
-price and the monthly limit, and records a dry run when a buy is due. The planned next buy is
+price and the monthly limit, and records a dry run when a buy is due. A buy the free
+balance doesn't cover is cut to what it covers, less a 1 % margin for the fee and the price
+moving; below Kraken's minimum it's skipped. The planned next buy is
 kept until it's due; one missed by more than 48 hours is planned again instead. A plan that
 can't be checked says "Problem: …" and notifies its owner once. Saving a plan never buys; the
 next check plans again.
