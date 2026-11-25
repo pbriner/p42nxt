@@ -94,7 +94,9 @@ RELEASE_ADDRESS = Setting(
         " https://github.com/<owner>/<repo>/releases/download/registry. Empty: the installation"
         " never asks for updates. Nothing about the installation is sent there."
     ),
-    adopt="registry_url",
+    # The image's address, not registry_url: that one is read whenever the setting is empty,
+    # so clearing the setting couldn't turn updates off.
+    adopt="release_address",
 )
 REQUESTS_PER_MINUTE = Setting(
     "sys.requests_per_minute",

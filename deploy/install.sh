@@ -1,17 +1,18 @@
 #!/bin/sh
 # Creates a new P42cloud installation and starts it; the rest happens in the web installer.
 #
-#   deploy/install.sh <name> [--image p42cloud:<version>] [--qa]
+#   deploy/install.sh <name> [--image p42cloud:<version>] [--backups <folder>] [--qa]
 #
 # Writes the installation's folder ($P42_HOME/<name>, by default ~/.p42cloud/<name>) with its
 # settings (random passwords, the one-time setup code) and its master key, makes the backup
-# folder ($P42_BACKUPS/p42cloud-<name>, by default ~/Backups/p42cloud-<name>), starts the database, sets
-# it up and checks that it's safe. Refuses to touch an installation that exists already.
+# folder (--backups, or $P42_BACKUPS/p42cloud-<name>, by default ~/Backups/p42cloud-<name>),
+# starts the database, sets it up and checks that it's safe. Refuses to touch an installation
+# that exists already. The backup folder can be changed later in the app (then deploy/restart.sh).
 # --qa: an installation that never acts in the real world.
 set -eu
 
 usage() {
-    echo "usage: $0 <name> [--image p42cloud:<version>] [--qa]" >&2
+    echo "usage: $0 <name> [--image p42cloud:<version>] [--backups <folder>] [--qa]" >&2
     exit 2
 }
 
@@ -20,9 +21,11 @@ name=$1
 shift
 image=p42cloud:latest
 environment=production
+backups=
 while [ $# -gt 0 ]; do
     case $1 in
         --image) [ $# -ge 2 ] || usage; image=$2; shift 2 ;;
+        --backups) [ $# -ge 2 ] || usage; backups=$2; shift 2 ;;
         --qa) environment=qa; shift ;;
         *) usage ;;
     esac
@@ -38,7 +41,13 @@ docker compose version >/dev/null 2>&1 || { echo "Docker Compose is needed." >&2
 
 home=${P42_HOME:-$HOME/.p42cloud}
 folder=$home/$name
-backups=${P42_BACKUPS:-$HOME/Backups}/p42cloud-$name
+if [ -z "$backups" ]; then
+    backups=${P42_BACKUPS:-$HOME/Backups}/p42cloud-$name
+fi
+case $backups in
+    /*) ;;
+    *) echo "The backup folder must be a full path, starting with /." >&2; exit 2 ;;
+esac
 project=p42cloud-$name
 if [ -e "$folder" ]; then
     echo "An installation named $name exists already ($folder). Nothing changed." >&2

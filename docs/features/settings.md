@@ -34,7 +34,7 @@ and tests set `P42_PUBLIC_URL` and the others there).
 | `sys.app_name`, `sys.language` | `P42cloud`, `en` | The installation's name, and the language for browsers asking for one the app doesn't speak (set by the web installer). Public |
 | `sys.theme`, `sys.stage` | `violet`, `production` | The default theme, and what the installation is for (`screens.md`). Public |
 | `sys.public_url` | empty | **The app's address**, like `https://p42.example.com` (scheme, host, port; nothing after; https in production except `localhost`). Passkeys, sign-in providers and links in messages need it |
-| `sys.registry_url` | empty | **Release address**: where signed releases are published (`releases.md`); empty, the installation never asks. https in production |
+| `sys.registry_url` | the image's | **Release address**: where signed releases are published (`releases.md`); a released image brings its repository's, a local build none; empty, the installation never asks. https in production |
 | `sys.requests_per_minute` | `600` | Per person, token or address (10 to 100,000) |
 | `sys.session_idle_minutes`, `sys.session_max_hours` | `30`, `12` | When a session ends: after this long without use (5 to 1440 minutes), and in any case (1 to 720 hours) |
 | `sys.passwords_off_for` | none | Kinds of person (`employee`, `external`) who may sign in only through a sign-in provider. People with emergency access keep their password |

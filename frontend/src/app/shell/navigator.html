@@ -73,13 +73,7 @@
                     class="row child"
                     [routerLink]="target(item).commands"
                     [queryParams]="target(item).query"
-                    routerLinkActive="active"
-                    [routerLinkActiveOptions]="{
-                      paths: 'exact',
-                      queryParams: 'ignored',
-                      matrixParams: 'ignored',
-                      fragment: 'ignored',
-                    }"
+                    [class.active]="active() === item.name"
                     (click)="navigated.emit()"
                   >
                     <span class="label">{{ item.label }}</span>
@@ -189,13 +183,7 @@
       [class.nested]="nested"
       [routerLink]="target(row.found.item).commands"
       [queryParams]="target(row.found.item).query"
-      routerLinkActive="active"
-      [routerLinkActiveOptions]="{
-        paths: 'exact',
-        queryParams: 'ignored',
-        matrixParams: 'ignored',
-        fragment: 'ignored',
-      }"
+      [class.active]="active() === row.found.item.name"
       (click)="navigated.emit()"
     >
       <span class="material-symbols-outlined icon" aria-hidden="true">{{

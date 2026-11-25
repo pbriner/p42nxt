@@ -189,6 +189,18 @@
             "title": "Admin Name",
             "type": "string"
           },
+          "backup_folder": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backup Folder"
+          },
           "backups": {
             "title": "Backups",
             "type": "boolean"
@@ -231,6 +243,18 @@
             "maxLength": 200,
             "title": "Password",
             "type": "string"
+          },
+          "release_address": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Address"
           }
         },
         "required": [
@@ -320,7 +344,7 @@
   },
   "info": {
     "title": "P42cloud",
-    "version": "0.47.0"
+    "version": "0.47.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1044,6 +1068,30 @@
           }
         },
         "summary": "Setup Modules",
+        "tags": [
+          "setup"
+        ]
+      }
+    },
+    "/api/v1/setup/settings": {
+      "get": {
+        "description": "While the installer is open: the backup folder install.sh made and the release address\nthe image brought, to keep or change.",
+        "operationId": "setup_settings_api_v1_setup_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Setup Settings Api V1 Setup Settings Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Setup Settings",
         "tags": [
           "setup"
         ]

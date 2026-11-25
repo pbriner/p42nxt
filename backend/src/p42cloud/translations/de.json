@@ -1468,6 +1468,11 @@
    "text": "Sein Zeitplan"
   },
   {
+   "key": "sys.field|sys.job_run.trigger|choice:setup",
+   "english": "Setting up",
+   "text": "Die Einrichtung"
+  },
+  {
    "key": "sys.field|sys.job_run.trigger|choice:update",
    "english": "An update",
    "text": "Ein Update"

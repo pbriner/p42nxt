@@ -89,6 +89,39 @@ export function target(item: NavItem): { commands: string[]; query: Record<strin
   return { commands: ['/list', list], query: filterQuery(item.filter) };
 }
 
+/**
+ * The one item the address belongs to. Several items may lead to the same list with different
+ * filters, so the item whose parameters are all in the address wins, the most specific first;
+ * parameters the list adds itself (sorting, paging) don't count against it.
+ */
+export function activeItem(
+  items: NavItem[],
+  path: string,
+  query: Record<string, unknown>,
+): string | null {
+  let best: { name: string; score: number } | null = null;
+  for (const item of items) {
+    const wanted = target(item);
+    const leads =
+      '/' +
+      wanted.commands
+        .join('/')
+        .replace(/^\/+/, '')
+        .replace(/\/{2,}/g, '/');
+    if (leads !== path) {
+      continue;
+    }
+    const params = Object.entries(wanted.query);
+    if (params.some(([k, v]) => String(query[k] ?? '') !== v)) {
+      continue;
+    }
+    if (!best || params.length > best.score) {
+      best = { name: item.name, score: params.length };
+    }
+  }
+  return best?.name ?? null;
+}
+
 /** A filter as list parameters: plain conditions as chips, anything else as a fixed filter. */
 export function filterQuery(filter: unknown): Record<string, string> {
   if (!filter || typeof filter !== 'object') {

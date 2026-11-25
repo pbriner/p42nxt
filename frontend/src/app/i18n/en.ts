@@ -459,6 +459,14 @@ export const EN = {
   'setup.backups_later': 'I’ll set up backups later',
   'setup.master_key':
     'I have stored a copy of the master key (master.key) somewhere safe. Without it, encrypted secrets can’t be recovered.',
+  'setup.release_address': 'Release address',
+  'setup.release_hint':
+    'Updates and more modules come from here. Clear it to never look for updates.',
+  'setup.release_off':
+    'Without an address, this installation never looks for updates or more modules.',
+  'setup.backup_folder': 'Backup folder',
+  'setup.backup_hint': 'The folder on this machine the daily backups go to.',
+  'setup.backup_restart': 'A new folder applies once deploy/restart.sh has run on the machine.',
   'setup.next': 'Next',
   'setup.back': 'Back',
   'setup.finish': 'Set up',

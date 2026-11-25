@@ -43,6 +43,10 @@ COPY --from=frontend /app/frontend/dist/browser ./frontend/dist/browser
 RUN uv sync --frozen --no-dev --package p42cloud
 
 ENV PATH=/app/.venv/bin:$PATH
+# Where this image's releases are published: a new installation's Release address starts with
+# it, so it finds its updates and modules without a setup step. Empty for a local build.
+ARG RELEASE_ADDRESS=""
+ENV P42_RELEASE_ADDRESS=$RELEASE_ADDRESS
 # Modules installed from signed packages: a volume here starts out owned by the app's user.
 RUN mkdir -p /data/modules && chown 10001 /data/modules
 USER 10001

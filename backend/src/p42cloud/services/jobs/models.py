@@ -103,6 +103,7 @@ JOB_RUN = Table(
                 "manual": "Someone",
                 "retry": "A retry",
                 "update": "An update",
+                "setup": "Setting up",
             },
             required=True,
             default="schedule",

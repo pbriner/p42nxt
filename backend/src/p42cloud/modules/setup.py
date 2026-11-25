@@ -15,14 +15,19 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from p42cloud.data.catalog import load_catalog
+from p42cloud.data.installation import RELEASE_ADDRESS
 from p42cloud.data.records import Records
+from p42cloud.data.settings import Setting, value
+from p42cloud.data.types import Invalid
 from p42cloud.kernel.context import EVERYTHING, Context, working_as
 from p42cloud.kernel.db import transaction
-from p42cloud.kernel.errors import Problem
+from p42cloud.kernel.errors import FieldError, Problem
+from p42cloud.modules.install import check_updates_soon
 from p42cloud.modules.lifecycle import switch_off
 from p42cloud.security.access.manifest import ADMINISTRATORS
 from p42cloud.security.sign_in import credentials, passwords
 from p42cloud.security.sign_in.events import event
+from p42cloud.services.backups.manifest import FOLDER
 
 # Any number: the lock that keeps two setups from running at once.
 _LOCK = 4242_0001
@@ -43,6 +48,8 @@ class Setup:
     modules: frozenset[str]  # the optional modules to keep on
     backups: bool  # set up now; False: postponed, knowingly
     master_key: bool  # a copy is stored safely
+    backup_folder: str | None = None  # None: the one install.sh made stays
+    release_address: str | None = None  # None: the image's stays ("" asks for no updates)
 
 
 async def _open(conn: AsyncConnection) -> bool:
@@ -63,6 +70,35 @@ def _check_code(expected: str | None, given: str) -> None:
         )
     if not hmac.compare_digest(expected.strip().upper().encode(), given.strip().upper().encode()):
         raise Problem(403, "wrong_setup_code", "That isn't the setup code.")
+
+
+# The settings the installer asks for, by the name its body gives them.
+MACHINE: dict[str, Setting] = {"backup_folder": FOLDER, "release_address": RELEASE_ADDRESS}
+
+
+async def machine_settings(engine: AsyncEngine) -> dict[str, str]:
+    """The backup folder install.sh made and the release address the image brought, to keep or
+    change while setting up."""
+    with working_as(Context(channel="setup", access=EVERYTHING)):
+        async with transaction(engine, "sys") as conn:
+            return {key: str(await value(conn, s.name) or "") for key, s in MACHINE.items()}
+
+
+def _checked(given: Setup) -> list[tuple[str, Any]]:
+    """The machine settings given, checked before anything is written, each error by its field."""
+    chosen: list[tuple[str, Any]] = []
+    errors: list[FieldError] = []
+    for key, setting in MACHINE.items():
+        wanted = getattr(given, key)
+        if wanted is None:
+            continue
+        try:
+            chosen.append((setting.name, setting.check(wanted)))
+        except Invalid as invalid:
+            errors.append(FieldError(key, "invalid", str(invalid)))
+    if errors:
+        raise Problem(422, "validation", "Some fields aren't valid.", errors=errors)
+    return chosen
 
 
 async def optional_modules(engine: AsyncEngine) -> list[dict[str, Any]]:
@@ -96,6 +132,7 @@ async def set_up(
     if not given.master_key:
         raise Problem(422, "confirm", "Store a copy of the master key first, and confirm it.")
     passwords.check(given.password, given.email)
+    machine = _checked(given)
     with working_as(Context(channel="setup", access=EVERYTHING)):
         async with transaction(engine, "sys") as conn:
             await conn.execute(text("SELECT pg_advisory_xact_lock(:k)"), {"k": _LOCK})
@@ -110,7 +147,12 @@ async def set_up(
             ).sys_id
             await records.create("sys.membership", {"group": ADMINISTRATORS, "person": person})
             await credentials.set_password(conn, person, given.password)
-            for name, value in (("sys.app_name", given.name), ("sys.language", given.language)):
+            chosen: list[tuple[str, Any]] = [
+                ("sys.app_name", given.name),
+                ("sys.language", given.language),
+                *machine,
+            ]
+            for name, value in chosen:
                 found = await records.list(
                     "sys.setting", where={"field": "name", "op": "eq", "value": name}
                 )
@@ -123,6 +165,9 @@ async def set_up(
                 backups="set up" if given.backups else "postponed",
                 master_key="stored",
             )
+            # A new installation knows only the modules it came with; the registry's are offered
+            # once the update check has run, which shouldn't wait for its daily time.
+            await check_updates_soon(conn, "setup")
         installed = await optional_modules(engine)
     await _keep_only(owner, installed, given.modules)
 

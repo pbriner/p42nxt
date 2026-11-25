@@ -105,6 +105,16 @@
               </li>
             }
           </ul>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>{{ i18n.t('setup.release_address') }}</mat-label>
+            <input matInput name="releaseAddress" type="url" maxlength="500" [(ngModel)]="releaseAddress" />
+            <mat-hint>{{ i18n.t(releaseAddress.trim() ? 'setup.release_hint' : 'setup.release_off') }}</mat-hint>
+          </mat-form-field>
+          @if (errors()['release_address']; as message) {
+            <p class="error-line" role="alert">
+              <span class="material-symbols-outlined" aria-hidden="true">error</span>{{ message }}
+            </p>
+          }
           <div class="actions">
             <button mat-button type="button" matStepperPrevious>{{ i18n.t('setup.back') }}</button>
             <button mat-flat-button type="button" matStepperNext>{{ i18n.t('setup.next') }}</button>
@@ -112,6 +122,18 @@
         </mat-step>
 
         <mat-step [label]="i18n.t('setup.safety_step')">
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>{{ i18n.t('setup.backup_folder') }}</mat-label>
+            <input matInput name="backupFolder" maxlength="500" [(ngModel)]="backupFolder" />
+            <mat-hint>{{
+              i18n.t(backupFolder.trim() !== madeFolder ? 'setup.backup_restart' : 'setup.backup_hint')
+            }}</mat-hint>
+          </mat-form-field>
+          @if (errors()['backup_folder']; as message) {
+            <p class="error-line" role="alert">
+              <span class="material-symbols-outlined" aria-hidden="true">error</span>{{ message }}
+            </p>
+          }
           <mat-radio-group class="choices" [(ngModel)]="backups" name="backups">
             <mat-radio-button value="done">{{ i18n.t('setup.backups_done') }}</mat-radio-button>
             <mat-radio-button value="later">{{ i18n.t('setup.backups_later') }}</mat-radio-button>
