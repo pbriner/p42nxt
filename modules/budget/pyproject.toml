@@ -1,6 +1,6 @@
 [project]
 name = "p42cloud-budget"
-version = "0.2.0"
+version = "0.3.0"
 description = "Budget: versions and their lines per cost center and cost type, with a rhythm"
 requires-python = ">=3.14"
 license = "Apache-2.0"

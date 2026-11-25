@@ -34,6 +34,7 @@ import { ConnectionSecrets } from './connection-secrets';
 import { LanguageExchange } from './language-exchange';
 import { PersonSignIn } from './person-sign-in';
 import { RecordFiles } from './record-files';
+import { RecordApprovals } from './record-approvals';
 import { RecordJournal } from './record-journal';
 import { askToDelete } from './delete-dialog';
 import { FieldDisplay } from './field-display';
@@ -63,6 +64,7 @@ function same(a: unknown, b: unknown): boolean {
   selector: 'app-form-page',
   imports: [
     RecordFiles,
+    RecordApprovals,
     RecordJournal,
     ConnectionSecrets,
     LanguageExchange,

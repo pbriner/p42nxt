@@ -2,6 +2,25 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.50.0
+
+Approvals.
+
+- A state move can need approval: `Transition(..., approval=Approval(steps=(Step(role),
+  Step(role, field, above)), remind_after=, escalate_after=, escalate_to=))`. Its button asks
+  for approval instead of moving; one yes per step moves it on, the last one makes the move, a
+  no (with a reason) ends it.
+- Never by the person who asked; deputies (My work → My deputies) stand in for those away.
+- While an approval waits, the record doesn't change and the move can't be made around it.
+- Reminders and escalation from the daily job **Remind and escalate waiting approvals**.
+- Approval rules are records (Automation → Approval rules); a rule an administrator changed is
+  kept through module updates. Every approval: Automation → Approvals.
+- In the app: the approval card on the record's form, **My approvals**, and the home widget
+  **Waiting for my approval**.
+- API: `GET /api/v1/approvals/mine`, `GET …/<id>/approvals`, `POST /api/v1/approvals/<id>/
+  approve|reject|withdraw`. SDK: `Approval`, `Step`, `Client.approvals()`, `Client.decide()`,
+  `Client.pending_approval()`.
+
 ## 0.49.0
 
 Tokens, profile and recovery.

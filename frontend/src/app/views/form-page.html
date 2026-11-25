@@ -137,6 +137,10 @@
       </div>
     }
 
+    @if (id() && id() !== 'new') {
+      <app-record-approvals [table]="table.table" [id]="id()" [version]="original()['_etag']" (changed)="reload()" />
+    }
+
     @for (section of sections(); track $index) {
       <mat-card appearance="outlined" class="section">
         <mat-card-header>

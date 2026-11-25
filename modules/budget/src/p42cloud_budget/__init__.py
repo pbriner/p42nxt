@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from p42cloud.sdk import (
+    Approval,
     Change,
     Choice,
     Client,
@@ -34,6 +35,7 @@ from p42cloud.sdk import (
     Route,
     RouteRequest,
     Section,
+    Step,
     String,
     Table,
     TableHook,
@@ -196,6 +198,8 @@ async def _draft(client: Client, version: str) -> dict[str, Any]:
     found = await client.get("budget.version", version)
     if found["state"] != "draft":
         raise _invalid("version", "Only a draft version's lines change.")
+    if await client.pending_approval("budget.version", version):
+        raise _invalid("version", "The version waits for approval: its lines don't change now.")
     return found
 
 
@@ -493,7 +497,7 @@ module = Module(
     name="Budget",
     publisher="p42",
     version=package_version("p42cloud-budget"),
-    depends_on={"sys": ">=0.46,<1", "costing": ">=0.3,<1"},
+    depends_on={"sys": ">=0.50,<1", "costing": ">=0.3,<1"},
     tables=TABLES,
     roles=(PLANNER, CONTROLLER, READER),
     hooks=(
@@ -507,7 +511,15 @@ module = Module(
             "state",
             initial="draft",
             transitions=(
-                Transition("submit", "Submit", "draft", "submitted", icon="send"),
+                # A controller's yes, never the one who submits; the version waits in draft.
+                Transition(
+                    "submit",
+                    "Submit for approval",
+                    "draft",
+                    "approved",
+                    icon="send",
+                    approval=Approval(steps=(Step("budget.controller"),)),
+                ),
                 Transition(
                     "send_back", "Send back", "submitted", "draft", roles=CONTROLLERS, icon="undo"
                 ),

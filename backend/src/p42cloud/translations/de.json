@@ -238,6 +238,221 @@
    "text": "Token-Hash"
   },
   {
+   "key": "sys.field|sys.approval.decided|label",
+   "english": "Decided",
+   "text": "Entschieden"
+  },
+  {
+   "key": "sys.field|sys.approval.escalated|label",
+   "english": "Escalated",
+   "text": "Eskaliert"
+  },
+  {
+   "key": "sys.field|sys.approval.note|label",
+   "english": "Why (rejected)",
+   "text": "Warum (abgelehnt)"
+  },
+  {
+   "key": "sys.field|sys.approval.record|label",
+   "english": "Record",
+   "text": "Datensatz"
+  },
+  {
+   "key": "sys.field|sys.approval.reminded|label",
+   "english": "Reminded",
+   "text": "Erinnert"
+  },
+  {
+   "key": "sys.field|sys.approval.requested_by|label",
+   "english": "Asked by",
+   "text": "Angefragt von"
+  },
+  {
+   "key": "sys.field|sys.approval.rule|label",
+   "english": "Rule",
+   "text": "Regel"
+  },
+  {
+   "key": "sys.field|sys.approval.state|choice:approved",
+   "english": "Approved",
+   "text": "Freigegeben"
+  },
+  {
+   "key": "sys.field|sys.approval.state|choice:pending",
+   "english": "Waiting",
+   "text": "Wartet"
+  },
+  {
+   "key": "sys.field|sys.approval.state|choice:rejected",
+   "english": "Rejected",
+   "text": "Abgelehnt"
+  },
+  {
+   "key": "sys.field|sys.approval.state|choice:withdrawn",
+   "english": "Withdrawn",
+   "text": "Zurückgezogen"
+  },
+  {
+   "key": "sys.field|sys.approval.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|sys.approval.step_started|label",
+   "english": "Step started",
+   "text": "Schritt begonnen"
+  },
+  {
+   "key": "sys.field|sys.approval.steps|label",
+   "english": "Steps",
+   "text": "Schritte"
+  },
+  {
+   "key": "sys.field|sys.approval.step|label",
+   "english": "Step",
+   "text": "Schritt"
+  },
+  {
+   "key": "sys.field|sys.approval.table|label",
+   "english": "Table",
+   "text": "Tabelle"
+  },
+  {
+   "key": "sys.field|sys.approval.title|label",
+   "english": "What",
+   "text": "Was"
+  },
+  {
+   "key": "sys.field|sys.approval.transition|label",
+   "english": "Move",
+   "text": "Schritt im Ablauf"
+  },
+  {
+   "key": "sys.field|sys.approval_decision.approval|label",
+   "english": "Approval",
+   "text": "Freigabe"
+  },
+  {
+   "key": "sys.field|sys.approval_decision.decision|choice:approve",
+   "english": "Approved",
+   "text": "Freigegeben"
+  },
+  {
+   "key": "sys.field|sys.approval_decision.decision|choice:reject",
+   "english": "Rejected",
+   "text": "Abgelehnt"
+  },
+  {
+   "key": "sys.field|sys.approval_decision.decision|label",
+   "english": "Decision",
+   "text": "Entscheid"
+  },
+  {
+   "key": "sys.field|sys.approval_decision.note|label",
+   "english": "Note",
+   "text": "Notiz"
+  },
+  {
+   "key": "sys.field|sys.approval_decision.on_behalf_of|label",
+   "english": "For",
+   "text": "Für"
+  },
+  {
+   "key": "sys.field|sys.approval_decision.person|label",
+   "english": "By",
+   "text": "Von"
+  },
+  {
+   "key": "sys.field|sys.approval_decision.step|label",
+   "english": "Step",
+   "text": "Schritt"
+  },
+  {
+   "key": "sys.field|sys.approval_rule.changed|help",
+   "english": "Kept as it is when the module is updated.",
+   "text": "Bleibt so, wenn das Modul aktualisiert wird."
+  },
+  {
+   "key": "sys.field|sys.approval_rule.changed|label",
+   "english": "Changed by an administrator",
+   "text": "Von einem Administrator geändert"
+  },
+  {
+   "key": "sys.field|sys.approval_rule.custom|label",
+   "english": "Made by an administrator",
+   "text": "Von einem Administrator erstellt"
+  },
+  {
+   "key": "sys.field|sys.approval_rule.escalate_after|label",
+   "english": "Escalate after (days)",
+   "text": "Eskalieren nach (Tagen)"
+  },
+  {
+   "key": "sys.field|sys.approval_rule.escalate_to|label",
+   "english": "Escalate to (role)",
+   "text": "Eskalieren an (Rolle)"
+  },
+  {
+   "key": "sys.field|sys.approval_rule.module_ref|label",
+   "english": "Module",
+   "text": "Modul"
+  },
+  {
+   "key": "sys.field|sys.approval_rule.module|label",
+   "english": "Module name",
+   "text": "Modulname"
+  },
+  {
+   "key": "sys.field|sys.approval_rule.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.approval_rule.remind_after|label",
+   "english": "Remind after (days)",
+   "text": "Erinnern nach (Tagen)"
+  },
+  {
+   "key": "sys.field|sys.approval_rule.steps|label",
+   "english": "Steps",
+   "text": "Schritte"
+  },
+  {
+   "key": "sys.field|sys.approval_rule.transition|label",
+   "english": "Move",
+   "text": "Schritt im Ablauf"
+  },
+  {
+   "key": "sys.field|sys.approver.approval|label",
+   "english": "Approval",
+   "text": "Freigabe"
+  },
+  {
+   "key": "sys.field|sys.approver.escalation|label",
+   "english": "Escalated to them",
+   "text": "An sie eskaliert"
+  },
+  {
+   "key": "sys.field|sys.approver.on_behalf_of|label",
+   "english": "For",
+   "text": "Für"
+  },
+  {
+   "key": "sys.field|sys.approver.open|label",
+   "english": "Waiting for them",
+   "text": "Wartet auf sie"
+  },
+  {
+   "key": "sys.field|sys.approver.person|label",
+   "english": "Approver",
+   "text": "Freigebende Person"
+  },
+  {
+   "key": "sys.field|sys.approver.step|label",
+   "english": "Step",
+   "text": "Schritt"
+  },
+  {
    "key": "sys.field|sys.backup.file|label",
    "english": "File",
    "text": "Datei"
@@ -646,6 +861,26 @@
    "key": "sys.field|sys.dashboard_layout.person|label",
    "english": "Person",
    "text": "Person"
+  },
+  {
+   "key": "sys.field|sys.deputy.deputy|label",
+   "english": "Deputy",
+   "text": "Stellvertretung"
+  },
+  {
+   "key": "sys.field|sys.deputy.ends|label",
+   "english": "Until",
+   "text": "Bis"
+  },
+  {
+   "key": "sys.field|sys.deputy.person|label",
+   "english": "Away",
+   "text": "Abwesend"
+  },
+  {
+   "key": "sys.field|sys.deputy.starts|label",
+   "english": "From",
+   "text": "Von"
   },
   {
    "key": "sys.field|sys.doc_page.body|label",
@@ -3503,6 +3738,26 @@
    "text": "API-Token"
   },
   {
+   "key": "sys.form_view|sys.approval_decision|section:1",
+   "english": "Approval decision",
+   "text": "Freigabeentscheid"
+  },
+  {
+   "key": "sys.form_view|sys.approval_rule|section:1",
+   "english": "Approval rule",
+   "text": "Freigaberegel"
+  },
+  {
+   "key": "sys.form_view|sys.approval|section:1",
+   "english": "Approval",
+   "text": "Freigabe"
+  },
+  {
+   "key": "sys.form_view|sys.approver|section:1",
+   "english": "Approver",
+   "text": "Freigebende Person"
+  },
+  {
    "key": "sys.form_view|sys.backup|section:1",
    "english": "Backup",
    "text": "Sicherung"
@@ -3551,6 +3806,11 @@
    "key": "sys.form_view|sys.dashboard_layout|section:1",
    "english": "Dashboard layout",
    "text": "Dashboard-Anordnung"
+  },
+  {
+   "key": "sys.form_view|sys.deputy|section:1",
+   "english": "Deputy",
+   "text": "Stellvertretung"
   },
   {
    "key": "sys.form_view|sys.doc_page|section:1",
@@ -3823,6 +4083,11 @@
    "text": "Widget"
   },
   {
+   "key": "sys.job|sys.approval_follow_up|label",
+   "english": "Remind and escalate waiting approvals",
+   "text": "An wartende Freigaben erinnern und eskalieren"
+  },
+  {
    "key": "sys.job|sys.audit_check|label",
    "english": "Check the audit log for tampering",
    "text": "Das Prüfprotokoll auf Manipulation prüfen"
@@ -3878,6 +4143,26 @@
    "text": "API-Tokens"
   },
   {
+   "key": "sys.list_view|sys.approval_decision|label",
+   "english": "Approval decisions",
+   "text": "Freigabeentscheide"
+  },
+  {
+   "key": "sys.list_view|sys.approval_rule|label",
+   "english": "Approval rules",
+   "text": "Freigaberegeln"
+  },
+  {
+   "key": "sys.list_view|sys.approval|label",
+   "english": "Approvals",
+   "text": "Freigaben"
+  },
+  {
+   "key": "sys.list_view|sys.approver|label",
+   "english": "Approvers",
+   "text": "Freigebende"
+  },
+  {
    "key": "sys.list_view|sys.backup|label",
    "english": "Backups",
    "text": "Sicherungen"
@@ -3926,6 +4211,11 @@
    "key": "sys.list_view|sys.dashboard_layout|label",
    "english": "Dashboard layouts",
    "text": "Dashboard-Anordnungen"
+  },
+  {
+   "key": "sys.list_view|sys.deputy|label",
+   "english": "Deputies",
+   "text": "Stellvertretungen"
   },
   {
    "key": "sys.list_view|sys.doc_page|label",
@@ -4223,6 +4513,26 @@
    "text": "Aussehen"
   },
   {
+   "key": "sys.nav_item|sys.approval_rules|label",
+   "english": "Approval rules",
+   "text": "Freigaberegeln"
+  },
+  {
+   "key": "sys.nav_item|sys.approval_rules|section",
+   "english": "Automation",
+   "text": "Automatisierung"
+  },
+  {
+   "key": "sys.nav_item|sys.approvals|label",
+   "english": "Approvals",
+   "text": "Freigaben"
+  },
+  {
+   "key": "sys.nav_item|sys.approvals|section",
+   "english": "Automation",
+   "text": "Automatisierung"
+  },
+  {
    "key": "sys.nav_item|sys.backups|label",
    "english": "Backups",
    "text": "Sicherungen"
@@ -4251,6 +4561,16 @@
    "key": "sys.nav_item|sys.currencies|section",
    "english": "Modules and data",
    "text": "Module und Daten"
+  },
+  {
+   "key": "sys.nav_item|sys.deputies|label",
+   "english": "My deputies",
+   "text": "Meine Stellvertretungen"
+  },
+  {
+   "key": "sys.nav_item|sys.deputies|section",
+   "english": "My work",
+   "text": "Meine Arbeit"
   },
   {
    "key": "sys.nav_item|sys.event_deliveries|label",
@@ -4331,6 +4651,16 @@
    "key": "sys.nav_item|sys.modules|section",
    "english": "Modules and data",
    "text": "Module und Daten"
+  },
+  {
+   "key": "sys.nav_item|sys.my_approvals|label",
+   "english": "My approvals",
+   "text": "Meine Freigaben"
+  },
+  {
+   "key": "sys.nav_item|sys.my_approvals|section",
+   "english": "My work",
+   "text": "Meine Arbeit"
   },
   {
    "key": "sys.nav_item|sys.notification_deliveries|label",
@@ -4493,6 +4823,26 @@
    "text": "Aussehen"
   },
   {
+   "key": "sys.notification_kind|sys.approval_asked|description",
+   "english": "Something waits for your approval: as an approver, a deputy, or because it waited too long elsewhere.",
+   "text": "Etwas wartet auf deine Freigabe: als freigebende Person, als Stellvertretung oder weil es anderswo zu lange gewartet hat."
+  },
+  {
+   "key": "sys.notification_kind|sys.approval_asked|label",
+   "english": "Your approval is asked",
+   "text": "Deine Freigabe ist gefragt"
+  },
+  {
+   "key": "sys.notification_kind|sys.approval_decided|description",
+   "english": "What you asked approval for was approved or rejected (with the reason).",
+   "text": "Wofür du eine Freigabe angefragt hast, wurde freigegeben oder abgelehnt (mit dem Grund)."
+  },
+  {
+   "key": "sys.notification_kind|sys.approval_decided|label",
+   "english": "Your request is decided",
+   "text": "Deine Anfrage ist entschieden"
+  },
+  {
    "key": "sys.notification_kind|sys.event_failed|description",
    "english": "A module couldn't handle an event after its last try: what it should have done hasn't happened.",
    "text": "Ein Modul konnte ein Ereignis auch beim letzten Versuch nicht verarbeiten: Was es hätte tun sollen, ist nicht geschehen."
@@ -4593,6 +4943,11 @@
    "text": "Benutzer"
   },
   {
+   "key": "sys.schedule|sys.approval_follow_up|label",
+   "english": "Waiting approvals, daily",
+   "text": "Wartende Freigaben, täglich"
+  },
+  {
    "key": "sys.schedule|sys.audit_check|label",
    "english": "Audit log check, weekly",
    "text": "Prüfung des Prüfprotokolls, wöchentlich"
@@ -4656,6 +5011,46 @@
    "key": "sys.table|sys.api_token|label_plural",
    "english": "API tokens",
    "text": "API-Tokens"
+  },
+  {
+   "key": "sys.table|sys.approval_decision|label",
+   "english": "Approval decision",
+   "text": "Freigabeentscheid"
+  },
+  {
+   "key": "sys.table|sys.approval_decision|label_plural",
+   "english": "Approval decisions",
+   "text": "Freigabeentscheide"
+  },
+  {
+   "key": "sys.table|sys.approval_rule|label",
+   "english": "Approval rule",
+   "text": "Freigaberegel"
+  },
+  {
+   "key": "sys.table|sys.approval_rule|label_plural",
+   "english": "Approval rules",
+   "text": "Freigaberegeln"
+  },
+  {
+   "key": "sys.table|sys.approval|label",
+   "english": "Approval",
+   "text": "Freigabe"
+  },
+  {
+   "key": "sys.table|sys.approval|label_plural",
+   "english": "Approvals",
+   "text": "Freigaben"
+  },
+  {
+   "key": "sys.table|sys.approver|label",
+   "english": "Approver",
+   "text": "Freigebende Person"
+  },
+  {
+   "key": "sys.table|sys.approver|label_plural",
+   "english": "Approvers",
+   "text": "Freigebende"
   },
   {
    "key": "sys.table|sys.backup|label",
@@ -4756,6 +5151,16 @@
    "key": "sys.table|sys.dashboard_layout|label_plural",
    "english": "Dashboard layouts",
    "text": "Dashboard-Anordnungen"
+  },
+  {
+   "key": "sys.table|sys.deputy|label",
+   "english": "Deputy",
+   "text": "Stellvertretung"
+  },
+  {
+   "key": "sys.table|sys.deputy|label_plural",
+   "english": "Deputies",
+   "text": "Stellvertretungen"
   },
   {
    "key": "sys.table|sys.doc_page|label",
@@ -5411,6 +5816,11 @@
    "key": "sys.ui_action|sys.update_tonight|label",
    "english": "Update tonight",
    "text": "Heute Nacht aktualisieren"
+  },
+  {
+   "key": "sys.widget|sys.my_approvals|title",
+   "english": "Waiting for my approval",
+   "text": "Wartet auf meine Freigabe"
   },
   {
    "key": "sys.widget|sys.people|title",

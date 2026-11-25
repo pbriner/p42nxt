@@ -6,6 +6,7 @@ test.use({ storageState: storage('admin') });
 
 test('a line with a rhythm fills its year, and the version is approved and locked', async ({
   page,
+  browser,
 }, info) => {
   const tag = `${info.project.name.slice(0, 3)}${Date.now() % 100000}`;
   await page.goto('/');
@@ -40,13 +41,22 @@ test('a line with a rhythm fills its year, and the version is approved and locke
   // Four quarters: the year total is worked out.
   await expect(page.getByText('2,000.00').first()).toBeVisible();
 
-  for (const [move, next] of [
-    ['Submit', 'Approve'],
-    ['Approve', 'Lock'],
-  ]) {
-    await page.getByRole('button', { name: move }).click();
-    await expect(page.getByRole('button', { name: next })).toBeVisible();
-  }
+  // Submitting asks a controller's approval: never the one who submits.
+  await page.getByRole('button', { name: 'Submit for approval' }).click();
+  const card = page.locator('app-record-approvals');
+  await expect(card.getByText('Waiting for approval')).toBeVisible();
+  await expect(card).toContainText('Cleo Controller');
+  await expect(card.getByRole('button', { name: 'Approve' })).toHaveCount(0);
+
+  const other = await browser.newContext({ storageState: storage('controller') });
+  const controller = await other.newPage();
+  await controller.goto('/approvals');
+  const waiting = controller.locator('mat-card').filter({ hasText: `Budget ${tag}` });
+  await waiting.getByRole('button', { name: 'Approve' }).click();
+  await expect(waiting).toHaveCount(0);
+  await other.close();
+
+  await page.reload();
   await page.getByRole('button', { name: 'Lock' }).click();
   await page
     .getByRole('dialog')

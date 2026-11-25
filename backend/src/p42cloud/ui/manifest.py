@@ -181,6 +181,23 @@ NAVIGATION = (
                 icon="notifications",
                 keywords=("inbox", "messages"),
             ),
+            Item(
+                "my_approvals",
+                "My approvals",
+                "sys.approver",
+                kind="page",
+                path="/approvals",
+                icon="approval",
+                keywords=("approve", "reject", "waiting"),
+            ),
+            Item(
+                "deputies",
+                "My deputies",
+                "sys.deputy",
+                filter={"field": "person", "op": "eq", "value": "@me"},
+                icon="supervisor_account",
+                keywords=("away", "holiday", "stand in"),
+            ),
         ),
     ),
     Section(
@@ -235,6 +252,14 @@ NAVIGATION = (
                 keywords=("events", "failed"),
             ),
             Item("event_types", "Event types", "sys.event_type", icon="category"),
+            Item("approvals", "Approvals", "sys.approval", icon="approval"),
+            Item(
+                "approval_rules",
+                "Approval rules",
+                "sys.approval_rule",
+                icon="rule",
+                keywords=("approvals", "steps", "thresholds"),
+            ),
             Item(
                 "notification_kinds", "Notification kinds", "sys.notification_kind", icon="campaign"
             ),
@@ -287,6 +312,20 @@ WIDGETS = (
         accent=1,
         trend="created",
         shown="available",
+    ),
+    Widget(
+        "my_approvals",
+        "Waiting for my approval",
+        "figure",
+        list="sys.approver",
+        filter={
+            "and": [
+                {"field": "person", "op": "eq", "value": "@me"},
+                {"field": "open", "op": "eq", "value": True},
+            ]
+        },
+        icon="approval",
+        accent=2,
     ),
 )
 

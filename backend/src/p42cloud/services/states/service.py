@@ -161,6 +161,19 @@ async def _holds_role(change: Change, roles: list[str]) -> bool:
     )
 
 
+async def _needs_approval(conn: AsyncConnection, transition: str) -> bool:
+    await switch_role(conn, "sys")
+    return bool(
+        await conn.scalar(
+            text(
+                "SELECT EXISTS (SELECT 1 FROM sys.approval_rule WHERE name = :n"
+                " AND deleted IS NULL)"
+            ),
+            {"n": transition},
+        )
+    )
+
+
 async def _check_move(change: Change, flow: Any) -> None:
     field = str(flow.field)
     new = change.values[field]
@@ -179,7 +192,7 @@ async def _check_move(change: Change, flow: Any) -> None:
     moves = list(
         await change.records.conn.execute(
             text(
-                "SELECT roles, condition FROM sys.state_transition WHERE flow = :f"
+                "SELECT name, roles, condition FROM sys.state_transition WHERE flow = :f"
                 " AND deleted IS NULL AND to_state = :to"
                 " AND (from_state IS NULL OR from_state = :from)"
             ),
@@ -193,6 +206,10 @@ async def _check_move(change: Change, flow: Any) -> None:
         if await _holds_role(change, list(move.roles or [])) and await _holds(
             change, move.condition
         ):
+            if await _needs_approval(change.records.conn, str(move.name)):
+                raise Problem(
+                    409, "needs_approval", "This move needs approval: its button asks for it."
+                )
             return
     raise _refuse(field, "not_allowed", f"{said[:-1]} now, or not by you.")
 

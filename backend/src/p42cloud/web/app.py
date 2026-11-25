@@ -34,6 +34,7 @@ from p42cloud.web.caller import Rates
 from p42cloud.web.routes import (
     actions,
     aggregates,
+    approvals,
     comments,
     exports,
     files,
@@ -166,6 +167,7 @@ def create_app(
     app.include_router(actions.router)
     # Before the record routes: `aggregate` would otherwise be taken for a record's ID.
     app.include_router(aggregates.router)
+    app.include_router(approvals.router)
     app.include_router(exports.router)
     app.include_router(comments.router)
     app.include_router(files.router)  # before the records': its paths are more particular

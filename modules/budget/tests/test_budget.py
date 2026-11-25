@@ -68,23 +68,32 @@ async def _months(client: Client, line: Any) -> dict[int, str]:
     return {int(r["month"]): r["amount"] for r in found["records"]}
 
 
-async def test_a_version_is_submitted_approved_and_locked_by_a_controller(
+async def test_a_version_is_approved_by_a_controller_then_locked(
     as_system: Acting, as_person: Acting
 ) -> None:
     async with as_system() as client:
+        made = await _setup(client)
         planner = await _person(client, "budget.planner")
         controller = await _person(client, "budget.controller")
     async with as_person(planner) as client:
         version = await client.create("budget.version", {"name": "Budget 2027", "year": 2027})
         assert version["state"] == "draft"
+        await _line(client, version["sys_id"], made, rhythm="monthly", amount="10", from_month=1)
         await client.action("budget.version", version["sys_id"], "budget.move_submit")
-        with pytest.raises(Problem):  # approving is a controller's
-            current = await client.get("budget.version", version["sys_id"])
+        current = await client.get("budget.version", version["sys_id"])
+        assert current["state"] == "draft"  # waiting for a controller's yes
+        with pytest.raises(Problem):  # approving is a controller's, never around the approval
             await client.update(
                 "budget.version", version["sys_id"], {"state": "approved"}, current["_etag"]
             )
+    with pytest.raises(Problem):  # its lines don't change while it waits
+        async with as_person(planner) as client:
+            await _line(client, version["sys_id"], made, rhythm="once", amount="5", from_month=3)
     async with as_person(controller) as client:
-        await client.action("budget.version", version["sys_id"], "budget.move_approve")
+        waiting = (await client.approvals("budget.version", version["sys_id"]))[0]
+        assert waiting["may_decide"]
+        await client.decide(waiting["sys_id"], "approve")
+        assert (await client.get("budget.version", version["sys_id"]))["state"] == "approved"
         await client.action("budget.version", version["sys_id"], "budget.move_lock")
         assert (await client.get("budget.version", version["sys_id"]))["state"] == "locked"
 

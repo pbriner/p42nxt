@@ -26,6 +26,7 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `POST /api/v1/<module>/<table>/<id>/action/<name>` | Run a UI action on a record (`screens.md`) |
 | `POST /api/v1/<module>/<table>/action/<name>` | Run it on several (`ids`), a result per record |
 | `GET /api/v1/<module>/<table>/aggregate` | Totals (below) |
+| `GET /api/v1/approvals/mine`, `GET …/<id>/approvals`, `POST /api/v1/approvals/<id>/approve\|reject\|withdraw` | Approvals (`approvals.md`) |
 | `GET /api/v1/<module>/<table>/export` | The list as a CSV, Excel or JSON file (`records.md`) |
 | `GET /api/v1/dashboards/<name>` | A dashboard for the caller (`screens.md`) |
 | `POST /api/v1/mcp` | The MCP server for AI agents, with an API token (`mcp.md`) |

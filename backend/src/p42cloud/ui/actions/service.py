@@ -25,6 +25,7 @@ from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.security.access.guards import RECENT
 from p42cloud.security.sign_in.events import event
+from p42cloud.services.approvals.service import ask, rule_for
 from p42cloud.ui.actions.models import (
     INPUT_TYPES,
     PLACES,
@@ -242,6 +243,16 @@ def _values(action: Any, inputs: dict[str, Any]) -> dict[str, Any]:
     return values
 
 
+async def _approval_rule(records: Records, action: Any) -> Any | None:
+    """A state move's button whose move needs approval: it asks instead of moving."""
+    module, _, name = str(action.name).partition(".")
+    if action.set is None or not name.startswith("move_"):
+        return None
+    found = await rule_for(records.conn, f"{module}.{name.removeprefix('move_')}")
+    await switch_role(records.conn, "sys")
+    return found
+
+
 @dataclass(frozen=True)
 class _Chosen:
     """An action found and checked, with its inputs: ready to run on records."""
@@ -264,7 +275,15 @@ async def _one(
         raise Problem(403, "not_available", "This action isn't available for this record now.")
     language = records.situation.language
     result: ActionResult | None = None
-    if action.set is not None:
+    rule = await _approval_rule(records, action)
+    if rule is not None:
+        label = str(translated(action.label, language) or action.name)
+        result = ActionResult(
+            message=await ask(
+                records, table, sys_id, rule=rule, move=_values(action, inputs), label=label
+            )
+        )
+    elif action.set is not None:
         await records.update(table.key, sys_id, _values(action, inputs), record.etag)
     else:
         handler = HANDLERS.get(action.name)

@@ -202,6 +202,10 @@ async def _prepare(
                     [ADMINISTRATORS, greeters, controllers, desk],
                 ),
                 "plain": await _person(records, sealer, "Pat Plain", "plain@e2e.test", [greeters]),
+                # A second controller: approves what the admin submits (never one's own).
+                "controller": await _person(
+                    records, sealer, "Cleo Controller", "controller@e2e.test", [controllers]
+                ),
             }
             for size in SIGNERS:
                 people[f"signer-{size}"] = await _person(
