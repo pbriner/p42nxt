@@ -9,7 +9,7 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 |---|---|
 | `GET /api/v1/health` | Whether the app is up (anyone) |
 | `GET /api/v1/me` | The caller: their person record, groups, how they're signed in |
-| `GET /api/v1/<module>/<table>` | A page of records |
+| `GET /api/v1/<module>/<table>` | A page of records; `fields=partner.city` adds fields of referenced records |
 | `POST /api/v1/<module>/<table>` | A new record (201, `Location`, `ETag`) |
 | `GET /api/v1/<module>/<table>/<id>` | One record (`ETag`) |
 | `PATCH /api/v1/<module>/<table>/<id>` | Change fields; needs `If-Match` |
@@ -23,6 +23,7 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `POST /api/v1/<module>/<table>/<id>/action/<name>` | Run a UI action on a record (`screens.md`) |
 | `POST /api/v1/<module>/<table>/action/<name>` | Run it on several (`ids`), a result per record |
 | `GET /api/v1/<module>/<table>/aggregate` | Totals (below) |
+| `GET /api/v1/<module>/<table>/export` | The list as a CSV, Excel or JSON file (`records.md`) |
 | `GET /api/v1/dashboards/<name>` | A dashboard for the caller (`screens.md`) |
 | `POST /api/v1/mcp` | The MCP server for AI agents, with an API token (`mcp.md`) |
 | `GET /api/v1/installation` | The installation's name and language, and whether setup is open (`setup.md`) |

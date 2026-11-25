@@ -24,7 +24,7 @@ import {
   toParams,
   toWhere,
 } from '../core/filters';
-import { FieldInfo, NUMBER_TYPES, TableInfo, shown, textIn } from '../core/format';
+import { FieldInfo, NUMBER_TYPES, SUMMED_TYPES, TableInfo, shown, textIn } from '../core/format';
 import { I18n } from '../core/i18n';
 import { ListView, ListViews, Remembered, SavedView, conditionsOf } from '../core/list-views';
 import { Preferences } from '../core/preferences';
@@ -45,6 +45,11 @@ interface Page {
   next: string | null;
   total: number | null;
   total_exact: boolean;
+}
+
+interface AggregateAnswer {
+  total: unknown;
+  groups: { key: unknown; label: string; value: unknown }[];
 }
 
 interface CellMenu {
@@ -134,9 +139,14 @@ export class ListPage {
     ]),
   );
 
+  /** Fields of referenced records shown as columns (`partner.city`), by their path. */
+  private readonly walked = signal(new Map<string, FieldInfo>());
   protected readonly fields = computed(
-    () => new Map((this.table()?.fields ?? []).map((f) => [f.name, f])),
+    () =>
+      new Map([...(this.table()?.fields ?? []).map((f) => [f.name, f] as const), ...this.walked()]),
   );
+  /** The total of each number column over the whole filter, not just the page. */
+  protected readonly totals = signal(new Map<string, string>());
   protected readonly conditions = computed(() => (this.query() ? fromParams(this.query()!) : []));
   protected readonly search = computed(() => this.query()?.get('q') ?? '');
   protected readonly active = computed(() => {
@@ -150,16 +160,18 @@ export class ListPage {
     }
     return this.active()?.sort ?? this.rememberedState()?.sort ?? this.view()?.sort ?? DEFAULT_SORT;
   });
-  protected readonly columns = computed(() => {
-    const chosen =
+  private readonly chosenColumns = computed(
+    () =>
       this.draftColumns() ??
       this.active()?.columns ??
       this.rememberedState()?.columns ??
       this.view()?.columns ??
-      [];
+      [],
+  );
+  protected readonly columns = computed(() =>
     // Columns a module removed, or the person may not read, simply don't show.
-    return chosen.filter((c) => this.fields().get(c)?.read);
-  });
+    this.chosenColumns().filter((c) => this.fields().get(c)?.read),
+  );
   protected readonly changed = computed(() => {
     const view = this.active();
     if (!view) {
@@ -180,6 +192,13 @@ export class ListPage {
   );
 
   constructor() {
+    // A column from a referenced record: its field described, then the page loaded with it.
+    effect(() => {
+      const paths = this.chosenColumns().filter((c) => c.includes('.'));
+      if (this.table() && paths.some((p) => !untracked(() => this.walked()).has(p))) {
+        void untracked(() => this.describeWalked(paths));
+      }
+    });
     effect(() => {
       const name = this.params()?.get('view');
       if (name && name !== this.opened) {
@@ -245,8 +264,65 @@ export class ListPage {
     if (!view) {
       return;
     }
+    const where = this.whereNow();
+    this.loadedKey = this.stateKey();
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      const { data } = await this.api.get<Page>(path(view.table), {
+        query: {
+          limit: Math.min(this.preferences.values().page_size, 500),
+          sort: this.sort().join(','),
+          after: this.after(),
+          where: where ? JSON.stringify(where) : null,
+          fields: this.fieldsParam(),
+        },
+      });
+      this.page.set(data);
+      this.selected.set(new Set());
+      if (!this.before().length) {
+        void this.loadTotals(where);
+      }
+      await this.nameReferences();
+    } catch (error) {
+      this.error.set(describe(error));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** The fields behind columns like `partner.city`, labelled "Partner › City". */
+  private async describeWalked(paths: string[]): Promise<void> {
+    const found = new Map(this.walked());
+    let added = false;
+    for (const p of paths) {
+      const [ref, name] = p.split('.');
+      const via = this.table()?.fields.find((f) => f.name === ref);
+      if (found.has(p) || !via?.options.table || !name) {
+        continue;
+      }
+      try {
+        const target = await this.tables.describe(via.options.table);
+        const field = target.fields.find((f) => f.name === name);
+        if (field) {
+          found.set(p, { ...field, name: p, label: `${via.label} › ${field.label}` });
+          added = true;
+        }
+      } catch {
+        // A table they may not read: the column doesn't show.
+      }
+    }
+    if (added) {
+      this.walked.set(found);
+      await this.load();
+    }
+  }
+
+  /** The filter the list shows: the view's, the chips, a fixed one and the search. */
+  private whereNow(): unknown {
+    const view = this.view();
     const parts: unknown[] = [];
-    if (view.filter) {
+    if (view?.filter) {
       parts.push(view.filter);
     }
     const own = toWhere(this.conditions());
@@ -263,31 +339,92 @@ export class ListPage {
       }
     }
     const q = this.search();
-    const searched = (view.search ?? []).filter((f) => this.fields().get(f)?.read);
+    const searched = (view?.search ?? []).filter((f) => this.fields().get(f)?.read);
     if (q && searched.length) {
       parts.push({ or: searched.map((f) => ({ field: f, op: 'contains', value: q })) });
     }
-    const where = parts.length === 0 ? null : parts.length === 1 ? parts[0] : { and: parts };
-    this.loadedKey = this.stateKey();
-    this.busy.set(true);
-    this.error.set(null);
-    try {
-      const { data } = await this.api.get<Page>(path(view.table), {
-        query: {
-          limit: Math.min(this.preferences.values().page_size, 500),
-          sort: this.sort().join(','),
-          after: this.after(),
-          where: where ? JSON.stringify(where) : null,
-        },
-      });
-      this.page.set(data);
-      this.selected.set(new Set());
-      await this.nameReferences();
-    } catch (error) {
-      this.error.set(describe(error));
-    } finally {
-      this.busy.set(false);
+    return parts.length === 0 ? null : parts.length === 1 ? parts[0] : { and: parts };
+  }
+
+  /** The list's own fields and the referenced ones, when it shows any of those. */
+  private fieldsParam(): string | null {
+    const walked = this.columns().filter((c) => c.includes('.'));
+    if (!walked.length) {
+      return null;
     }
+    const own = (this.table()?.fields ?? []).filter((f) => f.read).map((f) => f.name);
+    return [...own, ...walked].join(',');
+  }
+
+  /** Each number column's total over the whole filter; amounts per currency. */
+  private async loadTotals(where: unknown): Promise<void> {
+    const view = this.view();
+    const summed = this.columns().filter(
+      (c) => !c.includes('.') && SUMMED_TYPES.has(this.fields().get(c)?.type ?? ''),
+    );
+    if (!view || !summed.length) {
+      this.totals.set(new Map());
+      return;
+    }
+    const found = new Map<string, string>();
+    await Promise.all(
+      summed.map(async (name) => {
+        const field = this.fields().get(name)!;
+        const holder = field.options['currency_field'];
+        const byCurrency = typeof holder === 'string' && this.fields().get(holder)?.read;
+        try {
+          const { data } = await this.api.get<AggregateAnswer>(`${path(view.table)}/aggregate`, {
+            query: {
+              measure: 'sum',
+              field: name,
+              group: byCurrency ? holder : null,
+              limit: 10,
+              where: where ? JSON.stringify(where) : null,
+            },
+            quiet: true,
+          });
+          const parts = byCurrency
+            ? data.groups.map((g) => this.amount(field, g.value, String(g.key ?? '')))
+            : [this.amount(field, data.total, '')];
+          found.set(name, parts.filter((p) => p).join(' · ') || '—');
+        } catch {
+          // No total for a column they can't add up.
+        }
+      }),
+    );
+    this.totals.set(found);
+  }
+
+  private amount(field: FieldInfo, value: unknown, currency: string): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    const options: FieldInfo['options'] = { ...field.options, currency_field: null };
+    if (currency) {
+      options['currency'] = currency;
+    }
+    const fixed: FieldInfo = { ...field, options };
+    return shown({ [field.name]: value }, fixed, field.name, this.i18n.language(), (k) =>
+      this.i18n.t(k),
+    );
+  }
+
+  /** The address of the list as a file, with its filter, sort and columns. */
+  protected exportLink(format: 'csv' | 'xlsx' | 'json'): string {
+    const view = this.view();
+    if (!view) {
+      return '';
+    }
+    const query = new URLSearchParams({
+      format,
+      fields: this.columns().join(','),
+      sort: this.sort().join(','),
+    });
+    const where = this.whereNow();
+    if (where) {
+      query.set('where', JSON.stringify(where));
+    }
+    return `${path(view.table)}/export?${query.toString()}`;
   }
 
   /** Names for the records the chips point to, from the page or the API. */
@@ -474,7 +611,11 @@ export class ListPage {
     const available = this.availableFields();
     this.dialog
       .open<ColumnsDialog, ColumnsRequest, string[]>(ColumnsDialog, {
-        data: { shown: this.columns(), available },
+        data: {
+          shown: this.columns(),
+          available: [...available, ...this.walked().values()],
+          references: available.filter((f) => f.kind === 'reference' && !!f.options.table),
+        },
       })
       .afterClosed()
       .subscribe((columns) => columns && this.setColumns(columns));
@@ -491,12 +632,20 @@ export class ListPage {
   }
 
   protected setColumns(columns: string[]): void {
+    this.totals.set(new Map());
     if (this.active()) {
       this.draftColumns.set(columns);
     } else {
       this.draftColumns.set(null);
       this.rememberedState.update((r) => (r ? { ...r, columns } : r));
       void this.rememberValues({ columns });
+    }
+    // A referenced record's field already described needs the page again; totals follow.
+    const shown = new Set(Object.keys(this.page()?.records[0] ?? {}));
+    if (columns.some((c) => c.includes('.') && this.walked().has(c) && !shown.has(c))) {
+      void this.load();
+    } else {
+      void this.loadTotals(this.whereNow());
     }
   }
 

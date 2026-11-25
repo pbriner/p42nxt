@@ -27,6 +27,7 @@ from p42cloud.data.types.datetime import DateTime
 from p42cloud.data.types.decimal import Decimal
 from p42cloud.data.types.duration import Duration
 from p42cloud.data.types.email import Email
+from p42cloud.data.types.formula import Formula
 from p42cloud.data.types.hostname import Hostname
 from p42cloud.data.types.icon import Icon
 from p42cloud.data.types.integer import Integer
@@ -37,6 +38,7 @@ from p42cloud.data.types.number import Number
 from p42cloud.data.types.percent import Percent
 from p42cloud.data.types.phone import Phone
 from p42cloud.data.types.reference import Reference
+from p42cloud.data.types.rollup import Rollup
 from p42cloud.data.types.secret import Secret
 from p42cloud.data.types.string import String
 from p42cloud.data.types.text import Text
@@ -87,6 +89,7 @@ __all__ = [
     "FormRule",
     "FormSection",
     "FormView",
+    "Formula",
     "GaveUp",
     "Grant",
     "Hostname",
@@ -112,6 +115,7 @@ __all__ = [
     "Reference",
     "RelatedList",
     "Role",
+    "Rollup",
     "Route",
     "RouteRequest",
     "Schedule",

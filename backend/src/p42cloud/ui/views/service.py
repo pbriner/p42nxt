@@ -7,7 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from p42cloud.data.catalog import Catalog, TableDef
-from p42cloud.data.conditions import Filter, Query, Situation, field_of
+from p42cloud.data.conditions import MAX_WALK, Filter, Query, Situation, field_of
 from p42cloud.data.hooks import Change, TableHook
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.ui.declared import label_of, sync
@@ -21,8 +21,21 @@ MAX_COLUMNS = 40
 MAX_SAVED = 100
 
 
-def _unknown(table: TableDef, names: list[str]) -> list[str]:
-    return [n for n in names if field_of(table, n.removeprefix("-")) is None]
+def _known(catalog: Catalog, table: TableDef, name: str) -> bool:
+    """A field of the table, or of a record it points to (`partner.city`, at most 3 steps)."""
+    parts = name.removeprefix("-").split(".")
+    current: TableDef | None = table
+    for i, part in enumerate(parts):
+        f = field_of(current, part) if current is not None else None
+        if f is None or i > MAX_WALK:
+            return False
+        target = f.type.references(f.field.options)
+        current = catalog.table(target) if target else None
+    return True
+
+
+def _unknown(catalog: Catalog, table: TableDef, names: list[str]) -> list[str]:
+    return [n for n in names if not _known(catalog, table, n)]
 
 
 def _names(value: Any, where: str) -> list[str]:
@@ -74,7 +87,9 @@ def _view_problems(catalog: Catalog, module: str, view: ListView) -> list[FieldE
         return [FieldError(where, "unknown_table", "A view is of one of the module's tables.")]
     found = [
         FieldError(where, "unknown_field", f"No field {n!r}.")
-        for n in _unknown(table, [*view.columns, *view.sort, *view.available, *view.search])
+        for n in _unknown(
+            catalog, table, [*view.columns, *view.sort, *view.available, *view.search]
+        )
     ]
     if not view.columns:
         found.append(FieldError(where, "no_columns", "A view shows at least one column."))
@@ -177,7 +192,7 @@ async def _check_state(change: Change, table_name: str) -> None:
     table = await _view_table(change, table_name)
     for name in ("columns", "sort"):
         if name in change.values:
-            unknown = _unknown(table, _names(change.values[name], name))
+            unknown = _unknown(change.records.catalog, table, _names(change.values[name], name))
             if unknown:
                 raise _invalid(name, f"No such fields: {', '.join(unknown)}.")
     if "filter" in change.values and change.values["filter"] is not None:

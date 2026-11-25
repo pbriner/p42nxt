@@ -9,6 +9,7 @@ import { unit as datetime } from './datetime';
 import { unit as decimal } from './decimal';
 import { unit as duration } from './duration';
 import { unit as email } from './email';
+import { unit as formula } from './formula';
 import { unit as hostname } from './hostname';
 import { unit as icon } from './icon';
 import { unit as integer } from './integer';
@@ -19,6 +20,7 @@ import { unit as number } from './number';
 import { unit as percent } from './percent';
 import { unit as phone } from './phone';
 import { unit as reference } from './reference';
+import { unit as rollup } from './rollup';
 import { unit as secret } from './secret';
 import { unit as string } from './string';
 import { unit as text } from './text';
@@ -37,6 +39,7 @@ export const FIELD_TYPES: Record<string, FieldTypeUnit> = {
   decimal: decimal,
   duration: duration,
   email: email,
+  formula: formula,
   hostname: hostname,
   icon: icon,
   integer: integer,
@@ -47,6 +50,7 @@ export const FIELD_TYPES: Record<string, FieldTypeUnit> = {
   percent: percent,
   phone: phone,
   reference: reference,
+  rollup: rollup,
   secret: secret,
   string: string,
   text: text,

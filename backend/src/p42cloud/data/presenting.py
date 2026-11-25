@@ -285,6 +285,16 @@ def _names_of(
     return display, state
 
 
+def _walked_labels(record: Record, language: str) -> dict[str, Any]:
+    """The choices among a list's fields of referenced records (`partner.kind`), named."""
+    display: dict[str, Any] = {}
+    for path, (f, value) in record.walked.items():
+        if value is not None and f.field.type == "choice":
+            labels = {v["value"]: v.get("label") for v in f.field.options.get("values", [])}
+            display[path] = translated(labels.get(value), language)
+    return display
+
+
 _PERSON = "sys.person"
 _BY_PERSON = ("created_by", "updated_by", "deleted_by")
 
@@ -371,6 +381,7 @@ async def annotate(records: Records, table: TableDef, found: list[Record]) -> li
     for record, body in zip(found, bodies, strict=True):
         display, state = _names_of(records.catalog, table, record, names, language)
         display |= _who(record, names.get(_PERSON, {}))
+        display |= _walked_labels(record, language)
         body["_display"] = display
         if state:
             body["_reference_state"] = state

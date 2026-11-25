@@ -47,6 +47,11 @@ people may add, and the fields the search looks in. Its name is the table's (`he
 views=(ListView("hello.greeting", ("text", "language", "author", "created")),),
 ```
 
+Columns can also be fields of referenced records (`partner.city`), in a declared view, a saved
+view or the person's own columns (**Columns** → **Add a field of**). Under the rows, each column
+of numbers shows its total for the whole filter, not just the page; amounts per currency.
+**Export** downloads the list as Excel, CSV or JSON, with its filter, columns and sort.
+
 Every table gets a list view: a table whose module declares none gets one made from its fields
 (the display field first, then up to four more). Unless a view says otherwise, the search looks
 in its text columns. The core's made views stay out of the search; the core's people, groups,

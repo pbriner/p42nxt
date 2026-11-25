@@ -410,6 +410,11 @@
      "kind": "KEYWORD_ONLY",
      "name": "deleted",
      "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "columns",
+     "required": false
     }
    ],
    "notify": [
@@ -886,6 +891,45 @@
    {
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "related_auto",
+    "required": false
+   }
+  ]
+ },
+ "Formula": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "expression",
+    "required": true
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "precision",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "scale",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "currency_field",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "currency",
+    "required": false
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
     "required": false
    }
   ]
@@ -1629,6 +1673,65 @@
    {
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "description",
+    "required": false
+   }
+  ]
+ },
+ "Rollup": {
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "label",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "table",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "via",
+    "required": true
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "measure",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "field",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "where",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "precision",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "scale",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "currency_field",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "currency",
+    "required": false
+   },
+   {
+    "kind": "VAR_KEYWORD",
+    "name": "common",
     "required": false
    }
   ]

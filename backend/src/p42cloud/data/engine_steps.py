@@ -577,6 +577,67 @@ END $$;
 REVOKE ALL ON FUNCTION sys.p42_in_use() FROM PUBLIC;
 """
 
+# Calculated fields (types/formula.py): three arguments per field, its column, its SQL over the
+# record `r` (made by formulas.py from checked names and numbers only) and its column type. As the
+# person saving: it reads only the record being saved.
+_FORMULAS = """
+CREATE FUNCTION sys.p42_formula() RETURNS trigger LANGUAGE plpgsql
+SET search_path = pg_catalog, sys AS $$
+DECLARE
+    i integer := 0;
+    result text;
+    patch jsonb := '{}'::jsonb;
+BEGIN
+    WHILE i < TG_NARGS LOOP
+        EXECUTE format('SELECT CAST((%s) AS %s)::text FROM (SELECT ($1).*) r',
+                       TG_ARGV[i + 1], TG_ARGV[i + 2]) INTO result USING NEW;
+        patch := patch || jsonb_build_object(TG_ARGV[i], result);
+        i := i + 3;
+    END LOOP;
+    NEW := jsonb_populate_record(NEW, patch);
+    RETURN NEW;
+END $$;
+
+-- Roll-ups (types/rollup.py), on the related table: six arguments per roll-up, the parent table,
+-- its column, the reference to it, the aggregate over the records `c`, the condition and the
+-- column type. The parent records the change was about (before and after a move) are worked out
+-- again, whoever may write them: the total follows its lines.
+CREATE FUNCTION sys.p42_rollup() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog, sys AS $$
+DECLARE
+    i integer := 0;
+    fresh jsonb := to_jsonb(NEW);
+    before jsonb := CASE WHEN TG_OP = 'UPDATE' THEN to_jsonb(OLD) ELSE '{}'::jsonb END;
+    parent uuid;
+    parents uuid[];
+    total text;
+BEGIN
+    WHILE i < TG_NARGS LOOP
+        parents := ARRAY[]::uuid[];
+        IF fresh ->> TG_ARGV[i + 2] IS NOT NULL THEN
+            parents := parents || (fresh ->> TG_ARGV[i + 2])::uuid;
+        END IF;
+        IF before ->> TG_ARGV[i + 2] IS NOT NULL
+           AND before ->> TG_ARGV[i + 2] IS DISTINCT FROM fresh ->> TG_ARGV[i + 2] THEN
+            parents := parents || (before ->> TG_ARGV[i + 2])::uuid;
+        END IF;
+        FOREACH parent IN ARRAY parents LOOP
+            EXECUTE format('SELECT CAST(coalesce(%s, 0) AS %s)::text FROM %s c'
+                           ' WHERE c.%I = $1 AND c.deleted IS NULL AND (%s)',
+                           TG_ARGV[i + 3], TG_ARGV[i + 5], TG_RELID::regclass, TG_ARGV[i + 2],
+                           TG_ARGV[i + 4]) INTO total USING parent;
+            EXECUTE format('UPDATE %s SET %I = CAST($2 AS %s) WHERE sys_id = $1'
+                           ' AND %I IS DISTINCT FROM CAST($2 AS %s)',
+                           TG_ARGV[i]::regclass, TG_ARGV[i + 1], TG_ARGV[i + 5], TG_ARGV[i + 1],
+                           TG_ARGV[i + 5]) USING parent, total;
+        END LOOP;
+        i := i + 6;
+    END LOOP;
+    RETURN NULL;
+END $$;
+REVOKE ALL ON FUNCTION sys.p42_rollup() FROM PUBLIC;
+"""
+
 STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0001_context", _CONTEXT),
     ("0002_record_rules", _RECORD_RULES),
@@ -594,4 +655,5 @@ STEPS: Final[tuple[tuple[str, str], ...]] = (
     ("0014_audit_months_ahead", _AUDIT_MONTHS_AHEAD),
     ("0015_record_numbers", _NUMBERS),
     ("0016_in_use", _IN_USE),
+    ("0017_formulas_and_rollups", _FORMULAS),
 )

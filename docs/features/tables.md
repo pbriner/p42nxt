@@ -51,6 +51,8 @@ the database makes, how a value is checked and stored, and which changes keep ev
 | `Choice(values, tones=)` | `text` | One of the declared values (`a-z`, `0-9`, `_`), each with a label. `tones` makes some stand out in lists: `primary`, `tertiary`, `error` or `muted` (struck through), in the theme's colours |
 | `Reference(table, on_delete=)` | `uuid` | The record exists (foreign key, indexed). `key=` fills it from another field instead (below); `on_delete` says what deleting the target does (below) |
 | `Number(prefix=, digits=)` | `text` | A record number from the database (below) |
+| `Formula(expression, precision=, scale=, currency_field= or currency=)` | `numeric(p,s)` | Worked out by the database from the record's own numbers and dates on every save (below) |
+| `Rollup(table, via, measure=, field=, where=, …)` | `numeric(p,s)` | The sum or count of the records pointing to this one, kept right by the database (below) |
 | `AnyRecord(table_field=)` | `uuid` | A record of any table; `table_field` names the field saying which (a reference to `sys.table`, or a table's name), and gives the linked record a related list |
 | `Json` | `jsonb` | Valid JSON |
 
@@ -89,6 +91,27 @@ from a counter of its own (per field), whatever was sent; nobody types or change
 refuses it, and so does the database). A number is never given twice, not even after a delete:
 it's unique among all records, deleted ones too. Records there when the field is added are
 numbered in the order they were made.
+
+### Calculated fields
+
+`Formula("Gross", "net * (1 + vat)")` is worked out by the database on every save, from the
+record's own number and date fields (roll-ups too, other formulas not): numbers, `+ - * /`,
+parentheses and `round(x, places)`, `abs`, `coalesce`, `least`, `greatest`. Two dates
+subtracted give days (`due - issued`). A division by zero gives nothing, and so does an empty
+field unless `coalesce` gives a value instead. With `currency_field=` or `currency=` it reads
+like an amount. Nobody types one (the API refuses it); lists filter, sort and add it up like any
+number. A formula that names an unknown field, mixes dates and numbers wrongly or doesn't parse
+stops the module's install with the reason. Changing a formula works every record out again.
+
+### Roll-ups
+
+`Rollup("Total", "finance.statement_line", "statement", field="amount")` is the sum of the
+lines' amounts on each statement; `measure="count"` counts them, and `where={"kind": "charge"}`
+counts only lines whose fields have these values. Deleted lines never count. The database keeps
+it right whenever a line is made, changed, moved to another statement, deleted or restored,
+however that's done, and works every record out when the roll-up is added or changed. The
+related table must be of the same module and point to this one through `via`. Like formulas,
+roll-ups are never typed and behave like any number in lists.
 
 ### Read-only fields
 
