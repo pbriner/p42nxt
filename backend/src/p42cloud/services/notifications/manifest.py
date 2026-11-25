@@ -38,6 +38,11 @@ KINDS = (
         "A module is offered in the registry that this installation hasn't installed yet.",
     ),
     NotificationKind(
+        "secret_expiring",
+        "A connection's secret expires",
+        "Two weeks before a connection's secret expires, and on the day: time to get a new one.",
+    ),
+    NotificationKind(
         "module_roles",
         "A module brings roles",
         "After a module is installed: the roles it brings, to give to groups of people.",

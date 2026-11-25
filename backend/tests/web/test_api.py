@@ -102,6 +102,23 @@ async def test_health_is_public_and_records_are_not(api: httpx.AsyncClient) -> N
     assert records.json()["code"] == "not_signed_in"
 
 
+async def test_live_and_ready_say_whether_it_can_serve(api: httpx.AsyncClient) -> None:
+    live = await api.get("/api/v1/health/live")
+    ready = await api.get("/api/v1/health/ready")
+    assert live.json() == {"status": "ok"}
+    assert ready.status_code == 200 and ready.json()["status"] == "ok"
+
+
+async def test_a_token_can_not_make_another_token(
+    api: httpx.AsyncClient, admin: tuple[str, str]
+) -> None:
+    _, token = admin
+    made = await api.post("/api/v1/tokens", json={"name": "Copy"}, headers=_bearer(token))
+    me = await api.get("/api/v1/me", headers=_bearer(token))
+    assert (made.status_code, made.json()["code"]) == (403, "verify_again")
+    assert me.json()["session"] is None  # a token has no browser session
+
+
 # ---- records over HTTP ----
 
 

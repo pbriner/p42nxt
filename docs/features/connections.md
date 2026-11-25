@@ -55,6 +55,11 @@ never shown again.
 **Check** (an action on the connection) runs the type's check and records whether it works,
 when, and what it said.
 
+A secret may have an **Expires** date (when the outside system stops taking it). The daily job
+**Remind owners of expiring secrets** tells the connection's owner two weeks before and again
+on the day (notification kind **A connection's secret expires**). A new value or date resets
+the reminder.
+
 ## Using a connection in a module
 
 ```python

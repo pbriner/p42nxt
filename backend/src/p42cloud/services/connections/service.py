@@ -186,6 +186,10 @@ async def _seal_secret(change: Change) -> None:
     if change.operation in ("delete", "restore"):
         return
     conn = change.records.conn
+    if "told" in change.sent:
+        raise _invalid("told", "Set by the reminder.")
+    if {"value", "expires"} & set(change.values):
+        change.values["told"] = None  # a new secret or date: reminded again before it ends
     if change.operation == "create":
         change.values["owner"] = change.person
         connection = change.values.get("connection")

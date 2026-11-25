@@ -45,6 +45,8 @@ class Table:
     # Its records have work notes: a conversation only those who may change a record read and
     # add to (the team working on it, not everyone who sees it).
     work_notes: bool = False
+    # Sensitive: each read of its records over the API is an entry of the audit log.
+    log_reads: bool = False
 
 
 def _field_problems(table: str, name: str, declared: Field) -> list[FieldError]:
@@ -171,6 +173,7 @@ def to_catalog(schema: str, tables: list[Table]) -> Catalog:
             files=t.files,
             comments=t.comments,
             work_notes=t.work_notes,
+            log_reads=t.log_reads,
         )
         for t in tables
     ]

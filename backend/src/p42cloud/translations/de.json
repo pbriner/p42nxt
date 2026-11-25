@@ -198,6 +198,11 @@
    "text": "Angezeigt bis"
   },
   {
+   "key": "sys.field|sys.api_token.addresses|label",
+   "english": "Only from these addresses",
+   "text": "Nur von diesen Adressen"
+  },
+  {
    "key": "sys.field|sys.api_token.expires|label",
    "english": "Expires",
    "text": "Läuft ab"
@@ -428,6 +433,16 @@
    "text": "Verbindung"
   },
   {
+   "key": "sys.field|sys.connection_secret.expires|help",
+   "english": "When the outside system stops taking it: you're reminded before.",
+   "text": "Wann das andere System es nicht mehr annimmt: Du wirst vorher erinnert."
+  },
+  {
+   "key": "sys.field|sys.connection_secret.expires|label",
+   "english": "Expires",
+   "text": "Läuft ab"
+  },
+  {
    "key": "sys.field|sys.connection_secret.name|label",
    "english": "Name",
    "text": "Name"
@@ -436,6 +451,11 @@
    "key": "sys.field|sys.connection_secret.owner|label",
    "english": "Owner",
    "text": "Besitzer"
+  },
+  {
+   "key": "sys.field|sys.connection_secret.told|label",
+   "english": "Reminded",
+   "text": "Erinnert"
   },
   {
    "key": "sys.field|sys.connection_secret.value|label",
@@ -2793,6 +2813,11 @@
    "text": "Bezeichnung"
   },
   {
+   "key": "sys.field|sys.table.log_reads|label",
+   "english": "Reads are logged",
+   "text": "Lesen wird protokolliert"
+  },
+  {
    "key": "sys.field|sys.table.name|label",
    "english": "Name",
    "text": "Name"
@@ -3838,6 +3863,11 @@
    "text": "Mitglieder der dynamischen Gruppen prüfen"
   },
   {
+   "key": "sys.job|sys.secret_expiry|label",
+   "english": "Remind owners of expiring secrets",
+   "text": "Besitzer an ablaufende Geheimnisse erinnern"
+  },
+  {
    "key": "sys.list_view|sys.announcement|label",
    "english": "Messages",
    "text": "Meldungen"
@@ -4513,6 +4543,16 @@
    "text": "Ein Modul zum Installieren"
   },
   {
+   "key": "sys.notification_kind|sys.secret_expiring|description",
+   "english": "Two weeks before a connection's secret expires, and on the day: time to get a new one.",
+   "text": "Zwei Wochen bevor das Geheimnis einer Verbindung abläuft, und am Tag selbst: Zeit für ein neues."
+  },
+  {
+   "key": "sys.notification_kind|sys.secret_expiring|label",
+   "english": "A connection's secret expires",
+   "text": "Das Geheimnis einer Verbindung läuft ab"
+  },
+  {
    "key": "sys.notification_kind|sys.update_finished|description",
    "english": "An update requested in the app has run: done, or failed (with the version before put back or not).",
    "text": "Ein in der App angefordertes Update ist gelaufen: fertig oder fehlgeschlagen (mit oder ohne Rückkehr zur Version davor)."
@@ -4591,6 +4631,11 @@
    "key": "sys.schedule|sys.repair_groups|label",
    "english": "Dynamic groups, nightly",
    "text": "Dynamische Gruppen, nachts"
+  },
+  {
+   "key": "sys.schedule|sys.secret_expiry|label",
+   "english": "Expiring secrets, daily",
+   "text": "Ablaufende Geheimnisse, täglich"
   },
   {
    "key": "sys.table|sys.announcement|label",

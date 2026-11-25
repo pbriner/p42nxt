@@ -4,6 +4,7 @@ import json
 import os
 import uuid
 from collections.abc import AsyncGenerator, Iterator
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -26,6 +27,7 @@ from p42cloud.services.connections.service import (
     connect,
     write_types,
 )
+from p42cloud.services.jobs.service import run_job
 from tests.security.helpers import acting
 
 HOST = "1.1.1.1"  # a public address: no name to resolve in tests
@@ -262,3 +264,39 @@ async def test_one_connection_of_several_and_never_anothers(
                 pass
     assert SEEN[-1].headers["Authorization"] == "Bearer t2"
     assert not_hers.value.code == "no_connection"
+
+
+async def test_owners_are_reminded_before_a_secret_expires(
+    engine: AsyncEngine, types: None
+) -> None:
+    anna, _ = await _people(engine)
+    soon = (datetime.now(UTC).date() + timedelta(days=10)).isoformat()
+    async with acting(engine, anna) as records:
+        made = await records.create("sys.connection", {"type": "sys.bearer_test", "label": "Shop"})
+        secret = await records.create(
+            "sys.connection_secret",
+            {"connection": str(made.sys_id), "name": "token", "value": "t", "expires": soon},
+        )
+        with pytest.raises(Problem):
+            await records.update("sys.connection_secret", secret.sys_id, {"told": soon}, None)
+    for _ in range(2):  # told once, not every day
+        state, _said = await run_job(engine, "sys.secret_expiry")
+        assert state == "succeeded"
+    async with acting(engine, None) as records:
+        told = (
+            (
+                await records.conn.execute(
+                    text("SELECT title FROM sys.notification WHERE person = :p AND kind = :k"),
+                    {"p": anna, "k": "sys.secret_expiring"},
+                )
+            )
+            .scalars()
+            .all()
+        )
+    assert told == [f"The secret token of Shop expires on {soon}"]
+    async with acting(engine, anna) as records:  # a new secret: reminded again later
+        current = await records.read("sys.connection_secret", secret.sys_id)
+        renewed = await records.update(
+            "sys.connection_secret", secret.sys_id, {"value": "t2"}, current.etag
+        )
+    assert renewed.values["told"] is None

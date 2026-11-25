@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from p42cloud.data.catalog import load_catalog
 from p42cloud.data.declarations import Table
 from p42cloud.data.metadata import declare
+from p42cloud.data.read_log import log_reads
 from p42cloud.data.records import Records
 from p42cloud.data.types.string import String
 from p42cloud.kernel.config import Settings
@@ -24,6 +25,7 @@ from p42cloud.kernel.secrets import Sealer
 from p42cloud.security.access.manifest import ADMINISTRATORS
 from p42cloud.security.access.roles import Grant, Role, write_roles
 from p42cloud.security.sign_in import credentials
+from p42cloud.security.sign_in.recovery import operator_token, reset_second_factor
 from p42cloud.security.sign_in.sessions import SignIn
 from p42cloud.security.tokens.service import TokenUse, make_token, use_token
 from tests.security.helpers import acting, change, context_of, role_id
@@ -253,3 +255,55 @@ async def test_service_accounts_never_sign_in_with_a_password(
     with pytest.raises(Problem) as refused:
         await sign_in.start(email, "correct horse battery staple")
     assert refused.value.status == 401
+
+
+async def test_a_token_works_only_from_its_addresses(shop: Shop, anonymous: object) -> None:
+    token = await _make(shop, shop.anna, shop.anna, addresses=["10.44.0.0/16", "10.45.1.2"])
+    await use_token(shop.engine, token, address="10.44.7.1")
+    await use_token(shop.engine, token, address="10.45.1.2")
+    for elsewhere in ("10.46.0.1", None):
+        with pytest.raises(Problem) as refused:
+            await use_token(shop.engine, token, address=elsewhere)
+        assert refused.value.status == 401
+    with pytest.raises(Problem) as wrong:
+        await _make(shop, shop.anna, shop.anna, addresses=["not an address"])
+    assert [e.field for e in wrong.value.errors] == ["addresses"]
+
+
+async def test_reads_with_a_token_are_logged(shop: Shop, anonymous: object) -> None:
+    use = await use_token(shop.engine, await _make(shop, shop.anna, shop.anna))
+    async with _with(shop, use) as records:
+        page = await records.list(shop.item)
+        await log_reads(
+            records, records.catalog.tables[shop.item], [r.sys_id for r in page.records]
+        )
+        logged = await records.conn.scalar(
+            text(
+                "SELECT changes FROM sys.audit_log WHERE operation = 'records_read'"
+                " AND person_id = :p ORDER BY created DESC LIMIT 1"
+            ),
+            {"p": shop.anna},
+        )
+    assert logged["table"] == shop.item and logged["count"] == len(page.records)
+
+
+async def test_the_operator_recovers_a_locked_out_person(shop: Shop) -> None:
+    email = f"locked-{uuid.uuid4().hex[:6]}@example.com"
+    async with acting(shop.engine, None) as records:
+        person = (await records.create("sys.person", {"name": "Locked", "email": email})).sys_id
+        await credentials.new_recovery_codes(records.conn, person)
+    with working_as(Context(channel="cli:test", access=EVERYTHING)):
+        async with transaction(shop.engine, "sys") as conn:
+            await reset_second_factor(conn, email)
+            left = await conn.scalar(
+                text("SELECT count(*) FROM sys.credential WHERE person = :p AND deleted IS NULL"),
+                {"p": person},
+            )
+            made = await operator_token(conn, email.upper(), "Rescue", 2)
+            with pytest.raises(Problem):
+                await operator_token(conn, email, "Too long", 48)
+    assert left == 0
+    assert made.expires - datetime.now(UTC) < timedelta(hours=2, minutes=1)
+    with working_as(Context(channel="api", access=EVERYTHING)):
+        use = await use_token(shop.engine, made.token)
+    assert use.person == person

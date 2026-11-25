@@ -10,6 +10,7 @@ the second factor given recently.
 """
 
 import hashlib
+import ipaddress
 import json
 import secrets
 from dataclasses import dataclass
@@ -77,13 +78,14 @@ async def _may_make(conn: AsyncConnection, person: UUID) -> None:
         raise _refuse("admins_only", "Only administrators make API tokens for service accounts.")
 
 
-async def make_token(
+async def make_token(  # noqa: PLR0913 - the token's options, all by keyword
     conn: AsyncConnection,
     person: UUID,
     name: str,
     *,
     roles: list[str] | None = None,
     expires: datetime | None = None,
+    addresses: list[str] | None = None,
 ) -> NewToken:
     """A new token acting as `person`; returns it once."""
     await switch_role(conn, "sys")
@@ -107,13 +109,24 @@ async def make_token(
         ]
     if not name.strip():
         errors.append(FieldError("name", "required", "Give the token a name."))
+    networks: list[str] | None = None
+    if addresses:
+        try:
+            networks = sorted(
+                {str(ipaddress.ip_network(a.strip(), strict=False)) for a in addresses}
+            )
+        except ValueError:
+            errors.append(
+                FieldError("addresses", "invalid", "Addresses like 203.0.113.7 or 203.0.113.0/24.")
+            )
     if errors:
         raise Problem(422, "validation", "Some fields aren't valid.", errors=errors)
     token = PREFIX + secrets.token_urlsafe(32)
     made = await conn.scalar(
         text(
-            "INSERT INTO sys.api_token (person, name, token, prefix, roles, expires)"
-            " VALUES (:person, :name, :token, :prefix, CAST(:roles AS jsonb), :expires)"
+            "INSERT INTO sys.api_token (person, name, token, prefix, roles, addresses, expires)"
+            " VALUES (:person, :name, :token, :prefix, CAST(:roles AS jsonb),"
+            " CAST(:addresses AS jsonb), :expires)"
             " RETURNING sys_id"
         ),
         {
@@ -122,6 +135,7 @@ async def make_token(
             "token": _hash(token),
             "prefix": token[:12],
             "roles": None if roles is None else json.dumps(sorted(roles)),
+            "addresses": None if networks is None else json.dumps(networks),
             "expires": expires,
         },
     )
@@ -131,8 +145,22 @@ async def make_token(
     return NewToken(made, token, expires)
 
 
+def _from_allowed(networks: list[str] | None, address: str | None) -> bool:
+    """Whether a token limited to some networks is used from one of them."""
+    if not networks:
+        return True
+    if address is None:
+        return False
+    try:
+        given = ipaddress.ip_address(address)
+    except ValueError:
+        return False
+    return any(given in ipaddress.ip_network(n) for n in networks)
+
+
 _FIND = text(
-    "SELECT t.sys_id, t.person, t.name, t.roles, t.expires, t.last_used FROM sys.api_token t"
+    "SELECT t.sys_id, t.person, t.name, t.roles, t.addresses, t.expires, t.last_used"
+    " FROM sys.api_token t"
     " JOIN sys.person p ON p.sys_id = t.person"
     " WHERE t.token = :token AND t.deleted IS NULL AND p.deleted IS NULL AND p.active"
 )
@@ -154,6 +182,11 @@ async def use_token(engine: AsyncEngine, token: str, address: str | None = None)
             row = (await conn.execute(_FIND, {"token": _hash(token)})).first()
         if row is None or row.expires <= now:
             await event(conn, "api_token_refused", address=address)
+            use = None
+        elif not _from_allowed(row.addresses, address):
+            await event(
+                conn, "api_token_refused", address=address, token=str(row.sys_id), why="address"
+            )
             use = None
         else:
             if row.last_used is None or now - row.last_used >= TOUCH_EVERY:

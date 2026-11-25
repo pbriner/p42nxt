@@ -53,11 +53,27 @@ Waiting sessions end after 10 minutes.
   asking for notifications) send `X-P42-Background: 1` and don't count as use, so an open tab
   doesn't keep a session alive.
 - People see their own sessions and end them; administrators see and end anyone's. Nobody sees
-  a session's token.
+  a session's token. In the app: **Profile → Where you are signed in**, with the browser, the
+  address and when it was last used; **Sign out** ends one, **Sign out everywhere else** all but
+  this one. `GET /api/v1/me` says which session is the caller's own (`session`).
 - **Changes to access** (groups, memberships, roles, grants) need the second factor given in the
   last 15 minutes. Giving it again doesn't start a new session. The browser app asks for the code
   when the server says so (`verify_again`), gives it (`POST /api/v1/sign-in/verify`) and makes
   the change again, once.
+
+## A locked-out administrator
+
+When someone lost their authenticator app and passkeys and nobody else can let them in, the
+operator resets their second factor on the server:
+
+```bash
+docker compose --project-directory ~/.p42cloud/<name> run --rm --entrypoint p42cloud upgrade \
+    reset-second-factor --email ada@example.com
+```
+
+Their authenticator apps, passkeys and recovery codes are retired and their sessions end. At
+their next sign-in they give their password and set up a new second factor. It's a security
+event (`second_factor_reset`).
 
 ## Invitations and resets
 
