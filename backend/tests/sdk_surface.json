@@ -256,6 +256,40 @@
      "required": false
     }
    ],
+   "comment": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "table",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "sys_id",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "text",
+     "required": true
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "kind",
+     "required": false
+    }
+   ],
+   "comments": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "table",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "sys_id",
+     "required": true
+    }
+   ],
    "connection": [
     {
      "kind": "POSITIONAL_OR_KEYWORD",
@@ -1863,6 +1897,11 @@
    {
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "comments",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "work_notes",
     "required": false
    }
   ]

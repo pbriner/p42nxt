@@ -20,6 +20,14 @@ EVENTS = (
         description="Someone commented on a record (about the record; data: the comment's ID).",
     ),
     EventType(
+        "work_note_added",
+        "A work note is added",
+        description=(
+            "Someone added a work note to a record (about the record; data: the note's ID)."
+            " Only those who may change the record read it."
+        ),
+    ),
+    EventType(
         "job_recovered",
         "A scheduled job works again",
         about="sys.schedule",

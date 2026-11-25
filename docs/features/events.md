@@ -24,6 +24,8 @@ They become records of `sys.event_type`. The core publishes:
 |---|---|---|
 | `sys.job_failed` | The schedule | `schedule`, `job`, `run`, `message`: a scheduled job failed after its last try |
 | `sys.job_recovered` | The schedule | `schedule`, `job`, `run`: it worked again after that |
+| `sys.comment_added` | The record | `comment`: the comment's ID |
+| `sys.work_note_added` | The record | `work_note`: the work note's ID (only those who may change the record read it) |
 
 ## Publishing
 

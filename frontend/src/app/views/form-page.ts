@@ -33,9 +33,8 @@ import { ActionRunner } from './action-runner';
 import { ConnectionSecrets } from './connection-secrets';
 import { LanguageExchange } from './language-exchange';
 import { PersonSignIn } from './person-sign-in';
-import { RecordComments } from './record-comments';
 import { RecordFiles } from './record-files';
-import { RecordHistory } from './record-history';
+import { RecordJournal } from './record-journal';
 import { askToDelete } from './delete-dialog';
 import { FieldDisplay } from './field-display';
 import { Related, RelatedTabs } from './related-tabs';
@@ -63,9 +62,8 @@ function same(a: unknown, b: unknown): boolean {
 @Component({
   selector: 'app-form-page',
   imports: [
-    RecordComments,
     RecordFiles,
-    RecordHistory,
+    RecordJournal,
     ConnectionSecrets,
     LanguageExchange,
     PersonSignIn,

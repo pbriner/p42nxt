@@ -1,0 +1,656 @@
+{
+ "language": "de",
+ "module": "tasks",
+ "texts": [
+  {
+   "key": "sys.event_subscription|tasks:sys.comment_added|label",
+   "english": "Watchers hear of comments",
+   "text": "Beobachter erfahren von Kommentaren"
+  },
+  {
+   "key": "sys.event_subscription|tasks:sys.job_failed|label",
+   "english": "Task rules: a scheduled job fails",
+   "text": "Aufgabenregeln: ein geplanter Job schlägt fehl"
+  },
+  {
+   "key": "sys.event_subscription|tasks:sys.job_recovered|label",
+   "english": "Task rules: a scheduled job works again",
+   "text": "Aufgabenregeln: ein geplanter Job läuft wieder"
+  },
+  {
+   "key": "sys.event_subscription|tasks:sys.work_note_added|label",
+   "english": "Watchers hear of work notes",
+   "text": "Beobachter erfahren von Arbeitsnotizen"
+  },
+  {
+   "key": "sys.field|tasks.rule.active|label",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|tasks.rule.due_days|help",
+   "english": "Empty: no due date.",
+   "text": "Leer: kein Fälligkeitsdatum."
+  },
+  {
+   "key": "sys.field|tasks.rule.due_days|label",
+   "english": "Due in days",
+   "text": "Fällig in Tagen"
+  },
+  {
+   "key": "sys.field|tasks.rule.event|choice:job_failed",
+   "english": "A scheduled job fails",
+   "text": "Ein geplanter Job schlägt fehl"
+  },
+  {
+   "key": "sys.field|tasks.rule.event|choice:job_recovered",
+   "english": "A scheduled job works again",
+   "text": "Ein geplanter Job läuft wieder"
+  },
+  {
+   "key": "sys.field|tasks.rule.event|label",
+   "english": "Opens on",
+   "text": "Öffnet bei"
+  },
+  {
+   "key": "sys.field|tasks.rule.group|label",
+   "english": "Group",
+   "text": "Gruppe"
+  },
+  {
+   "key": "sys.field|tasks.rule.impact|choice:high",
+   "english": "High",
+   "text": "Hoch"
+  },
+  {
+   "key": "sys.field|tasks.rule.impact|choice:low",
+   "english": "Low",
+   "text": "Niedrig"
+  },
+  {
+   "key": "sys.field|tasks.rule.impact|choice:medium",
+   "english": "Medium",
+   "text": "Mittel"
+  },
+  {
+   "key": "sys.field|tasks.rule.impact|label",
+   "english": "Impact",
+   "text": "Auswirkung"
+  },
+  {
+   "key": "sys.field|tasks.rule.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|tasks.rule.resolved_by|choice:job_failed",
+   "english": "A scheduled job fails",
+   "text": "Ein geplanter Job schlägt fehl"
+  },
+  {
+   "key": "sys.field|tasks.rule.resolved_by|choice:job_recovered",
+   "english": "A scheduled job works again",
+   "text": "Ein geplanter Job läuft wieder"
+  },
+  {
+   "key": "sys.field|tasks.rule.resolved_by|label",
+   "english": "Closes on",
+   "text": "Schliesst bei"
+  },
+  {
+   "key": "sys.field|tasks.rule.title|help",
+   "english": "The new task's title. {message} and the event's other details are filled in.",
+   "text": "Der Titel der neuen Aufgabe. {message} und die übrigen Angaben des Ereignisses werden eingesetzt."
+  },
+  {
+   "key": "sys.field|tasks.rule.title|label",
+   "english": "Task title",
+   "text": "Titel der Aufgabe"
+  },
+  {
+   "key": "sys.field|tasks.rule.urgency|choice:high",
+   "english": "High",
+   "text": "Hoch"
+  },
+  {
+   "key": "sys.field|tasks.rule.urgency|choice:low",
+   "english": "Low",
+   "text": "Niedrig"
+  },
+  {
+   "key": "sys.field|tasks.rule.urgency|choice:medium",
+   "english": "Medium",
+   "text": "Mittel"
+  },
+  {
+   "key": "sys.field|tasks.rule.urgency|label",
+   "english": "Urgency",
+   "text": "Dringlichkeit"
+  },
+  {
+   "key": "sys.field|tasks.task.about_table|label",
+   "english": "About table",
+   "text": "Tabelle des Bezugs"
+  },
+  {
+   "key": "sys.field|tasks.task.about|label",
+   "english": "About",
+   "text": "Bezug"
+  },
+  {
+   "key": "sys.field|tasks.task.closed|label",
+   "english": "Closed",
+   "text": "Abgeschlossen"
+  },
+  {
+   "key": "sys.field|tasks.task.description|label",
+   "english": "Description",
+   "text": "Beschreibung"
+  },
+  {
+   "key": "sys.field|tasks.task.due|label",
+   "english": "Due",
+   "text": "Fällig"
+  },
+  {
+   "key": "sys.field|tasks.task.group|label",
+   "english": "Group",
+   "text": "Gruppe"
+  },
+  {
+   "key": "sys.field|tasks.task.impact|choice:high",
+   "english": "High",
+   "text": "Hoch"
+  },
+  {
+   "key": "sys.field|tasks.task.impact|choice:low",
+   "english": "Low",
+   "text": "Niedrig"
+  },
+  {
+   "key": "sys.field|tasks.task.impact|choice:medium",
+   "english": "Medium",
+   "text": "Mittel"
+  },
+  {
+   "key": "sys.field|tasks.task.impact|help",
+   "english": "How many people, systems or processes it affects.",
+   "text": "Wie viele Personen, Systeme oder Abläufe betroffen sind."
+  },
+  {
+   "key": "sys.field|tasks.task.impact|label",
+   "english": "Impact",
+   "text": "Auswirkung"
+  },
+  {
+   "key": "sys.field|tasks.task.last_seen|label",
+   "english": "Last seen",
+   "text": "Zuletzt aufgetreten"
+  },
+  {
+   "key": "sys.field|tasks.task.number|label",
+   "english": "Number",
+   "text": "Nummer"
+  },
+  {
+   "key": "sys.field|tasks.task.priority|choice:critical",
+   "english": "Critical",
+   "text": "Kritisch"
+  },
+  {
+   "key": "sys.field|tasks.task.priority|choice:high",
+   "english": "High",
+   "text": "Hoch"
+  },
+  {
+   "key": "sys.field|tasks.task.priority|choice:low",
+   "english": "Low",
+   "text": "Niedrig"
+  },
+  {
+   "key": "sys.field|tasks.task.priority|choice:moderate",
+   "english": "Moderate",
+   "text": "Mässig"
+  },
+  {
+   "key": "sys.field|tasks.task.priority|help",
+   "english": "From impact and urgency.",
+   "text": "Aus Auswirkung und Dringlichkeit."
+  },
+  {
+   "key": "sys.field|tasks.task.priority|label",
+   "english": "Priority",
+   "text": "Priorität"
+  },
+  {
+   "key": "sys.field|tasks.task.repeats|label",
+   "english": "Times seen",
+   "text": "Anzahl aufgetreten"
+  },
+  {
+   "key": "sys.field|tasks.task.rule|label",
+   "english": "Opened by rule",
+   "text": "Von Regel eröffnet"
+  },
+  {
+   "key": "sys.field|tasks.task.state|choice:cancelled",
+   "english": "Cancelled",
+   "text": "Abgebrochen"
+  },
+  {
+   "key": "sys.field|tasks.task.state|choice:done",
+   "english": "Done",
+   "text": "Erledigt"
+  },
+  {
+   "key": "sys.field|tasks.task.state|choice:in_progress",
+   "english": "In progress",
+   "text": "In Arbeit"
+  },
+  {
+   "key": "sys.field|tasks.task.state|choice:new",
+   "english": "New",
+   "text": "Neu"
+  },
+  {
+   "key": "sys.field|tasks.task.state|choice:waiting",
+   "english": "Waiting",
+   "text": "Wartend"
+  },
+  {
+   "key": "sys.field|tasks.task.state|label",
+   "english": "State",
+   "text": "Status"
+  },
+  {
+   "key": "sys.field|tasks.task.taken_by|label",
+   "english": "Taken by",
+   "text": "Übernommen von"
+  },
+  {
+   "key": "sys.field|tasks.task.title|label",
+   "english": "Title",
+   "text": "Titel"
+  },
+  {
+   "key": "sys.field|tasks.task.told|label",
+   "english": "Told overdue",
+   "text": "Als überfällig gemeldet"
+  },
+  {
+   "key": "sys.field|tasks.task.urgency|choice:high",
+   "english": "High",
+   "text": "Hoch"
+  },
+  {
+   "key": "sys.field|tasks.task.urgency|choice:low",
+   "english": "Low",
+   "text": "Niedrig"
+  },
+  {
+   "key": "sys.field|tasks.task.urgency|choice:medium",
+   "english": "Medium",
+   "text": "Mittel"
+  },
+  {
+   "key": "sys.field|tasks.task.urgency|help",
+   "english": "How soon it must be solved.",
+   "text": "Wie rasch es gelöst sein muss."
+  },
+  {
+   "key": "sys.field|tasks.task.urgency|label",
+   "english": "Urgency",
+   "text": "Dringlichkeit"
+  },
+  {
+   "key": "sys.field|tasks.watcher.person|label",
+   "english": "Person",
+   "text": "Person"
+  },
+  {
+   "key": "sys.field|tasks.watcher.task|label",
+   "english": "Task",
+   "text": "Aufgabe"
+  },
+  {
+   "key": "sys.form_view|tasks.rule|section:1",
+   "english": "Rule",
+   "text": "Regel"
+  },
+  {
+   "key": "sys.form_view|tasks.rule|section:2",
+   "english": "The task",
+   "text": "Die Aufgabe"
+  },
+  {
+   "key": "sys.form_view|tasks.task|section:1",
+   "english": "Task",
+   "text": "Aufgabe"
+  },
+  {
+   "key": "sys.form_view|tasks.task|section:2",
+   "english": "Who and when",
+   "text": "Wer und wann"
+  },
+  {
+   "key": "sys.form_view|tasks.task|section:3",
+   "english": "Description",
+   "text": "Beschreibung"
+  },
+  {
+   "key": "sys.form_view|tasks.task|section:4",
+   "english": "From a rule",
+   "text": "Aus einer Regel"
+  },
+  {
+   "key": "sys.form_view|tasks.watcher|section:1",
+   "english": "Watcher",
+   "text": "Beobachter"
+  },
+  {
+   "key": "sys.job|tasks.due|label",
+   "english": "Tell due and overdue tasks",
+   "text": "Fällige und überfällige Aufgaben melden"
+  },
+  {
+   "key": "sys.list_view|tasks.rule|label",
+   "english": "Task rules",
+   "text": "Aufgabenregeln"
+  },
+  {
+   "key": "sys.list_view|tasks.task|label",
+   "english": "Tasks",
+   "text": "Aufgaben"
+  },
+  {
+   "key": "sys.list_view|tasks.watcher|label",
+   "english": "Watchers",
+   "text": "Beobachter"
+  },
+  {
+   "key": "sys.module|tasks|category_title",
+   "english": "Work",
+   "text": "Arbeit"
+  },
+  {
+   "key": "sys.module|tasks|summary",
+   "english": "Work for groups, taken by their members, opened and closed by rules on events.",
+   "text": "Arbeit für Gruppen, von ihren Mitgliedern übernommen, durch Regeln bei Ereignissen eröffnet und geschlossen."
+  },
+  {
+   "key": "sys.module|tasks|title",
+   "english": "Tasks",
+   "text": "Aufgaben"
+  },
+  {
+   "key": "sys.nav_item|tasks.all|label",
+   "english": "All tasks",
+   "text": "Alle Aufgaben"
+  },
+  {
+   "key": "sys.nav_item|tasks.all|section",
+   "english": "Tasks",
+   "text": "Aufgaben"
+  },
+  {
+   "key": "sys.nav_item|tasks.dashboard|label",
+   "english": "Dashboard",
+   "text": "Dashboard"
+  },
+  {
+   "key": "sys.nav_item|tasks.dashboard|section",
+   "english": "Tasks",
+   "text": "Aufgaben"
+  },
+  {
+   "key": "sys.nav_item|tasks.my_groups|label",
+   "english": "My groups' work",
+   "text": "Arbeit meiner Gruppen"
+  },
+  {
+   "key": "sys.nav_item|tasks.my_groups|section",
+   "english": "Tasks",
+   "text": "Aufgaben"
+  },
+  {
+   "key": "sys.nav_item|tasks.my_work|label",
+   "english": "My work",
+   "text": "Meine Arbeit"
+  },
+  {
+   "key": "sys.nav_item|tasks.my_work|section",
+   "english": "Tasks",
+   "text": "Aufgaben"
+  },
+  {
+   "key": "sys.nav_item|tasks.new|label",
+   "english": "New task",
+   "text": "Neue Aufgabe"
+  },
+  {
+   "key": "sys.nav_item|tasks.new|section",
+   "english": "Tasks",
+   "text": "Aufgaben"
+  },
+  {
+   "key": "sys.nav_item|tasks.rules|label",
+   "english": "Task rules",
+   "text": "Aufgabenregeln"
+  },
+  {
+   "key": "sys.nav_item|tasks.rules|section",
+   "english": "Tasks",
+   "text": "Aufgaben"
+  },
+  {
+   "key": "sys.notification_kind|tasks.due|description",
+   "english": "To whoever took it, or its group while nobody has.",
+   "text": "An die Person, die sie übernommen hat, oder an ihre Gruppe, solange niemand."
+  },
+  {
+   "key": "sys.notification_kind|tasks.due|label",
+   "english": "A task is due tomorrow or overdue",
+   "text": "Eine Aufgabe ist morgen fällig oder überfällig"
+  },
+  {
+   "key": "sys.notification_kind|tasks.new|description",
+   "english": "To the group's members.",
+   "text": "An die Mitglieder der Gruppe."
+  },
+  {
+   "key": "sys.notification_kind|tasks.new|label",
+   "english": "A new task for your group",
+   "text": "Eine neue Aufgabe für Ihre Gruppe"
+  },
+  {
+   "key": "sys.notification_kind|tasks.said|description",
+   "english": "To its watchers: a comment, or a work note (to watchers in its group).",
+   "text": "An ihre Beobachter: ein Kommentar, oder eine Arbeitsnotiz (an Beobachter in ihrer Gruppe)."
+  },
+  {
+   "key": "sys.notification_kind|tasks.said|label",
+   "english": "News on a task you watch",
+   "text": "Neues zu einer Aufgabe, die Sie beobachten"
+  },
+  {
+   "key": "sys.role|tasks.manager|description",
+   "english": "Does everything with tasks, and sets up the rules that open them.",
+   "text": "Tut alles mit Aufgaben und richtet die Regeln ein, die sie eröffnen."
+  },
+  {
+   "key": "sys.role|tasks.manager|label",
+   "english": "Tasks manager",
+   "text": "Aufgaben-Manager"
+  },
+  {
+   "key": "sys.role|tasks.user|description",
+   "english": "Sees every task, makes tasks for any group, works on its groups' tasks.",
+   "text": "Sieht alle Aufgaben, erstellt Aufgaben für jede Gruppe, bearbeitet die Aufgaben ihrer Gruppen."
+  },
+  {
+   "key": "sys.role|tasks.user|label",
+   "english": "Tasks user",
+   "text": "Aufgaben-Benutzer"
+  },
+  {
+   "key": "sys.schedule|tasks.due|label",
+   "english": "Due tasks, daily",
+   "text": "Fällige Aufgaben, täglich"
+  },
+  {
+   "key": "sys.state_transition|tasks.cancel|label",
+   "english": "Cancel",
+   "text": "Abbrechen"
+  },
+  {
+   "key": "sys.state_transition|tasks.close|label",
+   "english": "Mark done",
+   "text": "Als erledigt markieren"
+  },
+  {
+   "key": "sys.state_transition|tasks.finish_waiting|label",
+   "english": "Mark done",
+   "text": "Als erledigt markieren"
+  },
+  {
+   "key": "sys.state_transition|tasks.finish|label",
+   "english": "Mark done",
+   "text": "Als erledigt markieren"
+  },
+  {
+   "key": "sys.state_transition|tasks.give_back_waiting|label",
+   "english": "Give back",
+   "text": "Zurückgeben"
+  },
+  {
+   "key": "sys.state_transition|tasks.give_back|label",
+   "english": "Give back",
+   "text": "Zurückgeben"
+  },
+  {
+   "key": "sys.state_transition|tasks.resume|label",
+   "english": "Resume",
+   "text": "Fortsetzen"
+  },
+  {
+   "key": "sys.state_transition|tasks.take|label",
+   "english": "Take",
+   "text": "Übernehmen"
+  },
+  {
+   "key": "sys.state_transition|tasks.wait|label",
+   "english": "Wait",
+   "text": "Warten"
+  },
+  {
+   "key": "sys.table|tasks.rule|label",
+   "english": "Task rule",
+   "text": "Aufgabenregel"
+  },
+  {
+   "key": "sys.table|tasks.rule|label_plural",
+   "english": "Task rules",
+   "text": "Aufgabenregeln"
+  },
+  {
+   "key": "sys.table|tasks.task|label",
+   "english": "Task",
+   "text": "Aufgabe"
+  },
+  {
+   "key": "sys.table|tasks.task|label_plural",
+   "english": "Tasks",
+   "text": "Aufgaben"
+  },
+  {
+   "key": "sys.table|tasks.watcher|label",
+   "english": "Watcher",
+   "text": "Beobachter"
+  },
+  {
+   "key": "sys.table|tasks.watcher|label_plural",
+   "english": "Watchers",
+   "text": "Beobachter"
+  },
+  {
+   "key": "sys.ui_action|tasks.move_cancel|confirm",
+   "english": "Cancel the task?",
+   "text": "Die Aufgabe abbrechen?"
+  },
+  {
+   "key": "sys.ui_action|tasks.move_cancel|label",
+   "english": "Cancel",
+   "text": "Abbrechen"
+  },
+  {
+   "key": "sys.ui_action|tasks.move_close|label",
+   "english": "Mark done",
+   "text": "Als erledigt markieren"
+  },
+  {
+   "key": "sys.ui_action|tasks.move_finish_waiting|label",
+   "english": "Mark done",
+   "text": "Als erledigt markieren"
+  },
+  {
+   "key": "sys.ui_action|tasks.move_finish|label",
+   "english": "Mark done",
+   "text": "Als erledigt markieren"
+  },
+  {
+   "key": "sys.ui_action|tasks.move_give_back_waiting|label",
+   "english": "Give back",
+   "text": "Zurückgeben"
+  },
+  {
+   "key": "sys.ui_action|tasks.move_give_back|label",
+   "english": "Give back",
+   "text": "Zurückgeben"
+  },
+  {
+   "key": "sys.ui_action|tasks.move_resume|label",
+   "english": "Resume",
+   "text": "Fortsetzen"
+  },
+  {
+   "key": "sys.ui_action|tasks.move_take|label",
+   "english": "Take",
+   "text": "Übernehmen"
+  },
+  {
+   "key": "sys.ui_action|tasks.move_wait|label",
+   "english": "Wait",
+   "text": "Warten"
+  },
+  {
+   "key": "sys.ui_action|tasks.stop_watching|label",
+   "english": "Stop watching",
+   "text": "Nicht mehr beobachten"
+  },
+  {
+   "key": "sys.ui_action|tasks.watch|label",
+   "english": "Watch",
+   "text": "Beobachten"
+  },
+  {
+   "key": "sys.widget|tasks.by_priority|title",
+   "english": "My groups' work by priority",
+   "text": "Arbeit meiner Gruppen nach Priorität"
+  },
+  {
+   "key": "sys.widget|tasks.my_work|title",
+   "english": "My work",
+   "text": "Meine Arbeit"
+  },
+  {
+   "key": "sys.widget|tasks.overdue|title",
+   "english": "Overdue in my groups",
+   "text": "Überfällig in meinen Gruppen"
+  },
+  {
+   "key": "sys.widget|tasks.to_take|title",
+   "english": "To take in my groups",
+   "text": "Zu übernehmen in meinen Gruppen"
+  }
+ ]
+}

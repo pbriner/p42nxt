@@ -147,3 +147,19 @@ async def test_references_always_read_as_names(engine: AsyncEngine) -> None:
     assert bodies["About a person"]["_display"]["about"] == f"Plain {tag}"
     assert bodies["About a grant"]["_reference_state"]["about"] == "hidden"
     assert "about" not in bodies["About a grant"]["_display"]
+
+
+async def test_history_names_references_and_labels_choices(engine: AsyncEngine) -> None:
+    tag = uuid.uuid4().hex[:6]
+    async with acting(engine, None) as records:
+        group = await records.create("sys.group", {"name": f"Desk {tag}"})
+        person = await records.create("sys.person", {"name": f"Ann {tag}"})
+        member = await records.create(
+            "sys.membership", {"group": group.sys_id, "person": person.sys_id}
+        )
+        await change(records, "sys.person", person.sys_id, {"kind": "external"})
+        joined = await history(records, "sys.membership", member.sys_id)
+        changed = await history(records, "sys.person", person.sys_id)
+    assert joined[0]["display"]["group"] == [None, f"Desk {tag}"]
+    assert joined[0]["display"]["person"] == [None, f"Ann {tag}"]
+    assert changed[0]["display"] == {"kind": ["Employee", "External"]}

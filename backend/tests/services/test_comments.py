@@ -1,5 +1,5 @@
-"""Comments on records, over the API: the record's rights, the author's own removal, plain
-text, and an event per comment."""
+"""Comments and work notes on records, over the API: the record's rights (reading for comments,
+changing for work notes), the author's own removal, plain text, and an event per entry."""
 
 import os
 import uuid
@@ -21,6 +21,7 @@ from p42cloud.kernel.secrets import Sealer
 from p42cloud.modules.core import CORE
 from p42cloud.modules.install import install_modules
 from p42cloud.modules.manifest import Module
+from p42cloud.sdk import Client
 from p42cloud.security.access.roles import Grant, Role
 from p42cloud.security.tokens.service import make_token
 from p42cloud.web.app import create_app
@@ -32,15 +33,22 @@ MINE = {"field": "created_by", "op": "eq", "value": "@me"}
 
 
 def _module(module_id: str) -> Module:
-    receipt = Table("receipt", "Receipt", {"text": String("Text", max_length=60)}, comments=True)
+    receipt = Table(
+        "receipt",
+        "Receipt",
+        {"text": String("Text", max_length=60)},
+        comments=True,
+        work_notes=True,
+    )
     plain = Table("plain", "Plain", {"text": String("Text", max_length=60)})
+    noted = Table("noted", "Noted", {"text": String("Text", max_length=60)}, work_notes=True)
     return Module(
         id=module_id,
         publisher="test",
         name="Comments",
         version="1.0.0",
         depends_on={"sys": f">={version('p42cloud')}"},
-        tables=(receipt, plain),
+        tables=(receipt, plain, noted),
         roles=(
             Role(
                 f"{module_id}.keeper",
@@ -48,6 +56,7 @@ def _module(module_id: str) -> Module:
                 (
                     Grant(f"{module_id}.receipt", ALL, condition=MINE),
                     Grant(f"{module_id}.plain", ALL),
+                    Grant(f"{module_id}.noted", ALL),
                 ),
             ),
             Role(f"{module_id}.reader", "Reader", (Grant(f"{module_id}.receipt", ("read",)),)),
@@ -161,3 +170,75 @@ async def test_only_words_on_records_with_a_conversation(setup: dict[str, Any]) 
         headers=setup["ann"],
     )
     assert none.status_code == 404
+
+
+async def test_work_notes_are_for_those_who_may_change_the_record(
+    setup: dict[str, Any], app_engine: AsyncEngine
+) -> None:
+    api: httpx.AsyncClient = setup["api"]
+    receipt = await _receipt(setup, "ann")
+    said = f"/api/v1/{setup['module']}/receipt/{receipt}/comments"
+    note = await api.post(
+        said, json={"text": "Ask the roofer again.", "kind": "work_note"}, headers=setup["ann"]
+    )
+    assert note.status_code == 201, note.text
+    assert note.json()["kind"] == "work_note"
+    await api.post(said, json={"text": "Paid."}, headers=setup["ann"])
+    # Ann changes the receipt: she reads both. Rea only reads it: comments only.
+    mine = (await api.get(said, headers=setup["ann"])).json()["comments"]
+    assert [(c["kind"], c["text"]) for c in mine] == [
+        ("comment", "Paid."),
+        ("work_note", "Ask the roofer again."),
+    ]
+    theirs = (await api.get(said, headers=setup["rea"])).json()["comments"]
+    assert [c["text"] for c in theirs] == ["Paid."]
+    refused = await api.post(
+        said, json={"text": "Me too", "kind": "work_note"}, headers=setup["rea"]
+    )
+    assert refused.status_code == 403
+    hidden = await api.delete(f"/api/v1/comments/{note.json()['sys_id']}", headers=setup["rea"])
+    assert hidden.status_code == 404  # Rea doesn't learn there is one
+    wrong = await api.post(said, json={"text": "Hi", "kind": "memo"}, headers=setup["ann"])
+    assert wrong.status_code == 422
+
+    async with acting(app_engine, None) as records:
+        published = (
+            await records.conn.execute(
+                text(
+                    "SELECT type, data FROM sys.event WHERE about = CAST(:r AS uuid)"
+                    " ORDER BY created"
+                ),
+                {"r": receipt},
+            )
+        ).all()
+    assert [(p.type, list(p.data)) for p in published] == [
+        ("sys.work_note_added", ["work_note"]),
+        ("sys.comment_added", ["comment"]),
+    ]
+
+
+async def test_a_table_with_work_notes_only(setup: dict[str, Any]) -> None:
+    api: httpx.AsyncClient = setup["api"]
+    noted = await _receipt(setup, "ann", "noted")
+    said = f"/api/v1/{setup['module']}/noted/{noted}/comments"
+    assert (await api.post(said, json={"text": "Hi"}, headers=setup["ann"])).status_code == 404
+    made = await api.post(said, json={"text": "Hi", "kind": "work_note"}, headers=setup["ann"])
+    assert made.status_code == 201
+    table = (await api.get(f"/api/v1/meta/{setup['module']}/noted", headers=setup["ann"])).json()
+    assert (table["comments"], table["work_notes"]) == (False, True)
+
+
+async def test_modules_comment_and_note_through_the_sdk(
+    setup: dict[str, Any], app_engine: AsyncEngine
+) -> None:
+    receipt = await _receipt(setup, "ann")
+    table = f"{setup['module']}.receipt"
+    async with acting(app_engine, None) as records:
+        client = Client(records)
+        await client.comment(table, receipt, "Closed by the rule.", kind="work_note")
+        await client.comment(table, receipt, "Done.")
+        found = await client.comments(table, receipt)
+    assert [(c["kind"], c["text"]) for c in found] == [
+        ("comment", "Done."),
+        ("work_note", "Closed by the rule."),
+    ]

@@ -42,6 +42,9 @@ class Table:
     files: bool = False
     # Its records have a conversation: whoever may read one may comment on it.
     comments: bool = False
+    # Its records have work notes: a conversation only those who may change a record read and
+    # add to (the team working on it, not everyone who sees it).
+    work_notes: bool = False
 
 
 def _field_problems(table: str, name: str, declared: Field) -> list[FieldError]:
@@ -167,6 +170,7 @@ def to_catalog(schema: str, tables: list[Table]) -> Catalog:
             parent_field=t.parent,
             files=t.files,
             comments=t.comments,
+            work_notes=t.work_notes,
         )
         for t in tables
     ]

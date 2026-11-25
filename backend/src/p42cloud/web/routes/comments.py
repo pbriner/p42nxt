@@ -1,14 +1,15 @@
 """Comments on records (`services/comments`):
 
-    GET    /api/v1/<module>/<table>/<id>/comments   the record's comments, newest first
-    POST   /api/v1/<module>/<table>/<id>/comments   add one: {"text": "…"}
+    GET    /api/v1/<module>/<table>/<id>/comments   comments and work notes, newest first
+    POST   /api/v1/<module>/<table>/<id>/comments   add one: {"text": "…", "kind": "comment"}
     DELETE /api/v1/comments/<id>                    remove one's own
 
-Whoever may read the record reads its comments and may add one; only the author removes one.
+Whoever may read the record reads its comments and may add one; work notes are read and added
+only by those who may change it. Only the author removes either.
 """
 
 from dataclasses import asdict
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Request, Response
@@ -51,8 +52,9 @@ async def add_comment(
     request: Request,
     caller: Who,
     text: Annotated[str, Body(embed=True, max_length=10000)],
+    kind: Annotated[Literal["comment", "work_note"], Body(embed=True)] = "comment",
 ) -> dict[str, Any]:
     services: Services = request.app.state.services
     async with services.records(caller.context(language(request))) as records:
-        made = await comments.add(records, f"{module}.{table}", sys_id, text)
+        made = await comments.add(records, f"{module}.{table}", sys_id, text, kind)
     return asdict(made)

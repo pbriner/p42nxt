@@ -21,6 +21,15 @@
       },
       "Body_add_comment_api_v1__module___table___sys_id__comments_post": {
         "properties": {
+          "kind": {
+            "default": "comment",
+            "enum": [
+              "comment",
+              "work_note"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
           "text": {
             "maxLength": 10000,
             "title": "Text",
@@ -311,7 +320,7 @@
   },
   "info": {
     "title": "P42cloud",
-    "version": "0.46.0"
+    "version": "0.47.0"
   },
   "openapi": "3.1.0",
   "paths": {

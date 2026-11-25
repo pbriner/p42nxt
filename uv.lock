@@ -15,6 +15,7 @@ members = [
     "p42cloud-finance",
     "p42cloud-hello",
     "p42cloud-partners",
+    "p42cloud-tasks",
 ]
 
 [[package]]
@@ -568,7 +569,7 @@ wheels = [
 
 [[package]]
 name = "p42cloud"
-version = "0.46.0"
+version = "0.47.0"
 source = { editable = "backend" }
 dependencies = [
     { name = "argon2-cffi" },
@@ -736,6 +737,29 @@ dev = [
 name = "p42cloud-partners"
 version = "0.1.1"
 source = { editable = "modules/partners" }
+dependencies = [
+    { name = "p42cloud" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "p42cloud", editable = "backend" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+]
+
+[[package]]
+name = "p42cloud-tasks"
+version = "0.1.0"
+source = { editable = "modules/tasks" }
 dependencies = [
     { name = "p42cloud" },
 ]

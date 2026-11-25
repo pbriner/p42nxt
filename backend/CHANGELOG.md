@@ -2,6 +2,24 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.47.0
+
+- Work notes: a table declares `work_notes=True` and its records get notes only those who may
+  change them read and add (the team working on a record, not everyone who sees it). They share
+  the comments API: `POST …/comments` takes `"kind": "work_note"`, the list gives each entry's
+  `kind` and leaves work notes out for people who may only read the record. Each is published as
+  `sys.work_note_added`, never as `sys.comment_added`. The table's description says
+  `work_notes`.
+- The journal: forms show one timeline with the record's comments, work notes and changes,
+  newest first, instead of separate Comments and History sections. Show everything, only notes
+  and comments, or only changes; work notes are marked. It follows the record: saving shows the
+  change straight away.
+- Changes read as lists show them: the history API gives each entry a `display` with the names
+  of referenced records (if the person may read them) and the labels of choices, and the journal
+  shows dates and numbers in the person's language. A new record shows only its values.
+- Modules add and read comments and work notes with `Client.comment()` and `Client.comments()`.
+- Comments made at the same moment keep the order they were made in.
+
 ## 0.46.0
 
 - Forms say who created and last changed a record ("Created … by Anna"), not "by —": records
