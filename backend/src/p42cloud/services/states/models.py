@@ -9,6 +9,7 @@ from p42cloud.data.types.json import Json
 from p42cloud.data.types.reference import Reference
 from p42cloud.data.types.string import String
 from p42cloud.data.types.translated_text import TranslatedText
+from p42cloud.services.approvals.models import Approval
 
 STATE_FLOW = Table(
     "state_flow",
@@ -64,6 +65,8 @@ class Transition:
     condition: Any = None  # only when the record matches (the filter language)
     icon: str | None = None
     confirm: str | dict[str, str] | None = None
+    # The move needs other people's yes first (services/approvals); its button asks for it.
+    approval: Approval | None = None
 
 
 @dataclass(frozen=True)

@@ -93,6 +93,31 @@
    }
   ]
  },
+ "Approval": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "steps",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "remind_after",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "escalate_after",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "escalate_to",
+    "required": false
+   }
+  ]
+ },
  "Boolean": {
   "params": [
    {
@@ -234,6 +259,18 @@
      "required": false
     }
    ],
+   "approvals": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "table",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "sys_id",
+     "required": true
+    }
+   ],
    "call": [
     {
      "kind": "POSITIONAL_OR_KEYWORD",
@@ -344,6 +381,23 @@
      "kind": "POSITIONAL_OR_KEYWORD",
      "name": "values",
      "required": true
+    }
+   ],
+   "decide": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "approval",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "decision",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "note",
+     "required": false
     }
    ],
    "delete": [
@@ -460,6 +514,18 @@
     }
    ],
    "of": null,
+   "pending_approval": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "table",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "sys_id",
+     "required": true
+    }
+   ],
    "publish": [
     {
      "kind": "POSITIONAL_OR_KEYWORD",
@@ -1905,6 +1971,26 @@
    }
   ]
  },
+ "Step": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "role",
+    "required": true
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "field",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "above",
+    "required": false
+   }
+  ]
+ },
  "String": {
   "params": [
    {
@@ -2094,6 +2180,11 @@
    {
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "confirm",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "approval",
     "required": false
    }
   ]

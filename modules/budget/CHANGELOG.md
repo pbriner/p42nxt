@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- **Submit for approval**: submitting a version asks a budget controller's approval (the core's
+  approvals), never the one who submits. While it waits, the version and its lines don't change;
+  a no (with the reason) leaves it a draft, a yes makes it approved. Versions submitted before
+  keep Approve and Send back. Needs the core 0.50.
+
 ## 0.2.0
 
 - A budget line is one cost center and cost type of a version, with a **rhythm**: monthly,

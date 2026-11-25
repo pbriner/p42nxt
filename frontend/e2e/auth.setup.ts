@@ -3,7 +3,7 @@ import { request, test as setup } from '@playwright/test';
 import { code, person, state, storage } from './helpers';
 
 // Signs in once by API and keeps the cookies, so the tests start signed in.
-for (const name of ['admin', 'plain']) {
+for (const name of ['admin', 'plain', 'controller']) {
   setup(`sign in ${name}`, async () => {
     const who = person(name);
     const api = await request.newContext({

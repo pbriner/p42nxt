@@ -8,10 +8,15 @@ A version is the **budget** or a **forecast** for a year, in a currency. It goes
 
 | State | Meaning | Who moves it on |
 |---|---|---|
-| Draft | Being planned; its lines change | Planners: **Submit** |
-| Submitted | Waiting for approval | Budget controllers: **Approve**, or **Send back** to draft |
+| Draft | Being planned; its lines change | Planners: **Submit for approval** |
 | Approved | In force | Budget controllers: **Lock** |
 | Locked | Final; nothing changes any more | |
+
+**Submit for approval** asks a budget controller's approval: never the person who submits it.
+While it waits, the version and its lines don't change; the form shows who it waits for. A
+controller approves it (on the form or under **My approvals**), or rejects it saying why: then it
+stays a draft. Versions submitted before don't need it: a controller approves them or sends them
+back.
 
 Changes during the year go into a forecast version; an approved budget stays as it was.
 

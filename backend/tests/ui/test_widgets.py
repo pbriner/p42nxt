@@ -126,7 +126,9 @@ async def test_a_dashboard_starts_with_the_defaults_and_keeps_mandatory_widgets(
     async with acting(world.engine, world.plain) as records:
         first = await dashboard(records, "home")
     people = next(w for w in first["widgets"] if w["name"] == "sys.people")
-    assert people["shown"] == "available" and first["items"] == []  # offered, not placed
+    # People is offered, not placed; waiting approvals are on everyone's home.
+    assert people["shown"] == "available"
+    assert [i["widget"] for i in first["items"]] == ["sys.my_approvals"]
     assert first["new"] == []  # nothing is new before they arrange their own
     # Administrators make it mandatory for everyone.
     async with acting(world.engine, None) as records:

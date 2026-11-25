@@ -48,6 +48,7 @@ from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.modules.manifest import Migration, Module, package_version
 from p42cloud.sdk.client import Client
 from p42cloud.security.access.roles import Grant, Role
+from p42cloud.services.approvals.models import Approval, Step
 from p42cloud.services.calls.models import CallRun, GaveUp, OutsideCall
 from p42cloud.services.calls.models import Refused as CallRefused
 from p42cloud.services.connections.models import ConnectionType
@@ -68,6 +69,7 @@ __all__ = [
     "ActionResult",
     "ActionRun",
     "AnyRecord",
+    "Approval",
     "Boolean",
     "CallRefused",
     "CallRun",
@@ -122,6 +124,7 @@ __all__ = [
     "Secret",
     "Section",
     "Setting",
+    "Step",
     "String",
     "Subscription",
     "Table",

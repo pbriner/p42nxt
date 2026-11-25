@@ -28,6 +28,7 @@ from p42cloud.security.tokens import hooks as token_hooks
 from p42cloud.security.tokens import models as tokens
 from p42cloud.services.announcements import models as announcement_models
 from p42cloud.services.announcements import service as announcements
+from p42cloud.services.approvals import manifest as approvals
 from p42cloud.services.backups import manifest as backups
 from p42cloud.services.backups import models as backup_models
 from p42cloud.services.calls import models as calls
@@ -86,6 +87,7 @@ CORE = Module(
         *comments.TABLES,
         *currencies.TABLES,
         *states.TABLES,
+        *approvals.TABLES,
         *notifications.TABLES,
         *module_routes.TABLES,
         *backup_models.TABLES,
@@ -107,6 +109,7 @@ CORE = Module(
         *update_requests.HOOKS,
         *announcements.HOOKS,
         *states.HOOKS,
+        *approvals.HOOKS,
     ),
     docs=DOCS if DOCS.is_dir() else None,
     translations=Path(__file__).parent.parent / "translations",
@@ -129,7 +132,7 @@ CORE = Module(
     themes=ui.THEMES,
     widgets=ui.WIDGETS,
     actions=ui.ACTIONS,
-    notification_kinds=notifications.KINDS,
+    notification_kinds=(*notifications.KINDS, *approvals.KINDS),
     connection_types=notifications.CONNECTION_TYPES,
     events=events.EVENTS,
     jobs=(
@@ -139,6 +142,7 @@ CORE = Module(
         *events.JOBS,
         *maintenance.JOBS,
         *currencies.JOBS,
+        *approvals.JOBS,
         Job("check_updates", "Check for module updates", check_updates, timeout=120),
     ),
     schedules=(
@@ -148,6 +152,7 @@ CORE = Module(
         *events.SCHEDULES,
         *maintenance.SCHEDULES,
         *currencies.SCHEDULES,
+        *approvals.SCHEDULES,
         Schedule("check_updates", "Module updates, daily", "check_updates", "37 5 * * *"),
     ),
 )

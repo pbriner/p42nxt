@@ -1,6 +1,6 @@
 # Budget (`budget`)
 
-Version: 0.2.0 · Last updated: 2026-11-20
+Version: 0.3.0 · Last updated: 2026-11-25
 
 ## Purpose
 
@@ -11,7 +11,7 @@ approved and locked, compared with what was spent.
 
 | Module | Versions | What for |
 |---|---|---|
-| `sys` | `>=0.46,<1` | States, comments, amounts, deleting with links |
+| `sys` | `>=0.50,<1` | States, comments, amounts, deleting with links |
 | `costing` | `>=0.3,<1` | Cost centers and cost types |
 
 Works with `finance` when it's installed (the actuals), without needing it.
@@ -34,8 +34,8 @@ version brings them back). A cost center or cost type with budget lines can't be
 
 | Role | Can | Record conditions / personal data |
 |---|---|---|
-| `budget.planner` | Everything on Budget's tables; includes `costing.reader` | Moves of the flow: submit only |
-| `budget.controller` | The same; approves, sends back, locks | |
+| `budget.planner` | Everything on Budget's tables; includes `costing.reader` | Moves of the flow: submit for approval only |
+| `budget.controller` | The same; approves (never what they submitted), locks | |
 | `budget.reader` | Reads Budget's tables; includes `costing.reader` | |
 
 ## Views, navigation and dashboards
@@ -46,7 +46,9 @@ Lists and forms (a version's form lists its lines, a line's its months); the nav
 
 ## Workflows, approvals and jobs
 
-draft → submitted (Submit) → approved (Approve) → locked (Lock); submitted → draft (Send back).
+draft → approved (**Submit for approval**: a budget controller's approval, never the one who
+submits; while it waits, the version and its lines don't change) → locked (Lock). Versions
+submitted before 0.3 keep submitted → approved (Approve) and submitted → draft (Send back).
 No jobs.
 
 ## API

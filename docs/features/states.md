@@ -25,6 +25,7 @@ flows=(Flow("costing.order", "state", initial="open", transitions=(
 | `roles` | Only people holding one of these roles may make the move; empty: whoever may change the record |
 | `condition` | Only while the record matches (the filter language), as it is before the move |
 | `icon`, `confirm` | For its button |
+| `approval` | The move needs other people's yes first: its button asks for it (`approvals.md`) |
 
 Flows and transitions become records of `sys.state_flow` and `sys.state_transition`
 (administrators read them).

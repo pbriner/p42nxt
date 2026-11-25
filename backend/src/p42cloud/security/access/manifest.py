@@ -67,6 +67,17 @@ ROLES = [
             Grant(TOKENS, ("read",), fields=TOKEN_FIELDS),
             Grant(TOKENS, ("delete",)),
             Grant("sys.identity_provider", ALL),
+            # Approvals: every request, approver and decision; the rules' steps and days.
+            *(
+                Grant(t, ("read",))
+                for t in ("sys.approval", "sys.approver", "sys.approval_decision", "sys.deputy")
+            ),
+            Grant("sys.approval_rule", ("read",)),
+            Grant(
+                "sys.approval_rule",
+                ("write",),
+                fields=("steps", "remind_after", "escalate_after", "escalate_to"),
+            ),
             Grant("sys.external_id", ("read",)),
             Grant("sys.module", ("read",)),
             Grant("sys.module_update", ("read",)),
@@ -147,6 +158,14 @@ ROLES = [
             Grant(SESSIONS, ("delete",), condition=YOURS),
             Grant(TOKENS, ("read",), condition=YOURS, fields=TOKEN_FIELDS),
             Grant(TOKENS, ("delete",), condition=YOURS),
+            # Their own deputies; what waits for their approval; what they asked approval for.
+            Grant("sys.deputy", ("read", "create", "write", "delete", "restore"), condition=YOURS),
+            Grant("sys.approver", ("read",), condition=YOURS),
+            Grant(
+                "sys.approval",
+                ("read",),
+                condition={"field": "requested_by", "op": "eq", "value": "@me"},
+            ),
             # The documentation, and which modules there are.
             Grant("sys.doc_page", ("read",)),
             Grant(

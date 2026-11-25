@@ -21,6 +21,7 @@ from p42cloud.data.settings import DECLARED
 from p42cloud.data.settings import value as settings_value
 from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import Problem
+from p42cloud.services.approvals import service as approvals
 from p42cloud.services.calls.service import record
 from p42cloud.services.comments import service as comments
 from p42cloud.services.connections.service import connect
@@ -159,6 +160,23 @@ class Client:
         """The record's comments, and its work notes if the caller may change it; newest
         first."""
         return [asdict(c) for c in await comments.listed(self._records, table, self._id(sys_id))]
+
+    async def approvals(self, table: str, sys_id: UUID | str) -> list[Json]:
+        """The record's approvals, newest first, with what the caller may do (may_decide)."""
+        found = self._records.catalog.table(table)
+        if found is None:
+            raise Problem(404, "not_found", "There's no such table.")
+        return await approvals.of_record(self._records, found, self._id(sys_id))
+
+    async def decide(self, approval: UUID | str, decision: str, note: str | None = None) -> Json:
+        """Approve or reject (with a note saying why) as an approver; withdraw as who asked."""
+        if decision == "withdraw":
+            return await approvals.withdraw(self._records, self._id(approval))
+        return await approvals.decide(self._records, self._id(approval), decision, note)
+
+    async def pending_approval(self, table: str, sys_id: UUID | str) -> bool:
+        """Whether an approval of a move of this record is waiting (whoever may see it)."""
+        return await approvals.pending(self._records.conn, table, self._id(sys_id)) is not None
 
     async def call(
         self,

@@ -25,6 +25,8 @@ from p42cloud.kernel.db import ensure_module_role, owner_transaction
 from p42cloud.kernel.errors import FieldError, Problem
 from p42cloud.modules.manifest import CORE, Module
 from p42cloud.security.access.roles import write_roles
+from p42cloud.services.approvals.service import rule_rows
+from p42cloud.services.approvals.service import write_rules as write_approval_rules
 from p42cloud.services.calls.service import register as register_calls
 from p42cloud.services.calls.service import write_calls
 from p42cloud.services.connections.service import register as register_types
@@ -355,6 +357,19 @@ async def install_modules(
             await write_views(conn, catalog, module.id, module.views)
             await write_forms(conn, catalog, module.id, module.forms)
             await write_flows(conn, catalog, module.id, module.flows)
+            await write_approval_rules(
+                conn,
+                module.id,
+                rule_rows(
+                    module.id,
+                    [
+                        (t.name, t.approval)
+                        for f in module.flows
+                        for t in f.transitions
+                        if t.approval is not None
+                    ],
+                ),
+            )
             await write_actions(
                 conn, catalog, module.id, (*module.actions, *_move_buttons(module.flows))
             )

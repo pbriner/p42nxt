@@ -48,6 +48,11 @@ export const routes: Routes = [
         title: TITLE,
       },
       {
+        path: 'approvals',
+        loadComponent: () => import('./pages/approvals-page').then((m) => m.ApprovalsPage),
+        title: TITLE,
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./pages/profile').then((m) => m.Profile),
         title: TITLE,

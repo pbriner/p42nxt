@@ -294,8 +294,8 @@
   },
   {
    "key": "sys.state_transition|budget.submit|label",
-   "english": "Submit",
-   "text": "Einreichen"
+   "english": "Submit for approval",
+   "text": "Zur Freigabe einreichen"
   },
   {
    "key": "sys.table|budget.month|label",
@@ -349,8 +349,8 @@
   },
   {
    "key": "sys.ui_action|budget.move_submit|label",
-   "english": "Submit",
-   "text": "Einreichen"
+   "english": "Submit for approval",
+   "text": "Zur Freigabe einreichen"
   },
   {
    "key": "sys.widget|budget.plan_vs_actual|title",
