@@ -71,6 +71,9 @@
         </button>
       }
       <button mat-menu-item type="button" (click)="saveAs()">{{ i18n.t('list.save_as') }}</button>
+      @if (mayMakeWidgets()) {
+        <button mat-menu-item type="button" (click)="makeWidget()">{{ i18n.t('widget.from_list') }}</button>
+      }
       @if (active(); as view) {
         <button mat-menu-item type="button" (click)="toggleDefault()">
           {{ view.is_default ? i18n.t('list.not_default') : i18n.t('list.open_default') }}

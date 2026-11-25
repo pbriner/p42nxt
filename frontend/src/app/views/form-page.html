@@ -169,6 +169,10 @@
     }
     <button type="submit" hidden aria-hidden="true" tabindex="-1"></button>
 
+    @if (table.table === 'sys.widget') {
+      <app-widget-preview [values]="values()" />
+    }
+
     @if (table.table === 'sys.connection') {
       @if (creating()) {
         <p class="muted">{{ i18n.t('secrets.after_create') }}</p>

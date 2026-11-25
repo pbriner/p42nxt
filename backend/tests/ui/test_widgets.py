@@ -15,7 +15,9 @@ from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction
 from p42cloud.kernel.errors import Problem
+from p42cloud.modules.core import CORE
 from p42cloud.security.access.manifest import ADMINISTRATORS, EVERYONE
+from p42cloud.ui.actions.service import run
 from p42cloud.ui.widgets.models import Widget
 from p42cloud.ui.widgets.service import dashboard, write_widgets
 from tests.security.helpers import acting
@@ -209,3 +211,97 @@ async def test_a_placement_keeps_its_own_choice(world: World) -> None:
                         "items": [{"widget": "sys.people", "size": "s", "params": bad}],
                     },
                 )
+
+
+async def _admin(world: World) -> uuid.UUID:
+    async with acting(world.engine, None) as records:
+        admin = await records.create("sys.person", {"name": f"Root {uuid.uuid4().hex[:6]}"})
+        await records.create("sys.membership", {"group": ADMINISTRATORS, "person": admin.sys_id})
+    return admin.sys_id
+
+
+async def test_widgets_made_in_the_app_are_checked_and_named(world: World) -> None:
+    admin = await _admin(world)
+    async with acting(world.engine, admin) as records:
+        made = await records.create(
+            "sys.widget",
+            {
+                "title": {"en": "People by kind"},
+                "kind": "chart",
+                "list": "sys.person",
+                "group": "kind",
+                "chart": "bar",
+            },
+        )
+        again = await records.create(
+            "sys.widget",
+            {"title": {"en": "People by kind"}, "kind": "figure", "list": "sys.person"},
+        )
+        for wrong, field in (
+            (
+                {"kind": "chart", "list": "sys.person", "group": "nothing", "chart": "bar"},
+                "widgets",
+            ),
+            ({"kind": "figure", "list": "no.such_view"}, "widgets"),
+            ({"kind": "figure", "list": "sys.person", "source_route": "/x"}, "source_route"),
+        ):
+            with pytest.raises(Problem) as refused:
+                async with records.conn.begin_nested():
+                    await records.create("sys.widget", {"title": {"en": "Wrong"}} | wrong)
+            assert refused.value.errors[0].field.startswith(field), wrong
+    assert (made.values["name"], made.values["module"], made.values["custom"]) == (
+        "custom.people_by_kind",
+        "sys",
+        True,
+    )
+    assert again.values["name"] == "custom.people_by_kind_2"
+
+
+async def test_of_a_modules_widget_only_its_use_changes_and_stays(
+    world: World, owner_engine: AsyncEngine
+) -> None:
+    admin = await _admin(world)
+    async with acting(world.engine, admin) as records:
+        people = (
+            await records.list(
+                "sys.widget", where={"field": "name", "op": "eq", "value": "sys.people"}
+            )
+        ).records[0]
+        with pytest.raises(Problem):
+            async with records.conn.begin_nested():
+                await records.update("sys.widget", people.sys_id, {"kind": "list"}, people.etag)
+        with pytest.raises(Problem):
+            async with records.conn.begin_nested():
+                await records.delete("sys.widget", people.sys_id, people.etag)
+        changed = await records.update(
+            "sys.widget", people.sys_id, {"shown": "default"}, people.etag
+        )
+    assert changed.values["kept"] == ["shown"]
+    with working_as(Context(channel="upgrade")):
+        async with owner_transaction(owner_engine) as conn:
+            await write_widgets(conn, await load_catalog(conn), "sys", CORE.widgets)
+    async with acting(world.engine, None) as records:
+        kept = await records.read("sys.widget", people.sys_id)
+        await records.update(
+            "sys.widget", people.sys_id, {"shown": "available", "kept": None}, kept.etag
+        )
+    assert kept.values["shown"] == "default"  # the administrator's choice survived the update
+
+
+async def test_a_modules_widget_is_duplicated_to_change_freely(world: World) -> None:
+    admin = await _admin(world)
+    async with acting(world.engine, admin) as records:
+        people = (
+            await records.list(
+                "sys.widget", where={"field": "name", "op": "eq", "value": "sys.people"}
+            )
+        ).records[0]
+        done = await run(records, "sys.widget", "sys.duplicate_widget", people.sys_id, given={})
+        copy = (
+            await records.list(
+                "sys.widget",
+                where={"field": "name", "op": "starts_with", "value": "custom.people_copy"},
+            )
+        ).records[-1]
+    assert str(done["message"]).startswith("Copied as custom.people_copy")
+    assert (copy.values["list"], copy.values["custom"]) == ("sys.person", True)

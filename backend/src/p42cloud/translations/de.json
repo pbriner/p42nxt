@@ -3473,6 +3473,11 @@
    "text": "Zeitraum nach"
   },
   {
+   "key": "sys.field|sys.widget.field2|label",
+   "english": "Second series",
+   "text": "Zweite Reihe"
+  },
+  {
    "key": "sys.field|sys.widget.field|label",
    "english": "Measured field",
    "text": "Gemessenes Feld"
@@ -3496,6 +3501,11 @@
    "key": "sys.field|sys.widget.icon|label",
    "english": "Icon",
    "text": "Symbol"
+  },
+  {
+   "key": "sys.field|sys.widget.kept|label",
+   "english": "Kept through updates",
+   "text": "Bei Updates behalten"
   },
   {
    "key": "sys.field|sys.widget.kind|choice:chart",
@@ -4081,6 +4091,16 @@
    "key": "sys.form_view|sys.widget|section:1",
    "english": "Widget",
    "text": "Widget"
+  },
+  {
+   "key": "sys.form_view|sys.widget|section:2",
+   "english": "Look",
+   "text": "Aussehen"
+  },
+  {
+   "key": "sys.form_view|sys.widget|section:3",
+   "english": "Who gets it",
+   "text": "Wer es bekommt"
   },
   {
    "key": "sys.job|sys.approval_follow_up|label",
@@ -4943,6 +4963,16 @@
    "text": "Benutzer"
   },
   {
+   "key": "sys.role|sys.widget_editor|description",
+   "english": "Makes widgets from lists and decides who gets which widget.",
+   "text": "Erstellt Widgets aus Listen und entscheidet, wer welches Widget bekommt."
+  },
+  {
+   "key": "sys.role|sys.widget_editor|label",
+   "english": "Widget editor",
+   "text": "Widget-Redaktion"
+  },
+  {
    "key": "sys.schedule|sys.approval_follow_up|label",
    "english": "Waiting approvals, daily",
    "text": "Wartende Freigaben, täglich"
@@ -5726,6 +5756,11 @@
    "key": "sys.ui_action|sys.check|label",
    "english": "Check",
    "text": "Prüfen"
+  },
+  {
+   "key": "sys.ui_action|sys.duplicate_widget|label",
+   "english": "Duplicate",
+   "text": "Duplizieren"
   },
   {
    "key": "sys.ui_action|sys.install_now|confirm",

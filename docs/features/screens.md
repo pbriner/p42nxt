@@ -159,6 +159,7 @@ Widget("by_language", "By language", "chart", list="hello.greeting",
 | `kind` | `figure` (a number, with an optional `target` and a 12-month `trend` by a date field), `chart` (`bar`, `donut`, `column`, `line`, grouped by a field; dates per `period`), `list` (the first records), `text` |
 | `list`, `filter` | The list view it reads, and a filter on top |
 | `measure`, `field` | `count` (default), or `sum`, `avg`, `min`, `max` of a number field |
+| `field2` | A second number of the same records, as a second series of a bar or column chart (plan against actual) |
 | `dashboard` | Where it's placed by default: `home`, or the module's own. Every dashboard offers it |
 | `icon`, `accent`, `filled` | An icon tile, its chart colour (1 to 8), the whole card in that colour |
 | `sizes`, `size`, `refresh` | Allowed sizes (`s`, `wide`, `large`), the starting one; reload every so many seconds |
@@ -178,7 +179,28 @@ for a person counts. `GET /api/v1/dashboards/<name>` returns the widgets a perso
 their arrangement: their own (`sys.dashboard_layout`, a personal record), else the defaults;
 mandatory widgets are always in it, and widgets they haven't seen offered yet are `new`.
 
-Totals come from `GET /api/v1/<module>/<table>/aggregate` (`api.md`).
+Totals come from `GET /api/v1/<module>/<table>/aggregate` (`api.md`). A chart's **Other** (the
+groups past its limit) opens the records in none of the groups shown.
+
+### Widgets made in the app
+
+Widget editors (the role **Widget editor**, `sys.widget_editor`; administrators hold it) make
+widgets without code, as records of `sys.widget` through the normal routes and the generic form:
+
+- A widget made in the app (`custom`) is named `custom.<words of its title>`, belongs with the
+  module of its list (it goes away while that module is switched off), reads lists only (no
+  source routes) and is checked like a module's: the list exists, its fields are of the list's
+  table, the measured field is a number, the grouping field can group. It's offered on
+  dashboards (`available`) unless its maker places it for everyone.
+- Of a module's widget, only how it's used changes: `shown`, `position`, `size`, and its
+  audiences. What an editor changed is kept through module updates (`kept`). **Duplicate**
+  copies a module's widget into one made in the app, to change freely.
+- The widget's form has the sections Data, Look and Who gets it; its fields (measured, grouped
+  by, trend, over time by, second series) are picked from the fields of its list that fit. A
+  **preview** under the form shows the widget as typed, read like any widget.
+- **Create widget from this list** (a list's view menu) asks for a title and the kind (a figure,
+  a list, or a chart grouped by a field) and makes the widget with the list's filter, then opens
+  its form.
 
 ### Source widgets
 

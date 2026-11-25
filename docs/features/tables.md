@@ -24,6 +24,12 @@ problem is reported at once.
 
 Options every field takes: `required`, `unique`, `default`, `help`, `personal` (personal data).
 
+**Pickers narrowed by other fields**: `Reference("Cost center", "costing.center",
+narrow={"parent": "profit_center"})` offers only cost centers whose `parent` is the record's
+`profit_center` (nothing chosen yet: all). `String("Measured field", field_of="list",
+kinds=("number",))` names a field of the table whose list view the record's field `list` names;
+forms offer those fields, of these kinds. Both only shape what forms offer.
+
 `Table(..., log_reads=True)` marks a sensitive table: every read of its records over the API is
 an entry of the audit log (`api-tokens.md`, "Reads that are logged").
 

@@ -129,6 +129,7 @@ CORE = Module(
     icon="settings",
     navigation=ui.NAVIGATION,
     views=ui.VIEWS,
+    forms=ui.FORMS,
     themes=ui.THEMES,
     widgets=ui.WIDGETS,
     actions=ui.ACTIONS,

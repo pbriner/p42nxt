@@ -36,6 +36,7 @@ import { ConfirmDialog } from './confirm-dialog';
 import { askToDelete } from './delete-dialog';
 import { FilterDialog, FilterRequest } from './filter-dialog';
 import { SaveView, SaveViewDialog } from './save-view-dialog';
+import { WidgetChoice, WidgetFromList, WidgetFromListDialog } from './widget-from-list-dialog';
 import { Update, UpdateDialog, UpdateRequest } from './update-dialog';
 
 type Row = Record<string, unknown> & { sys_id: string; _etag: string };
@@ -239,6 +240,10 @@ export class ListPage {
       ]);
       this.actionDefs.set(actions);
       this.table.set(table);
+      void this.tables
+        .describe('sys.widget')
+        .then((w) => this.mayMakeWidgets.set(!!w.operations['create']))
+        .catch(() => this.mayMakeWidgets.set(false));
       this.saved.set(saved);
       this.rememberedState.set(remembered);
       const params = this.query();
@@ -534,6 +539,42 @@ export class ListPage {
         duration: 3000,
       });
     });
+  }
+
+  /** Widget editors make a widget from the list, with its filter. */
+  protected readonly mayMakeWidgets = signal(false);
+
+  protected makeWidget(): void {
+    const view = this.view();
+    if (!view) {
+      return;
+    }
+    this.dialog
+      .open<WidgetFromListDialog, WidgetFromList, WidgetChoice>(WidgetFromListDialog, {
+        data: {
+          title: this.table()?.label_plural ?? view.name,
+          fields: this.table()?.fields ?? [],
+        },
+      })
+      .afterClosed()
+      .subscribe(async (choice) => {
+        if (!choice) {
+          return;
+        }
+        try {
+          const { data } = await this.api.post<{ sys_id: string }>('/api/v1/sys/widget', {
+            title: choice.title,
+            kind: choice.kind,
+            list: view.name,
+            filter: this.whereNow(),
+            group: choice.group,
+            chart: choice.kind === 'chart' ? 'bar' : null,
+          });
+          void this.router.navigate(['/form/sys.widget', data.sys_id]);
+        } catch (error) {
+          this.snack.open(describe(error), this.i18n.t('common.close'));
+        }
+      });
   }
 
   protected saveAs(): void {

@@ -74,6 +74,7 @@ export class WidgetCard {
   protected readonly value = signal<number | null>(null);
   protected readonly trend = signal<number[]>([]);
   protected readonly points = signal<Point[]>([]);
+  protected readonly series = signal<[string, string] | null>(null);
   protected readonly lines = signal<Line[]>([]);
   protected readonly table = signal<TableInfo | null>(null);
   protected readonly asTable = signal(false);
@@ -270,8 +271,34 @@ export class WidgetCard {
         label: this.i18n.t('widget.other'),
         value: Number(totals.other),
         color: 'var(--chart-other)',
-        link: false,
+        link: !dated,
+        other: true,
       });
+    }
+    if (w.field2 && kind !== 'donut') {
+      // The second series: another number of the same records, per the same groups.
+      const second = await this.dashboards.totals(w.table!, {
+        measure: w.measure,
+        field: w.field2,
+        group: w.group,
+        period: w.period,
+        limit: 500,
+        where: this.where(w, over && since ? { field: over, op: 'gte', value: since } : null),
+      });
+      const byKey = new Map(second.groups.map((g) => [String(g.key), Number(g.value ?? 0)]));
+      const shownKeys = new Set(totals.groups.map((g) => String(g.key)));
+      const rest = second.groups
+        .filter((g) => !shownKeys.has(String(g.key)))
+        .reduce((n, g) => n + Number(g.value ?? 0), Number(second.other ?? 0));
+      for (const p of points) {
+        p.value2 = p.other ? rest : (byKey.get(String(p.key)) ?? 0);
+      }
+      this.series.set([
+        info.fields.find((f) => f.name === w.field)?.label ?? String(w.field),
+        info.fields.find((f) => f.name === w.field2)?.label ?? String(w.field2),
+      ]);
+    } else {
+      this.series.set(null);
     }
     this.points.set(points);
     this.value.set(totals.total === null ? null : Number(totals.total));
@@ -348,13 +375,19 @@ export class WidgetCard {
     if (!point.link || !w.group) {
       return;
     }
+    // "Other": the records in none of the groups shown.
+    const shownKeys = this.points()
+      .filter((p) => !p.other && p.key !== null)
+      .map((p) => p.key);
     const since = RANGES[this.range()];
     const over = this.rangeField();
     const filter = and(
       w.filter,
       this.chosen,
       over && since && over !== w.group ? { field: over, op: 'gte', value: since } : null,
-      { field: w.group, op: 'eq', value: point.key },
+      point.other
+        ? { field: w.group, op: 'not_in', value: shownKeys }
+        : { field: w.group, op: 'eq', value: point.key },
     );
     void this.router.navigate(['/list', w.list ?? ''], { queryParams: filterQuery(filter) });
   }

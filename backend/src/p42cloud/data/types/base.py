@@ -13,7 +13,7 @@ from p42cloud.data.sql import ident, literal
 
 READ_ONLY = "read_only"  # an option every field type may have
 # Options that say how the app treats a field, never what its values are: changing one keeps them.
-BEHAVIOUR = frozenset({READ_ONLY, "on_delete"})
+BEHAVIOUR = frozenset({READ_ONLY, "on_delete", "narrow", "field_of", "kinds"})
 
 
 class Invalid(ValueError):

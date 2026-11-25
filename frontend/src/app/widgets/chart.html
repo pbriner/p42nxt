@@ -6,9 +6,19 @@
           <button type="button" class="bar-row" [disabled]="!p.link" (click)="picked.emit(p)">
             <span class="bar-head">
               <span class="bar-label">{{ p.label }}</span>
-              <span class="bar-value">{{ format(p.value) }}</span>
+              <span class="bar-value"
+                >{{ format(p.value) }}
+                @if (series()) {
+                  · {{ format(p.value2 ?? 0) }}
+                }
+              </span>
             </span>
             <span class="track"><span class="bar" [style.width]="width(p)" [style.background]="accent()"></span></span>
+            @if (series()) {
+              <span class="track second"
+                ><span class="bar" [style.width]="width2(p)" style="background: var(--chart-2)"></span
+              ></span>
+            }
           </button>
         </li>
       }
@@ -78,6 +88,9 @@
             (click)="picked.emit(p)"
           >
             <span class="column-bar" [style.height]="height(p)" [style.background]="accent()"></span>
+            @if (series()) {
+              <span class="column-bar second" [style.height]="height2(p)" style="background: var(--chart-2)"></span>
+            }
           </button>
         }
       </div>
@@ -149,4 +162,11 @@
       </div>
     }
   }
+}
+
+@if (series(); as names) {
+  <ul class="series" aria-label="Series">
+    <li><span class="swatch" [style.background]="accent()"></span>{{ names[0] }}</li>
+    <li><span class="swatch" style="background: var(--chart-2)"></span>{{ names[1] }}</li>
+  </ul>
 }

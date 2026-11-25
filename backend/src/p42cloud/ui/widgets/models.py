@@ -45,8 +45,15 @@ WIDGET = Table(
             required=True,
             default="count",
         ),
-        "field": String("Measured field", max_length=63),
-        "group": String("Grouped by", max_length=63),
+        "field": String("Measured field", max_length=63, field_of="list", kinds=("number",)),
+        # A second number of the same records, as a second series (plan against actual).
+        "field2": String("Second series", max_length=63, field_of="list", kinds=("number",)),
+        "group": String(
+            "Grouped by",
+            max_length=63,
+            field_of="list",
+            kinds=("choice", "reference", "boolean", "text", "date", "datetime"),
+        ),
         "period": Choice("Per", {"day": "Day", "week": "Week", "month": "Month", "year": "Year"}),
         "chart": Choice(
             "Chart", {"bar": "Bars", "donut": "Donut", "column": "Columns", "line": "Line"}
@@ -57,15 +64,18 @@ WIDGET = Table(
         "filled": Boolean("Filled", required=True, default=False),
         "target": Decimal("Target"),
         # A date field: a 12-month sparkline under the figure.
-        "trend": String("Trend by", max_length=63),
+        "trend": String("Trend by", max_length=63, field_of="list", kinds=("date", "datetime")),
         # A date field: the chart offers the last 3 months, the last year or all of it.
-        "dated": String("Over time by", max_length=63),
+        "dated": String("Over time by", max_length=63, field_of="list", kinds=("date", "datetime")),
         "sizes": Json("Sizes", required=True),
         "size": Choice("Size", {"s": "Small", "wide": "Wide", "large": "Large"}, required=True),
         "refresh": Integer("Refresh (seconds)"),
         "shown": Choice("For everyone who may read it", SHOWN, required=True, default="default"),
         "position": Integer("Position", required=True, default=0),
         "custom": Boolean("Made by an administrator", required=True, default=False),
+        # A module widget's fields an administrator changed (shown, position, size): module
+        # updates leave them as they are.
+        "kept": Json("Kept through updates", read_only=True),
     },
     label_plural="Widgets",
     display="title",
@@ -126,6 +136,7 @@ class Widget:
     filter: Any = None
     measure: Literal["count", "sum", "avg", "min", "max"] = "count"
     field: str | None = None
+    field2: str | None = None  # a second series: another number of the same records
     group: str | None = None
     period: Literal["day", "week", "month", "year"] | None = None
     chart: Literal["bar", "donut", "column", "line"] | None = None

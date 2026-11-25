@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 
 import { FieldInfo } from '../../core/format';
 import { I18n } from '../../core/i18n';
+import { FormValues } from '../../core/form-values';
 import { Named, Tables } from '../../core/tables';
 import { FieldEditor } from '../unit';
 
@@ -98,6 +99,7 @@ export class ReferenceEditor implements FieldEditor {
   protected readonly i18n = inject(I18n);
   private readonly tables = inject(Tables);
   private readonly dialog = inject(MatDialog);
+  private readonly form = inject(FormValues, { optional: true });
   readonly field = input.required<FieldInfo>();
   readonly value = model<unknown>(null);
   readonly error = input<string | null>(null);
@@ -168,12 +170,34 @@ export class ReferenceEditor implements FieldEditor {
     }
     this.timer = setTimeout(async () => {
       try {
-        this.options.set(await this.tables.find(String(this.field().options.table), text.trim()));
+        this.options.set(
+          await this.tables.find(
+            String(this.field().options.table),
+            text.trim(),
+            10,
+            this.narrow(),
+          ),
+        );
       } catch {
         this.options.set([]);
       }
       this.searched.set(true);
     }, 200);
+  }
+
+  /** Only targets matching this record's other fields (`narrow`: cost centers under the
+   *  chosen profit center); a field still empty narrows nothing. */
+  private narrow(): Record<string, string> {
+    const narrow = this.field().options['narrow'] as Record<string, string> | undefined;
+    const values = this.form?.values() ?? {};
+    const found: Record<string, string> = {};
+    for (const [target, mine] of Object.entries(narrow ?? {})) {
+      const value = values[mine];
+      if (value !== null && value !== undefined && value !== '') {
+        found[`filter[${target}]`] = String(value);
+      }
+    }
+    return found;
   }
 
   protected picked(found: Named): void {

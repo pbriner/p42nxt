@@ -2,6 +2,7 @@
 
 import re
 import uuid
+from dataclasses import replace
 from typing import Any, cast
 
 from sqlalchemy import text
@@ -35,6 +36,7 @@ def _field_problems(
     found: list[FieldError] = []
     checks = (
         (widget.field, ("number",), "A number field to add up."),
+        (widget.field2, ("number",), "A number field for the second series."),
         (
             widget.group,
             ("choice", "reference", "boolean", "text", "date", "datetime"),
@@ -126,6 +128,12 @@ def _problems(
         )
     if widget.measure != "count" and widget.field is None:
         found.append(FieldError(where, "no_field", "A sum or average needs its field."))
+    if widget.field2 is not None and (
+        widget.kind != "chart" or widget.chart not in ("bar", "column") or widget.measure == "count"
+    ):
+        found.append(
+            FieldError(where, "bad_series", "A second series: a bar or column chart adding up.")
+        )
     return found + _field_problems(catalog, where, table_key, widget)
 
 
@@ -150,6 +158,14 @@ async def write_widgets(
         )
     }
     found = [p for w in widgets for p in _problems(catalog, views, module, w, sources)]
+    # What administrators changed of the module's widgets stays as they left it.
+    kept = {
+        str(r.name): set(r.kept or [])
+        for r in await conn.execute(
+            text("SELECT name, kept FROM sys.widget WHERE module = :m AND NOT custom"),
+            {"m": module},
+        )
+    }
     if len({w.name for w in widgets}) != len(widgets):
         found.append(FieldError("widgets", "duplicate", "A widget's name is used twice."))
     if found:
@@ -167,6 +183,7 @@ async def write_widgets(
             "filter": w.filter,
             "measure": w.measure,
             "field": w.field,
+            "field2": w.field2,
             "group": w.group,
             "period": w.period,
             "chart": w.chart,
@@ -185,6 +202,7 @@ async def write_widgets(
         }
         for position, w in enumerate(widgets)
     ]
+    rows = [{k: v for k, v in r.items() if k not in kept.get(str(r["name"]), set())} for r in rows]
     await sync(conn, "sys.widget", module, rows, frozenset({"title", "filter", "text", "sizes"}))
 
 
@@ -206,6 +224,7 @@ def _definition(row: Any, table: str | None, language: str, shown: str) -> dict[
         "filter": row.filter,
         "measure": row.measure,
         "field": row.field,
+        "field2": row.field2,
         "group": row.group,
         "period": row.period,
         "chart": row.chart,
@@ -357,4 +376,150 @@ async def _check_layout(change: Change) -> None:
             raise _invalid("items", 'A widget\'s choices name a record each: {"plan": its ID}.')
 
 
-TABLE_HOOKS = (TableHook("sys.dashboard_layout", before=_check_layout),)
+# ---- widgets made in the app ----
+
+USAGE = ("shown", "position", "size")  # what may change of a module's widget
+SLUG = re.compile(r"[^a-z0-9]+")
+_CUSTOM_FIELDS = (
+    "kind",
+    "list",
+    "filter",
+    "measure",
+    "field",
+    "field2",
+    "group",
+    "period",
+    "chart",
+    "text",
+    "icon",
+    "accent",
+    "filled",
+    "target",
+    "trend",
+    "dated",
+    "sizes",
+    "size",
+    "refresh",
+    "shown",
+)
+
+
+async def _current(change: Change) -> dict[str, Any]:
+    if change.sys_id is None:
+        return {}
+    await switch_role(change.records.conn, "sys")
+    found = await change.records.conn.execute(
+        text("SELECT * FROM sys.widget WHERE sys_id = :id"), {"id": change.sys_id}
+    )
+    row = found.mappings().first()
+    return dict(row) if row is not None else {}
+
+
+async def _name_for(change: Change, title: Any) -> str:
+    """custom.<words of the title>, numbered if it's taken."""
+    words = translated(title, "en") if isinstance(title, dict) else title
+    base = SLUG.sub("_", str(words or "widget").lower()).strip("_")[:30] or "widget"
+    base = base if base[0].isalpha() else f"w_{base}"
+    taken = set(
+        await change.records.conn.scalars(
+            text("SELECT name FROM sys.widget WHERE name LIKE :p"), {"p": f"custom.{base}%"}
+        )
+    )
+    name, n = f"custom.{base}", 2
+    while name in taken:
+        name, n = f"custom.{base}_{n}", n + 1
+    return name
+
+
+def _as_widget(values: dict[str, Any]) -> Widget:
+    title = values.get("title")
+    return Widget(
+        name="custom",
+        title=translated(title, "en") if isinstance(title, dict) else str(title or ""),
+        kind=values.get("kind") or "figure",
+        dashboard=HOME,
+        list=values.get("list"),
+        filter=values.get("filter"),
+        measure=values.get("measure") or "count",
+        field=values.get("field"),
+        field2=values.get("field2"),
+        group=values.get("group"),
+        period=values.get("period"),
+        chart=values.get("chart"),
+        text=values.get("text"),
+        icon=values.get("icon"),
+        accent=values.get("accent"),
+        filled=bool(values.get("filled")),
+        trend=values.get("trend"),
+        dated=values.get("dated"),
+        sizes=tuple(values.get("sizes") or SIZES),
+        size=values.get("size") or "s",
+        refresh=values.get("refresh"),
+        shown=values.get("shown") or "default",
+    )
+
+
+def _keep_use(change: Change, current: dict[str, Any]) -> None:
+    """Of a module's widget, only how it's used changes; and that is kept through updates."""
+    others = set(change.sent) - set(USAGE)
+    if others:
+        raise _invalid(
+            sorted(others)[0], "Of a module's widget, only shown, position and size change."
+        )
+    change.values["kept"] = sorted(set(current.get("kept") or []) | set(change.sent))
+
+
+async def _fill_new(change: Change, merged: dict[str, Any]) -> None:
+    change.values["custom"] = True
+    change.values["name"] = await _name_for(change, merged.get("title"))
+    change.values["dashboard"] = merged.get("dashboard") or HOME
+    change.values.setdefault("sizes", list(SIZES))
+    change.values.setdefault("size", "s")
+    if "shown" not in change.sent:  # offered on dashboards, placed by those who want it
+        change.values["shown"] = "available"
+
+
+async def _check_widget(change: Change) -> None:
+    """Widgets made in the app are checked like a module's; of a module's widget, only how it's
+    used changes (and that is kept through updates). The system (installs) isn't held."""
+    if change.records.access.unrestricted or change.operation == "restore":
+        return
+    current = await _current(change)
+    custom = bool(current.get("custom")) if current else True
+    if change.operation == "delete":
+        if not custom:
+            raise _invalid("custom", "A module's widget stays: hide it instead (shown).")
+        return
+    if not custom:
+        _keep_use(change, current)
+        return
+    merged = {**current, **change.values}
+    if change.operation == "create":
+        await _fill_new(change, merged)
+        merged = {**merged, **change.values}
+    elif {"name", "module", "custom", "source_route", "param", "param_table"} & set(change.sent):
+        raise _invalid("name", "A widget made in the app keeps its name; it has no source.")
+    if merged.get("source_route") or merged.get("param"):
+        raise _invalid("source_route", "Widgets made in the app read lists only.")
+    await switch_role(change.records.conn, "sys")
+    views = {
+        str(r.name): str(r.table)
+        for r in await change.records.conn.execute(
+            text('SELECT name, "table" FROM sys.list_view WHERE deleted IS NULL')
+        )
+    }
+    table = views.get(str(merged.get("list") or ""))
+    # A widget of a list belongs with the list's module: it goes when the module is off.
+    change.values["module"] = table.split(".", 1)[0] if table else "sys"
+    dashboard = str(merged.get("dashboard") or HOME)
+    widget = replace(_as_widget(merged), dashboard=dashboard)
+    module = dashboard if dashboard != HOME else "sys"
+    problems = _problems(change.records.catalog, views, module, widget, set())
+    if problems:
+        raise Problem(422, "validation", "Some fields aren't valid.", errors=problems)
+
+
+TABLE_HOOKS = (
+    TableHook("sys.dashboard_layout", before=_check_layout),
+    TableHook("sys.widget", before=_check_widget),
+)

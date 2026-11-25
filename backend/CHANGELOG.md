@@ -2,6 +2,22 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.51.0
+
+Widgets made in the app.
+
+- **Custom widgets**: widget editors make widgets as records of `sys.widget` (API and form),
+  checked like a module's; named `custom.<title>`, with the module of their list, offered on
+  dashboards. New role **Widget editor** (`sys.widget_editor`); administrators hold it.
+- Of a module's widget only shown, position and size change (and audiences), and those changes
+  are **kept through updates**. **Duplicate** copies a module's widget to change freely.
+- The widget form has sections (Data, Look, Who gets it), **pickers of the list's fitting
+  fields**, and a **live preview**. **Create widget from this list** in a list's view menu.
+- **Two series**: `field2` adds a second number of the same records to a bar or column chart.
+- A chart's **Other** opens the records in none of the groups shown.
+- **Narrowed pickers**: `Reference(..., narrow={"parent": "profit_center"})` and
+  `String(..., field_of=, kinds=)` (fields of a list) shape what forms offer.
+
 ## 0.50.0
 
 Approvals.

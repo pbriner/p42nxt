@@ -114,8 +114,32 @@ ROLES = [
             Grant("sys.channel_state", ("read",)),
             Grant("sys.module_route", ("read",)),
         ),
+        includes=("sys.widget_editor",),
         powerful=True,
         description="Runs the platform: people, settings, modules.",
+    ),
+    Role(
+        "sys.widget_editor",
+        "Widget editor",
+        grants=(
+            Grant("sys.widget", ("read",)),
+            # Widgets made in the app, in full; a module's: only how it's used.
+            Grant(
+                "sys.widget",
+                ("create", "write", "delete", "restore"),
+                condition={"field": "custom", "op": "eq", "value": True},
+            ),
+            Grant(
+                "sys.widget",
+                ("write",),
+                condition={"field": "custom", "op": "eq", "value": False},
+                fields=("shown", "position", "size"),
+            ),
+            Grant("sys.widget_audience", ALL),
+            Grant("sys.list_view", ("read",)),
+            Grant("sys.group", ("read",), fields=("name", "description")),
+        ),
+        description="Makes widgets from lists and decides who gets which widget.",
     ),
     Role(
         "sys.access_admin",

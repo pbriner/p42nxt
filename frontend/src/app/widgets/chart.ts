@@ -8,8 +8,12 @@ export interface Point {
   value: number;
   /** A CSS colour (a chart token); follows the entity, never its rank. */
   color: string;
-  /** Opens the list of what makes up this point; null for "Other" and dates. */
+  /** Opens the list of what makes up this point; not for dates. */
   link: boolean;
+  /** The second series' value at this point (plan against actual). */
+  value2?: number | null;
+  /** "Other": the groups past the limit (opens the records of none of the points shown). */
+  other?: boolean;
 }
 
 const DONUT = 140;
@@ -30,10 +34,14 @@ export class Chart {
   readonly accent = input('var(--chart-1)');
   readonly total = input<number | null>(null);
   readonly compact = input(false);
+  /** The two series' names, when the points carry a second value. */
+  readonly series = input<[string, string] | null>(null);
   readonly picked = output<Point>();
   protected readonly hover = signal<number | null>(null);
 
-  protected readonly max = computed(() => Math.max(0, ...this.points().map((p) => p.value)));
+  protected readonly max = computed(() =>
+    Math.max(0, ...this.points().flatMap((p) => [p.value, p.value2 ?? 0])),
+  );
   protected readonly min = computed(() => Math.min(0, ...this.points().map((p) => p.value)));
   protected readonly sum = computed(
     () => this.total() ?? this.points().reduce((n, p) => n + p.value, 0),
@@ -57,6 +65,14 @@ export class Chart {
 
   protected width(p: Point): string {
     return `${this.max() ? (p.value / this.max()) * 100 : 0}%`;
+  }
+
+  protected width2(p: Point): string {
+    return `${this.max() ? ((p.value2 ?? 0) / this.max()) * 100 : 0}%`;
+  }
+
+  protected height2(p: Point): string {
+    return `${this.max() ? ((p.value2 ?? 0) / this.max()) * 100 : 0}%`;
   }
 
   // ---- donut ----

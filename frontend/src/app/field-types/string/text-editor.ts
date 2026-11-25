@@ -3,6 +3,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
 import { FieldInfo } from '../../core/format';
+import { FieldNameEditor } from './field-name-editor';
 import { FieldEditor } from '../unit';
 
 const INPUT_TYPES: Record<string, string> = { email: 'email', url: 'url', phone: 'tel' };
@@ -10,24 +11,34 @@ const INPUT_TYPES: Record<string, string> = { email: 'email', url: 'url', phone:
 /** One line of text: names, addresses, codes. */
 @Component({
   selector: 'app-text-editor',
-  imports: [MatFormFieldModule, MatInputModule],
+  imports: [FieldNameEditor, MatFormFieldModule, MatInputModule],
   template: `
-    <mat-form-field appearance="outline" class="field" [class.mat-form-field-invalid]="!!error()">
-      <mat-label>{{ field().label }}</mat-label>
-      <input
-        matInput
-        [type]="type()"
-        [required]="field().required"
-        [attr.maxlength]="field().options['max_length'] ?? null"
-        [value]="value() ?? ''"
-        (input)="value.set($any($event.target).value || null)"
+    @if (field().options['field_of']) {
+      <!-- A field's name, from the fields of the list another field names. -->
+      <app-field-name-editor
+        [field]="field()"
+        [(value)]="value"
+        [error]="error()"
+        [shown]="shown()"
       />
-      @if (error()) {
-        <mat-hint class="field-error" role="alert">{{ error() }}</mat-hint>
-      } @else if (field().help) {
-        <mat-hint>{{ field().help }}</mat-hint>
-      }
-    </mat-form-field>
+    } @else {
+      <mat-form-field appearance="outline" class="field" [class.mat-form-field-invalid]="!!error()">
+        <mat-label>{{ field().label }}</mat-label>
+        <input
+          matInput
+          [type]="type()"
+          [required]="field().required"
+          [attr.maxlength]="field().options['max_length'] ?? null"
+          [value]="value() ?? ''"
+          (input)="value.set($any($event.target).value || null)"
+        />
+        @if (error()) {
+          <mat-hint class="field-error" role="alert">{{ error() }}</mat-hint>
+        } @else if (field().help) {
+          <mat-hint>{{ field().help }}</mat-hint>
+        }
+      </mat-form-field>
+    }
   `,
   styles: `
     .field {

@@ -34,7 +34,9 @@ import { ConnectionSecrets } from './connection-secrets';
 import { LanguageExchange } from './language-exchange';
 import { PersonSignIn } from './person-sign-in';
 import { RecordFiles } from './record-files';
+import { FormValues } from '../core/form-values';
 import { RecordApprovals } from './record-approvals';
+import { WidgetPreview } from './widget-preview';
 import { RecordJournal } from './record-journal';
 import { askToDelete } from './delete-dialog';
 import { FieldDisplay } from './field-display';
@@ -65,6 +67,7 @@ function same(a: unknown, b: unknown): boolean {
   imports: [
     RecordFiles,
     RecordApprovals,
+    WidgetPreview,
     RecordJournal,
     ConnectionSecrets,
     LanguageExchange,
@@ -82,6 +85,8 @@ function same(a: unknown, b: unknown): boolean {
   ],
   templateUrl: './form-page.html',
   styleUrl: './form-page.scss',
+  // Editors whose choices depend on other fields read the values as typed.
+  providers: [FormValues],
 })
 export class FormPage {
   protected readonly i18n = inject(I18n);
@@ -96,6 +101,7 @@ export class FormPage {
   private readonly runner = inject(ActionRunner);
   private readonly session = inject(Session);
   private readonly params = toSignal(this.route.paramMap);
+  private readonly formValues = inject(FormValues);
 
   protected readonly table = signal<string>('');
   protected readonly id = signal<string>('new');
@@ -205,6 +211,7 @@ export class FormPage {
   });
 
   constructor() {
+    effect(() => this.formValues.values.set(this.values()));
     effect(() => {
       const params = this.params();
       const table = params?.get('table');
