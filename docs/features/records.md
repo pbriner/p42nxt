@@ -74,9 +74,22 @@ await records.list("shop.product",
   or repeat records when others change the table. A cursor only works for the same sort order.
 - `limit` is from 1 to 500 (default 50).
 - **Totals** are exact up to 10,000, otherwise "more than 10,000"; `count=False` skips counting.
-- **Sort** by up to 5 of the table's own fields, `-` for descending. Empty values come last. Ties
-  are broken by `sys_id`, so the order is always the same.
+- **Sort** by up to 5 fields, `-` for descending. Empty values come last. Ties are broken by
+  `sys_id`, so the order is always the same.
+- **Fields of referenced records**: `columns=["partner.city"]` adds them to each record (up to 3
+  references followed), and they can be sorted by too. Each is empty where the person may not
+  read the reference, the referenced record or its field.
 - Deleted records aren't listed; `deleted=True` lists only them.
+
+## Export
+
+`GET /api/v1/<module>/<table>/export?format=csv|xlsx|json` gives the list as a file, with the
+same `filter[…]`, `where`, `sort` and `fields` (fields of referenced records too) as the list.
+Columns are labelled in the person's language; references and choices come named, as the list
+shows them. Excel gets real numbers and dates, so totals and sorting work there; CSV is UTF-8
+with a byte order mark (so Excel reads umlauts right); JSON is the records as the API gives them.
+At most 50,000 records (more: narrow the filter), only what the person may read. Each export is
+an entry of the audit log (`data_exported`: who, which table, format, filter, how many records).
 
 ## The filter language
 

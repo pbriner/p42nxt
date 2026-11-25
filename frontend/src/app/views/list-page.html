@@ -36,7 +36,15 @@
           <span class="material-symbols-outlined" aria-hidden="true">view_column</span>{{ i18n.t('list.columns') }}
         </button>
       }
+      <button mat-stroked-button type="button" [disabled]="!table()" [matMenuTriggerFor]="exportMenu">
+        <span class="material-symbols-outlined" aria-hidden="true">download</span>{{ i18n.t('list.export') }}
+      </button>
     </div>
+    <mat-menu #exportMenu="matMenu">
+      <a mat-menu-item [href]="exportLink('xlsx')" download>{{ i18n.t('list.export_xlsx') }}</a>
+      <a mat-menu-item [href]="exportLink('csv')" download>{{ i18n.t('list.export_csv') }}</a>
+      <a mat-menu-item [href]="exportLink('json')" download>{{ i18n.t('list.export_json') }}</a>
+    </mat-menu>
 
     <mat-menu #viewMenu="matMenu">
       <button mat-menu-item type="button" (click)="apply(null)">
@@ -255,6 +263,26 @@
                 </tr>
               }
             </tbody>
+            @if (totals().size && page()?.records?.length) {
+              <tfoot>
+                <tr>
+                  @if (selectable()) {
+                    <td class="select"></td>
+                  }
+                  @for (name of columns(); track name; let i = $index) {
+                    <td [class.number]="numeric(name)">
+                      @if (totals().get(name); as total) {
+                        <span class="cdk-visually-hidden">{{ i18n.t('list.total') }} {{ label(name) }}: </span
+                        >{{ total }}
+                      } @else if (i === 0) {
+                        <strong>{{ i18n.t('list.total') }}</strong>
+                      }
+                    </td>
+                  }
+                  <td class="actions"></td>
+                </tr>
+              </tfoot>
+            }
           </table>
         }
         @if (page() && !page()!.records.length && !busy()) {

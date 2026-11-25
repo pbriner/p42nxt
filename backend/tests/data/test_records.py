@@ -397,13 +397,18 @@ async def test_deleted_records_are_listed_only_in_the_bin(shop: tuple[str, Async
     assert "Old box" in _names(binned.records)
 
 
-@pytest.mark.parametrize("sort", [["colour"], ["category.name"], ["-x"]])
-async def test_only_own_fields_sort(shop: tuple[str, AsyncEngine], sort: list[str]) -> None:
+@pytest.mark.parametrize(
+    ("sort", "code"),
+    [(["colour"], "not_sortable"), (["-x"], "not_sortable"), (["category.x"], "not_a_column")],
+)
+async def test_only_known_fields_sort(
+    shop: tuple[str, AsyncEngine], sort: list[str], code: str
+) -> None:
     schema, engine = shop
     with pytest.raises(Problem) as refused:
         async with _records(engine) as records:
             await records.list(f"{schema}.product", sort=sort)
-    assert refused.value.errors[0].code == "not_sortable"
+    assert refused.value.errors[0].code == code
 
 
 # ---- undo ----

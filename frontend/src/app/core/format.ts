@@ -56,7 +56,18 @@ export interface TableInfo {
   }[];
 }
 
-export const NUMBER_TYPES = new Set(['integer', 'decimal', 'money', 'percent', 'duration']);
+export const NUMBER_TYPES = new Set([
+  'integer',
+  'decimal',
+  'money',
+  'percent',
+  'duration',
+  'formula',
+  'rollup',
+]);
+
+/** Number types whose column adds up to a total (a percentage's sum means nothing). */
+export const SUMMED_TYPES = new Set(['integer', 'decimal', 'money', 'formula', 'rollup']);
 
 export function shown(
   record: Record<string, unknown>,
@@ -98,6 +109,20 @@ export function shown(
       return `${(Number(value) * 100).toLocaleString(language)} %`;
     case 'integer':
       return Number(value).toLocaleString(language);
+    case 'formula':
+    case 'rollup':
+      // With a currency like an amount, else like a decimal.
+      return shown(
+        record,
+        {
+          ...field!,
+          type:
+            field!.options['currency'] || field!.options['currency_field'] ? 'money' : 'decimal',
+        },
+        name,
+        language,
+        t,
+      );
     case 'decimal': {
       // As many decimals as the field keeps (the browser's default stops at 3, so 0.0001 BTC
       // read as 0), without trailing zeros.

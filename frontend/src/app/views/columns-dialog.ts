@@ -6,12 +6,16 @@ import {
   moveItemInArray,
 } from '@angular/cdk/drag-drop';
 import { Component, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 
 import { FieldInfo } from '../core/format';
 import { I18n } from '../core/i18n';
+import { Tables } from '../core/tables';
 
 interface Column {
   name: string;
@@ -22,6 +26,8 @@ interface Column {
 export interface ColumnsRequest {
   shown: string[];
   available: FieldInfo[];
+  /** The list's references: their records' fields can be added as columns too. */
+  references?: FieldInfo[];
 }
 
 /** Which columns, in which order: by dragging, or with the arrows from the keyboard. */
@@ -34,10 +40,41 @@ export interface ColumnsRequest {
     MatButtonModule,
     MatCheckboxModule,
     MatDialogModule,
+    FormsModule,
+    MatFormFieldModule,
+    MatSelectModule,
   ],
   template: `
     <h2 mat-dialog-title>{{ i18n.t('columns.title') }}</h2>
     <mat-dialog-content>
+      @if (references.length) {
+        <div class="more">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
+            <mat-label>{{ i18n.t('columns.from') }}</mat-label>
+            <mat-select [ngModel]="via" (ngModelChange)="pickVia($event)">
+              @for (r of references; track r.name) {
+                <mat-option [value]="r">{{ r.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
+            <mat-label>{{ i18n.t('columns.field') }}</mat-label>
+            <mat-select [(ngModel)]="target" [disabled]="!targets().length">
+              @for (f of targets(); track f.name) {
+                <mat-option [value]="f">{{ f.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="!via || !target"
+            (click)="addWalked()"
+          >
+            {{ i18n.t('columns.add') }}
+          </button>
+        </div>
+      }
       <ul class="list" cdkDropList (cdkDropListDropped)="dropped($event)">
         @for (c of columns(); track c.name; let i = $index, last = $last) {
           <li class="row" cdkDrag>
@@ -102,6 +139,17 @@ export interface ColumnsRequest {
       border-radius: var(--app-radius-small);
       background: var(--mat-sys-surface-container-high);
     }
+    .more {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0 16px;
+      width: min(420px, 80vw);
+    }
+    .more mat-form-field {
+      flex: 1 1 160px;
+    }
     .handle {
       cursor: grab;
       color: var(--mat-sys-on-surface-variant);
@@ -116,7 +164,12 @@ export interface ColumnsRequest {
 })
 export class ColumnsDialog {
   protected readonly i18n = inject(I18n);
+  private readonly tables = inject(Tables);
   private readonly data = inject<ColumnsRequest>(MAT_DIALOG_DATA);
+  protected readonly references = this.data.references ?? [];
+  protected via: FieldInfo | null = null;
+  protected target: FieldInfo | null = null;
+  protected readonly targets = signal<FieldInfo[]>([]);
   protected readonly columns = signal<Column[]>([
     ...this.data.shown.map((name) => ({
       name,
@@ -127,6 +180,37 @@ export class ColumnsDialog {
       .filter((f) => !this.data.shown.includes(f.name))
       .map((f) => ({ name: f.name, label: f.label, shown: false })),
   ]);
+
+  /** The fields of the records a reference points to that can be shown (not references). */
+  protected async pickVia(via: FieldInfo): Promise<void> {
+    this.via = via;
+    this.target = null;
+    this.targets.set([]);
+    try {
+      const info = await this.tables.describe(via.options.table!);
+      this.targets.set(
+        info.fields.filter(
+          (f) => f.read && f.kind && f.kind !== 'reference' && f.name !== 'sys_id',
+        ),
+      );
+    } catch {
+      // A table they may not read offers nothing.
+    }
+  }
+
+  protected addWalked(): void {
+    if (!this.via || !this.target) {
+      return;
+    }
+    const name = `${this.via.name}.${this.target.name}`;
+    const label = `${this.via.label} › ${this.target.label}`;
+    this.columns.update((all) =>
+      all.some((c) => c.name === name)
+        ? all.map((c) => (c.name === name ? { ...c, shown: true } : c))
+        : [...all, { name, label, shown: true }],
+    );
+    this.target = null;
+  }
 
   protected chosen(): string[] {
     return this.columns()

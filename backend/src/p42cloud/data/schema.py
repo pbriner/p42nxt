@@ -19,7 +19,9 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from p42cloud.data.catalog import Catalog, FieldDef, TableDef
 from p42cloud.data.engine_steps import SYSTEM_COLUMNS
+from p42cloud.data.formulas import compile_formula
 from p42cloud.data.sql import ident, literal, qualified
+from p42cloud.data.types import Invalid
 from p42cloud.kernel.db import module_role
 from p42cloud.kernel.errors import Problem
 
@@ -180,7 +182,7 @@ def _wanted(catalog: Catalog, table: TableDef) -> tuple[dict[str, str], dict[str
 
 def _unique(f: FieldDef) -> str | None:
     column = ident(f.name)
-    if f.type.generated:
+    if f.type.name == "number":
         # Never given twice: deleted records keep theirs.
         return f"UNIQUE INDEX {{name}} ON {{table}} ({column})"
     if f.field.unique:
@@ -247,7 +249,7 @@ def _numbers(table: TableDef) -> tuple[str, ...]:
     """The number trigger's arguments: per record number, four (types/number.py)."""
     found: list[str] = []
     for f in table.active_fields():
-        if f.type.generated:
+        if f.type.name == "number":
             options = f.field.options
             found += [
                 f.name,
@@ -390,6 +392,162 @@ def _link_steps(table: TableDef, before: tuple[str, ...]) -> list[Step]:
     return steps
 
 
+def _formula_kinds(table: TableDef) -> dict[str, str]:
+    """The fields a formula may use: numbers (roll-ups too) and dates, not other formulas."""
+    return {
+        f.name: str(f.type.kind)
+        for f in table.active_fields()
+        if f.type.kind in ("number", "date") and f.type.name != "formula"
+    }
+
+
+def _formulas(table: TableDef) -> tuple[str, ...]:
+    """The formula trigger's arguments: per calculated field, its column, its SQL over the record
+    `r` and its column type (types/formula.py)."""
+    found: list[str] = []
+    kinds = _formula_kinds(table)
+    for f in table.active_fields():
+        if f.type.name != "formula":
+            continue
+        try:
+            sql, _ = compile_formula(str(f.field.options["expression"]), kinds)
+        except Invalid as error:
+            raise Problem(
+                409,
+                "bad_formula",
+                "A calculated field's formula can't be worked out.",
+                detail=f"{table.key}.{f.name}: {error}",
+            ) from error
+        found += [f.name, sql, f.type.column_type(f.field.options)]
+    return tuple(found)
+
+
+def _formula_steps(table: TableDef, before: tuple[str, ...]) -> list[Step]:
+    """The formula trigger (again, if a formula changed), and the records there worked out."""
+    wanted = _formulas(table)
+    if wanted == before:
+        return []
+    name = qualified(table.schema, table.name)
+    steps = [Step(f"DROP TRIGGER IF EXISTS p42_formula ON {name}", f"Stop working out {table.key}")]
+    if not wanted:
+        return steps
+    arguments = ", ".join(literal(a) for a in wanted)
+    steps.append(
+        Step(
+            f"CREATE TRIGGER p42_formula BEFORE INSERT OR UPDATE ON {name}"
+            f" FOR EACH ROW EXECUTE FUNCTION sys.p42_formula({arguments})",
+            f"Work out {table.key}'s calculated fields on every save",
+        )
+    )
+    first = wanted[0]
+    steps.append(
+        Step(
+            # Any column set to itself: the trigger works every formula out again.
+            f"UPDATE {name} SET {ident(first)} = {ident(first)}",  # noqa: S608 - checked names only
+            f"Work out the calculated fields of {table.key}'s records there already",
+        )
+    )
+    return steps
+
+
+def _active(table: TableDef, name: str) -> FieldDef | None:
+    return next((f for f in table.active_fields() if f.name == name), None)
+
+
+def _rollup_parts(catalog: Catalog, parent: TableDef, f: FieldDef) -> tuple[TableDef, str, str]:
+    """A roll-up's related table, its aggregate SQL over the records `c` and its condition."""
+    options = f.field.options
+    where = f"{parent.key}.{f.name}"
+
+    def bad(message: str) -> Problem:
+        return Problem(
+            409, "bad_rollup", "A roll-up can't be worked out.", detail=f"{where}: {message}"
+        )
+
+    child = catalog.table(str(options["table"]))
+    if child is None or child.retired:
+        raise bad(f"there's no table {options['table']}.")
+    if child.schema != parent.schema:
+        raise bad("it adds up a table of its own module only.")
+    via = _active(child, str(options["via"]))
+    if via is None or via.type.references(via.field.options) != parent.key:
+        raise bad(f"{child.key}.{options['via']} isn't a reference to {parent.key}.")
+    if options["measure"] == "count":
+        aggregate = "count(*)"
+    else:
+        summed = _active(child, str(options["field"]))
+        if summed is None or summed.type.kind != "number":
+            raise bad(f"{child.key} has no number field {options['field']!r}.")
+        aggregate = f"sum(c.{ident(summed.name)})"
+    conditions: list[str] = []
+    for name, value in sorted(dict(options.get("where") or {}).items()):
+        given = _active(child, name)
+        if given is None or given.type.kind not in ("text", "choice", "boolean", "number"):
+            raise bad(f"{child.key} has no field {name!r} to compare.")
+        try:
+            stored = given.type.check(value, given.field.options)
+        except Invalid as error:
+            raise bad(f"{name}: {error}") from error
+        conditions.append(f"c.{ident(name)} = {literal(str(given.type.to_json(stored)))}")
+    return child, aggregate, " AND ".join(conditions) or "true"
+
+
+def _rollups(catalog: Catalog, child: TableDef) -> tuple[str, ...]:
+    """The roll-up trigger's arguments, on the related table: per roll-up adding it up, the
+    parent table and column, the reference to it, the aggregate, the condition and the type."""
+    found: list[str] = []
+    for parent in sorted(catalog.tables.values(), key=lambda t: t.key):
+        if parent.retired:
+            continue
+        for f in parent.active_fields():
+            if f.type.name != "rollup" or f.field.options.get("table") != child.key:
+                continue
+            _, aggregate, condition = _rollup_parts(catalog, parent, f)
+            found += [
+                qualified(parent.schema, parent.name),
+                f.name,
+                str(f.field.options["via"]),
+                aggregate,
+                condition,
+                f.type.column_type(f.field.options),
+            ]
+    return tuple(found)
+
+
+def _rollup_steps(catalog: Catalog, child: TableDef, before: tuple[str, ...]) -> list[Step]:
+    """The roll-up trigger on the related table (again, if a roll-up changed), and every parent
+    record worked out."""
+    wanted = _rollups(catalog, child)
+    if wanted == before:
+        return []
+    name = qualified(child.schema, child.name)
+    steps = [Step(f"DROP TRIGGER IF EXISTS p42_rollup ON {name}", f"Stop adding up {child.key}")]
+    if not wanted:
+        return steps
+    arguments = ", ".join(literal(a) for a in wanted)
+    steps.append(
+        Step(
+            f"CREATE TRIGGER p42_rollup AFTER INSERT OR UPDATE ON {name}"
+            f" FOR EACH ROW EXECUTE FUNCTION sys.p42_rollup({arguments})",
+            f"Keep the roll-ups of {child.key} right",
+        )
+    )
+    for i in range(0, len(wanted), 6):
+        parent, column, via, aggregate, condition, kind = wanted[i : i + 6]
+        value = (
+            f"(SELECT CAST(coalesce({aggregate}, 0) AS {kind}) FROM {name} c"  # noqa: S608 - checked names only
+            f" WHERE c.{ident(via)} = p.sys_id AND c.deleted IS NULL AND ({condition}))"
+        )
+        steps.append(
+            Step(
+                f"UPDATE {parent} p SET {ident(column)} = {value}"  # noqa: S608 - checked names only
+                f" WHERE p.{ident(column)} IS DISTINCT FROM {value}",
+                f"Add up {child.key} for {parent}.{column} there already",
+            )
+        )
+    return steps
+
+
 def _create(table: TableDef, wanted_role: str) -> list[Step]:
     name = qualified(table.schema, table.name)
     columns = [SYSTEM_COLUMNS.strip()] + [
@@ -410,7 +568,13 @@ def _create(table: TableDef, wanted_role: str) -> list[Step]:
     ]
     if table.key in METADATA_TABLES:
         steps.append(_announce(table))
-    return steps + _link_steps(table, ()) + _tree_steps(table, ()) + _number_steps(table, ())
+    return (
+        steps
+        + _link_steps(table, ())
+        + _tree_steps(table, ())
+        + _number_steps(table, ())
+        + _formula_steps(table, ())
+    )
 
 
 def _announce(table: TableDef) -> Step:
@@ -481,6 +645,7 @@ def _change(table: TableDef, existing: Existing) -> list[Step]:
         + _link_steps(table, existing.triggers.get("p42_link", ()))
         + _tree_steps(table, existing.triggers.get("p42_tree", ()))
         + _number_steps(table, existing.triggers.get("p42_number", ()))
+        + _formula_steps(table, existing.triggers.get("p42_formula", ()))
     )
 
 
@@ -489,6 +654,8 @@ def plan(catalog: Catalog, database: Database) -> list[Step]:
     building: list[Step] = []
     dropping: list[Step] = []
     adding: list[Step] = []
+    # After every table and column exists: a roll-up's parent may come after its related table.
+    adding_up: list[Step] = []
     for schema in sorted({t.schema for t in catalog.tables.values()} - database.schemas):
         role = module_role(schema)
         if role not in database.roles:
@@ -521,6 +688,7 @@ def plan(catalog: Catalog, database: Database) -> list[Step]:
         building += _in_use_steps(
             table, _restricting(catalog, table), existing.triggers.get("p42_in_use", ())
         )
+        adding_up += _rollup_steps(catalog, table, existing.triggers.get("p42_rollup", ()))
         name = qualified(table.schema, table.name)
         constraints, indexes = _wanted(catalog, table)
         for old in sorted(existing.constraints - constraints.keys()):
@@ -536,7 +704,7 @@ def plan(catalog: Catalog, database: Database) -> list[Step]:
             )
         for new in sorted(indexes.keys() - existing.indexes):
             adding.append(Step(indexes[new], _says(table, new, indexes[new])))
-    return building + dropping + adding + _reads(catalog, database)
+    return building + adding_up + dropping + adding + _reads(catalog, database)
 
 
 def _reads(catalog: Catalog, database: Database) -> list[Step]:

@@ -65,9 +65,17 @@ class Client:
         limit: int = 50,
         after: str | None = None,
         deleted: bool = False,
+        columns: list[str] | None = None,
     ) -> Json:
+        """A page of records; `columns` adds fields of referenced records (`partner.city`)."""
         page = await self._records.list(
-            table, where=where, sort=sort, limit=limit, after=after, deleted=deleted
+            table,
+            where=where,
+            sort=sort,
+            limit=limit,
+            after=after,
+            deleted=deleted,
+            columns=columns,
         )
         return {
             "records": [self._json(table, r) for r in page.records],

@@ -2,6 +2,27 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.48.0
+
+Totals and columns.
+
+- **Calculated fields**: `Formula("Gross", "net * (1 + vat)")`, worked out by the database on
+  every save from the record's own numbers and dates (`+ - * /`, `round`, `abs`, `coalesce`,
+  `least`, `greatest`; two dates subtracted give days). Optionally with a currency.
+- **Roll-ups**: `Rollup("Total", "<module>.line", "statement", field="amount")`, the sum (or
+  `measure="count"`) of the records pointing to this one, optionally only those matching
+  `where`. The database keeps it right when a line is made, changed, moved, deleted or restored.
+- Both are never typed, and lists filter, sort and add them up like any number.
+- **Fields of referenced records as columns**: `fields=partner.city` on a list (and
+  `Client.list(columns=…)`), sortable, empty where the person may not read them. Saved views and
+  remembered columns keep them; the app's **Columns** dialog adds them.
+- **Column totals**: under a list, each column of numbers shows its total for the whole filter;
+  amounts per currency.
+- **Export**: `GET /api/v1/<module>/<table>/export?format=csv|xlsx|json`, with the list's filter,
+  columns and sort, up to 50,000 records, recorded in the audit log (`data_exported`). The app's
+  **Export** button downloads Excel, CSV or JSON.
+- New dependency: XlsxWriter (writing Excel files).
+
 ## 0.47.1
 
 - A new installation finds its modules without a setup step. A released image brings the

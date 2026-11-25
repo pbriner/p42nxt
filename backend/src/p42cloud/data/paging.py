@@ -23,12 +23,15 @@ class Sort:
     field: FieldDef
     descending: bool
     expression: str  # the SQL sorted by: the value, or empty where it may not be read
+    path: str | None = None  # a referenced record's field (`partner.city`), not the table's own
 
 
 def _value(s: Sort, values: dict[str, Any], language: str) -> Any:
-    value = values.get(s.field.name)
+    value = values.get(s.path or s.field.name)
     if s.field.type.kind == "translated":
-        return None if value is None else value.get(language, value.get("en"))
+        if s.path is not None or value is None:  # walked: in the person's language already
+            return value
+        return value.get(language, value.get("en"))
     return s.field.type.to_json(value)
 
 

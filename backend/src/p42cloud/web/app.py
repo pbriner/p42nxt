@@ -35,6 +35,7 @@ from p42cloud.web.routes import (
     actions,
     aggregates,
     comments,
+    exports,
     files,
     languages,
     mcp,
@@ -163,6 +164,7 @@ def create_app(
     app.include_router(actions.router)
     # Before the record routes: `aggregate` would otherwise be taken for a record's ID.
     app.include_router(aggregates.router)
+    app.include_router(exports.router)
     app.include_router(comments.router)
     app.include_router(files.router)  # before the records': its paths are more particular
     app.include_router(records.router)  # its paths take any module and table

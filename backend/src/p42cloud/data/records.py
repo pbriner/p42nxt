@@ -11,7 +11,7 @@ it.
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from typing import Any
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from p42cloud.data.access import Rules, forbidden
 from p42cloud.data.catalog import Catalog, FieldDef, TableDef
 from p42cloud.data.conditions import (
+    MAX_WALK,
     SYSTEM_FIELDS,
     Filter,
     Query,
@@ -51,6 +52,9 @@ EXACT_TOTAL = 10_000
 class Record:
     values: dict[str, Any]
     etag: str
+    # Fields of referenced records asked for in a list (`partner.city`): the field and its value,
+    # empty where the person may not read it.
+    walked: dict[str, tuple[FieldDef, Any]] = field(default_factory=dict[str, tuple[FieldDef, Any]])
 
     @property
     def sys_id(self) -> UUID:
@@ -205,6 +209,12 @@ class Records:
             if name in found and found.get(f"_can_{name}", True)
         }
         return Record(values, self._etag(table, values))
+
+    @staticmethod
+    def _with_walked(record: Record, row: Any, walked: dict[str, tuple[FieldDef, str]]) -> Record:
+        found = row._mapping
+        values = {path: (f, found[f"_w{i}"]) for i, (path, (f, _)) in enumerate(walked.items())}
+        return replace(record, walked=values) if values else record
 
     def _etag(self, table: TableDef, values: dict[str, Any]) -> str:
         fields = self._fields(table)
@@ -409,6 +419,9 @@ class Records:
         """A record as JSON: exact numbers and times as text; hidden fields absent."""
         fields = self._fields(table)
         shown = {name: fields[name].type.to_json(v) for name, v in record.values.items()}
+        for path, (f, value) in record.walked.items():
+            # A translated text comes in the person's language already.
+            shown[path] = value if f.type.kind == "translated" else f.type.to_json(value)
         return shown | {"_etag": record.etag}
 
     # ---- the operations ----
@@ -638,12 +651,66 @@ class Records:
 
     # ---- lists ----
 
-    def _sorting(self, table: TableDef, sort: list[str], query: Query, rules: Rules) -> list[Sort]:
+    def _walked(
+        self, table: TableDef, paths: list[str], query: Query, rules: Rules
+    ) -> dict[str, tuple[FieldDef, str]]:
+        """Fields of referenced records (`partner.city`) as SQL: empty where the person may not
+        read the reference, the record or the field."""
+
+        def walk(table: TableDef, alias: str, names: list[str], path: str) -> tuple[FieldDef, str]:
+            bad = _invalid([FieldError("fields", "not_a_column", f"{path!r} can't be shown.")])
+            f = field_of(table, names[0])
+            if f is None or f.type.secret:
+                raise bad
+            readable = rules.field(table, alias, f.name)
+            if len(names) == 1:
+                if f.type.references(f.field.options) is not None or f.type.kind is None:
+                    raise bad  # a field of it, not the reference itself
+                value = column(alias, f, query, self.situation)
+                return (
+                    f,
+                    value if readable == "true" else f"(CASE WHEN {readable} THEN {value} END)",
+                )
+            target_key = f.type.references(f.field.options)
+            target = self.catalog.table(target_key) if target_key else None
+            if target is None or target.retired or target.switched_off:
+                raise bad
+            inner = query.alias()
+            found, value = walk(target, inner, names[1:], path)
+            source = qualified(target.schema, target.name)
+            return found, (
+                f"(SELECT {value} FROM {source} {inner}"  # noqa: S608 - checked names only
+                f" WHERE {inner}.sys_id = {alias}.{ident(f.name)}"
+                f" AND {rules.rows(target, inner)} AND ({readable}))"
+            )
+
+        found: dict[str, tuple[FieldDef, str]] = {}
+        for path in dict.fromkeys(paths):
+            names = path.split(".")
+            if len(names) < 2 or len(names) > MAX_WALK + 1:  # noqa: PLR2004
+                raise _invalid(
+                    [FieldError("fields", "too_far", f"At most {MAX_WALK} references: {path!r}.")]
+                )
+            found[path] = walk(table, "t", names, path)
+        return found
+
+    def _sorting(
+        self,
+        table: TableDef,
+        sort: list[str],
+        query: Query,
+        rules: Rules,
+        walked: dict[str, tuple[FieldDef, str]] | None = None,
+    ) -> list[Sort]:
         if len(sort) > MAX_SORT:
             raise _invalid([FieldError("sort", "too_many", f"Sort by at most {MAX_SORT} fields.")])
         found: list[Sort] = []
         for item in sort:
             name = item.removeprefix("-")
+            if walked is not None and name in walked:
+                f, expression = walked[name]
+                found.append(Sort(f, item.startswith("-"), expression, name))
+                continue
             f = field_of(table, name)
             if f is None or f.type.kind is None:
                 raise _invalid([FieldError("sort", "not_sortable", f"Can't sort by {name!r}.")])
@@ -664,8 +731,10 @@ class Records:
         after: str | None = None,
         count: bool = True,
         deleted: bool = False,
+        columns: list[str] | None = None,
     ) -> Page:
-        """One page of records; `deleted=True` lists only deleted ones (the bin)."""
+        """One page of records; `deleted=True` lists only deleted ones (the bin). `columns` adds
+        fields of referenced records (`partner.city`), which can also be sorted by."""
         table = await self._table(key)
         if not self.access.of(table.key, "read"):
             raise forbidden(table.key)
@@ -674,7 +743,10 @@ class Records:
         query = Query()
         rules = self._rules(query)
         order = list(sort or [])
-        sorting = self._sorting(table, order, query, rules)
+        # Sorting by a referenced record's field shows it too: the page link needs its value.
+        paths = [*(columns or []), *(o.removeprefix("-") for o in order if "." in o)]
+        walked = self._walked(table, paths, query, rules)
+        sorting = self._sorting(table, order, query, rules, walked)
         conditions = [
             rules.rows(table, "t"),
             Filter(self.catalog, self.situation, query, guard=rules).sql(table, "t", where),
@@ -695,14 +767,23 @@ class Records:
         ordering = [
             f"{s.expression} {'DESC' if s.descending else 'ASC'} NULLS LAST" for s in sorting
         ]
+        extra = "".join(
+            f', {expression} AS "_w{i}"' for i, (_, expression) in enumerate(walked.values())
+        )
+        select = self._select(table, rules).replace(" FROM ", f"{extra} FROM ", 1)
         sql = (
-            f"{self._select(table, rules)} WHERE {' AND '.join(conditions)}"
+            f"{select} WHERE {' AND '.join(conditions)}"
             f" ORDER BY {', '.join([*ordering, 't.sys_id ASC'])} LIMIT {query.bind(limit + 1)}"
         )
         rows = (await self.conn.execute(text(sql), query.params)).all()
-        records = [self._record(table, row) for row in rows[:limit]]
+        records = [self._with_walked(self._record(table, row), row, walked) for row in rows[:limit]]
         following = (
-            cursor(order, sorting, records[-1].values, self.situation.language)
+            cursor(
+                order,
+                sorting,
+                records[-1].values | {p: v for p, (_, v) in records[-1].walked.items()},
+                self.situation.language,
+            )
             if len(rows) > limit
             else None
         )

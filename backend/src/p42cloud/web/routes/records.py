@@ -12,7 +12,7 @@ Filters come as `filter[field][op]=value` (all ANDed; lists comma-separated) and
 `where=<JSON>` for anything with OR or NOT; both together are ANDed. Lists and single records
 carry `_display` (references and choices named), `_access` (what the caller may do with the
 record) and `_actions` (the UI actions they may run on it); `fields=a,b` keeps only those
-fields.
+fields, and `fields=partner.city` adds a field of a referenced record (sortable by too).
 """
 
 import json
@@ -108,6 +108,7 @@ async def list_records(
             after=after,
             count=count,
             deleted=deleted,
+            columns=[f for f in (fields or "").split(",") if "." in f],
         )
         found = await annotate(records, records.catalog.tables[key], page.records)
         await available(records, records.catalog.tables[key], found)
