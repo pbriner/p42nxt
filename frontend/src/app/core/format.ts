@@ -42,6 +42,7 @@ export interface TableInfo {
   files: boolean;
   /** Its records have a conversation. */
   comments: boolean;
+  work_notes: boolean;
   operations: Record<string, boolean>;
   fields: FieldInfo[];
   /** Tables pointing to this one, through fields the person may read. */

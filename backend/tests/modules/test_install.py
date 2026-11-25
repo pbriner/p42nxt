@@ -200,6 +200,7 @@ def test_module_packages_are_found() -> None:
         "finance",
         "hello",
         "partners",
+        "tasks",
     ]
 
 

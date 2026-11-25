@@ -71,12 +71,20 @@ test('an order has a conversation, kept as plain text', async ({ page }, info) =
     center: house.sys_id,
   });
   await page.goto(`/form/costing.order/${order.sys_id}`);
-  const comments = page.locator('app-record-comments');
-  await expect(comments.getByText('No comments yet.')).toBeVisible();
-  await comments.getByLabel('Write a comment').fill('<b>Offer</b> from the roofer is in.');
-  await comments.getByRole('button', { name: 'Comment', exact: true }).click();
-  await expect(comments.getByText('<b>Offer</b> from the roofer is in.')).toBeVisible();
-  await comments.getByRole('button', { name: 'Remove my comment' }).click();
-  await expect(comments.getByText('No comments yet.')).toBeVisible();
+  const journal = page.locator('app-record-journal');
+  // The journal starts with the order being created; there's nothing said yet.
+  await expect(journal.getByText('Created', { exact: true })).toBeVisible();
+  await journal.getByLabel('Write a comment').fill('<b>Offer</b> from the roofer is in.');
+  await journal.getByRole('button', { name: 'Comment', exact: true }).click();
+  const said = journal.getByText('<b>Offer</b> from the roofer is in.');
+  await expect(said).toBeVisible();
+  // Only what was said, then only the changes.
+  await journal.getByRole('radio', { name: 'Notes and comments' }).click();
+  await expect(journal.getByText('Created', { exact: true })).toHaveCount(0);
+  await journal.getByRole('radio', { name: 'Changes' }).click();
+  await expect(said).toHaveCount(0);
+  await journal.getByRole('radio', { name: 'All' }).click();
+  await journal.getByRole('button', { name: 'Remove my comment' }).click();
+  await expect(said).toHaveCount(0);
   await noSidewaysScroll(page);
 });

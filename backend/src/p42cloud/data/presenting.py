@@ -144,6 +144,8 @@ def describe(
         "files": table.files,
         # Its records have a conversation.
         "comments": table.comments,
+        # Its records have work notes (only for those who may change a record).
+        "work_notes": table.work_notes,
         "operations": {op: bool(access.of(table.key, op)) for op in OPERATIONS},
         "fields": [
             _field(table, f, access, language, situation) for f in [*table.active_fields(), *system]
@@ -237,7 +239,7 @@ async def paths(
     return named
 
 
-def _target(catalog: Catalog, table: TableDef, f: FieldDef, record: Record) -> str | None:
+def target_of(catalog: Catalog, table: TableDef, f: FieldDef, record: Record) -> str | None:
     """The table a reference of this record points to: its declared one, or, for a link to any
     record, the one its table field names (a table's name, or its record of sys.table)."""
     declared = f.type.references(f.field.options)
@@ -268,7 +270,7 @@ def _names_of(
         value = record.values.get(f.name)
         if value is None:
             continue
-        target = _target(catalog, table, f, record)
+        target = target_of(catalog, table, f, record)
         if target is not None:
             known = names.get(target, {})
             if value not in known:
@@ -352,7 +354,7 @@ async def annotate(records: Records, table: TableDef, found: list[Record]) -> li
     references: dict[str, set[UUID]] = {}
     for f in table.active_fields():
         for r in found:
-            target = _target(records.catalog, table, f, r)
+            target = target_of(records.catalog, table, f, r)
             if target is not None and isinstance(r.values.get(f.name), UUID):
                 references.setdefault(target, set()).add(r.values[f.name])
     if people := _people(found):

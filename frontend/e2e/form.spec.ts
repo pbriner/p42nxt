@@ -169,8 +169,7 @@ test('a record shows who changed what, when', async ({ page }, info) => {
   await page.getByLabel('Name').fill(`${name} changed`);
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Saved', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Show the history' }).click();
-  const history = page.locator('app-record-history');
+  const history = page.locator('app-record-journal');
   await expect(history.getByText('Changed', { exact: true })).toBeVisible();
   await expect(history.getByText(`${name} changed`)).toBeVisible();
   await expect(history.getByText('Created', { exact: true })).toBeVisible();

@@ -183,18 +183,23 @@ async def _prepare(
                 "partners.manager",
                 "finance.bookkeeper",
                 "budget.controller",
+                "tasks.manager",
             ):
                 role = await conn.scalar(
                     text("SELECT sys_id FROM sys.role WHERE name = :n"), {"n": name}
                 )
                 await records.create("sys.group_role", {"group": controllers, "role": role})
+            # A group work is assigned to (Tasks), with the admin in it.
+            desk = (
+                await records.create("sys.group", {"name": "Help desk", "assignable": True})
+            ).sys_id
             people = {
                 "admin": await _person(
                     records,
                     sealer,
                     "Ada Admin",
                     "admin@e2e.test",
-                    [ADMINISTRATORS, greeters, controllers],
+                    [ADMINISTRATORS, greeters, controllers, desk],
                 ),
                 "plain": await _person(records, sealer, "Pat Plain", "plain@e2e.test", [greeters]),
             }

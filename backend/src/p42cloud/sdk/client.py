@@ -7,6 +7,7 @@ the request's transaction is shared. A module never writes another module's tabl
 
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
+from dataclasses import asdict
 from datetime import date
 from typing import Any
 from uuid import UUID
@@ -21,6 +22,7 @@ from p42cloud.data.settings import value as settings_value
 from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import Problem
 from p42cloud.services.calls.service import record
+from p42cloud.services.comments import service as comments
 from p42cloud.services.connections.service import connect
 from p42cloud.services.currencies.service import convert
 from p42cloud.services.events.outbox import publish
@@ -136,6 +138,19 @@ class Client:
             link=link,
             severity=severity,
         )
+
+    async def comment(
+        self, table: str, sys_id: UUID | str, text: str, *, kind: str = "comment"
+    ) -> Json:
+        """Adds a comment (for everyone who may read the record) or a work note (`kind=
+        "work_note"`, for those who may change it), checked as over HTTP, with this request's
+        change."""
+        return asdict(await comments.add(self._records, table, self._id(sys_id), text, kind))
+
+    async def comments(self, table: str, sys_id: UUID | str) -> list[Json]:
+        """The record's comments, and its work notes if the caller may change it; newest
+        first."""
+        return [asdict(c) for c in await comments.listed(self._records, table, self._id(sys_id))]
 
     async def call(
         self,

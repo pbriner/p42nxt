@@ -113,6 +113,16 @@
    "text": "Ein geplanter Job funktioniert wieder"
   },
   {
+   "key": "sys.event_type|sys.work_note_added|description",
+   "english": "Someone added a work note to a record (about the record; data: the note's ID). Only those who may change the record read it.",
+   "text": "Jemand hat einem Datensatz eine Arbeitsnotiz hinzugefügt (über den Datensatz; Daten: die ID der Notiz). Nur wer den Datensatz ändern darf, liest sie."
+  },
+  {
+   "key": "sys.event_type|sys.work_note_added|label",
+   "english": "A work note is added",
+   "text": "Eine Arbeitsnotiz kommt hinzu"
+  },
+  {
    "key": "sys.field|sys.announcement.about_update|label",
    "english": "About the update",
    "text": "Über das Update"
@@ -321,6 +331,21 @@
    "key": "sys.field|sys.comment.about|label",
    "english": "On",
    "text": "Zu"
+  },
+  {
+   "key": "sys.field|sys.comment.kind|choice:comment",
+   "english": "Comment",
+   "text": "Kommentar"
+  },
+  {
+   "key": "sys.field|sys.comment.kind|choice:work_note",
+   "english": "Work note",
+   "text": "Arbeitsnotiz"
+  },
+  {
+   "key": "sys.field|sys.comment.kind|label",
+   "english": "Kind",
+   "text": "Art"
   },
   {
    "key": "sys.field|sys.comment.record_id|label",
@@ -2791,6 +2816,11 @@
    "key": "sys.field|sys.table.unique_together|label",
    "english": "Unique together",
    "text": "Gemeinsam eindeutig"
+  },
+  {
+   "key": "sys.field|sys.table.work_notes|label",
+   "english": "Work notes can be added",
+   "text": "Arbeitsnotizen möglich"
   },
   {
    "key": "sys.field|sys.theme.cards|choice:outlined",

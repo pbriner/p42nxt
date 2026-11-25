@@ -43,6 +43,8 @@ await client.update("hello.greeting", made["sys_id"], {"text": "Hello"}, made["_
 ```
 
 - `list`, `get`, `create`, `update`, `delete`, `restore`.
+- `comment(table, id, text, kind="comment")` adds a comment, or a work note with
+  `kind="work_note"`; `comments(table, id)` reads them (`comments.md`).
 - Records come and go as JSON: exact numbers and times as text, the version as `_etag`, fields
   the person may not read left out.
 - **Whose rights**: the person making the request. A module never shows anyone data they

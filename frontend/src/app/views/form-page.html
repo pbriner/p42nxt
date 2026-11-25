@@ -190,14 +190,19 @@
     @if (!creating() && !deleted()) {
       <app-related-tabs [table]="table.table" [id]="id()" [lists]="related()" [name]="name()" />
     }
-    @if (table.comments && !creating() && !deleted()) {
-      <app-record-comments [table]="table.table" [id]="id()" />
-    }
     @if (table.files && !creating() && !deleted()) {
       <app-record-files [table]="table.table" [id]="id()" [mayChange]="writable()" />
     }
     @if (!creating()) {
-      <app-record-history [table]="table.table" [id]="id()" />
+      <app-record-journal
+        [table]="table.table"
+        [id]="id()"
+        [comments]="table.comments"
+        [workNotes]="table.work_notes"
+        [mayChange]="!!access()['write']"
+        [deleted]="deleted()"
+        [version]="original()['_etag']"
+      />
     }
   </form>
 } @else {
