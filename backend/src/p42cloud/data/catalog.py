@@ -48,6 +48,7 @@ class TableDef:
     files: bool = False  # files may be attached to its records
     comments: bool = False  # its records have a conversation
     work_notes: bool = False  # its records have notes for those who may change them
+    log_reads: bool = False  # reading its records over the API is logged
 
     @property
     def display(self) -> str | None:
@@ -79,7 +80,7 @@ _TABLES = text(
     'SELECT sys_id, "schema", name, label, label_plural, unique_together, owner_field,'
     " coalesce(switched_off, false) AS switched_off, display_field, parent_field,"
     " coalesce(files, false) AS files, coalesce(comments, false) AS comments,"
-    " coalesce(work_notes, false) AS work_notes,"
+    " coalesce(work_notes, false) AS work_notes, coalesce(log_reads, false) AS log_reads,"
     " deleted IS NOT NULL AS retired"
     ' FROM sys."table"'
 )
@@ -130,6 +131,7 @@ async def load_catalog(conn: AsyncConnection) -> Catalog:
             files=row.files,
             comments=row.comments,
             work_notes=row.work_notes,
+            log_reads=row.log_reads,
         )
         tables[table.key] = table
     return Catalog(tables)

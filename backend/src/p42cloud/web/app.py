@@ -46,6 +46,7 @@ from p42cloud.web.routes import (
     setup,
     sign_in,
     tables,
+    tokens,
 )
 from p42cloud.web.services import Services
 
@@ -155,6 +156,7 @@ def create_app(
     app.include_router(setup.router)
     app.include_router(people.router)
     app.include_router(tables.router)
+    app.include_router(tokens.router)
     app.include_router(screens.router)
     app.include_router(languages.router)
     app.include_router(mcp.router)

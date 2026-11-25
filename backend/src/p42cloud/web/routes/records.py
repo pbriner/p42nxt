@@ -24,6 +24,7 @@ from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
 
 from p42cloud.data.history import MAX_ENTRIES, history
 from p42cloud.data.presenting import annotate, deletion_preview
+from p42cloud.data.read_log import log_reads
 from p42cloud.kernel.errors import Problem
 from p42cloud.ui.actions.service import available
 from p42cloud.web.caller import Caller, language, who
@@ -112,6 +113,7 @@ async def list_records(
         )
         found = await annotate(records, records.catalog.tables[key], page.records)
         await available(records, records.catalog.tables[key], found)
+        await log_reads(records, records.catalog.tables[key], (r.sys_id for r in page.records))
     return {
         "records": [_only(r, fields) for r in found],
         "next": page.next,
@@ -156,6 +158,7 @@ async def read_record(
         record = await records.read(key, sys_id)
         (found,) = await annotate(records, records.catalog.tables[key], [record])
         await available(records, records.catalog.tables[key], [found])
+        await log_reads(records, records.catalog.tables[key], [record.sys_id])
     return _one(response, _only(found, fields))
 
 

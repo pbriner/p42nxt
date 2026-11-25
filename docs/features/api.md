@@ -8,6 +8,8 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | Route | What |
 |---|---|
 | `GET /api/v1/health` | Whether the app is up (anyone) |
+| `GET /api/v1/health/live` | Whether the process answers, for a liveness check (anyone) |
+| `GET /api/v1/health/ready` | Whether it can serve: the database answers; `503` while not (anyone) |
 | `GET /api/v1/me` | The caller: their person record, groups, how they're signed in |
 | `GET /api/v1/<module>/<table>` | A page of records; `fields=partner.city` adds fields of referenced records |
 | `POST /api/v1/<module>/<table>` | A new record (201, `Location`, `ETag`) |
@@ -15,6 +17,7 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `PATCH /api/v1/<module>/<table>/<id>` | Change fields; needs `If-Match` |
 | `DELETE /api/v1/<module>/<table>/<id>` | Soft deletion; needs `If-Match` |
 | `POST /api/v1/<module>/<table>/<id>/restore` | Restore |
+| `POST /api/v1/tokens` | A new API token, shown once (`api-tokens.md`) |
 | `POST /api/v1/people/<id>/invitation` | A one-time link for a person to set a password and a second factor (`{"reset": true}` first ends their sessions and credentials); administrators only |
 | `GET /api/v1/meta/<module>/<table>` | The table described for the caller (below) |
 | `POST /api/v1/tables` | Make or change one of the administrators' own tables (`tables.md`) |

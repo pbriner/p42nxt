@@ -9,6 +9,7 @@ import { Api, describe } from '../core/api';
 import { textIn } from '../core/format';
 import { I18n } from '../core/i18n';
 import { PAGE_SIZES, Preference, Preferences } from '../core/preferences';
+import { ProfileAccess } from './profile-access';
 import { ProfileNotifications } from './profile-notifications';
 
 interface ThemeChoice {
@@ -25,6 +26,7 @@ interface ThemeChoice {
     MatCardModule,
     MatFormFieldModule,
     MatSelectModule,
+    ProfileAccess,
     ProfileNotifications,
   ],
   template: `
@@ -112,6 +114,7 @@ interface ThemeChoice {
         </mat-card>
 
         <app-profile-notifications />
+        <app-profile-access />
       </div>
     </div>
   `,

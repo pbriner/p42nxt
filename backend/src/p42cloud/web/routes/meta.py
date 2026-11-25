@@ -6,6 +6,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from p42cloud.data.undo import undo
 from p42cloud.kernel.errors import Problem
@@ -24,6 +26,26 @@ async def health() -> dict[str, str]:
     return {"status": "ok", "version": version("p42cloud")}
 
 
+@router.get("/health/live")
+@requires(PUBLIC)
+async def live() -> dict[str, str]:
+    """Whether the process answers at all, for a container's liveness check."""
+    return {"status": "ok"}
+
+
+@router.get("/health/ready")
+@requires(PUBLIC)
+async def ready(request: Request) -> dict[str, str]:
+    """Whether it can serve: the database answers. 503 while it doesn't."""
+    services: Services = request.app.state.services
+    try:
+        async with services.engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+    except (OSError, SQLAlchemyError) as error:
+        raise Problem(503, "not_ready", "The database doesn't answer.") from error
+    return {"status": "ok", "version": version("p42cloud")}
+
+
 @router.get("/me")
 @requires(SIGNED_IN)
 async def me(request: Request, caller: Who) -> dict[str, Any]:
@@ -38,6 +60,8 @@ async def me(request: Request, caller: Who) -> dict[str, Any]:
         "groups": sorted(str(g) for g in caller.access.groups),
         "channel": caller.channel,
         "verified_at": caller.verified_at.isoformat() if caller.verified_at else None,
+        # The browser's own session, so a list of sessions can say which one this is.
+        "session": str(caller.session) if caller.session else None,
     }
 
 

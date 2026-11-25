@@ -56,6 +56,7 @@ METADATA_TABLES = [
             "files": Boolean("Files can be attached", default=False),
             "comments": Boolean("Comments can be added", default=False),
             "work_notes": Boolean("Work notes can be added", default=False),
+            "log_reads": Boolean("Reads are logged", default=False),
         },
         label_plural="Tables",
         unique_together=(("schema", "name"),),
@@ -123,7 +124,7 @@ _TABLE_VALUES = (
     " label_plural = CAST(:label_plural AS jsonb),"
     " unique_together = CAST(:unique_together AS jsonb), owner_field = :owner_field,"
     " display_field = :display_field, parent_field = :parent_field, files = :files,"
-    " comments = :comments, work_notes = :work_notes"
+    " comments = :comments, work_notes = :work_notes, log_reads = :log_reads"
 )
 _FIELD_COLUMNS = (
     '"table", name, type, label, help, options, required, "unique", "default", personal, position'
@@ -147,6 +148,7 @@ async def _write_table(conn: AsyncConnection, schema: str, declared: Table) -> u
         "files": declared.files,
         "comments": declared.comments,
         "work_notes": declared.work_notes,
+        "log_reads": declared.log_reads,
     }
     row_id = await conn.scalar(
         text('SELECT sys_id FROM sys."table" WHERE "schema" = :schema AND name = :name'), values
@@ -156,10 +158,11 @@ async def _write_table(conn: AsyncConnection, schema: str, declared: Table) -> u
             text(
                 'INSERT INTO sys."table"'
                 ' ("schema", name, label, label_plural, unique_together, owner_field,'
-                " display_field, parent_field, files, comments, work_notes, switched_off)"
+                " display_field, parent_field, files, comments, work_notes, log_reads,"
+                " switched_off)"
                 " VALUES (:schema, :name, CAST(:label AS jsonb), CAST(:label_plural AS jsonb),"
                 " CAST(:unique_together AS jsonb), :owner_field, :display_field, :parent_field,"
-                " :files, :comments, :work_notes, false) RETURNING sys_id"
+                " :files, :comments, :work_notes, :log_reads, false) RETURNING sys_id"
             ),
             values,
         )

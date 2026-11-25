@@ -24,6 +24,9 @@ problem is reported at once.
 
 Options every field takes: `required`, `unique`, `default`, `help`, `personal` (personal data).
 
+`Table(..., log_reads=True)` marks a sensitive table: every read of its records over the API is
+an entry of the audit log (`api-tokens.md`, "Reads that are logged").
+
 A default may be a word, worked out on each create: `@me` (a reference to `sys.person`: who
 creates the record), `@today`, `@today+14d` (`d`, `w`, `m`, `y`) and the period words of the
 filter language for dates, `@now` and `@now+2h` for dates and times. Hooks see defaults; the

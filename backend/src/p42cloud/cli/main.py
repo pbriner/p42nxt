@@ -23,7 +23,7 @@ from p42cloud.data.audit import Anchor, missing_months, verify_chain
 from p42cloud.data.settings import value
 from p42cloud.data.types import Invalid
 from p42cloud.kernel.config import get_settings
-from p42cloud.kernel.context import Context, working_as
+from p42cloud.kernel.context import EVERYTHING, Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction, transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.outgoing import safe_client
@@ -41,6 +41,7 @@ from p42cloud.modules.registry import discover
 from p42cloud.modules.updates import refresh
 from p42cloud.security.sign_in.credentials import NewKey
 from p42cloud.security.sign_in.first_admin import create_first_admin
+from p42cloud.security.sign_in.recovery import operator_token, reset_second_factor
 from p42cloud.services.backups.manifest import FOLDER
 from p42cloud.services.update_requests import service as update_requests
 
@@ -207,6 +208,34 @@ async def _module(action: str, module: str | None, source: Source) -> int:
     return 0
 
 
+async def _recover(what: str, email: str, name: str, hours: int) -> int:
+    """For the operator: a person's second factor reset, or a short-lived token for them."""
+    engine = create_engine(get_settings().database_url)
+    try:
+        with working_as(Context(channel=f"cli:{what}", access=EVERYTHING)):
+            async with transaction(engine, "sys") as conn:
+                if what == "reset-second-factor":
+                    await reset_second_factor(conn, email)
+                    print(
+                        f"{email}: second factor reset, sessions ended. They set up a new one at"
+                        " their next sign-in, with their password.",
+                        file=sys.stderr,
+                    )
+                else:
+                    made = await operator_token(conn, email, name, hours)
+                    print(
+                        f"Token for {email}, until {made.expires:%Y-%m-%d %H:%M} UTC:",
+                        file=sys.stderr,
+                    )
+                    print(made.token)
+    except Problem as problem:
+        print(f"{problem.title} {problem.detail or ''}".strip(), file=sys.stderr)
+        return 1
+    finally:
+        await engine.dispose()
+    return 0
+
+
 async def _core_image(version: str | None) -> int:
     """Prints the image to update to (for deploy/update.sh), checked by this image's keys."""
     engine = create_engine(get_settings().owner_database_url)
@@ -333,6 +362,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     admin.add_argument("--name", required=True)
     admin.add_argument("--email", required=True)
+    reset = commands.add_parser(
+        "reset-second-factor",
+        help="a locked-out person's authenticator apps and passkeys removed (audited)",
+    )
+    reset.add_argument("--email", required=True)
+    token = commands.add_parser(
+        "token", help="a short-lived API token acting as a person, for the operator (audited)"
+    )
+    token.add_argument("--email", required=True)
+    token.add_argument("--name", default="Operator")
+    token.add_argument("--hours", type=int, default=1, help="1 to 24 (default 1)")
     audit = commands.add_parser("audit", help="the audit log")
     verify = audit.add_subparsers(dest="audit_command", required=True).add_parser(
         "verify", help="recompute the hash chain and report tampering"
@@ -354,6 +394,8 @@ def main(argv: list[str] | None = None) -> int:
         "create-admin": lambda: _create_admin(args.name, args.email),
         "audit": lambda: _verify(args.anchor),
         "check": _check,
+        "reset-second-factor": lambda: _recover("reset-second-factor", args.email, "", 0),
+        "token": lambda: _recover("token", args.email, args.name, args.hours),
         "core": lambda: _core_image(args.version),
         "backup": lambda: _backup_folder(args.new_folder),
         "updater": lambda: _updater(

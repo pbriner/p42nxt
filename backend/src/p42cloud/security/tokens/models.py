@@ -18,6 +18,8 @@ API_TOKEN = Table(
         "prefix": String("Starts with", max_length=12, required=True),
         # The roles it may use (names); empty: all of the account's roles.
         "roles": Json("Only these roles"),
+        # Networks it may be used from (CIDR, like 203.0.113.0/24); empty: anywhere.
+        "addresses": Json("Only from these addresses"),
         "expires": DateTime("Expires", required=True),
         "last_used": DateTime("Last used"),
     },

@@ -2,6 +2,27 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.49.0
+
+Tokens, profile and recovery.
+
+- **Making API tokens**: `POST /api/v1/tokens` (name, expiry, roles, addresses; `person` for a
+  service account, administrators only), shown once. In the app: Profile → API tokens, with a
+  copy button; administrators choose a service account under Acts as.
+- **Token address limits**: a token may be limited to networks (`addresses`, CIDR); from
+  elsewhere it's refused like a wrong token.
+- **Your sessions**: Profile → Where you are signed in, with Sign out per session and Sign out
+  everywhere else; `GET /api/v1/me` gives the caller's own `session`.
+- **Operator recovery** on the server: `p42cloud reset-second-factor --email …` (a locked-out
+  person sets up a new second factor at their next sign-in) and `p42cloud token --email …
+  --hours …` (a token for 1 to 24 hours). Both are security events.
+- **Reads that are logged**: every read with a token, and every read of a table declared
+  `Table(log_reads=True)`, is an entry of the audit log (`records_read`).
+- **Health checks**: `GET /api/v1/health/live` and `GET /api/v1/health/ready` (503 while the
+  database doesn't answer).
+- **Expiring secrets**: a connection's secret may have an Expires date; its owner is reminded two
+  weeks before and on the day (daily job, notification kind `sys.secret_expiring`).
+
 ## 0.48.0
 
 Totals and columns.

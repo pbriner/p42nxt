@@ -30,7 +30,7 @@ SESSIONS = "sys.session"
 SESSION_FIELDS = ("person", "stage", "expires", "last_seen", "verified", "address", "agent")
 TOKENS = "sys.api_token"
 # What people see of API tokens: never the token's hash.
-TOKEN_FIELDS = ("person", "name", "prefix", "roles", "expires", "last_used")
+TOKEN_FIELDS = ("person", "name", "prefix", "roles", "addresses", "expires", "last_used")
 SCREENS = (
     "sys.nav_item",
     "sys.list_view",

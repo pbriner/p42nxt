@@ -2006,6 +2006,11 @@
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "work_notes",
     "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "log_reads",
+    "required": false
    }
   ]
  },

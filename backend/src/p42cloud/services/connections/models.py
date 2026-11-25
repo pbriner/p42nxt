@@ -9,6 +9,7 @@ import httpx
 from p42cloud.data.declarations import Table
 from p42cloud.data.types.boolean import Boolean
 from p42cloud.data.types.choice import Choice
+from p42cloud.data.types.date import Date
 from p42cloud.data.types.datetime import DateTime
 from p42cloud.data.types.json import Json
 from p42cloud.data.types.reference import Reference
@@ -83,6 +84,11 @@ CONNECTION_SECRET = Table(
         "name": String("Name", max_length=60, required=True),
         # Sealed with the master key, bound to its connection and name; never read back.
         "value": Secret("Value", required=True),
+        "expires": Date(
+            "Expires", help="When the outside system stops taking it: you're reminded before."
+        ),
+        # The day its owner was last reminded (two weeks before, then on the day).
+        "told": Date("Reminded", read_only=True),
     },
     label_plural="Connection secrets",
     owner="owner",

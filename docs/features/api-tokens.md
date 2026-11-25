@@ -19,6 +19,7 @@ A service account is a person of the kind *service account*: an import, a job, a
 | Name | Shown in the audit log: requests with the token have the channel `api:token:<name>` |
 | Starts with | The token's first characters (`p42_…`), to tell tokens apart |
 | Only these roles | The roles it may use; empty: all of the account's roles |
+| Only from these addresses | Networks it may be used from (`203.0.113.7`, `203.0.113.0/24`); empty: anywhere. A request from elsewhere is refused like a wrong token |
 | Expires | 90 days after it's made unless set otherwise, a year at the most |
 | Last used | Updated at most every 5 minutes |
 
@@ -32,8 +33,35 @@ A service account is a person of the kind *service account*: an import, a job, a
 - People see their own tokens and revoke them; administrators see and revoke anyone's. Nobody
   sees a token's hash.
 
+## Making a token
+
+`POST /api/v1/tokens` with a `name`, and optionally `expires`, `roles`, `addresses` and `person`
+(a service account's ID; administrators only). The answer has the token, once; afterwards only
+its first characters show. In the app: **Profile → API tokens** (name, how long it lasts,
+addresses), with a copy button for the new token. Administrators pick a service account there
+under **Acts as**. If the second factor is older than 15 minutes, the app asks for a code first.
+
+## When nobody can sign in
+
+On the server, the operator makes a short-lived token for a person (1 to 24 hours, default 1):
+
+```bash
+docker compose --project-directory ~/.p42cloud/<name> run --rm --entrypoint p42cloud upgrade \
+    token --email ada@example.com --hours 2
+```
+
+It prints the token. Both this and resetting a second factor (`sign-in.md`) are security
+events: `operator_token_made`, `second_factor_reset`.
+
+## Reads that are logged
+
+Every read of records with a token (lists and single records) is an entry of the audit log,
+`records_read`: who, through which token, which table and which records (up to 100 named, all
+counted). So is every read of a table declared `Table(log_reads=True)` (a sensitive one), by
+anyone, over the API. Exports are logged as `data_exported` (`records.md`).
+
 ## Security events
 
 `api_token_made`, `api_token_revoked`, and `api_token_refused` for every request with a wrong,
-revoked or expired token. After 20 refused tokens from one network address within 15 minutes,
+revoked or expired token, or one from an address it isn't allowed from. After 20 refused tokens from one network address within 15 minutes,
 further requests from it are refused for 15 minutes.

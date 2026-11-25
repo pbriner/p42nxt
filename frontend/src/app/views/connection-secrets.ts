@@ -12,6 +12,7 @@ interface Secret {
   set: boolean;
   sys_id: string | null;
   etag: string | null;
+  expires: string | null;
 }
 
 const SECRETS = '/api/v1/sys/connection_secret';
@@ -45,10 +46,20 @@ const WORDS: Record<string, string> = { api: 'API', url: 'URL', id: 'ID' };
               />
               <mat-hint>{{ s.set ? i18n.t('secrets.set') : i18n.t('secrets.not_set') }}</mat-hint>
             </mat-form-field>
+            <mat-form-field appearance="outline" class="date">
+              <mat-label>{{ i18n.t('secrets.expires') }}</mat-label>
+              <input
+                matInput
+                type="date"
+                [value]="dates()[s.name] ?? s.expires ?? ''"
+                (input)="dateIn(s.name, $any($event.target).value)"
+              />
+              <mat-hint>{{ i18n.t('secrets.expires_hint') }}</mat-hint>
+            </mat-form-field>
             <button
               mat-stroked-button
               type="button"
-              [disabled]="!typed()[s.name] || busy()"
+              [disabled]="(!typed()[s.name] && !(s.set && s.name in dates())) || busy()"
               (click)="save(s)"
             >
               {{ i18n.t('secrets.save') }}
@@ -74,6 +85,9 @@ const WORDS: Record<string, string> = { api: 'API', url: 'URL', id: 'ID' };
       flex: 1;
       min-width: min(320px, 100%);
     }
+    .date {
+      width: min(200px, 100%);
+    }
   `,
 })
 export class ConnectionSecrets {
@@ -84,6 +98,8 @@ export class ConnectionSecrets {
   readonly type = input.required<string>();
   protected readonly secrets = signal<Secret[]>([]);
   protected readonly typed = signal<Record<string, string>>({});
+  /** Expiry dates changed here, by secret; '' clears one. */
+  protected readonly dates = signal<Record<string, string>>({});
   protected readonly busy = signal(false);
   protected readonly said = signal<string | null>(null);
 
@@ -100,8 +116,15 @@ export class ConnectionSecrets {
       this.api.get<{ records: { secrets: string[] | null }[] }>('/api/v1/sys/connection_type', {
         query: { 'filter[name]': type, fields: 'secrets', count: false },
       }),
-      this.api.get<{ records: { sys_id: string; name: string; _etag: string }[] }>(SECRETS, {
-        query: { 'filter[connection]': connection, fields: 'name', count: false, limit: 50 },
+      this.api.get<{
+        records: { sys_id: string; name: string; _etag: string; expires: string | null }[];
+      }>(SECRETS, {
+        query: {
+          'filter[connection]': connection,
+          fields: 'name,expires',
+          count: false,
+          limit: 50,
+        },
       }),
     ]);
     const have = new Map(kept.data.records.map((r) => [r.name, r]));
@@ -111,6 +134,7 @@ export class ConnectionSecrets {
         set: have.has(name),
         sys_id: have.get(name)?.sys_id ?? null,
         etag: have.get(name)?._etag ?? null,
+        expires: have.get(name)?.expires ?? null,
       })),
     );
   }
@@ -126,20 +150,34 @@ export class ConnectionSecrets {
     this.typed.update((all) => ({ ...all, [name]: value }));
   }
 
+  protected dateIn(name: string, value: string): void {
+    this.dates.update((all) => ({ ...all, [name]: value }));
+  }
+
   protected async save(secret: Secret): Promise<void> {
     const value = this.typed()[secret.name];
-    if (!value || this.busy()) {
+    const dated = secret.name in this.dates();
+    if ((!value && !(secret.set && dated)) || this.busy()) {
       return;
+    }
+    const changes: Record<string, unknown> = value ? { value } : {};
+    if (dated) {
+      changes['expires'] = this.dates()[secret.name] || null;
     }
     this.busy.set(true);
     this.said.set(null);
     try {
       if (secret.sys_id && secret.etag) {
-        await this.api.patch(`${SECRETS}/${secret.sys_id}`, { value }, secret.etag);
+        await this.api.patch(`${SECRETS}/${secret.sys_id}`, changes, secret.etag);
       } else {
-        await this.api.post(SECRETS, { connection: this.connection(), name: secret.name, value });
+        await this.api.post(SECRETS, {
+          connection: this.connection(),
+          name: secret.name,
+          ...changes,
+        });
       }
       this.typed.update((all) => ({ ...all, [secret.name]: '' }));
+      this.dates.update(({ [secret.name]: _, ...rest }) => rest);
       this.said.set(this.i18n.t('secrets.saved', { name: this.label(secret.name) }));
       await this.load(this.connection(), this.type());
     } catch (error) {
