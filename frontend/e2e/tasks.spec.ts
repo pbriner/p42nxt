@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { api, noSidewaysScroll, storage } from './helpers';
+import { api, compact, noSidewaysScroll, storage } from './helpers';
 
 test.use({ storageState: storage('admin') });
 
@@ -39,4 +39,28 @@ test('a group member takes a task, keeps work notes apart from comments, and mar
   await expect(page.getByRole('button', { name: 'Take' })).toHaveCount(0);
   await expect(journal.getByText('Done').first()).toBeVisible();
   await noSidewaysScroll(page);
+});
+
+test('of the items leading to the task list, only the one opened is marked', async ({
+  page,
+}, info) => {
+  test.skip(compact(info), 'the navigator closes after choosing on small screens');
+  await page.goto('/');
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  const tasks = nav.getByRole('button', { name: 'Tasks', exact: true });
+  if ((await tasks.getAttribute('aria-expanded')) !== 'true') {
+    await tasks.click();
+  }
+  const items = ['My work', "My groups' work", 'All tasks'];
+  for (const chosen of items) {
+    await nav.getByRole('link', { name: chosen, exact: true }).click();
+    for (const item of items) {
+      const link = nav.getByRole('link', { name: item, exact: true });
+      if (item === chosen) {
+        await expect(link).toHaveClass(/active/);
+      } else {
+        await expect(link).not.toHaveClass(/active/);
+      }
+    }
+  }
 });

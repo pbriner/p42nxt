@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # Where module releases are published (the registry's index.json is read from there). Off by
     # default: without it the installation never asks for updates.
     registry_url: str | None = None
+    # The release address the image was built for (the repository it came from): the setting
+    # Release address starts with it on a new installation, and can be changed or cleared there.
+    release_address: str | None = None
     # Which folder on the machine the worker was given as its backup folder (at /backups). Not
     # a choice: the deploy scripts write it from the setting "Backup folder", which is.
     backups_mounted: str | None = None
@@ -54,6 +57,7 @@ class Settings(BaseSettings):
     @field_validator(
         "public_url",
         "registry_url",
+        "release_address",
         "backups_mounted",
         "modules_dir",
         "trusted_proxies",

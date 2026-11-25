@@ -49,8 +49,8 @@ class Setting:
     check: Callable[[Any], Any]
     help: str = ""
     public: bool = False
-    # A value the environment gave before this was a setting (a Settings field): taken over once,
-    # when the setting first comes.
+    # A value the environment gives (a Settings field: one from before this was a setting, or one
+    # the image brings): taken over once, when the setting first comes.
     adopt: str | None = None
 
 

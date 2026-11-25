@@ -66,6 +66,10 @@ export class SetupPage {
   protected repeat = '';
   protected backups: 'done' | 'later' | null = null;
   protected masterKey = false;
+  protected backupFolder = '';
+  protected releaseAddress = '';
+  /** The folder install.sh made: Docker gives the worker this one until the next restart. */
+  protected madeFolder = '';
 
   /** The modules kept: those chosen, what they need, and the core's. */
   protected readonly kept = computed(() => {
@@ -92,11 +96,17 @@ export class SetupPage {
 
   private async load(): Promise<void> {
     try {
-      const { data } = await this.api.get<{ modules: Module[] }>('/api/v1/setup/modules', {
-        quiet: true,
-      });
+      const [{ data }, machine] = await Promise.all([
+        this.api.get<{ modules: Module[] }>('/api/v1/setup/modules', { quiet: true }),
+        this.api.get<{ backup_folder: string; release_address: string }>('/api/v1/setup/settings', {
+          quiet: true,
+        }),
+      ]);
       this.modules.set(data.modules);
       this.chosen.set(new Set(data.modules.filter((m) => !m.required).map((m) => m.id)));
+      this.madeFolder = machine.data.backup_folder;
+      this.backupFolder = machine.data.backup_folder;
+      this.releaseAddress = machine.data.release_address;
     } catch {
       this.installation.setupOpen.set(false);
     }
@@ -158,6 +168,8 @@ export class SetupPage {
           modules: [...this.kept()],
           backups: this.backups === 'done',
           master_key: this.masterKey,
+          backup_folder: this.backupFolder.trim(),
+          release_address: this.releaseAddress.trim(),
         },
         { quiet: true },
       );

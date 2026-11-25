@@ -37,11 +37,26 @@ test('a new installation is set up in the browser, then its admin sets up a seco
     .fill('correct horse battery staple');
   await next();
   await expect(page.getByText('always included')).toBeVisible(); // the core
+  // A test installation's image brings no release address: it looks for no updates.
+  const release = page.getByRole('textbox', { name: 'Release address' });
+  await expect(release).toHaveValue('');
+  await expect(page.getByText('never looks for updates')).toBeVisible();
+  await release.fill('ftp://nowhere');
   await next();
+  const folder = page.getByRole('textbox', { name: 'Backup folder' });
+  await folder.fill('/srv/p42-backups');
+  await expect(page.getByText('once deploy/restart.sh has run')).toBeVisible();
   const finish = page.getByRole('button', { name: 'Set up', exact: true });
   await page.getByText('I’ll set up backups later').click();
   await expect(finish).toBeDisabled(); // the master key's copy is confirmed first
   await page.getByText('I have stored a copy of the master key').click();
+  await finish.click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'releases/download/registry' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Back' }).filter({ visible: true }).last().click();
+  await release.fill('');
+  await next();
   await finish.click();
 
   await expect(page.getByRole('heading', { name: 'Set up a second factor' })).toBeVisible();

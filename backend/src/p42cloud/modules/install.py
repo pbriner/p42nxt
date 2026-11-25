@@ -392,20 +392,22 @@ async def _finish(engine: AsyncEngine, *, upgraded: bool) -> None:
         await languages.seed(conn)
         await languages.apply(conn, await load_catalog(conn))
         if upgraded:
-            await _check_updates_soon(conn)
+            await check_updates_soon(conn)
 
 
-async def _check_updates_soon(conn: AsyncConnection) -> None:
-    """After an update, what fits may have changed (a module waiting for this core): the
-    update check runs now rather than at its daily time."""
+async def check_updates_soon(conn: AsyncConnection, trigger: str = "update") -> None:
+    """After an update, what fits may have changed (a module waiting for this core), and a
+    new installation doesn't know the registry's modules yet: the update check runs now rather
+    than at its daily time."""
     await conn.execute(
         text(
             "INSERT INTO sys.job_run (job, schedule, state, trigger, attempt, not_before)"
-            " SELECT 'sys.check_updates', NULL, 'queued', 'update', 1, now()"
+            " SELECT 'sys.check_updates', NULL, 'queued', :trigger, 1, now()"
             " WHERE EXISTS (SELECT 1 FROM sys.job WHERE name = 'sys.check_updates'"
             " AND deleted IS NULL) AND NOT EXISTS (SELECT 1 FROM sys.job_run"
             " WHERE job = 'sys.check_updates' AND state = 'queued' AND deleted IS NULL)"
-        )
+        ),
+        {"trigger": trigger},
     )
 
 

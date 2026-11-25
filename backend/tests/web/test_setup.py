@@ -75,13 +75,24 @@ async def test_the_installer_is_open_once_and_only_with_its_code(fresh: Settings
     async with app.router.lifespan_context(app), client:
         before = (await client.get("/api/v1/installation")).json()
         modules = (await client.get("/api/v1/setup/modules")).json()["modules"]
+        machine = (await client.get("/api/v1/setup/settings")).json()
+        temporary = await client.post(
+            "/api/v1/setup", json=_body(backup_folder="/etc/p42", release_address="ftp://x")
+        )
         wrong = await client.post("/api/v1/setup", json=_body(code="nope"))
         unconfirmed = await client.post("/api/v1/setup", json=_body(master_key=False))
         weak = await client.post("/api/v1/setup", json=_body(password="short"))
-        done = await client.post("/api/v1/setup", json=_body())
+        done = await client.post(
+            "/api/v1/setup",
+            json=_body(
+                backup_folder="/srv/p42-backups/",
+                release_address="https://example.test/releases/download/registry",
+            ),
+        )
         again = await client.post("/api/v1/setup", json=_body(email="eve@acme.test"))
         after = (await client.get("/api/v1/installation")).json()
         closed = await client.get("/api/v1/setup/modules")
+        closed_settings = await client.get("/api/v1/setup/settings")
     assert before == {"name": "P42cloud", "language": "en", "setup_open": True}
     assert any(m["id"] == "sys" and m["required"] for m in modules)
     assert (wrong.status_code, wrong.json()["code"]) == (403, "wrong_setup_code")
@@ -92,6 +103,36 @@ async def test_the_installer_is_open_once_and_only_with_its_code(fresh: Settings
     assert (again.status_code, again.json()["code"]) == (409, "set_up")
     assert after == {"name": "Acme", "language": "de", "setup_open": False}
     assert closed.status_code == 409
+    assert machine == {"backup_folder": "", "release_address": ""}
+    assert [e["field"] for e in temporary.json()["errors"]] == ["backup_folder", "release_address"]
+    assert closed_settings.status_code == 409
+    owner = create_engine(fresh.owner_database_url)
+    try:
+        async with owner.connect() as conn:
+            chosen = dict(
+                (
+                    await conn.execute(
+                        text(
+                            "SELECT name, value #>> '{}' FROM sys.setting"
+                            " WHERE name IN ('sys.backup_folder', 'sys.registry_url')"
+                        )
+                    )
+                ).all()
+            )
+            # The registry's modules are offered right away, not after the daily check.
+            queued = await conn.scalar(
+                text(
+                    "SELECT count(*) FROM sys.job_run WHERE job = 'sys.check_updates'"
+                    " AND trigger = 'setup' AND state = 'queued'"
+                )
+            )
+    finally:
+        await owner.dispose()
+    assert chosen == {
+        "sys.backup_folder": "/srv/p42-backups",
+        "sys.registry_url": "https://example.test/releases/download/registry",
+    }
+    assert queued == 1
 
 
 async def test_without_a_setup_code_the_installer_stays_closed(fresh: Settings) -> None:

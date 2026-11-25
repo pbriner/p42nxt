@@ -15,13 +15,23 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
 
 import { describe } from '../core/api';
 import { Favorite, Favorites } from '../core/favorites';
 import { I18n } from '../core/i18n';
 import { Installation } from '../core/installation';
-import { Found, NavItem, NavModule, Navigation, fold, target } from '../core/navigation';
+import {
+  Found,
+  NavItem,
+  NavModule,
+  Navigation,
+  activeItem,
+  fold,
+  target,
+} from '../core/navigation';
 import { remember, remembered } from '../core/storage';
 import { FolderDialog } from './folder-dialog';
 
@@ -55,6 +65,7 @@ export class Navigator {
   protected readonly favorites = inject(Favorites);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
+  private readonly router = inject(Router);
   /** The module of the page shown: it opens by itself. */
   readonly currentModule = input<string | null>(null);
   readonly navigated = output<void>();
@@ -64,6 +75,27 @@ export class Navigator {
   protected readonly openModules = signal(new Set(remembered(OPEN_MODULES)));
   protected readonly openFolders = signal(new Set(remembered(OPEN_FOLDERS)));
   protected readonly target = target;
+
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((e) => e instanceof NavigationEnd),
+      map(() => this.router.url),
+      startWith(this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /** The single item the page belongs to, so items leading to one list don't all light up. */
+  protected readonly active = computed(() => {
+    const tree = this.router.parseUrl(this.url());
+    const segments = tree.root.children['primary']?.segments ?? [];
+    const path = '/' + segments.map((s) => s.path).join('/');
+    return activeItem(
+      this.navigation.items().map((f) => f.item),
+      path,
+      tree.queryParams,
+    );
+  });
 
   protected readonly modules = computed(() => {
     const q = fold(this.query());

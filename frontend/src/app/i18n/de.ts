@@ -466,6 +466,15 @@ export const DE: Record<TextKey, string> = {
   'setup.backups_later': 'Ich richte Backups später ein',
   'setup.master_key':
     'Ich habe eine Kopie des Hauptschlüssels (master.key) sicher aufbewahrt. Ohne ihn lassen sich verschlüsselte Geheimnisse nicht wiederherstellen.',
+  'setup.release_address': 'Release-Adresse',
+  'setup.release_hint':
+    'Von hier kommen Updates und weitere Module. Leer lassen, um nie nach Updates zu suchen.',
+  'setup.release_off':
+    'Ohne Adresse sucht diese Installation nie nach Updates oder weiteren Modulen.',
+  'setup.backup_folder': 'Backup-Ordner',
+  'setup.backup_hint': 'Der Ordner auf diesem Rechner, in den die täglichen Backups kommen.',
+  'setup.backup_restart':
+    'Ein neuer Ordner gilt, sobald deploy/restart.sh auf dem Rechner gelaufen ist.',
   'setup.next': 'Weiter',
   'setup.back': 'Zurück',
   'setup.finish': 'Einrichten',

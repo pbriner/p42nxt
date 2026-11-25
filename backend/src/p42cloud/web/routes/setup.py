@@ -2,6 +2,7 @@
 
     GET  /api/v1/installation      its name and language, and whether setup is still open
     GET  /api/v1/setup/modules     while open: the installed modules, to keep or switch off
+    GET  /api/v1/setup/settings    while open: the backup folder and the release address
     POST /api/v1/setup             while open, with the setup code: the first administrator
 
 After setting up, the administrator is signed in up to the second factor, which they set up next.
@@ -17,7 +18,7 @@ from p42cloud.data import settings
 from p42cloud.kernel.context import EVERYTHING, Context, working_as
 from p42cloud.kernel.db import transaction
 from p42cloud.kernel.errors import Problem
-from p42cloud.modules.setup import Setup, is_open, optional_modules, set_up
+from p42cloud.modules.setup import Setup, is_open, machine_settings, optional_modules, set_up
 from p42cloud.security.sign_in.events import event, failures
 from p42cloud.web.caller import address, check_origin
 from p42cloud.web.permissions import PUBLIC, requires
@@ -41,6 +42,9 @@ class SetupBody(BaseModel):
     )
     backups: bool
     master_key: bool
+    # Left out: what install.sh and the image set stays.
+    backup_folder: Annotated[str, Field(max_length=500)] | None = None
+    release_address: Annotated[str, Field(max_length=500)] | None = None
 
 
 def _services(request: Request) -> Services:
@@ -75,6 +79,17 @@ async def setup_modules(request: Request) -> dict[str, Any]:
     return {"modules": await optional_modules(services.engine)}
 
 
+@router.get("/setup/settings")
+@requires(PUBLIC)
+async def setup_settings(request: Request) -> dict[str, Any]:
+    """While the installer is open: the backup folder install.sh made and the release address
+    the image brought, to keep or change."""
+    services = _services(request)
+    if not services.settings.setup_code or not await is_open(services.engine):
+        raise Problem(409, "set_up", "This installation is set up already. Sign in.")
+    return await machine_settings(services.engine)
+
+
 @router.post("/setup")
 @requires(PUBLIC)
 async def setup(body: SetupBody, request: Request, response: Response) -> dict[str, Any]:
@@ -101,6 +116,8 @@ async def setup(body: SetupBody, request: Request, response: Response) -> dict[s
         modules=frozenset(body.modules),
         backups=body.backups,
         master_key=body.master_key,
+        backup_folder=body.backup_folder,
+        release_address=body.release_address,
     )
     try:
         await set_up(services.engine, services.owner, services.settings.setup_code, given)

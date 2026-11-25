@@ -2,6 +2,23 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.47.1
+
+- A new installation finds its modules without a setup step. A released image brings the
+  release address of the repository it was built from (`P42_RELEASE_ADDRESS`, set at build), and
+  the setting **Release address** starts with it; an installation that has the setting keeps its
+  own. Right after the web installer, the update check runs, so the registry's modules are under
+  Available updates at once instead of the next morning.
+- The web installer shows the **Release address** (with the modules) and the **Backup folder**
+  (with safety), to keep, change or clear; a new backup folder applies once `deploy/restart.sh`
+  has run. `GET /api/v1/setup/settings` gives both while setup is open; `POST /api/v1/setup`
+  takes `backup_folder` and `release_address`.
+- `deploy/install.sh --backups <folder>` chooses the backup folder when installing.
+
+- The navigator marks only one item as open. Items that lead to the same list with different
+  filters (My work, My groups' work, All tasks) all lit up at once; now the item whose filter is
+  in the address is marked, the most specific one first.
+
 ## 0.47.0
 
 - Work notes: a table declares `work_notes=True` and its records get notes only those who may

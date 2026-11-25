@@ -120,8 +120,10 @@ An installation several releases behind updates in one step, straight to the rel
   data, straight to the code being checked (`.github/scripts/upgrade-check.sh <tag>`), and
   checks the database is safe, the audit log intact and the data still there.
 
-The installation only downloads the index; it sends nothing about itself. The release address is
-empty by default, and must use https in production.
+The installation only downloads the index; it sends nothing about itself. A released image
+brings the release address of the repository it was built from, and a new installation starts
+with it (an image built by hand brings none); it can be changed or cleared, and must use https
+in production.
 
 ## Installing a module from its package
 
