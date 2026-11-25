@@ -1687,6 +1687,11 @@
     "required": false
    },
    {
+    "kind": "KEYWORD_ONLY",
+    "name": "narrow",
+    "required": false
+   },
+   {
     "kind": "VAR_KEYWORD",
     "name": "common",
     "required": false
@@ -2001,6 +2006,16 @@
    {
     "kind": "KEYWORD_ONLY",
     "name": "max_length",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "field_of",
+    "required": false
+   },
+   {
+    "kind": "KEYWORD_ONLY",
+    "name": "kinds",
     "required": false
    },
    {
@@ -2343,6 +2358,11 @@
    {
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "field",
+    "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "field2",
     "required": false
    },
    {

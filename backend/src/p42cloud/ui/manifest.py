@@ -15,7 +15,7 @@ from p42cloud.services.update_requests.service import tonight
 from p42cloud.ui.actions.models import UI_ACTION, ActionResult, ActionRun, UIAction
 from p42cloud.ui.favorites import models as favorites
 from p42cloud.ui.forms import layouts
-from p42cloud.ui.forms.models import FORM_VIEW
+from p42cloud.ui.forms.models import FORM_VIEW, FormSection, FormView
 from p42cloud.ui.navigation.models import NAV_ITEM, Item, Section
 from p42cloud.ui.preferences import models as preferences
 from p42cloud.ui.rules import service as rules
@@ -300,6 +300,35 @@ NAVIGATION = (
     ),
 )
 
+# A widget's form: what it shows, how it looks, who gets it (audiences as a related list).
+FORMS = (
+    FormView(
+        "sys.widget",
+        (
+            FormSection(
+                "Data",
+                (
+                    "title",
+                    "kind",
+                    "list",
+                    "filter",
+                    "measure",
+                    "field",
+                    "field2",
+                    "group",
+                    "period",
+                    "chart",
+                    "trend",
+                    "dated",
+                    "text",
+                ),
+            ),
+            FormSection("Look", ("icon", "accent", "filled", "target", "size", "sizes", "refresh")),
+            FormSection("Who gets it", ("shown", "dashboard", "position", "custom", "kept")),
+        ),
+    ),
+)
+
 # On everyone's home, for those who may read people.
 WIDGETS = (
     Widget(
@@ -328,6 +357,39 @@ WIDGETS = (
         accent=2,
     ),
 )
+
+
+_COPIED = (
+    "kind",
+    "list",
+    "filter",
+    "measure",
+    "field",
+    "field2",
+    "group",
+    "period",
+    "chart",
+    "text",
+    "icon",
+    "accent",
+    "filled",
+    "target",
+    "trend",
+    "dated",
+    "sizes",
+    "size",
+    "refresh",
+    "dashboard",
+)
+
+
+async def _duplicate_widget(run: ActionRun) -> ActionResult:
+    """A copy made in the app, to change freely: the module's widget stays as it is."""
+    title: dict[str, str] = run.record["title"] or {"en": "Widget"}
+    copy = {k: run.record[k] for k in _COPIED if run.record.get(k) is not None}
+    copy["title"] = {language: f"{words} (copy)" for language, words in title.items()}
+    made = await run.records.create("sys.widget", copy)
+    return ActionResult(message=f"Copied as {made.values['name']}: change it there.")
 
 
 async def _run_now(run: ActionRun) -> ActionResult:
@@ -414,6 +476,16 @@ A_NEW_MODULE = {
 }
 
 ACTIONS = (
+    UIAction(
+        "duplicate_widget",
+        "sys.widget",
+        "Duplicate",
+        places=("form_button",),
+        icon="content_copy",
+        operation="read",
+        condition={"field": "source_route", "op": "empty"},
+        handler=_duplicate_widget,
+    ),
     UIAction(
         "roles_to_administrators",
         "sys.module",

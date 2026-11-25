@@ -258,3 +258,25 @@ button {
   font: var(--mat-sys-body-small);
   pointer-events: none;
 }
+
+.track.second {
+  margin-top: 2px;
+}
+.column-bar.second {
+  margin-left: 2px;
+}
+.series {
+  display: flex;
+  gap: 16px;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  font: var(--mat-sys-body-small);
+}
+.series .swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 2px;
+}

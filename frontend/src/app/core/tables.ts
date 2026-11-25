@@ -71,11 +71,17 @@ export class Tables {
     }
   }
 
-  async find(table: string, text: string, limit = 10): Promise<Named[]> {
+  async find(
+    table: string,
+    text: string,
+    limit = 10,
+    narrow: Record<string, string> = {},
+  ): Promise<Named[]> {
     const info = await this.describe(table);
     const display = info.display ?? 'sys_id';
     const { data } = await this.api.get<{ records: Record<string, unknown>[] }>(path(table), {
       query: {
+        ...narrow,
         [`filter[${display}][contains]`]: text || null,
         fields: display,
         sort: display,

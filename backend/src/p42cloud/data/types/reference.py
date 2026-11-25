@@ -33,7 +33,7 @@ class ReferenceType(FieldType):
         return None if value is None else str(value)
 
     def option_problems(self, options: dict[str, Any]) -> list[str]:
-        own = ("table", "key", "match", "on_delete")
+        own = ("table", "key", "match", "on_delete", "narrow")
         found = super().option_problems({k: v for k, v in options.items() if k not in own})
         table = options.get("table")
         if not isinstance(table, str) or not TABLE.match(table):
@@ -48,6 +48,13 @@ class ReferenceType(FieldType):
         on_delete = options.get("on_delete")
         if on_delete is not None and on_delete not in ON_DELETE:
             found.append("on_delete is restrict, cascade or clear.")
+        narrow = options.get("narrow")
+        if narrow is not None and not (
+            isinstance(narrow, dict)
+            and narrow
+            and all(isinstance(k, str) and isinstance(v, str) for k, v in narrow.items())  # pyright: ignore[reportUnknownVariableType]
+        ):
+            found.append("narrow maps the target's fields to fields of this record.")
         return found
 
     def column_type(self, options: dict[str, Any]) -> str:
@@ -68,20 +75,25 @@ class ReferenceType(FieldType):
 TYPE = ReferenceType()
 
 
-def Reference(
+def Reference(  # noqa: PLR0913 - the options, all by keyword
     label: str,
     table: str,
     *,
     key: str | None = None,
     match: str = "name",
     on_delete: str | None = None,
+    narrow: dict[str, str] | None = None,
     **common: Unpack[Common],
 ) -> Field:
     """`key`: the field naming the target by its `match` (the database fills the link).
-    `on_delete`: restrict, cascade or clear (`ON_DELETE`); none keeps the reference."""
+    `on_delete`: restrict, cascade or clear (`ON_DELETE`); none keeps the reference.
+    `narrow`: the picker offers only targets whose fields equal this record's, like
+    `{"parent": "profit_center"}` (cost centers under the chosen profit center)."""
     options: dict[str, Any] = {"table": table}
     if key is not None:
         options |= {"key": key, "match": match}
     if on_delete is not None:
         options["on_delete"] = on_delete
+    if narrow is not None:
+        options["narrow"] = narrow
     return declare("reference", label, options, common)

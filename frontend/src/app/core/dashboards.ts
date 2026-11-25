@@ -22,6 +22,8 @@ export interface WidgetDef {
   filter: unknown;
   measure: string;
   field: string | null;
+  /** A second number of the same records, as a second series. */
+  field2?: string | null;
   group: string | null;
   period: string | null;
   chart: 'bar' | 'donut' | 'column' | 'line' | null;

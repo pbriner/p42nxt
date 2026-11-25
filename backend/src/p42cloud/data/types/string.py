@@ -13,8 +13,17 @@ class StringType(FieldType):
     kind = "text"
 
     def option_problems(self, options: dict[str, Any]) -> list[str]:
-        rest = {k: v for k, v in options.items() if k != "max_length"}
+        rest = {k: v for k, v in options.items() if k not in ("max_length", "field_of", "kinds")}
         found = super().option_problems(rest)
+        field_of, kinds = options.get("field_of"), options.get("kinds")
+        if field_of is not None and not isinstance(field_of, str):
+            found.append("field_of names the field holding a list view's name.")
+        if kinds is not None and (
+            field_of is None
+            or not isinstance(kinds, list)
+            or not all(isinstance(k, str) for k in kinds)  # pyright: ignore[reportUnknownVariableType]
+        ):
+            found.append("kinds lists the kinds of fields offered (number, date …), with field_of.")
         length = options.get("max_length")
         if not isinstance(length, int) or isinstance(length, bool) or not 1 <= length <= MAX_LENGTH:
             found.append(f"max_length must be a whole number from 1 to {MAX_LENGTH}.")
@@ -38,5 +47,19 @@ class StringType(FieldType):
 TYPE = StringType()
 
 
-def String(label: str, *, max_length: int = 255, **common: Unpack[Common]) -> Field:
-    return declare("string", label, {"max_length": max_length}, common)
+def String(
+    label: str,
+    *,
+    max_length: int = 255,
+    field_of: str | None = None,
+    kinds: tuple[str, ...] | None = None,
+    **common: Unpack[Common],
+) -> Field:
+    """`field_of`: the value names a field of the table whose list view the record's field of
+    that name gives (a widget's measured field); forms offer those fields, `kinds` only some."""
+    options: dict[str, Any] = {"max_length": max_length}
+    if field_of is not None:
+        options["field_of"] = field_of
+        if kinds is not None:
+            options["kinds"] = list(kinds)
+    return declare("string", label, options, common)
