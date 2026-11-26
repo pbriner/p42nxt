@@ -58,7 +58,9 @@ when, and what it said.
 **Devices in your own network** (smart plugs, a router, a hypervisor): a connection type marked
 `local` reaches nothing on the internet and only the ranges an administrator names on the
 connection (**Local ranges**, like `192.168.1.0/24`: inside a network, at most a /16), by
-address, over http or https. It's the one exception to the safe client's rule, explicit on the
+address, over http or https. Ranges that reach the installation's own machine or the cloud's
+metadata address are refused (loopback, `0.0.0.0/8`, link-local, and IPv6 ranges that wrap
+IPv4 addresses), and each request is checked again. It's the one exception to the safe client's rule, explicit on the
 connection and in the audit log. A device with its own certificate (a UniFi console, Proxmox)
 can have it pasted (**Its own certificate**): only that one is trusted.
 

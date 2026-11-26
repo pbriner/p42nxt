@@ -287,6 +287,25 @@ async def _replace(client: Client, zone: dict[str, Any], records: list[dict[str,
     return len(records)
 
 
+def dns_server(given: Any) -> str:
+    """A DNS server to transfer zones from: an address in your own network, not this machine
+    itself or its network links."""
+    try:
+        ip = ipaddress.ip_address(str(given or "").strip())
+    except ValueError:
+        raise _invalid("server", "The DNS server's IP address, like 192.168.1.1.") from None
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
+    if not ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_unspecified:
+        raise _invalid("server", "A DNS server in your own network, like 192.168.1.1.")
+    return str(ip)
+
+
+async def _check_zone(change: Change) -> None:
+    if change.values.get("server"):
+        change.values["server"] = dns_server(change.values["server"])
+
+
 def _transfer(server: str, name: str) -> list[dict[str, Any]]:
     zone = dns.zone.from_xfr(dns.query.xfr(server, name, lifetime=20))
     found: list[dict[str, Any]] = []
@@ -316,11 +335,9 @@ async def read_zones(run: JobRun) -> str:
     ):
         records: list[dict[str, Any]] = []
         if zone["kept_by"] == "axfr":
-            server = str(zone.get("server") or "")
             try:
-                if not ipaddress.ip_address(server).is_private:
-                    raise ValueError(server)
-            except ValueError as error:
+                server = dns_server(zone.get("server"))
+            except Problem as error:
                 raise Problem(
                     409, "bad_server", f"{zone['name']}: a DNS server in your network."
                 ) from error
@@ -362,7 +379,7 @@ module = Module(
     name="IPAM",
     publisher="p42",
     version=package_version("p42cloud-ipam"),
-    depends_on={"sys": ">=0.52,<1", "places": ">=0.1,<1", "cmdb": ">=0.1,<1"},
+    depends_on={"sys": ">=0.52.1,<1", "places": ">=0.1,<1", "cmdb": ">=0.1,<1"},
     tables=TABLES,
     roles=(
         Role(
@@ -384,6 +401,7 @@ module = Module(
         TableHook("ipam.subnet", before=_check_subnet),
         TableHook("ipam.address", before=_check_address),
         TableHook("ipam.dns_record", before=_link_record),
+        TableHook("ipam.dns_zone", before=_check_zone),
     ),
     connection_types=(
         ConnectionType(

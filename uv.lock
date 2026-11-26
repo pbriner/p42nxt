@@ -581,12 +581,13 @@ wheels = [
 
 [[package]]
 name = "p42cloud"
-version = "0.52.0"
+version = "0.52.1"
 source = { editable = "backend" }
 dependencies = [
     { name = "argon2-cffi" },
     { name = "asyncpg" },
     { name = "cryptography" },
+    { name = "dnspython" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "packaging" },
@@ -612,6 +613,7 @@ requires-dist = [
     { name = "argon2-cffi", specifier = ">=25.1.0" },
     { name = "asyncpg", specifier = ">=0.30" },
     { name = "cryptography", specifier = ">=50.0.2" },
+    { name = "dnspython", specifier = ">=2.9" },
     { name = "fastapi", specifier = ">=0.162.7" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "packaging", specifier = ">=26.3" },
@@ -657,7 +659,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-cmdb"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "modules/cmdb" }
 dependencies = [
     { name = "cryptography" },
@@ -780,7 +782,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-ipam"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "modules/ipam" }
 dependencies = [
     { name = "dnspython" },

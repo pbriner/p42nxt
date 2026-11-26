@@ -7,6 +7,7 @@ documentation, and its record with the version. A module is never downgraded.
 """
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -18,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from p42cloud.data import settings
 from p42cloud.data.catalog import load_catalog
-from p42cloud.data.hooks import HOOKS
+from p42cloud.data.hooks import EVERY_TABLE, HOOKS, Change, Hook, TableHook
 from p42cloud.data.metadata import declare
 from p42cloud.data.upgrade import upgrade
 from p42cloud.kernel.db import ensure_module_role, owner_transaction
@@ -126,10 +127,41 @@ def _move_buttons(flows: tuple[Flow, ...]) -> tuple[UIAction, ...]:
     return tuple(buttons)
 
 
+log = logging.getLogger("p42cloud.modules")
+_CONTAINED: dict[Hook, Hook] = {}
+
+
+def _contained(module_id: str, hook: Hook) -> Hook:
+    """A module's hook on every table follows changes and never stops one: what it does runs
+    in a savepoint, and when it fails that is undone and logged while the change goes on."""
+    if hook not in _CONTAINED:
+
+        async def run(change: Change) -> None:
+            try:
+                async with change.records.conn.begin_nested():
+                    await hook(change)
+            except Exception:
+                log.exception("%s: hook on every table failed (%s)", module_id, change.table.key)
+
+        _CONTAINED[hook] = run
+    return _CONTAINED[hook]
+
+
+def _hooks(module: Module) -> tuple[TableHook, ...]:
+    if module.id == CORE:
+        return module.hooks
+    return tuple(
+        TableHook(h.table, after=_contained(module.id, h.after))
+        if h.table == EVERY_TABLE and h.after is not None
+        else h
+        for h in module.hooks
+    )
+
+
 def compose(modules: list[Module]) -> None:
     """Connects the modules' hooks; every process does it once at start."""
     for module in modules:
-        HOOKS.add(*module.hooks)
+        HOOKS.add(*_hooks(module))
         register_actions(module.id, module.actions)
         register_jobs(module.id, module.jobs)
         register_types(module.id, module.connection_types)
@@ -336,7 +368,7 @@ async def install_modules(
     compose(ordered)
     protected = _core_dependencies(ordered)
     done: list[str] = []
-    upgraded = False
+    changed = False
     for module in ordered:
         state = known.get(module.id)
         before = state.version if state is not None else None
@@ -395,18 +427,19 @@ async def install_modules(
                 await switch(conn, module.id, on=False)  # new tables and roles stay off too
         if before != module.parsed_version or (state is not None and state.removed):
             done.append(f"{module.id} {before or 'new'} → {module.version}")
-            upgraded = upgraded or before is not None
-    await _finish(engine, upgraded=upgraded)
+            changed = True
+    await _finish(engine, changed=changed)
     return done
 
 
-async def _finish(engine: AsyncEngine, *, upgraded: bool) -> None:
+async def _finish(engine: AsyncEngine, *, changed: bool) -> None:
     """The modules wrote their texts in English: the translations in force go back on. After
-    an update, the update check runs soon."""
+    a module is installed or updated, the update check runs soon: a module waiting for it may
+    fit now."""
     async with owner_transaction(engine) as conn:
         await languages.seed(conn)
         await languages.apply(conn, await load_catalog(conn))
-        if upgraded:
+        if changed:
             await check_updates_soon(conn)
 
 

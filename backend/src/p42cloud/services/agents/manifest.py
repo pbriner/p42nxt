@@ -1,10 +1,12 @@
 """What agents add to the core: their tables, events and the job marking quiet ones."""
 
+from p42cloud.data.hooks import TableHook
 from p42cloud.services.agents import models, service
 from p42cloud.services.events.models import EventType
 from p42cloud.services.jobs.models import Job, JobRun, Schedule
 
 TABLES = models.TABLES
+HOOKS = (TableHook("sys.agent", after=service.follow_active),)
 EVENTS = (
     EventType("agent_enrolled", "An agent is enrolled", about="sys.agent"),
     EventType("agent_quiet", "An agent goes quiet", about="sys.agent"),

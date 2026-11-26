@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1
+
+Security fixes.
+
+- A Shelly device's address is an IP address in your own network or a host name, nothing more:
+  no port, path or user, and not this machine or the cloud's metadata address.
+- CMDB operators switch Shelly devices but can't change their address or agent.
+- Agents' answers can be read by CMDB managers only, no longer by every CMDB reader.
+- Needs core 0.52.1, with its security fixes.
+
 ## 0.1.0
 
 - Configuration items in 24 classes (hardware, virtual, containers, data, software,

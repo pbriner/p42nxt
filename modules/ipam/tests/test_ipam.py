@@ -44,3 +44,18 @@ async def test_subnets_addresses_and_the_next_free_one(as_system: Acting) -> Non
             {"zone": zone["sys_id"], "name": "nas", "type": "a", "value": f"{base}.2"},
         )
     assert str(record["address"]) == str(address["sys_id"])
+
+
+async def test_zones_are_read_only_from_servers_in_your_network(as_system: Acting) -> None:
+    async with as_system() as client:
+        for bad in ("127.0.0.1", "169.254.169.254", "8.8.8.8", "::ffff:127.0.0.1", "ns1"):
+            with pytest.raises(Problem):
+                await client.create(
+                    "ipam.dns_zone",
+                    {"name": f"z{uuid.uuid4().hex[:6]}.lan", "kept_by": "axfr", "server": bad},
+                )
+        made = await client.create(
+            "ipam.dns_zone",
+            {"name": f"z{uuid.uuid4().hex[:6]}.lan", "kept_by": "axfr", "server": "192.168.1.1"},
+        )
+    assert made["server"] == "192.168.1.1"

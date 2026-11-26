@@ -12,7 +12,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from p42cloud.kernel.context import EVERYTHING, Context, working_as
 from p42cloud.kernel.db import transaction
@@ -25,6 +25,7 @@ from p42cloud.web.services import Services
 
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 Who = Annotated[Caller, Depends(who)]
+MAX_REPORT = 256_000
 
 
 class CodeBody(BaseModel):
@@ -76,12 +77,35 @@ async def agent_tasks(request: Request, caller: Who, version: str | None = None)
         return {"tasks": await tasks_for(records.conn, caller.person, version, address(request))}
 
 
-@router.post("/tasks/{task}")
+async def _report_body(request: Request) -> ReportBody:
+    """Read in pieces and stopped at the limit: an answer is small, whatever is sent."""
+    declared = request.headers.get("content-length")
+    if declared is not None and (not declared.isdigit() or int(declared) > MAX_REPORT):
+        raise Problem(413, "too_large", "The answer is too large.")
+    raw = bytearray()
+    async for chunk in request.stream():
+        raw += chunk
+        if len(raw) > MAX_REPORT:
+            raise Problem(413, "too_large", "The answer is too large.")
+    try:
+        return ReportBody.model_validate_json(bytes(raw) or b"{}")
+    except ValidationError as error:
+        raise Problem(422, "validation", "The answer isn't valid.") from error
+
+
+@router.post(
+    "/tasks/{task}",
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {"application/json": {"schema": ReportBody.model_json_schema()}},
+        }
+    },
+)
 @requires(SIGNED_IN)
-async def agent_report(
-    task: UUID, body: ReportBody, request: Request, caller: Who
-) -> dict[str, Any]:
-    """The agent's answer to one of its running tasks."""
+async def agent_report(task: UUID, request: Request, caller: Who) -> dict[str, Any]:
+    """The agent's answer to one of its running tasks (at most 256 kB)."""
+    body = await _report_body(request)
     services: Services = request.app.state.services
     async with services.records(caller.context(language(request))) as records:
         await report(records.conn, caller.person, task, body.ok, body.result)

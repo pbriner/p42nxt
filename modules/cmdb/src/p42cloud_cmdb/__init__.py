@@ -148,9 +148,8 @@ READER = Role(
         *(Grant(t, ("read",)) for t in OWN_TABLES),
         Grant("cmdb.relation_type", ("read",)),
         Grant("cmdb.ci_class", ("read",)),
-        # The core's agents, to show them as items and read their answers.
+        # The core's agents, to show them as items (their answers stay with managers).
         Grant("sys.agent", ("read",)),
-        Grant("sys.agent_task", ("read",)),
     ),
     includes=("places.reader", "partners.reader"),
     description="Sees every configuration item, relationship and map.",
@@ -165,14 +164,19 @@ EDITOR = Role(
 OPERATOR = Role(
     "cmdb.operator",
     "CMDB operator",
-    grants=(Grant("cmdb.shelly_device", ("read", "write")),),
+    # Switching only: where a device is and who reaches it stay with editors.
+    grants=(Grant("cmdb.shelly_device", ("write",), fields=("notes",)),),
     includes=("cmdb.reader",),
     description="Switches Shelly devices on and off.",
 )
 MANAGER = Role(
     "cmdb.manager",
     "CMDB manager",
-    grants=(Grant("cmdb.relation_type", ALL), Grant("cmdb.ci_class", ALL)),
+    grants=(
+        Grant("cmdb.relation_type", ALL),
+        Grant("cmdb.ci_class", ALL),
+        Grant("sys.agent_task", ("read",)),
+    ),
     includes=("cmdb.editor", "cmdb.operator"),
     description="Everything, including relation types and classes of one's own.",
 )
@@ -407,7 +411,7 @@ module = Module(
     name="CMDB",
     publisher="p42",
     version=package_version("p42cloud-cmdb"),
-    depends_on={"sys": ">=0.52,<1", "places": ">=0.1,<1", "partners": ">=0.1,<1"},
+    depends_on={"sys": ">=0.52.1,<1", "places": ">=0.1,<1", "partners": ">=0.1,<1"},
     tables=TABLES,
     roles=(READER, EDITOR, OPERATOR, MANAGER),
     hooks=(
@@ -418,6 +422,7 @@ module = Module(
         TableHook("cmdb.relation_type", before=check_type),
         TableHook("cmdb.relationship", before=check_relationship),
         TableHook("cmdb.certificate", before=discovery.read_certificate),
+        TableHook("cmdb.shelly_device", before=discovery.check_address),
         TableHook("cmdb.cable", before=network.check_cable),
     ),
     seed=seed,

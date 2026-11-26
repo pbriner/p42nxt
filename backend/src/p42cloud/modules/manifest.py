@@ -204,7 +204,10 @@ class Module:
             # Every table (EVERY_TABLE): the core, or a module only after a change (it follows
             # what happened, as the CMDB indexes administrators' tables; it never refuses one).
             if not h.table.startswith(f"{self.id}.")
-            and not (h.table == EVERY_TABLE and (self.id == CORE or h.before is None))
+            and not (
+                h.table == EVERY_TABLE
+                and (self.id == CORE or (h.before is None and h.fill is None))
+            )
         ]
         for migration in self.migrations:
             try:

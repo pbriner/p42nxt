@@ -1,6 +1,6 @@
 [project]
 name = "p42cloud"
-version = "0.52.0"
+version = "0.52.1"
 description = "P42cloud platform: a business platform for small companies"
 requires-python = ">=3.14"
 license = "Apache-2.0"
@@ -18,6 +18,8 @@ dependencies = [
     "fastapi>=0.162.7",
     "uvicorn>=0.54.0",
     "xlsxwriter>=3.2",
+    # For modules: they bring no libraries of their own (IPAM reads DNS zones with it).
+    "dnspython>=2.9",
 ]
 
 [project.scripts]

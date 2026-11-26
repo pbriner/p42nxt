@@ -31,7 +31,7 @@ from p42cloud.data.records import Records
 from p42cloud.kernel.context import current
 from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import FieldError, Problem
-from p42cloud.kernel.outgoing import host_allowed, safe_client, within
+from p42cloud.kernel.outgoing import host_allowed, never_local, safe_client, within
 from p42cloud.kernel.secrets import SealError, process_sealer
 from p42cloud.services.connections.models import AUTHS, ConnectionType
 
@@ -209,10 +209,10 @@ def _check_local(change: Change) -> None:
             net = ipaddress.ip_network(str(given).strip(), strict=False)
         except ValueError as error:
             raise _invalid("local_ranges", f"Not a range: {given}.") from error
-        if not net.is_private or net.is_loopback or net.prefixlen < MIN_PREFIX[net.version]:
+        if never_local(net) or net.prefixlen < MIN_PREFIX[net.version]:
             raise _invalid(
                 "local_ranges",
-                f"{net}: a range inside your network, at most a /16 (no loopback).",
+                f"{net}: a range inside your network, at most a /16 (not this machine itself).",
             )
         checked.append(str(net))
     change.values["local_ranges"] = checked

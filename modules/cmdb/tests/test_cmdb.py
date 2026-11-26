@@ -237,3 +237,36 @@ def test_a_shellys_state_is_read_from_both_generations() -> None:
         "temperature": 40,
     }
     assert _shelly_state(gen1)["switched_on"] is False
+
+
+async def _person(client: Client, role: str) -> str:
+    found = await client.list("sys.role", where={"field": "name", "op": "eq", "value": role})
+    group = await client.create("sys.group", {"name": f"{role} {_tag()}"})
+    await client.create(
+        "sys.group_role", {"group": group["sys_id"], "role": found["records"][0]["sys_id"]}
+    )
+    person = await client.create("sys.person", {"name": f"{role} {_tag()}"})
+    await client.create("sys.membership", {"group": group["sys_id"], "person": person["sys_id"]})
+    return str(person["sys_id"])
+
+
+async def test_a_shelly_is_reached_by_its_address_only(
+    as_system: Acting, as_person: Acting
+) -> None:
+    async with as_system() as client:
+        for bad in ("10.0.0.5:8080/secret?x=", "169.254.169.254", "127.0.0.1", "8.8.8.8"):
+            with pytest.raises(Problem):
+                await client.create("cmdb.shelly_device", {"name": "plug", "address": bad})
+        plug = await client.create(
+            "cmdb.shelly_device", {"name": f"plug {_tag()}", "address": " 192.168.1.40 "}
+        )
+        assert plug["address"] == "192.168.1.40"
+        operator = await _person(client, "cmdb.operator")
+    async with as_person(operator) as client:
+        current = await client.get("cmdb.shelly_device", plug["sys_id"])
+        with pytest.raises(Problem):  # switching, not moving it elsewhere
+            await client.update(
+                "cmdb.shelly_device", plug["sys_id"], {"address": "192.168.1.41"}, current["_etag"]
+            )
+        with pytest.raises(Problem):  # agents' answers are for managers
+            await client.list("sys.agent_task")

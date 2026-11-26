@@ -34,10 +34,10 @@ Core dependency: no
 
 | Role | Can |
 |---|---|
-| `cmdb.reader` | Read everything; includes Places and Partners readers |
+| `cmdb.reader` | Read everything (not agents' answers); includes Places and Partners readers |
 | `cmdb.editor` | Change CIs, relationships, interfaces, ports, cables, the review list |
-| `cmdb.operator` | Switch Shelly devices |
-| `cmdb.manager` | Everything, including relation types and classes |
+| `cmdb.operator` | Switch Shelly devices (not change their address or agent) |
+| `cmdb.manager` | Everything, including relation types, classes and agents' answers |
 
 ## Views, navigation and dashboards
 
@@ -58,6 +58,9 @@ CMDB settings. Dashboard `cmdb`: the map of a chosen item, items by class, certi
 Events: `cmdb.device_down`, `cmdb.device_recovered`, `cmdb.certificate_expiring`,
 `cmdb.certificate_expired`, `cmdb.review_waiting`. Listens for the core's agent events (agents
 become items) and `sys.agent_task_done`.
+
+A Shelly device's address is an IP address in your own network or a host name, nothing more
+(no port, path or user, not this machine or the cloud's metadata address).
 
 ## API
 

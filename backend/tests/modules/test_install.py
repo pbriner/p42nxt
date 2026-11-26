@@ -3,16 +3,18 @@ documentation and record; never downgraded."""
 
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from dataclasses import replace
 from importlib.metadata import version
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from p42cloud.data.declarations import Table
-from p42cloud.data.hooks import Change, TableHook
+from p42cloud.data.hooks import EVERY_TABLE, Change, TableHook
 from p42cloud.data.types.string import String
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
@@ -20,7 +22,7 @@ from p42cloud.kernel.db import create_engine, owner_transaction
 from p42cloud.kernel.errors import Problem
 from p42cloud.kernel.safety import problems
 from p42cloud.modules.core import CORE
-from p42cloud.modules.install import install_modules
+from p42cloud.modules.install import _hooks, install_modules  # pyright: ignore[reportPrivateUsage]
 from p42cloud.modules.manifest import Module
 from p42cloud.modules.registry import discover
 from p42cloud.security.access.manifest import ADMINISTRATORS
@@ -167,6 +169,8 @@ async def test_the_owner_makes_a_new_modules_role(
         ({"depends_on": {}}, "needs_core"),
         ({"version": "one"}, "bad_version"),
         ({"hooks": (TableHook("sys.person", before=_refuse_names),)}, "not_its_table"),
+        ({"hooks": (TableHook(EVERY_TABLE, before=_refuse_names),)}, "not_its_table"),
+        ({"hooks": (TableHook(EVERY_TABLE, fill=_refuse_names),)}, "not_its_table"),
     ],
 )
 async def test_modules_are_checked_before_anything_changes(
@@ -286,7 +290,7 @@ async def test_a_module_from_before_publishers_keeps_loading_and_takes_one_later
     assert "only by its own publisher" in taken.value.title
 
 
-async def test_an_update_checks_for_updates_again_soon(
+async def test_an_install_or_update_checks_for_updates_again_soon(
     owner: AsyncEngine,
     app: AsyncEngine,
     new_module: Callable[[], Awaitable[str]],
@@ -313,7 +317,7 @@ async def test_an_update_checks_for_updates_again_soon(
 
     await queued()  # earlier tests' runs out of the way
     await _install(owner, _module(module_id, docs))
-    assert await queued() == 0  # a new module: nothing installed changed
+    assert await queued() == 1  # a new module: one waiting for it may fit now
     await _install(owner, _module(module_id, docs, version="1.0.1"))
     await _install(owner, _module(module_id, docs, version="1.0.2"))
     assert await queued() == 1  # once, however many updates came before the worker
@@ -382,3 +386,23 @@ async def test_a_modules_roles_are_given_to_administrators_with_one_button(
     assert "Administrators hold its roles now (1)" in str(said)
     assert "hold all its roles already" in str(again)
     assert held == 1
+
+
+async def test_a_modules_hook_on_every_table_never_stops_a_change(tmp_path: Path) -> None:
+    async def fails(change: Change) -> None:
+        raise Problem(422, "nope", "A module refusing everything.")
+
+    class _Conn:
+        @asynccontextmanager
+        async def begin_nested(self) -> AsyncGenerator[None]:
+            yield
+
+    module = _module(
+        f"h{uuid.uuid4().hex[:8]}", tmp_path, hooks=(TableHook(EVERY_TABLE, after=fails),)
+    )
+    hook = _hooks(module)[0].after
+    assert hook is not None and hook is not fails
+    change = SimpleNamespace(
+        records=SimpleNamespace(conn=_Conn()), table=SimpleNamespace(key="x.y")
+    )
+    await hook(change)  # type: ignore[arg-type]  # logged, not raised
