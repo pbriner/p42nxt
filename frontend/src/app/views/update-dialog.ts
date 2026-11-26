@@ -122,11 +122,13 @@ export class UpdateDialog {
   protected readonly i18n = inject(I18n);
   protected readonly data = inject<UpdateRequest>(MAT_DIALOG_DATA);
   private readonly ref = inject(MatDialogRef<UpdateDialog, Update>);
-  /** Fields the person may change, of types simple enough to set here. */
+  /** Fields the person may change, of types simple enough to set here; never one the form
+   *  shows read-only (set by the platform or a module's buttons, which do the work). */
   protected readonly fields = this.data.fields.filter(
     (f) =>
       f.write &&
       !f.system &&
+      !f.options['read_only'] &&
       (PLAIN.has(f.type) || ['choice', 'boolean', 'reference'].includes(f.kind ?? '')),
   );
   protected readonly field = signal<FieldInfo | null>(null);

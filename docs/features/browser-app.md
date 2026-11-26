@@ -57,7 +57,8 @@ administrator, modules, safety; then the administrator sets up their second fact
     link. Right-click a header: sort, filter on it, hide it. With `Ctrl`, `⌘` or `Shift` the
     browser's own menu opens instead.
   - **Choosing records** (for those who may change them): "Update selected" sets one field on
-    each, checked and recorded record by record, and says which weren't changed.
+    each, checked and recorded record by record, and says which weren't changed. It offers only
+    fields the person may change and the form doesn't show read-only.
   - **Deleting** asks first and can be undone from the message that follows.
   - Choices that stand out (`tables.md`, tones) show in colour; a value the person may not see
     shows as "(no access)".

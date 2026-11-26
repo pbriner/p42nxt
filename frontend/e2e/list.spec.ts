@@ -116,6 +116,21 @@ test('update selected changes each chosen record', async ({ page }, info) => {
   await expect(page.getByRole('cell', { name: 'No', exact: true })).toHaveCount(2);
 });
 
+test('update selected never offers a read-only field', async ({ page }, info) => {
+  test.skip(cardsShown(info), 'choosing records happens in the table');
+  const name = `Bulk ${info.project.name}${Date.now() % 100000}`;
+  const client = await api(page);
+  await client.post('/api/v1/sys/connection', { type: 'dca.kraken', label: name });
+  await page.goto(`/list/sys.connection?q=${encodeURIComponent(name)}`);
+  await page.getByRole('checkbox', { name: 'Select all on this page' }).check();
+  await page.getByRole('button', { name: 'Update selected' }).click();
+  const dialog = await opened(page);
+  await dialog.getByRole('combobox', { name: 'Field' }).click();
+  await expect(page.getByRole('option', { name: 'Name', exact: true })).toBeVisible();
+  // Whether it works comes from its check, never typed: read-only in the form, and here too.
+  await expect(page.getByRole('option', { name: 'Works', exact: true })).toHaveCount(0);
+});
+
 test('deleting asks first, and can be undone', async ({ page }, info) => {
   const name = `Gone ${info.project.name} ${Date.now() % 100000}`;
   const client = await api(page);
