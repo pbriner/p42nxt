@@ -26,3 +26,25 @@ test('a connection: its type picked by name, then its keys asked for', async ({ 
   await expect(page.getByText('API key saved, encrypted.')).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Works' })).toHaveCount(0); // shown, not edited
 });
+
+test.describe('as an administrator', () => {
+  test.use({ storageState: storage('admin') });
+
+  test('a local connection takes its ranges one per line, no JSON', async ({ page }, info) => {
+    test.skip(info.project.name !== 'desktop', 'one per installation: once is enough');
+    await page.goto('/form/sys.connection/new');
+    const type = page.getByRole('combobox', { name: 'Type' });
+    await type.fill('Shelly');
+    await page.getByRole('option', { name: 'Shelly devices' }).first().click();
+    await page.getByRole('textbox', { name: 'Name' }).fill('Shellys');
+    const ranges = page.getByRole('textbox', { name: 'Local ranges' });
+    await ranges.fill('192.168.1.0/24\n10.0.5.0/24');
+    await expect(page.getByText('Not valid JSON')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Create' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Connection Shellys' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Local ranges' })).toHaveValue(
+      '192.168.1.0/24\n10.0.5.0/24',
+    );
+  });
+});

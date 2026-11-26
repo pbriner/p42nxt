@@ -31,7 +31,14 @@ from p42cloud.data.records import Records
 from p42cloud.kernel.context import current
 from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import FieldError, Problem
-from p42cloud.kernel.outgoing import host_allowed, never_local, safe_client, within
+from p42cloud.kernel.outgoing import (
+    host_allowed,
+    is_name,
+    never_local,
+    pinned_context,
+    safe_client,
+    within,
+)
 from p42cloud.kernel.secrets import SealError, process_sealer
 from p42cloud.services.connections.models import AUTHS, ConnectionType
 
@@ -157,17 +164,17 @@ async def _check_connection(change: Change) -> None:
             text("SELECT type FROM sys.connection WHERE sys_id = :id"), {"id": change.sys_id}
         )
         _, kind = _type(found)
-    _check_where(change, kind)
+    await _check_where(change, kind)
     if {"health", "checked", "health_message"} & set(
         change.values
     ) and change.operation != "create":
         raise _invalid("health", "A connection's health comes from its check.")
 
 
-def _check_where(change: Change, kind: ConnectionType) -> None:
+async def _check_where(change: Change, kind: ConnectionType) -> None:
     """Where it may reach: a local type's ranges, else an https address on the type's hosts."""
     if kind.local:
-        _check_local(change)
+        await _check_local(change)
         return
     if change.values.get("local_ranges") or change.values.get("trusted_certificate"):
         raise _invalid(
@@ -180,51 +187,82 @@ def _check_where(change: Change, kind: ConnectionType) -> None:
 
 
 def _pinned(pem: str) -> ssl.SSLContext:
-    """Trusts this one certificate only (a device's own), reached by its address."""
+    """Trusts this one certificate only (a device's own), whatever name it's reached by."""
     try:
-        context = ssl.create_default_context(cadata=pem)
+        return pinned_context(pem)
     except ssl.SSLError as error:
         raise Problem(
             409, "bad_certificate", "The connection's certificate can't be read."
         ) from error
-    context.check_hostname = False
-    return context
 
 
 MIN_PREFIX = {4: 16, 6: 48}  # no wider than a /16 (IPv4) or a /48 (IPv6)
 
 
-def _check_local(change: Change) -> None:
-    """A local connection's ranges: inside a network, not too wide, its address within them.
-    It's the one way past the safe client's rule, so it's checked strictly (and audited, as a
-    record)."""
+async def _check_local(change: Change) -> None:
+    """A local connection's ranges: inside a network, not too wide; its address one of them, or
+    a host name (looked up and checked on every request). It's the one way past the safe
+    client's rule, so it's checked strictly (and audited, as a record)."""
     ranges = change.values.get("local_ranges")
-    if ranges is None and change.operation != "create":
+    if ranges is not None or change.operation == "create":
+        change.values["local_ranges"] = _ranges(ranges)
+    pem = change.values.get("trusted_certificate")
+    if pem:
+        try:
+            pinned_context(str(pem))
+        except ssl.SSLError as error:
+            raise _invalid("trusted_certificate", "Not a certificate (PEM).") from error
+    if "base_url" not in change.values and ranges is None:
         return
-    if not isinstance(ranges, list) or not ranges:
+    url = change.values.get("base_url")
+    if "base_url" not in change.values and change.operation != "create":
+        url = await change.records.conn.scalar(
+            text("SELECT base_url FROM sys.connection WHERE sys_id = :id"), {"id": change.sys_id}
+        )
+    checked = change.values.get("local_ranges")
+    if checked is None:
+        stored = await change.records.conn.scalar(
+            text("SELECT local_ranges FROM sys.connection WHERE sys_id = :id"),
+            {"id": change.sys_id},
+        )
+        checked = list(stored or [])
+    _check_address(str(url) if url else None, cast(list[str], checked))
+
+
+def _ranges(given: Any) -> list[str]:
+    """The ranges as typed (a list, or text with one per line or comma-separated), checked."""
+    if isinstance(given, str):
+        given = [r for r in re.split(r"[\s,;]+", given) if r]
+    if not isinstance(given, list) or not given:
         raise _invalid("local_ranges", "Name the ranges it may reach, like 192.168.1.0/24.")
     checked: list[str] = []
-    for given in cast(list[Any], ranges):
+    for item in cast(list[Any], given):
         try:
-            net = ipaddress.ip_network(str(given).strip(), strict=False)
+            net = ipaddress.ip_network(str(item).strip(), strict=False)
         except ValueError as error:
-            raise _invalid("local_ranges", f"Not a range: {given}.") from error
+            raise _invalid("local_ranges", f"Not a range: {item}.") from error
         if never_local(net) or net.prefixlen < MIN_PREFIX[net.version]:
             raise _invalid(
                 "local_ranges",
                 f"{net}: a range inside your network, at most a /16 (not this machine itself).",
             )
         checked.append(str(net))
-    change.values["local_ranges"] = checked
-    pem = change.values.get("trusted_certificate")
-    if pem:
-        try:
-            ssl.create_default_context(cadata=str(pem))
-        except ssl.SSLError as error:
-            raise _invalid("trusted_certificate", "Not a certificate (PEM).") from error
-    url = change.values.get("base_url")
-    host = urlsplit(str(url)).hostname if url else None
-    if host is not None and not within(host, checked):
+    return checked
+
+
+def _check_address(url: str | None, ranges: list[str]) -> None:
+    """An http(s) address: an IP address in one of the ranges, or a host name."""
+    if url is None:
+        return
+    parts = urlsplit(url)
+    host = parts.hostname
+    if parts.scheme not in ("http", "https") or not host:
+        raise _invalid("base_url", "An http or https address.")
+    if parts.username or parts.password:
+        raise _invalid("base_url", "No user or password in the address; use the keys.")
+    if is_name(host):
+        return
+    if not within(host, ranges):
         raise _invalid("base_url", "The address is in one of its local ranges.")
 
 

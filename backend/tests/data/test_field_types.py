@@ -78,6 +78,9 @@ def test_every_type_is_found_by_name() -> None:
             uuid.UUID("01900000-0000-7000-8000-000000000001"),
         ),
         ("json", {}, {"a": [1, 2]}, {"a": [1, 2]}),
+        ("json", {"lines": True}, [" 192.168.1.0/24 ", ""], ["192.168.1.0/24"]),
+        ("json", {"lines": True}, "a\nb, c;d", ["a", "b", "c", "d"]),
+        ("json", {"lines": True}, "\n ,", None),
         ("text", {}, None, None),
     ],
 )
@@ -109,6 +112,8 @@ def test_values_are_checked_and_stored_in_their_form(
         ("choice", {"values": [{"value": "new", "label": {"en": "New"}}]}, "old"),
         ("reference", {"table": "sys.table"}, "not an id"),
         ("json", {}, float("nan")),
+        ("json", {"lines": True}, {"a": 1}),
+        ("json", {"lines": True}, ["a", 2]),
     ],
 )
 def test_wrong_values_are_refused(type_name: str, options: dict[str, Any], given: Any) -> None:
@@ -171,3 +176,13 @@ def test_changes_that_keep_every_value(old: Field, new: Field, keeps: bool) -> N
 )
 def test_the_engine_widens_columns_only(old: str, new: str, fits: bool) -> None:
     assert widens(old, new) is fits
+
+
+def test_a_json_field_can_become_lines_and_back() -> None:
+    plain = Field("json", {"en": "Ranges"})
+    lines = Field("json", {"en": "Ranges"}, {"lines": True})
+    kind = FIELD_TYPES["json"]
+    assert kind.keeps_values(plain, lines)
+    assert kind.keeps_values(lines, plain)
+    assert kind.option_problems({"lines": True}) == []
+    assert kind.option_problems({"lines": "yes"}) == ["lines is true or false."]

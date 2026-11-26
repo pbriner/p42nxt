@@ -314,6 +314,7 @@ NAVIGATION = (
     Section(
         "CMDB",
         (
+            Item("dashboard", "Dashboard", kind="page", path="/dashboard/cmdb", icon="dashboard"),
             Item("all", "All items", "cmdb.ci", icon="inventory_2"),
             Item("relationships", "Relationships", "cmdb.relationship", icon="hub"),
             Item(

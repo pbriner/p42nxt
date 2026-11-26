@@ -57,12 +57,22 @@ when, and what it said.
 
 **Devices in your own network** (smart plugs, a router, a hypervisor): a connection type marked
 `local` reaches nothing on the internet and only the ranges an administrator names on the
-connection (**Local ranges**, like `192.168.1.0/24`: inside a network, at most a /16), by
-address, over http or https. Ranges that reach the installation's own machine or the cloud's
+connection (**Local ranges**, one per line, like `192.168.1.0/24`: inside a network, at most a
+/16), over http or https. Ranges that reach the installation's own machine or the cloud's
 metadata address are refused (loopback, `0.0.0.0/8`, link-local, and IPv6 ranges that wrap
-IPv4 addresses), and each request is checked again. It's the one exception to the safe client's rule, explicit on the
-connection and in the audit log. A device with its own certificate (a UniFi console, Proxmox)
-can have it pasted (**Its own certificate**): only that one is trusted.
+IPv4 addresses), and each request is checked again. It's the one exception to the safe client's
+rule, explicit on the connection and in the audit log.
+
+Its **address** is an IP address in one of its ranges, or a host name (like
+`https://console.home.example.net`, behind your own reverse proxy). A name is looked up on every
+request; every address it has must be in the ranges, else the request is refused, and the
+request goes to the address just checked, so the name can't point elsewhere in between. The
+certificate is then checked against the name as usual. No user or password goes in the address.
+
+A device with its own certificate (a UniFi console, Proxmox) can have it pasted (**Its own
+certificate**): only that one is trusted, whatever name or address it's reached by. Certificates
+devices make themselves are often loose (one that may sign certificates without saying it's an
+authority); they're accepted when pasted, since nothing else is trusted.
 
 A secret may have an **Expires** date (when the outside system stops taking it). The daily job
 **Remind owners of expiring secrets** tells the connection's owner two weeks before and again

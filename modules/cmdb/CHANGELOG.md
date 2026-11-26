@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2
+
+- A **Dashboard** entry in the menu (the dashboard with the map was there, but hard to find).
+- The UniFi connection type is called "UniFi console: devices for the CMDB", so it isn't
+  mixed up with IPAM's.
+- Scans write "last seen" again only after 10 minutes unless something else changed, and Shelly
+  readings only when they change: far fewer entries in the audit trail. A Shelly device is
+  marked down once it surely hasn't answered for 15 minutes (at most 25).
+
 ## 0.1.1
 
 Security fixes.

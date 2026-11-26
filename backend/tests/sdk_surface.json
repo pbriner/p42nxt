@@ -1235,6 +1235,11 @@
     "required": true
    },
    {
+    "kind": "KEYWORD_ONLY",
+    "name": "lines",
+    "required": false
+   },
+   {
     "kind": "VAR_KEYWORD",
     "name": "common",
     "required": false

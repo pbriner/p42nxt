@@ -406,7 +406,7 @@ module = Module(
     connection_types=(
         ConnectionType(
             "unifi",
-            "UniFi console (DNS)",
+            "UniFi console: DNS records for IPAM",
             (),
             auth="api_key",
             secrets=("key",),
@@ -486,6 +486,9 @@ module = Module(
         Section(
             "IPAM",
             (
+                Item(
+                    "dashboard", "Dashboard", kind="page", path="/dashboard/ipam", icon="dashboard"
+                ),
                 Item("subnets", "Subnets", "ipam.subnet", icon="lan"),
                 Item("addresses", "IP addresses", "ipam.address", icon="pin"),
                 Item("vlans", "VLANs", "ipam.vlan", icon="segment"),

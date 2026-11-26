@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from p42cloud.data.catalog import load_catalog
 from p42cloud.data.records import Records
+from p42cloud.kernel import outgoing
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction, transaction
@@ -300,3 +301,54 @@ async def test_owners_are_reminded_before_a_secret_expires(
             "sys.connection_secret", secret.sys_id, {"value": "t2"}, current.etag
         )
     assert renewed.values["told"] is None
+
+
+# ---- connections to one's own network ----
+
+
+@pytest.fixture
+def local_type() -> Iterator[None]:
+    use_sealer(Sealer(os.urandom(32)))
+    TYPES["sys.local_test"] = ("sys", ConnectionType("local_test", "L", (), local=True))
+    TEST_TRANSPORTS["sys.local_test"] = httpx.MockTransport(_answer)
+    yield
+    TYPES.pop("sys.local_test", None)
+    TEST_TRANSPORTS.pop("sys.local_test", None)
+
+
+async def test_a_local_connection_takes_ranges_as_typed_and_a_name(
+    engine: AsyncEngine, local_type: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def lookup(host: str) -> list[str]:
+        return {"ubi.home.example.net": ["192.168.1.7"]}.get(host, ["203.0.113.9"])
+
+    monkeypatch.setattr(outgoing, "lookup", lookup)
+    anna, _ = await _people(engine)
+    async with acting(engine, anna) as records:
+        made = await records.create(
+            "sys.connection",
+            {
+                "type": "sys.local_test",
+                "label": "Console",
+                "base_url": "https://ubi.home.example.net",
+                "local_ranges": "192.168.1.0/24\n 10.0.5.0/24, ",  # as typed in the form
+            },
+        )
+        refused: list[str] = []
+        for values in (
+            {"base_url": "https://192.168.9.1"},  # an address outside its ranges
+            {"base_url": "https://admin:pw@192.168.1.1"},  # no user or password in it
+            {"base_url": "ftp://192.168.1.1"},
+            {"local_ranges": ["0.0.0.0/0"]},
+        ):
+            current = await records.read("sys.connection", made.sys_id)
+            with pytest.raises(Problem) as wrong:
+                await records.update("sys.connection", made.sys_id, values, current.etag)
+            refused.append(wrong.value.code)
+        SEEN.clear()
+        async with connect(records, "sys.local_test") as http:
+            await http.get("/proxy/network/integration/v1/sites")
+    assert made.values["local_ranges"] == ["192.168.1.0/24", "10.0.5.0/24"]
+    assert refused == ["validation"] * 4
+    assert SEEN[-1].url.host == "192.168.1.7"
+    assert SEEN[-1].headers["host"] == "ubi.home.example.net"

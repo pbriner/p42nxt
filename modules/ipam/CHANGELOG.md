@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- A **Dashboard** entry in the menu.
+- The UniFi connection type is called "UniFi console: DNS records for IPAM", so it isn't mixed
+  up with the CMDB's.
+
 ## 0.1.1
 
 Security fix: a zone's DNS server is an IP address in your own network, checked when it's

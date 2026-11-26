@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- A **Dashboard** entry in the menu.
+
 ## 0.1.0
 
 - Places as one tree: sites, buildings, floors, rooms, racks and other places, with sensible

@@ -581,7 +581,7 @@ wheels = [
 
 [[package]]
 name = "p42cloud"
-version = "0.52.1"
+version = "0.52.2"
 source = { editable = "backend" }
 dependencies = [
     { name = "argon2-cffi" },
@@ -659,7 +659,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-cmdb"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "modules/cmdb" }
 dependencies = [
     { name = "cryptography" },
@@ -782,7 +782,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-ipam"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "modules/ipam" }
 dependencies = [
     { name = "dnspython" },
@@ -834,7 +834,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-places"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "modules/places" }
 dependencies = [
     { name = "p42cloud" },
