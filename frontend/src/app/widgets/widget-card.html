@@ -26,6 +26,13 @@
         @case ('text') {
           <p class="text">{{ widget().text }}</p>
         }
+        @case ('map') {
+          @if (graph().nodes.length) {
+            <app-graph [nodes]="graph().nodes" [edges]="graph().edges" />
+          } @else if (!busy()) {
+            <p class="muted">{{ i18n.t('widget.nothing') }}</p>
+          }
+        }
         @case ('figure') {
           <a class="figure" [routerLink]="listLink().commands" [queryParams]="listLink().query"
             >{{ answer()?.text ?? format(value()) }}

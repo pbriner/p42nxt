@@ -73,6 +73,11 @@ ROLES = [
                 for t in ("sys.approval", "sys.approver", "sys.approval_decision", "sys.deputy")
             ),
             Grant("sys.approval_rule", ("read",)),
+            # Agents: who they are, their codes and tasks; switching one off.
+            Grant("sys.agent", ("read", "create")),
+            Grant("sys.agent", ("write",), fields=("active", "notes")),
+            Grant("sys.agent_code", ("read",), fields=("name", "expires", "used")),
+            Grant("sys.agent_task", ("read",)),
             Grant(
                 "sys.approval_rule",
                 ("write",),

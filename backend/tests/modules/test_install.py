@@ -195,11 +195,14 @@ async def test_modules_depending_on_each_other_in_a_circle_are_refused(
 def test_module_packages_are_found() -> None:
     assert [m.id for m in discover()] == [
         "budget",
+        "cmdb",
         "costing",
         "dca",
         "finance",
         "hello",
+        "ipam",
         "partners",
+        "places",
         "tasks",
     ]
 

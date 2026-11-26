@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+- Task rules also open on the CMDB's events, when the CMDB is installed: a device stops
+  answering (closed when it answers again), a certificate ends soon or has ended, something
+  found waits for review.
+
 ## 0.1.0
 
 - Tasks for groups: title, description, impact and urgency giving the priority, a due date, and

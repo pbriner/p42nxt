@@ -93,8 +93,10 @@ def _source_problems(
         name, table = widget.param
         if not WIDGET_NAME.match(name) or catalog.table(table) is None:
             found.append(FieldError(where, "bad_param", "A choice: a name and a table."))
-    if widget.kind not in ("figure", "chart"):
-        found.append(FieldError(where, "bad_source", "Only figures and charts have a source."))
+    if widget.kind not in ("figure", "chart", "map"):
+        found.append(
+            FieldError(where, "bad_source", "Only figures, charts and maps have a source.")
+        )
     elif widget.source not in sources:
         found.append(
             FieldError(where, "unknown_source", f"{module} has no GET route {widget.source}.")
@@ -104,6 +106,15 @@ def _source_problems(
     return found
 
 
+def _sourceless_problems(where: str, widget: Widget) -> list[FieldError]:
+    """A map needs its source; a text its text."""
+    if widget.kind == "map":
+        return [FieldError(where, "no_source", "A map comes from a source route.")]
+    if widget.text is None:
+        return [FieldError(where, "no_text", "A text widget has its text.")]
+    return []
+
+
 def _problems(
     catalog: Catalog, views: dict[str, str], module: str, widget: Widget, sources: set[str]
 ) -> list[FieldError]:
@@ -111,10 +122,8 @@ def _problems(
     found = _shape_problems(where, module, widget)
     if widget.source is not None:
         return found + _source_problems(catalog, views, module, widget, sources)
-    if widget.kind == "text":
-        if widget.text is None:
-            found.append(FieldError(where, "no_text", "A text widget has its text."))
-        return found
+    if widget.kind in ("map", "text"):
+        return found + _sourceless_problems(where, widget)
     table_key = views.get(widget.list) if widget.list is not None else None
     if table_key is None:
         return [*found, FieldError(where, "unknown_view", f"No list view {widget.list!r}.")]

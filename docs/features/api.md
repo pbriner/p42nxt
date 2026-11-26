@@ -18,6 +18,7 @@ it (`backend/src/p42cloud/web/`). The installation's `web` service runs it (`p42
 | `DELETE /api/v1/<module>/<table>/<id>` | Soft deletion; needs `If-Match` |
 | `POST /api/v1/<module>/<table>/<id>/restore` | Restore |
 | `POST /api/v1/tokens` | A new API token, shown once (`api-tokens.md`) |
+| `POST /api/v1/agents/codes`, `/enrol`; `GET`, `POST /api/v1/agents/tasks…` | Agents (`agents.md`) |
 | `POST /api/v1/people/<id>/invitation` | A one-time link for a person to set a password and a second factor (`{"reset": true}` first ends their sessions and credentials); administrators only |
 | `GET /api/v1/meta/<module>/<table>` | The table described for the caller (below) |
 | `POST /api/v1/tables` | Make or change one of the administrators' own tables (`tables.md`) |

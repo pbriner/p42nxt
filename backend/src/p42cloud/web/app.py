@@ -33,6 +33,7 @@ from p42cloud.web import problems as problem_answers
 from p42cloud.web.caller import Rates
 from p42cloud.web.routes import (
     actions,
+    agents,
     aggregates,
     approvals,
     comments,
@@ -166,6 +167,7 @@ def create_app(
     app.include_router(modules_router)
     app.include_router(actions.router)
     # Before the record routes: `aggregate` would otherwise be taken for a record's ID.
+    app.include_router(agents.router)
     app.include_router(aggregates.router)
     app.include_router(approvals.router)
     app.include_router(exports.router)

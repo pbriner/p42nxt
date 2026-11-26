@@ -5,22 +5,27 @@ as JSON (exact numbers and times as text), the person making the request is the 
 the request's transaction is shared. A module never writes another module's tables any other way.
 """
 
+import socket
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 from datetime import date
+from importlib.metadata import version as package_version
 from typing import Any
 from uuid import UUID
 
 import httpx
+from sqlalchemy import text
 
 from p42cloud.data.catalog import TableDef
 from p42cloud.data.hooks import Change
 from p42cloud.data.records import Record, Records
 from p42cloud.data.settings import DECLARED
 from p42cloud.data.settings import value as settings_value
+from p42cloud.kernel.config import get_settings
 from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import Problem
+from p42cloud.services.agents import service as agent_tasks
 from p42cloud.services.approvals import service as approvals
 from p42cloud.services.calls.service import record
 from p42cloud.services.comments import service as comments
@@ -173,6 +178,44 @@ class Client:
         if decision == "withdraw":
             return await approvals.withdraw(self._records, self._id(approval))
         return await approvals.decide(self._records, self._id(approval), decision, note)
+
+    async def installation(self) -> Json:
+        """What the installation is made of, for describing it (a CMDB registering it): the
+        core's version, the host it runs on, the environment, the database server and its
+        version, and the modules with their versions and whether they're on."""
+        conn = self._records.conn
+        await switch_role(conn, "sys")
+        database = str(await conn.scalar(text("SELECT version()")) or "")
+        modules = [
+            {"id": r.name, "name": r.label, "version": r.version, "enabled": r.enabled}
+            for r in await conn.execute(
+                text(
+                    "SELECT name, label, version, enabled FROM sys.module"
+                    " WHERE deleted IS NULL ORDER BY name"
+                )
+            )
+        ]
+        try:
+            environment = str(get_settings().environment)
+        except ValueError:  # no environment to read (a test, a tool)
+            environment = "unknown"
+        return {
+            "version": package_version("p42cloud"),
+            "host": socket.gethostname(),
+            "environment": environment,
+            "database": database.split(" on ", maxsplit=1)[0],
+            "modules": modules,
+        }
+
+    async def agent_task(
+        self, agent: UUID | str, module: str, kind: str, payload: Json | None = None
+    ) -> UUID:
+        """A task for an agent (`sys.agent`), from a module: the agent fetches it, does it and
+        answers; the module hears of it as the event `sys.agent_task_done` (with `module` and
+        `kind`) and reads the answer from the task (`sys.agent_task`, `result`)."""
+        return await agent_tasks.queue(
+            self._records.conn, self._id(agent), module, kind, payload or {}
+        )
 
     async def pending_approval(self, table: str, sys_id: UUID | str) -> bool:
         """Whether an approval of a move of this record is waiting (whoever may see it)."""

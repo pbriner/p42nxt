@@ -13,7 +13,7 @@ publishes events and notifies people through it). Refusals are `Problem`s.
 """
 
 from p42cloud.data.declarations import Table
-from p42cloud.data.hooks import Change, TableHook
+from p42cloud.data.hooks import EVERY_TABLE, Change, TableHook
 from p42cloud.data.records import Records
 from p42cloud.data.settings import Setting
 from p42cloud.data.types import Invalid
@@ -65,6 +65,7 @@ from p42cloud.ui.views.models import ListView
 from p42cloud.ui.widgets.models import Widget
 
 __all__ = [
+    "EVERY_TABLE",
     "ActionInput",
     "ActionResult",
     "ActionRun",

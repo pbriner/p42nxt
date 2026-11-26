@@ -3,6 +3,31 @@
  "module": "tasks",
  "texts": [
   {
+   "key": "sys.event_subscription|tasks:cmdb.certificate_expired|label",
+   "english": "Task rules: a certificate has ended",
+   "text": "Aufgabenregeln: ein Zertifikat ist abgelaufen"
+  },
+  {
+   "key": "sys.event_subscription|tasks:cmdb.certificate_expiring|label",
+   "english": "Task rules: a certificate ends soon",
+   "text": "Aufgabenregeln: ein Zertifikat läuft bald ab"
+  },
+  {
+   "key": "sys.event_subscription|tasks:cmdb.device_down|label",
+   "english": "Task rules: a device stops answering",
+   "text": "Aufgabenregeln: ein Gerät antwortet nicht mehr"
+  },
+  {
+   "key": "sys.event_subscription|tasks:cmdb.device_recovered|label",
+   "english": "Task rules: a device answers again",
+   "text": "Aufgabenregeln: ein Gerät antwortet wieder"
+  },
+  {
+   "key": "sys.event_subscription|tasks:cmdb.review_waiting|label",
+   "english": "Task rules: something found waits for review",
+   "text": "Aufgabenregeln: etwas Gefundenes wartet auf Prüfung"
+  },
+  {
    "key": "sys.event_subscription|tasks:sys.comment_added|label",
    "english": "Watchers hear of comments",
    "text": "Beobachter erfahren von Kommentaren"
@@ -38,6 +63,26 @@
    "text": "Fällig in Tagen"
   },
   {
+   "key": "sys.field|tasks.rule.event|choice:certificate_expired",
+   "english": "A certificate has ended",
+   "text": "Ein Zertifikat ist abgelaufen"
+  },
+  {
+   "key": "sys.field|tasks.rule.event|choice:certificate_expiring",
+   "english": "A certificate ends soon",
+   "text": "Ein Zertifikat läuft bald ab"
+  },
+  {
+   "key": "sys.field|tasks.rule.event|choice:device_down",
+   "english": "A device stops answering",
+   "text": "Ein Gerät antwortet nicht mehr"
+  },
+  {
+   "key": "sys.field|tasks.rule.event|choice:device_recovered",
+   "english": "A device answers again",
+   "text": "Ein Gerät antwortet wieder"
+  },
+  {
    "key": "sys.field|tasks.rule.event|choice:job_failed",
    "english": "A scheduled job fails",
    "text": "Ein geplanter Job schlägt fehl"
@@ -46,6 +91,11 @@
    "key": "sys.field|tasks.rule.event|choice:job_recovered",
    "english": "A scheduled job works again",
    "text": "Ein geplanter Job läuft wieder"
+  },
+  {
+   "key": "sys.field|tasks.rule.event|choice:review_waiting",
+   "english": "Something found waits for review",
+   "text": "Etwas Gefundenes wartet auf Prüfung"
   },
   {
    "key": "sys.field|tasks.rule.event|label",
@@ -83,6 +133,26 @@
    "text": "Name"
   },
   {
+   "key": "sys.field|tasks.rule.resolved_by|choice:certificate_expired",
+   "english": "A certificate has ended",
+   "text": "Ein Zertifikat ist abgelaufen"
+  },
+  {
+   "key": "sys.field|tasks.rule.resolved_by|choice:certificate_expiring",
+   "english": "A certificate ends soon",
+   "text": "Ein Zertifikat läuft bald ab"
+  },
+  {
+   "key": "sys.field|tasks.rule.resolved_by|choice:device_down",
+   "english": "A device stops answering",
+   "text": "Ein Gerät antwortet nicht mehr"
+  },
+  {
+   "key": "sys.field|tasks.rule.resolved_by|choice:device_recovered",
+   "english": "A device answers again",
+   "text": "Ein Gerät antwortet wieder"
+  },
+  {
    "key": "sys.field|tasks.rule.resolved_by|choice:job_failed",
    "english": "A scheduled job fails",
    "text": "Ein geplanter Job schlägt fehl"
@@ -91,6 +161,11 @@
    "key": "sys.field|tasks.rule.resolved_by|choice:job_recovered",
    "english": "A scheduled job works again",
    "text": "Ein geplanter Job läuft wieder"
+  },
+  {
+   "key": "sys.field|tasks.rule.resolved_by|choice:review_waiting",
+   "english": "Something found waits for review",
+   "text": "Etwas Gefundenes wartet auf Prüfung"
   },
   {
    "key": "sys.field|tasks.rule.resolved_by|label",

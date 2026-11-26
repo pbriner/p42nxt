@@ -10,11 +10,14 @@ resolution-markers = [
 members = [
     "p42cloud",
     "p42cloud-budget",
+    "p42cloud-cmdb",
     "p42cloud-costing",
     "p42cloud-dca",
     "p42cloud-finance",
     "p42cloud-hello",
+    "p42cloud-ipam",
     "p42cloud-partners",
+    "p42cloud-places",
     "p42cloud-tasks",
 ]
 
@@ -338,6 +341,15 @@ wheels = [
 ]
 
 [[package]]
+name = "dnspython"
+version = "2.9.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/76/49/900383b471c645a3c397f47b3211d1fcecb3a540c98f683494cdf86b33de/dnspython-2.9.2.tar.gz", hash = "sha256:8d4d39a513e649d634004ce4d39ade2352efcea472a0247535a5c2d18a9d7ba9", size = 455484, upload-time = "2026-11-03T23:56:53.601Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/0c/5346358b3a20275d256978c35203ddc2c8617f78c1b23795b79ba22ced6d/dnspython-2.9.2-py3-none-any.whl", hash = "sha256:af15f7d385a6ae2fb35a796fde2138004c8c42c7389090e2addc83e3b3340fd8", size = 360455, upload-time = "2026-11-03T23:56:52.088Z" },
+]
+
+[[package]]
 name = "fastapi"
 version = "0.162.7"
 source = { registry = "https://pypi.org/simple" }
@@ -569,7 +581,7 @@ wheels = [
 
 [[package]]
 name = "p42cloud"
-version = "0.51.0"
+version = "0.52.0"
 source = { editable = "backend" }
 dependencies = [
     { name = "argon2-cffi" },
@@ -636,6 +648,37 @@ dev = [
 
 [package.metadata]
 requires-dist = [{ name = "p42cloud", editable = "backend" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+]
+
+[[package]]
+name = "p42cloud-cmdb"
+version = "0.1.0"
+source = { editable = "modules/cmdb" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "httpx" },
+    { name = "p42cloud" },
+    { name = "sqlalchemy" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cryptography" },
+    { name = "httpx" },
+    { name = "p42cloud", editable = "backend" },
+    { name = "sqlalchemy" },
+]
 
 [package.metadata.requires-dev]
 dev = [
@@ -736,6 +779,35 @@ dev = [
 ]
 
 [[package]]
+name = "p42cloud-ipam"
+version = "0.1.0"
+source = { editable = "modules/ipam" }
+dependencies = [
+    { name = "dnspython" },
+    { name = "httpx" },
+    { name = "p42cloud" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dnspython" },
+    { name = "httpx" },
+    { name = "p42cloud", editable = "backend" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+]
+
+[[package]]
 name = "p42cloud-partners"
 version = "0.1.1"
 source = { editable = "modules/partners" }
@@ -759,8 +831,31 @@ dev = [
 ]
 
 [[package]]
-name = "p42cloud-tasks"
+name = "p42cloud-places"
 version = "0.1.0"
+source = { editable = "modules/places" }
+dependencies = [
+    { name = "p42cloud" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "p42cloud", editable = "backend" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+]
+
+[[package]]
+name = "p42cloud-tasks"
+version = "0.2.0"
 source = { editable = "modules/tasks" }
 dependencies = [
     { name = "p42cloud" },

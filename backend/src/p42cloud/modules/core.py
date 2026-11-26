@@ -26,6 +26,7 @@ from p42cloud.security.sign_in import invitations
 from p42cloud.security.sign_in import models as sign_in
 from p42cloud.security.tokens import hooks as token_hooks
 from p42cloud.security.tokens import models as tokens
+from p42cloud.services.agents import manifest as agents
 from p42cloud.services.announcements import models as announcement_models
 from p42cloud.services.announcements import service as announcements
 from p42cloud.services.approvals import manifest as approvals
@@ -88,6 +89,7 @@ CORE = Module(
         *currencies.TABLES,
         *states.TABLES,
         *approvals.TABLES,
+        *agents.TABLES,
         *notifications.TABLES,
         *module_routes.TABLES,
         *backup_models.TABLES,
@@ -135,7 +137,7 @@ CORE = Module(
     actions=ui.ACTIONS,
     notification_kinds=(*notifications.KINDS, *approvals.KINDS),
     connection_types=notifications.CONNECTION_TYPES,
-    events=events.EVENTS,
+    events=(*events.EVENTS, *agents.EVENTS),
     jobs=(
         *jobs.JOBS,
         *notifications.JOBS,
@@ -144,6 +146,7 @@ CORE = Module(
         *maintenance.JOBS,
         *currencies.JOBS,
         *approvals.JOBS,
+        *agents.JOBS,
         Job("check_updates", "Check for module updates", check_updates, timeout=120),
     ),
     schedules=(
@@ -154,6 +157,7 @@ CORE = Module(
         *maintenance.SCHEDULES,
         *currencies.SCHEDULES,
         *approvals.SCHEDULES,
+        *agents.SCHEDULES,
         Schedule("check_updates", "Module updates, daily", "check_updates", "37 5 * * *"),
     ),
 )

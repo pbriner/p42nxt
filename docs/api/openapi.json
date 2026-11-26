@@ -55,6 +55,21 @@
         "title": "Code",
         "type": "object"
       },
+      "CodeBody": {
+        "properties": {
+          "name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CodeBody",
+        "type": "object"
+      },
       "ConfirmApp": {
         "properties": {
           "code": {
@@ -90,6 +105,32 @@
           }
         },
         "title": "DecisionBody",
+        "type": "object"
+      },
+      "EnrolBody": {
+        "properties": {
+          "code": {
+            "maxLength": 40,
+            "title": "Code",
+            "type": "string"
+          },
+          "host": {
+            "default": "",
+            "maxLength": 253,
+            "title": "Host",
+            "type": "string"
+          },
+          "version": {
+            "default": "",
+            "maxLength": 40,
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "EnrolBody",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -162,6 +203,20 @@
           "password"
         ],
         "title": "Password",
+        "type": "object"
+      },
+      "ReportBody": {
+        "properties": {
+          "ok": {
+            "default": true,
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "result": {
+            "title": "Result"
+          }
+        },
+        "title": "ReportBody",
         "type": "object"
       },
       "Run": {
@@ -433,10 +488,206 @@
   },
   "info": {
     "title": "P42cloud",
-    "version": "0.51.0"
+    "version": "0.52.0"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/agents/codes": {
+      "post": {
+        "description": "A one-time code (24 hours) to enrol the agent of this name; shown once.",
+        "operationId": "agent_code_api_v1_agents_codes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Agent Code Api V1 Agents Codes Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Agent Code",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/api/v1/agents/enrol": {
+      "post": {
+        "description": "The agent's own service account and token, for its code (once).",
+        "operationId": "agent_enrol_api_v1_agents_enrol_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrolBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Agent Enrol Api V1 Agents Enrol Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Agent Enrol",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/api/v1/agents/tasks": {
+      "get": {
+        "description": "The agent's waiting tasks, now running; asking is also how it's seen.",
+        "operationId": "agent_tasks_api_v1_agents_tasks_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Agent Tasks Api V1 Agents Tasks Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Agent Tasks",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/api/v1/agents/tasks/{task}": {
+      "post": {
+        "description": "The agent's answer to one of its running tasks.",
+        "operationId": "agent_report_api_v1_agents_tasks__task__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Agent Report Api V1 Agents Tasks  Task  Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Agent Report",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
     "/api/v1/approvals/mine": {
       "get": {
         "description": "What waits for the caller's approval (or theirs as a deputy), oldest first.",

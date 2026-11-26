@@ -9,7 +9,7 @@ export interface WidgetDef {
   /** The dashboard it's placed on by default (`home`, or a module's): offered on every one. */
   dashboard: string;
   title: string;
-  kind: 'list' | 'figure' | 'chart' | 'text';
+  kind: 'list' | 'figure' | 'chart' | 'text' | 'map';
   list: string | null;
   /** A module route answering the figure or the points (source widgets). */
   source: string | null;

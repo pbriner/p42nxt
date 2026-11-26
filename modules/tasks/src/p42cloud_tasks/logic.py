@@ -40,6 +40,12 @@ TAKEN = ("in_progress", "waiting")
 EVENTS = {
     "job_failed": ("sys.job_failed", "A scheduled job fails"),
     "job_recovered": ("sys.job_recovered", "A scheduled job works again"),
+    # The CMDB's, when it's installed (Tasks doesn't need it).
+    "device_down": ("cmdb.device_down", "A device stops answering"),
+    "device_recovered": ("cmdb.device_recovered", "A device answers again"),
+    "certificate_expiring": ("cmdb.certificate_expiring", "A certificate ends soon"),
+    "certificate_expired": ("cmdb.certificate_expired", "A certificate has ended"),
+    "review_waiting": ("cmdb.review_waiting", "Something found waits for review"),
 }
 EVENT_CHOICES = {key: label for key, (_, label) in EVENTS.items()}
 BY_TYPE = {event: key for key, (event, _) in EVENTS.items()}

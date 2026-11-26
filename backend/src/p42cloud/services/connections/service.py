@@ -11,7 +11,9 @@ platform's safe client, and signs in with the secrets from the vault.
 
 import asyncio
 import base64
+import ipaddress
 import re
+import ssl
 import uuid
 from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager
@@ -29,7 +31,7 @@ from p42cloud.data.records import Records
 from p42cloud.kernel.context import current
 from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import FieldError, Problem
-from p42cloud.kernel.outgoing import host_allowed, safe_client
+from p42cloud.kernel.outgoing import host_allowed, safe_client, within
 from p42cloud.kernel.secrets import SealError, process_sealer
 from p42cloud.services.connections.models import AUTHS, ConnectionType
 
@@ -78,7 +80,7 @@ def _problems(kind: ConnectionType) -> list[FieldError]:
         found.append(FieldError(where, "bad_name", "a-z, 0-9 and _, starting with a letter."))
     if kind.auth not in AUTHS:
         found.append(FieldError(where, "bad_auth", f"One of {', '.join(AUTHS)}."))
-    if not kind.allowed_hosts:
+    if not kind.allowed_hosts and not kind.local:
         found.append(FieldError(where, "no_hosts", "A type names the hosts it may reach."))
     if kind.auth == "signed" and kind.sign is None:
         found.append(FieldError(where, "no_sign", "A signed type signs its requests (sign)."))
@@ -116,6 +118,7 @@ async def write_types(
             "secrets": list(k.secrets) or None,
             "base_url": k.base_url or None,
             "api_key_header": k.api_key_header if k.auth == "api_key" else None,
+            "local": k.local,
         }
         for k in types
     ]
@@ -142,7 +145,7 @@ async def _check_connection(change: Change) -> None:
         _, kind = _type(change.values.get("type"))
         if not change.values.get("base_url"):
             change.values["base_url"] = kind.base_url or None
-        if not change.values["base_url"]:
+        if not change.values["base_url"] and not kind.local:
             raise _invalid("base_url", "This kind of connection needs its address.")
         change.values["health"] = "unknown"
         if kind.shared:
@@ -154,13 +157,75 @@ async def _check_connection(change: Change) -> None:
             text("SELECT type FROM sys.connection WHERE sys_id = :id"), {"id": change.sys_id}
         )
         _, kind = _type(found)
-    url = change.values.get("base_url")
-    if url is not None and (problem := _url_problem(str(url), kind.allowed_hosts)):
-        raise _invalid("base_url", problem)
+    _check_where(change, kind)
     if {"health", "checked", "health_message"} & set(
         change.values
     ) and change.operation != "create":
         raise _invalid("health", "A connection's health comes from its check.")
+
+
+def _check_where(change: Change, kind: ConnectionType) -> None:
+    """Where it may reach: a local type's ranges, else an https address on the type's hosts."""
+    if kind.local:
+        _check_local(change)
+        return
+    if change.values.get("local_ranges") or change.values.get("trusted_certificate"):
+        raise _invalid(
+            "local_ranges",
+            "Only connections to your own network have local ranges or a pinned certificate.",
+        )
+    url = change.values.get("base_url")
+    if url is not None and (problem := _url_problem(str(url), kind.allowed_hosts)):
+        raise _invalid("base_url", problem)
+
+
+def _pinned(pem: str) -> ssl.SSLContext:
+    """Trusts this one certificate only (a device's own), reached by its address."""
+    try:
+        context = ssl.create_default_context(cadata=pem)
+    except ssl.SSLError as error:
+        raise Problem(
+            409, "bad_certificate", "The connection's certificate can't be read."
+        ) from error
+    context.check_hostname = False
+    return context
+
+
+MIN_PREFIX = {4: 16, 6: 48}  # no wider than a /16 (IPv4) or a /48 (IPv6)
+
+
+def _check_local(change: Change) -> None:
+    """A local connection's ranges: inside a network, not too wide, its address within them.
+    It's the one way past the safe client's rule, so it's checked strictly (and audited, as a
+    record)."""
+    ranges = change.values.get("local_ranges")
+    if ranges is None and change.operation != "create":
+        return
+    if not isinstance(ranges, list) or not ranges:
+        raise _invalid("local_ranges", "Name the ranges it may reach, like 192.168.1.0/24.")
+    checked: list[str] = []
+    for given in cast(list[Any], ranges):
+        try:
+            net = ipaddress.ip_network(str(given).strip(), strict=False)
+        except ValueError as error:
+            raise _invalid("local_ranges", f"Not a range: {given}.") from error
+        if not net.is_private or net.is_loopback or net.prefixlen < MIN_PREFIX[net.version]:
+            raise _invalid(
+                "local_ranges",
+                f"{net}: a range inside your network, at most a /16 (no loopback).",
+            )
+        checked.append(str(net))
+    change.values["local_ranges"] = checked
+    pem = change.values.get("trusted_certificate")
+    if pem:
+        try:
+            ssl.create_default_context(cadata=str(pem))
+        except ssl.SSLError as error:
+            raise _invalid("trusted_certificate", "Not a certificate (PEM).") from error
+    url = change.values.get("base_url")
+    host = urlsplit(str(url)).hostname if url else None
+    if host is not None and not within(host, checked):
+        raise _invalid("base_url", "The address is in one of its local ranges.")
 
 
 async def _check_shared(change: Change, type_name: str) -> None:
@@ -319,7 +384,9 @@ async def connect(
     row: Any = (
         await conn.execute(
             text(
-                "SELECT sys_id, base_url FROM sys.connection WHERE owner = :o AND type = :t"
+                "SELECT sys_id, base_url, local_ranges, trusted_certificate FROM sys.connection"
+                " WHERE owner = :o"
+                " AND type = :t"
                 " AND deleted IS NULL AND (CAST(:l AS text) IS NULL OR label = :l)"
                 " AND (CAST(:c AS uuid) IS NULL OR sys_id = CAST(:c AS uuid))"
                 " ORDER BY created LIMIT 1"
@@ -344,12 +411,16 @@ async def connect(
             raise Problem(
                 409, "secret_unreadable", f"The secret {item.name!r} can't be opened; set it again."
             ) from error
-    inner = TEST_TRANSPORTS.get(type_name) or httpx.AsyncHTTPTransport(retries=0)
+    trusted = row.trusted_certificate if kind.local else None
+    inner = TEST_TRANSPORTS.get(type_name) or (
+        httpx.AsyncHTTPTransport(retries=0, verify=_pinned(str(trusted)) if trusted else True)
+    )
     client = safe_client(
         allowed_hosts=kind.allowed_hosts,
-        base_url=row.base_url,
+        base_url=row.base_url or "",
         auth=_Auth(kind, secrets),
         transport=_Retrying(inner),
+        local_ranges=list(row.local_ranges or []) if kind.local else None,
     )
     try:
         yield client
