@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4
+
+- **Review tasks**: "Something found waits for review" is now about the scan that found it, and
+  a new event "Everything a scan found is reviewed" follows when its last waiting find is
+  created, attached or ignored. A task rule (Tasks 0.2.1) on these keeps one task per scan for
+  the group you choose, counts each new find on it, and closes it once all are reviewed.
+- CMDB readers see the CMDB's own jobs (what a find and its task are about).
+
 ## 0.1.3
 
 - A review row's **State** is changed only by its buttons. Setting it to "Created" by hand made

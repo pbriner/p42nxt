@@ -352,3 +352,56 @@ async def test_a_scan_rewrites_last_seen_only_when_stale(as_system: Acting) -> N
         again = (await client.get("cmdb.network_device", made["sys_id"]))["last_seen"]
     assert first is not None
     assert again == first  # seen a moment ago: not written again
+
+
+async def test_a_scans_finds_are_one_task_closed_once_reviewed(
+    as_system: Acting, deliver_events: Callable[..., Awaitable[list[str]]]
+) -> None:
+    tag = _tag()
+    async with as_system() as client:
+        group = await client.create("sys.group", {"name": f"Network {tag}", "assignable": True})
+        rule = await client.create(
+            "tasks.rule",
+            {
+                "name": f"Review {tag}",
+                "event": "review_waiting",
+                "resolved_by": "review_cleared",
+                "title": "Review what was found",
+                "group": group["sys_id"],
+            },
+        )
+        for n in (1, 2):
+            facts = {"name": f"client {tag} {n}", "discovery_key": f"unifi-client:{tag}{n}"}
+            assert await observe(client, "UniFi", "computer", facts) == "waiting"
+    await deliver_events()
+    async with as_system() as client:
+        (task,) = (  # the open one: other tests' finds may have opened and closed one before
+            await client.list(
+                "tasks.task",
+                where={
+                    "and": [
+                        {"field": "rule", "op": "eq", "value": rule["sys_id"]},
+                        {"field": "state", "op": "in", "value": ["new", "in_progress", "waiting"]},
+                    ]
+                },
+            )
+        )["records"]
+        assert task["about_table"] == "sys.job" and task["repeats"] == 2  # one task for the scan
+        rows = (
+            await client.list(
+                "cmdb.review",
+                where={
+                    "and": [
+                        {"field": "found_by", "op": "eq", "value": "UniFi"},
+                        {"field": "state", "op": "eq", "value": "waiting"},
+                    ]
+                },
+                limit=500,
+            )
+        )["records"]
+        for row in rows:  # every waiting UniFi find, including other tests'
+            await client.action("cmdb.review", row["sys_id"], "cmdb.review_ignore")
+    await deliver_events()
+    async with as_system() as client:
+        closed = await client.get("tasks.task", task["sys_id"])
+    assert closed["state"] not in ("new", "in_progress", "waiting")

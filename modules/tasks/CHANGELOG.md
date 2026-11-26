@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Task rules can also open or close on the CMDB's "Everything a scan found is reviewed": with
+  "Something found waits for review" opening, one task per scan closes once its finds are
+  reviewed.
+
 ## 0.2.0
 
 - Task rules also open on the CMDB's events, when the CMDB is installed: a device stops

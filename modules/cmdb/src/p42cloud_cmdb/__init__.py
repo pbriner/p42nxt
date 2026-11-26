@@ -198,6 +198,8 @@ READER = Role(
         Grant("cmdb.ci_class", ("read",)),
         # The core's agents, to show them as items (their answers stay with managers).
         Grant("sys.agent", ("read",)),
+        # Its own scan jobs: what a review row and its task are about.
+        Grant("sys.job", ("read",), condition={"field": "module", "op": "eq", "value": "cmdb"}),
     ),
     includes=("places.reader", "partners.reader"),
     description="Sees every configuration item, relationship and map.",
@@ -452,7 +454,17 @@ EVENTS = (
     EventType("device_recovered", "A device answers again"),
     EventType("certificate_expiring", "A certificate ends soon", about="cmdb.certificate"),
     EventType("certificate_expired", "A certificate has ended", about="cmdb.certificate"),
-    EventType("review_waiting", "Something found waits for review"),
+    EventType(
+        "review_waiting",
+        "Something found waits for review",
+        description="About the scan that found it (its job), so one task covers a scan's finds.",
+    ),
+    EventType(
+        "review_cleared",
+        "Everything a scan found is reviewed",
+        about="sys.job",
+        description="When the last waiting find of a scan is created, attached or ignored.",
+    ),
 )
 
 module = Module(
@@ -472,6 +484,7 @@ module = Module(
         TableHook("cmdb.relationship", before=check_relationship),
         TableHook("cmdb.certificate", before=discovery.read_certificate),
         TableHook("cmdb.shelly_device", before=discovery.check_address),
+        TableHook("cmdb.review", after=discovery.review_handled),
         TableHook("cmdb.cable", before=network.check_cable),
     ),
     seed=seed,

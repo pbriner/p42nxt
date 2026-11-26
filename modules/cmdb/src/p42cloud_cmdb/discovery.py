@@ -107,6 +107,42 @@ def _stale(seen: Any, now: datetime) -> bool:
     return now - was >= SEEN_EVERY
 
 
+# The job that reports each source's finds: a review task is about the scan, not each find.
+SCANS = {"UniFi": "cmdb.unifi_scan", "Proxmox": "cmdb.proxmox_scan"}
+
+
+async def _scan_job(client: Client, source: str) -> tuple[str, str] | None:
+    name = SCANS.get(source)
+    if name is None:
+        return None
+    found = await client.list("sys.job", where={"field": "name", "op": "eq", "value": name})
+    return ("sys.job", str(found["records"][0]["sys_id"])) if found["records"] else None
+
+
+async def review_handled(change: Change) -> None:
+    """A find created, attached or ignored: when it was its scan's last waiting one, that
+    scan's review is done (a task rule closes its task on this)."""
+    if change.operation != "write" or change.sys_id is None:
+        return
+    if change.values.get("state") in (None, "waiting"):
+        return
+    client = Client.of(change)
+    row = await client.get("cmdb.review", change.sys_id)
+    waiting = await client.list(
+        "cmdb.review",
+        where={
+            "and": [
+                {"field": "found_by", "op": "eq", "value": row["found_by"]},
+                {"field": "state", "op": "eq", "value": "waiting"},
+            ]
+        },
+        limit=1,
+    )
+    about = await _scan_job(client, str(row["found_by"]))
+    if not waiting["records"] and about is not None:
+        await client.publish("cmdb.review_cleared", about=about, data={"found_by": row["found_by"]})
+
+
 def _searched(facts: dict[str, Any]) -> dict[str, Any]:
     """A review row's address, MAC and host name from its facts, for its list and search."""
     address = facts.get("address") or facts.get("management_address")
@@ -155,7 +191,7 @@ async def observe(client: Client, source: str, ci_class: str, facts: dict[str, A
             row["_etag"],
         )
         return str(row["state"])
-    await client.create(
+    made = await client.create(
         "cmdb.review",
         {
             "found": str(facts.get("name") or match_key)[:255],
@@ -167,7 +203,13 @@ async def observe(client: Client, source: str, ci_class: str, facts: dict[str, A
         }
         | _searched(facts),
     )
-    await client.publish("cmdb.review_waiting", data={"found": str(facts.get("name") or "")})
+    # About the scan, so a task rule keeps one task per scan and counts each new find on it.
+    about = await _scan_job(client, source) or ("cmdb.review", str(made["sys_id"]))
+    await client.publish(
+        "cmdb.review_waiting",
+        about=about,
+        data={"found": str(facts.get("name") or ""), "found_by": source},
+    )
     return "waiting"
 
 

@@ -23,6 +23,11 @@
    "text": "Aufgabenregeln: ein Gerät antwortet wieder"
   },
   {
+   "key": "sys.event_subscription|tasks:cmdb.review_cleared|label",
+   "english": "Task rules: everything a scan found is reviewed",
+   "text": "Aufgabenregeln: alles von einem Scan Gefundene ist geprüft"
+  },
+  {
    "key": "sys.event_subscription|tasks:cmdb.review_waiting|label",
    "english": "Task rules: something found waits for review",
    "text": "Aufgabenregeln: etwas Gefundenes wartet auf Prüfung"
@@ -93,6 +98,11 @@
    "text": "Ein geplanter Job läuft wieder"
   },
   {
+   "key": "sys.field|tasks.rule.event|choice:review_cleared",
+   "english": "Everything a scan found is reviewed",
+   "text": "Alles von einem Scan Gefundene ist geprüft"
+  },
+  {
    "key": "sys.field|tasks.rule.event|choice:review_waiting",
    "english": "Something found waits for review",
    "text": "Etwas Gefundenes wartet auf Prüfung"
@@ -161,6 +171,11 @@
    "key": "sys.field|tasks.rule.resolved_by|choice:job_recovered",
    "english": "A scheduled job works again",
    "text": "Ein geplanter Job läuft wieder"
+  },
+  {
+   "key": "sys.field|tasks.rule.resolved_by|choice:review_cleared",
+   "english": "Everything a scan found is reviewed",
+   "text": "Alles von einem Scan Gefundene ist geprüft"
   },
   {
    "key": "sys.field|tasks.rule.resolved_by|choice:review_waiting",
