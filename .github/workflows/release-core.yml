@@ -56,6 +56,13 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ env.VERSION }}
+      # Not added to the index while a high or critical weakness with a fix is still in it.
+      - name: Known vulnerabilities in the image
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          docker run --rm aquasec/trivy:0.58.1 image --quiet --scanners vuln \
+            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$IMAGE@$DIGEST"
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true

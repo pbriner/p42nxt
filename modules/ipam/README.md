@@ -42,4 +42,4 @@ Read DNS zones (daily); Reserve the next free address (a subnet's button).
 ## Outside systems
 
 UniFi console (API key, local connection); DNS servers by zone transfer (AXFR, without a key
-for now).
+for now). A zone's DNS server is an IP address in your own network, checked when it's saved.

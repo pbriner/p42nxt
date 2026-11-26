@@ -48,8 +48,9 @@ await client.update("hello.greeting", made["sys_id"], {"text": "Hello"}, made["_
   read and decide approvals (`approvals.md`).
 - `installation()` says what the installation is made of (versions, host, database, modules);
   `agent_task(agent, module, kind, payload)` hands a task to an agent (`agents.md`).
-- `EVERY_TABLE` as a hook's table: a module may follow every table after a change, never refuse
-  one.
+- `EVERY_TABLE` as a hook's table: a module may follow every table after a change (an
+  after-hook only, no `before` or `fill`). It never refuses one: if the hook fails, its work is
+  undone and logged, and the change goes on.
 - `comment(table, id, text, kind="comment")` adds a comment, or a work note with
   `kind="work_note"`; `comments(table, id)` reads them (`comments.md`).
 - Records come and go as JSON: exact numbers and times as text, the version as `_etag`, fields

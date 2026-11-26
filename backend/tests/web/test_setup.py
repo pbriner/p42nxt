@@ -123,7 +123,7 @@ async def test_the_installer_is_open_once_and_only_with_its_code(fresh: Settings
             queued = await conn.scalar(
                 text(
                     "SELECT count(*) FROM sys.job_run WHERE job = 'sys.check_updates'"
-                    " AND trigger = 'setup' AND state = 'queued'"
+                    " AND trigger IN ('setup', 'update') AND state = 'queued'"
                 )
             )
     finally:

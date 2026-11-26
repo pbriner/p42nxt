@@ -4,6 +4,8 @@ expire. New things always go to the review list; scans never overwrite what was 
 """
 
 import hashlib
+import ipaddress
+import re
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
@@ -311,8 +313,10 @@ async def shelly_read(run: JobRun) -> str:
     try:
         async with client.connection("cmdb.shelly") as http:
             for d in devices:
-                if not d.get("address"):
-                    continue
+                try:
+                    address = device_address(d.get("address"))
+                except Problem:
+                    continue  # none, or one from before addresses were checked: not reached
                 if d.get("agent"):
                     # In another network: its agent reads it and answers (on_agent_task).
                     await client.agent_task(
@@ -321,7 +325,7 @@ async def shelly_read(run: JobRun) -> str:
                         "shelly_status",
                         {
                             "device": d["sys_id"],
-                            "address": d["address"],
+                            "address": address,
                             "generation": d.get("generation"),
                         },
                     )
@@ -330,7 +334,7 @@ async def shelly_read(run: JobRun) -> str:
                 try:
                     gen2 = (d.get("generation") or GEN2) >= GEN2
                     path = "/rpc/Shelly.GetStatus" if gen2 else "/status"
-                    answer = await http.get(f"http://{d['address']}{path}", timeout=5)
+                    answer = await http.get(f"http://{address}{path}", timeout=5)
                     answer.raise_for_status()
                     state = _shelly_state(answer.json())
                 except httpx.HTTPError, ValueError:
@@ -368,6 +372,30 @@ async def shelly_read(run: JobRun) -> str:
     return f"{read} Shelly device(s) read, {down} down."
 
 
+_LABEL = r"[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"
+_NAME = re.compile(rf"^(?=.{{1,253}}$){_LABEL}(?:\.{_LABEL})*$")
+
+
+def device_address(given: Any) -> str:
+    """A device's local address: an IP address or a host name, nothing more (no port, path or
+    user), so what's built from it reaches the device and only the device."""
+    text = str(given or "").strip()
+    try:
+        ip = ipaddress.ip_address(text.strip("[]"))
+    except ValueError:
+        if _NAME.match(text):
+            return text.lower()
+        raise invalid("address", "An IP address or a host name, like 192.168.1.40.") from None
+    if not ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_unspecified:
+        raise invalid("address", "An address in your own network, like 192.168.1.40.")
+    return f"[{ip}]" if ip.version == 6 else str(ip)  # noqa: PLR2004 - IPv6 in brackets
+
+
+async def check_address(change: Change) -> None:
+    if change.values.get("address"):
+        change.values["address"] = device_address(change.values["address"])
+
+
 async def _switch(run: ActionRun, on: bool | None) -> ActionResult:
     client = Client(run.records)
     d = run.record
@@ -384,7 +412,7 @@ async def _switch(run: ActionRun, on: bool | None) -> ActionResult:
         path = "/relay/0?turn=" + ("toggle" if on is None else ("on" if on else "off"))
     async with client.connection("cmdb.shelly") as http:
         try:
-            answer = await http.get(f"http://{d['address']}{path}", timeout=5)
+            answer = await http.get(f"http://{device_address(d['address'])}{path}", timeout=5)
             answer.raise_for_status()
         except httpx.HTTPError as error:
             raise Problem(502, "unreachable", f"{d['name']} doesn't answer.") from error

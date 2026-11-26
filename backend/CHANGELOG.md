@@ -2,6 +2,29 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.52.1
+
+Security fixes for 0.52.0.
+
+- **Local connections** no longer accept ranges that reach the installation's own machine or
+  the cloud's metadata address: loopback, `0.0.0.0/8`, link-local (`169.254.0.0/16`,
+  `fe80::/10`), and IPv6 ranges that wrap IPv4 addresses (`::ffff:0:0/96`, `64:ff9b::/96`).
+  Each request is checked again, whatever ranges are set.
+- **Modules on every table**: a module may only follow changes on every table (an after-hook),
+  never fill in values before them. If such a hook fails, its work is undone and logged, and the
+  change goes on.
+- **Agents**: enrolling an agent again, or turning it off, stops its old account and token.
+  Answers are at most 256 kB. A task that's still waiting isn't queued twice, and tasks not
+  answered within an hour are marked failed.
+- **dnspython** is now part of the core, so modules can read DNS (an installation refuses a
+  module that needs a library the core doesn't have). A test checks this for every module.
+- **Module updates**: installing a new module now also runs the update check again, so a
+  module that was waiting for it can be installed right away (before, only an update did that,
+  and the waiting module stayed "doesn't fit" until the next day).
+- **The image** gets the operating system's security fixes when it's built, and no longer has
+  pip, which the app doesn't use. A release is refused while a high or critical weakness with a
+  fix is still in it.
+
 ## 0.52.0
 
 What the CMDB needs, and agents.

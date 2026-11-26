@@ -77,11 +77,34 @@ def host_allowed(host: str, allowed: Iterable[str]) -> bool:
     return False
 
 
+# Never reached as a local device, whatever ranges are named: this machine, its own network
+# links and the cloud's metadata address, and IPv6 prefixes that wrap IPv4 addresses.
+_WRAPPING = (ipaddress.ip_network("::ffff:0:0/96"), ipaddress.ip_network("64:ff9b::/96"))
+_NEVER_V4 = (ipaddress.ip_network("0.0.0.0/8"),)
+
+
+def never_local(net: ipaddress.IPv4Network | ipaddress.IPv6Network) -> bool:
+    """Whether a range (or one address as /32, /128) touches what no local connection reaches."""
+    if isinstance(net, ipaddress.IPv6Network) and any(net.overlaps(w) for w in _WRAPPING):
+        return True
+    return (
+        not net.is_private
+        or net.is_loopback
+        or net.is_link_local
+        or net.is_multicast
+        or net.is_unspecified
+        or net.is_reserved
+        or (isinstance(net, ipaddress.IPv4Network) and any(net.overlaps(n) for n in _NEVER_V4))
+    )
+
+
 def within(host: str, ranges: Iterable[str]) -> bool:
-    """Whether an address (not a name) is in one of the ranges."""
+    """Whether an address (not a name) is in one of the ranges, and one a device may have."""
     try:
         ip = ipaddress.ip_address(host.strip("[]").split("%", 1)[0])
     except ValueError:
+        return False
+    if never_local(ipaddress.ip_network(ip)):
         return False
     return any(ip in ipaddress.ip_network(r, strict=False) for r in ranges)
 

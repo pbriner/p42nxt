@@ -12,7 +12,9 @@ RUN npm run build
 FROM python:3.14-slim
 # pg_dump for the backup job, the same major version as the database (PostgreSQL's own signed
 # packages: Debian's would be older).
+# The base image's packages with every security fix out since it was made.
 RUN apt-get update \
+ && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends ca-certificates curl \
  && install -d /usr/share/postgresql-common/pgdg \
  && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
@@ -24,6 +26,9 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends postgresql-client-18 \
  && apt-get purge -y curl && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
+# The app runs with uv's environment: the base image's own pip (and what it bundles) goes.
+RUN python -m pip uninstall -y pip setuptools wheel 2>/dev/null || true \
+ && rm -rf /usr/local/lib/python3.14/site-packages/pip* /usr/local/lib/python3.14/site-packages/setuptools*
 COPY --from=ghcr.io/astral-sh/uv:0.13.0 /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
 

@@ -10,3 +10,8 @@ installation's public API, outbound only, with its own service account and token
 3. The installation shows it as an agent (and the CMDB as an item); modules hand it tasks.
 
 Tasks it knows today: a Shelly device's state, switching one. It needs Python 3.12+ and httpx.
+
+It talks to the installation only over https and keeps its token readable by its own user only.
+It reaches devices only by a bare address in its own network or a host name. To narrow that to
+some ranges, set `P42AGENT_RANGES`, like `192.168.1.0/24,10.0.5.0/24`. It sends back only the
+values the installation reads, not everything a device answers.

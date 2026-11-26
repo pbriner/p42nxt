@@ -13,15 +13,18 @@ nothing in that network has to be opened (`backend/src/p42cloud/services/agents/
    do is what's given to that account.
 
 The agent is a record of `sys.agent` (name, the account it acts as, version, host, seen from,
-last seen); an administrator switches one off (`active`).
+last seen); an administrator switches one off (`active`). Switched off, its account and token
+stop working; switched on again, they work again. Enrolling an agent again under the same name
+stops the old account and its token.
 
 ## Tasks
 
 Modules hand out tasks (`Client.agent_task(agent, module, kind, payload)`). The agent asks for
 its waiting tasks (`GET /api/v1/agents/tasks`, which also counts as being seen), does them and
-answers (`POST /api/v1/agents/tasks/<id>` with `ok` and a `result`). The module hears of it as
+answers (`POST /api/v1/agents/tasks/<id>` with `ok` and a `result`, at most 256 kB). The module hears of it as
 the event `sys.agent_task_done` (with `module` and `kind`) and reads the answer from the task
-(`sys.agent_task`).
+(`sys.agent_task`). A task that's still waiting isn't queued a second time, and one not answered
+within an hour is marked failed.
 
 An agent not seen for 15 minutes is quiet (`sys.agent_quiet`, once); when it asks again,
 `sys.agent_back`. Enrolments, refused codes and new codes are security events.
@@ -29,4 +32,7 @@ An agent not seen for 15 minutes is quiet (`sys.agent_quiet`, once); when it ask
 ## The reference agent
 
 `agent/p42agent.py` (Python and httpx): `enrol <url> <code>`, then `run` as a service. It knows
-the tasks `shelly_status` and `shelly_switch` today.
+the tasks `shelly_status` and `shelly_switch` today. It talks to the installation over https
+only, keeps its token readable by its own user only, reaches devices only by an address in its
+own network or a host name (`P42AGENT_RANGES` narrows that to some ranges), and sends back only
+the values the installation reads.

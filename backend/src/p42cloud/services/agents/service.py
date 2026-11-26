@@ -14,6 +14,7 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from p42cloud.data.hooks import Change
 from p42cloud.kernel.db import switch_role
 from p42cloud.kernel.errors import Problem
 from p42cloud.security.sign_in.events import event
@@ -24,6 +25,8 @@ CODE_LIFE = timedelta(hours=24)
 TOKEN_LIFE = timedelta(days=365)
 QUIET_AFTER = timedelta(minutes=15)
 MAX_TASKS = 50
+# A task nobody answered in this time has failed (its agent was away or lost it).
+TASK_LIFE = timedelta(hours=1)
 
 
 def _hash(code: str) -> str:
@@ -72,6 +75,14 @@ async def enrol(
         {"n": f"Agent {row.name}"},
     )
     assert isinstance(person, uuid.UUID)  # noqa: S101 - RETURNING gives it
+    # Enrolled again under its name: the old account and so its token stop working.
+    await conn.execute(
+        text(
+            "UPDATE sys.person SET active = false WHERE sys_id IN"
+            " (SELECT person FROM sys.agent WHERE name = :n AND deleted IS NULL)"
+        ),
+        {"n": row.name},
+    )
     now = datetime.now(UTC)
     agent = await conn.scalar(
         text(
@@ -172,8 +183,17 @@ async def report(
 async def queue(
     conn: AsyncConnection, agent: uuid.UUID, module: str, kind: str, payload: Any
 ) -> uuid.UUID:
-    """A task for an agent, from a module."""
+    """A task for an agent, from a module; the same one still waiting isn't queued twice."""
     await switch_role(conn, "sys")
+    waiting = await conn.scalar(
+        text(
+            "SELECT sys_id FROM sys.agent_task WHERE agent = :a AND module = :m AND kind = :k"
+            " AND payload = CAST(:p AS jsonb) AND state = 'queued' AND deleted IS NULL LIMIT 1"
+        ),
+        {"a": agent, "m": module, "k": kind[:60], "p": json.dumps(payload)},
+    )
+    if isinstance(waiting, uuid.UUID):
+        return waiting
     found = await conn.scalar(
         text(
             "INSERT INTO sys.agent_task (agent, module, kind, payload, state)"
@@ -201,4 +221,26 @@ async def mark_quiet(conn: AsyncConnection) -> int:
     ).all()
     for r in rows:
         await publish(conn, "sys.agent_quiet", about=("sys.agent", r.sys_id), data={"name": r.name})
+    await conn.execute(
+        text(
+            "UPDATE sys.agent_task SET state = 'failed', finished = now(),"
+            ' result = \'{"error": "Not answered in time."}\'::jsonb'
+            " WHERE state IN ('queued', 'running') AND deleted IS NULL AND created < :before"
+        ),
+        {"before": datetime.now(UTC) - TASK_LIFE},
+    )
     return len(rows)
+
+
+async def follow_active(change: Change) -> None:
+    """An agent turned off: its account (and so its token) stops working; on again, it works."""
+    if change.sys_id is None or "active" not in change.values:
+        return
+    await switch_role(change.records.conn, "sys")
+    await change.records.conn.execute(
+        text(
+            "UPDATE sys.person SET active = :on WHERE sys_id ="
+            " (SELECT person FROM sys.agent WHERE sys_id = :id)"
+        ),
+        {"on": bool(change.values["active"]), "id": change.sys_id},
+    )

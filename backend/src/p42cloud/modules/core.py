@@ -112,6 +112,7 @@ CORE = Module(
         *announcements.HOOKS,
         *states.HOOKS,
         *approvals.HOOKS,
+        *agents.HOOKS,
     ),
     docs=DOCS if DOCS.is_dir() else None,
     translations=Path(__file__).parent.parent / "translations",

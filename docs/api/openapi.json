@@ -205,20 +205,6 @@
         "title": "Password",
         "type": "object"
       },
-      "ReportBody": {
-        "properties": {
-          "ok": {
-            "default": true,
-            "title": "Ok",
-            "type": "boolean"
-          },
-          "result": {
-            "title": "Result"
-          }
-        },
-        "title": "ReportBody",
-        "type": "object"
-      },
       "Run": {
         "properties": {
           "inputs": {
@@ -488,7 +474,7 @@
   },
   "info": {
     "title": "P42cloud",
-    "version": "0.52.0"
+    "version": "0.52.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -634,7 +620,7 @@
     },
     "/api/v1/agents/tasks/{task}": {
       "post": {
-        "description": "The agent's answer to one of its running tasks.",
+        "description": "The agent's answer to one of its running tasks (at most 256 kB).",
         "operationId": "agent_report_api_v1_agents_tasks__task__post",
         "parameters": [
           {
@@ -652,7 +638,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReportBody"
+                "properties": {
+                  "ok": {
+                    "default": true,
+                    "title": "Ok",
+                    "type": "boolean"
+                  },
+                  "result": {
+                    "title": "Result"
+                  }
+                },
+                "title": "ReportBody",
+                "type": "object"
               }
             }
           },
