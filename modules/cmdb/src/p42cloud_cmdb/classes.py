@@ -589,8 +589,14 @@ REVIEW = Table(
     {
         "found": String("What was found", max_length=255, required=True),
         "found_by": String("Found by", max_length=60, required=True),
-        "ci_class": String("Proposed class", max_length=120),
+        "ci_class": String("Class name", max_length=120),
+        # Picked from the classes in forms and lists; the name above follows it.
+        "ci_class_ref": Reference("Proposed class", "cmdb.ci_class", key="ci_class"),
         "facts": Json("Facts", required=True),
+        # From the facts, as text, so lists show and search them.
+        "address": String("IP address", max_length=64),
+        "mac": String("MAC address", max_length=32),
+        "host_name": String("Host name", max_length=253),
         "match_key": String("Key", max_length=200, required=True),
         "state": Choice(
             "State",
@@ -603,6 +609,7 @@ REVIEW = Table(
             required=True,
             default="waiting",
             tones={"waiting": "primary", "ignored": "muted"},
+            read_only=True,  # changed by the review's buttons, which do the work
         ),
         "ci": Reference("Configuration item", "cmdb.ci"),
         "seen": DateTime("Last seen", required=True),

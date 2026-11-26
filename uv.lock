@@ -659,7 +659,7 @@ dev = [
 
 [[package]]
 name = "p42cloud-cmdb"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "modules/cmdb" }
 dependencies = [
     { name = "cryptography" },

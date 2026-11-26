@@ -14,7 +14,9 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 from p42cloud.sdk import Client, Problem
+from sqlalchemy.ext.asyncio import create_async_engine
 
+from p42cloud_cmdb import repair_reviews
 from p42cloud_cmdb.discovery import (  # pyright: ignore[reportPrivateUsage]
     _changed_state,  # pyright: ignore[reportPrivateUsage]
     _shelly_state,  # pyright: ignore[reportPrivateUsage]
@@ -150,11 +152,55 @@ async def test_what_scans_find_goes_to_the_review_list(as_system: Acting) -> Non
             )
         )["records"][0]
         assert row["times"] == 2
+        assert row["ci_class_ref"]  # the proposed class, linked from its name
+        assert row["mac"] == facts["mac"]  # searchable, not only in the facts
+        found = await client.list(
+            "cmdb.review", where={"field": "mac", "op": "contains", "value": facts["mac"][:8]}
+        )
+        assert row["sys_id"] in [r["sys_id"] for r in found["records"]]
         done = await client.action(
             "cmdb.review", row["sys_id"], "cmdb.review_create", {"ci_class": "network_device"}
         )
         assert "Made" in str(done["message"])
+        made = await client.get("cmdb.review", row["sys_id"])
+        assert made["state"] == "created" and made["ci"]  # leads to what it became
         assert await observe(client, "UniFi", "network_device", facts) == "matched"  # by its MAC
+
+
+async def test_rows_set_to_created_by_hand_wait_again(
+    as_system: Acting, p42_installation: Any
+) -> None:
+    tag = _tag()
+    async with as_system() as client:
+        device, device_ci = await _ci(
+            client, "network_device", {"name": f"made {tag}", "discovery_key": f"m{tag}"}
+        )
+        rows: dict[str, dict[str, Any]] = {}
+        for key in (f"m{tag}", f"n{tag}"):  # made with the button, and set by hand
+            rows[key] = await client.create(
+                "cmdb.review",
+                {
+                    "found": key,
+                    "found_by": "UniFi",
+                    "facts": {"name": key, "address": f"192.168.1.{len(rows) + 10}"},
+                    "match_key": key,
+                    "seen": datetime.now(UTC).isoformat(),
+                    "state": "created",
+                },
+            )
+    del device
+    owner = create_async_engine(p42_installation.owner_database_url)  # as an upgrade runs
+    try:
+        async with owner.begin() as conn:
+            await repair_reviews(conn)
+    finally:
+        await owner.dispose()
+    async with as_system() as client:
+        linked = await client.get("cmdb.review", rows[f"m{tag}"]["sys_id"])
+        waiting = await client.get("cmdb.review", rows[f"n{tag}"]["sys_id"])
+    assert (linked["state"], linked["ci"]) == ("created", device_ci)
+    assert (waiting["state"], waiting["ci"]) == ("waiting", None)
+    assert (linked["address"], waiting["address"]) == ("192.168.1.10", "192.168.1.11")
 
 
 async def test_a_cable_path_runs_through_patch_panels(as_system: Acting) -> None:

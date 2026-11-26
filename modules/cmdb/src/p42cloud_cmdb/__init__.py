@@ -19,6 +19,7 @@ from p42cloud.sdk import (
     Item,
     Job,
     ListView,
+    Migration,
     Module,
     NotificationKind,
     RelatedList,
@@ -126,6 +127,53 @@ async def seed(conn: AsyncConnection, _: Any) -> None:
         )
 
 
+async def repair_reviews(conn: AsyncConnection) -> None:
+    """0.1.2 let people set a review row to "created" by hand, making nothing, and the button
+    left the row without its item. A row whose item exists (made with its key) is linked to
+    it; one with no item waits again, so it can be created. Every row gets its address, MAC
+    and host name from its facts, so lists can search them."""
+    await conn.execute(
+        text(
+            "UPDATE cmdb.review SET"
+            " address = left(coalesce(facts->>'address', facts->>'management_address'), 64),"
+            " mac = left(lower(facts->>'mac'), 32), host_name = left(facts->>'host_name', 253)"
+            " WHERE deleted IS NULL"
+        )
+    )
+    rows = (
+        await conn.execute(
+            text(
+                "SELECT sys_id, match_key FROM cmdb.review"
+                " WHERE state = 'created' AND ci IS NULL AND deleted IS NULL"
+            )
+        )
+    ).all()
+    for row in rows:
+        ci = None
+        for key in BY_KEY:
+            ci = await conn.scalar(
+                text(
+                    # Only the shipped class tables' names go into the statement.
+                    f"SELECT i.sys_id FROM cmdb.{key} r JOIN cmdb.ci i"  # noqa: S608
+                    ' ON i.record = r.sys_id AND i."table" = :t'
+                    " WHERE r.discovery_key = :k AND r.deleted IS NULL LIMIT 1"
+                ),
+                {"t": f"cmdb.{key}", "k": row.match_key},
+            )
+            if ci is not None:
+                break
+        if ci is not None:
+            await conn.execute(
+                text("UPDATE cmdb.review SET ci = :c WHERE sys_id = :i"),
+                {"c": ci, "i": row.sys_id},
+            )
+        else:
+            await conn.execute(
+                text("UPDATE cmdb.review SET state = 'waiting' WHERE sys_id = :i"),
+                {"i": row.sys_id},
+            )
+
+
 def _yes_no(given: Any) -> bool:
     if not isinstance(given, bool):
         raise Invalid("Yes or no.")
@@ -203,7 +251,7 @@ ACTIONS = (
         "review_create",
         "cmdb.review",
         "Create the item",
-        places=("form_button", "list_row"),
+        places=("form_button", "list_row", "list_bulk"),
         icon="add_circle",
         condition={"field": "state", "op": "eq", "value": "waiting"},
         inputs=(
@@ -470,6 +518,7 @@ module = Module(
         Route("GET", "/path", network.path_route, "From a port through panels to the far end."),
     ),
     actions=ACTIONS,
+    migrations=(Migration("0.1.3", repair_reviews),),
     widgets=WIDGETS,
     views=(
         ListView(
@@ -481,9 +530,9 @@ module = Module(
         ListView("cmdb.relationship", ("from_ci", "type", "to_ci", "origin"), sort=("from_ci",)),
         ListView(
             "cmdb.review",
-            ("found", "found_by", "ci_class", "state", "times", "seen"),
+            ("found", "address", "mac", "found_by", "ci_class_ref", "state", "seen"),
             sort=("-seen",),
-            search=("found",),
+            search=("found", "address", "mac", "host_name"),
         ),
         ListView(
             "cmdb.relation_type",
