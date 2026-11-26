@@ -11,3 +11,9 @@ pytest_plugins = ["p42cloud.sdk.testing"]
 @pytest.fixture(scope="session")
 def p42_modules() -> list[Module]:
     return [module]
+
+
+@pytest.fixture(scope="session")
+def p42_also() -> tuple[str, ...]:
+    """Tasks too: a task rule opens one task per scan's finds and closes it once reviewed."""
+    return ("tasks",)

@@ -46,6 +46,7 @@ EVENTS = {
     "certificate_expiring": ("cmdb.certificate_expiring", "A certificate ends soon"),
     "certificate_expired": ("cmdb.certificate_expired", "A certificate has ended"),
     "review_waiting": ("cmdb.review_waiting", "Something found waits for review"),
+    "review_cleared": ("cmdb.review_cleared", "Everything a scan found is reviewed"),
 }
 EVENT_CHOICES = {key: label for key, (_, label) in EVENTS.items()}
 BY_TYPE = {event: key for key, (event, _) in EVENTS.items()}

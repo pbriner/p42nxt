@@ -29,6 +29,10 @@ the fields scans fill; what you typed stays); what's new waits in the **Review l
 the item (one or several at once; the row then links to it), say it's one you know, or ignore
 it. Created items are in **All items** and in their class's list.
 
+To get a task for a group when a scan finds something, an administrator adds a task rule (Tasks):
+opens on **Something found waits for review**, closes on **Everything a scan found is reviewed**.
+There's then one task per scan, counting its new finds, closed once they're all reviewed.
+
 ## Shelly devices
 
 Read every 5 minutes (state, power, energy, temperature); **Switch on**, **Switch off**. One not
