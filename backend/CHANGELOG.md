@@ -2,6 +2,11 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.52.3
+
+- **Update selected** in lists no longer offers fields the form shows read-only (set by the
+  platform or by a module's buttons, like a review row's state or whether a connection works).
+
 ## 0.52.2
 
 - **Local connections by name**: a connection to your own network can have a host name as its
