@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.3
+
+- A review row's **State** is changed only by its buttons. Setting it to "Created" by hand made
+  nothing; rows like that wait again after the upgrade, so their items can be created.
+- **Create the item** links the review row to the item it made (rows made before are linked by
+  the upgrade), and works for several selected rows at once.
+- A review row's **Proposed class** is picked from the CMDB's classes, no longer typed.
+- Review rows show their **IP address**, **MAC address** and **Host name** (from what the scan
+  found), and the review list's search finds them. The upgrade fills them for rows already there.
+
 ## 0.1.2
 
 - A **Dashboard** entry in the menu (the dashboard with the map was there, but hard to find).

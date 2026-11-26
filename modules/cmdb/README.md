@@ -28,7 +28,7 @@ Core dependency: no
 | `cmdb.relation_type` | A kind of relation | Shipped: runs on, hosted on, part of, contains, secured by, uses, depends on, connected to, protected by; managers change them (kept) and add their own; classes checked where set; `needs` or `link` for maps |
 | `cmdb.relationship` | From a CI, of a type, to a CI | Once per pair; not to itself; no loops of `needs`; both-ways types once |
 | `cmdb.interface`, `cmdb.port`, `cmdb.cable` | A device's interfaces (MAC unique), ports, cables between ports | A port takes one cable, a patch panel's two |
-| `cmdb.review` | Something a scan found that no CI matches | Create the item, it's one we know, ignore |
+| `cmdb.review` | Something a scan found that no CI matches | Its IP address, MAC and host name from the facts (shown and searched); its proposed class picked from the classes; state set only by its buttons: create the item (one or several; the row links to it), it's one we know, ignore. Upgrade 0.1.3 links rows to items made from them and lets rows set to created by hand wait again, and fills address, MAC and host name |
 
 ## Roles and access
 

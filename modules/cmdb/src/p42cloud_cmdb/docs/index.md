@@ -26,7 +26,8 @@ needs it to the left; each box opens its item.
 The UniFi console and Proxmox are read every 30 minutes, once an administrator has set up their
 connection (for UniFi, the type **UniFi console: devices for the CMDB**). What's known is kept up to date (only
 the fields scans fill; what you typed stays); what's new waits in the **Review list**: create
-the item, say it's one you know, or ignore it.
+the item (one or several at once; the row then links to it), say it's one you know, or ignore
+it. Created items are in **All items** and in their class's list.
 
 ## Shelly devices
 

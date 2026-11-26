@@ -107,6 +107,18 @@ def _stale(seen: Any, now: datetime) -> bool:
     return now - was >= SEEN_EVERY
 
 
+def _searched(facts: dict[str, Any]) -> dict[str, Any]:
+    """A review row's address, MAC and host name from its facts, for its list and search."""
+    address = facts.get("address") or facts.get("management_address")
+    mac = facts.get("mac")
+    host = facts.get("host_name")
+    return {
+        "address": str(address)[:64] if address else None,
+        "mac": str(mac).lower()[:32] if mac else None,
+        "host_name": str(host)[:253] if host else None,
+    }
+
+
 async def observe(client: Client, source: str, ci_class: str, facts: dict[str, Any]) -> str:
     """One thing a scan saw: its CI updated (only the scanned fields), else on the review list.
     Returns matched, waiting or ignored."""
@@ -139,7 +151,7 @@ async def observe(client: Client, source: str, ci_class: str, facts: dict[str, A
         await client.update(
             "cmdb.review",
             row["sys_id"],
-            {"seen": now, "times": int(row["times"]) + 1, "facts": facts},
+            {"seen": now, "times": int(row["times"]) + 1, "facts": facts} | _searched(facts),
             row["_etag"],
         )
         return str(row["state"])
@@ -152,7 +164,8 @@ async def observe(client: Client, source: str, ci_class: str, facts: dict[str, A
             "facts": facts,
             "match_key": match_key,
             "seen": now,
-        },
+        }
+        | _searched(facts),
     )
     await client.publish("cmdb.review_waiting", data={"found": str(facts.get("name") or "")})
     return "waiting"
@@ -173,29 +186,25 @@ async def create_from_review(run: ActionRun) -> ActionResult:
     if run.inputs.get("place"):
         values["place"] = run.inputs["place"]
     made = await client.create(f"cmdb.{key}", values)
-    if facts.get("mac"):
-        index = await client.list(
-            "cmdb.ci",
-            where={
-                "and": [
-                    {"field": "table", "op": "eq", "value": f"cmdb.{key}"},
-                    {"field": "record", "op": "eq", "value": str(made["sys_id"])},
-                ]
-            },
-            limit=1,
+    index = await client.list(
+        "cmdb.ci",
+        where={
+            "and": [
+                {"field": "table", "op": "eq", "value": f"cmdb.{key}"},
+                {"field": "record", "op": "eq", "value": str(made["sys_id"])},
+            ]
+        },
+        limit=1,
+    )
+    ci = index["records"][0]["sys_id"] if index["records"] else None
+    if ci and facts.get("mac"):
+        await client.create(
+            "cmdb.interface", {"ci": ci, "name": "eth0", "mac": str(facts["mac"]).lower()}
         )
-        if index["records"]:
-            await client.create(
-                "cmdb.interface",
-                {
-                    "ci": index["records"][0]["sys_id"],
-                    "name": "eth0",
-                    "mac": str(facts["mac"]).lower(),
-                },
-            )
     current = await client.get("cmdb.review", row["sys_id"])
+    # Linked, so the review row leads to what it became.
     await client.update(
-        "cmdb.review", row["sys_id"], {"state": "created", "ci": None}, current["_etag"]
+        "cmdb.review", row["sys_id"], {"state": "created", "ci": ci}, current["_etag"]
     )
     return ActionResult(message=f"Made {values['name']}.")
 
