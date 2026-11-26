@@ -163,6 +163,13 @@ module = Module(
         Section(
             "Places",
             (
+                Item(
+                    "dashboard",
+                    "Dashboard",
+                    kind="page",
+                    path="/dashboard/places",
+                    icon="dashboard",
+                ),
                 Item("places", "Places", "places.place", icon="location_city"),
                 Item(
                     "sites",

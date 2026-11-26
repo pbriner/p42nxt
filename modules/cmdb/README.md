@@ -41,7 +41,7 @@ Core dependency: no
 
 ## Views, navigation and dashboards
 
-Navigation: CMDB (All items, Relationships, Review list), one section per family, Network,
+Navigation: CMDB (Dashboard, All items, Relationships, Review list), one section per family, Network,
 CMDB settings. Dashboard `cmdb`: the map of a chosen item, items by class, certificates ending in
 30 days, found to review, not seen for 30 days. Bulk "Move to a place" on every class.
 
@@ -50,9 +50,9 @@ CMDB settings. Dashboard `cmdb`: the map of a chosen item, items by class, certi
 | Job (schedule) | What |
 |---|---|
 | Register this installation (hourly) | The application, its modules and the database as CIs (setting "Register this installation", on) |
-| Read the UniFi console (every 30 minutes) | Devices and clients into the review list or their CI |
+| Read the UniFi console (every 30 minutes) | Devices and clients into the review list or their CI; "last seen" is written again only after 10 minutes, unless something else changed |
 | Read Proxmox (every 30 minutes) | Nodes, VMs, LXC containers |
-| Read Shelly devices (every 5 minutes) | State, power, energy, temperature; down after 15 minutes; through an agent in other networks |
+| Read Shelly devices (every 5 minutes) | State, power, energy, temperature, written only when they change ("last seen" every 10 minutes); down once it surely hasn't answered for 15 minutes (at most 25); through an agent in other networks |
 | Warn of ending certificates (daily) | 30, 14 and 3 days before, and once ended |
 
 Events: `cmdb.device_down`, `cmdb.device_recovered`, `cmdb.certificate_expiring`,
@@ -69,5 +69,6 @@ A Shelly device's address is an IP address in your own network or a host name, n
 
 ## Outside systems
 
-UniFi console (API key), Proxmox (API token), Shelly devices: connections to your own network
-(local ranges, a pinned certificate where the device made its own).
+UniFi console (connection type "UniFi console: devices for the CMDB", API key), Proxmox (API
+token), Shelly devices: connections to your own network (local ranges; the address an IP address
+or a host name; a pinned certificate where the device made its own).

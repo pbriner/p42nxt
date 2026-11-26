@@ -28,6 +28,9 @@ from p42cloud_cmdb.classes import BY_KEY
 from p42cloud_cmdb.index import every, invalid
 
 DOWN_AFTER = timedelta(minutes=15)
+# "Last seen" is written at most this often unless something else changes with it: each write is
+# an audit entry, and a scan every few minutes would fill the trail with nothing but that.
+SEEN_EVERY = timedelta(minutes=10)
 GEN2 = 2  # Shelly's second generation and later answer RPC
 WARN_DAYS = (30, 14, 3)
 
@@ -43,7 +46,7 @@ def _proxmox_sign(request: httpx.Request, secrets: dict[str, str]) -> None:
 CONNECTION_TYPES = (
     ConnectionType(
         "unifi",
-        "UniFi console (Dream Machine)",
+        "UniFi console: devices for the CMDB",
         (),
         auth="api_key",
         secrets=("key",),
@@ -93,10 +96,22 @@ async def _matching(client: Client, facts: dict[str, Any]) -> Any:
     return None
 
 
+def _stale(seen: Any, now: datetime) -> bool:
+    """Whether a stored "last seen" is old enough to be written again."""
+    if not seen:
+        return True
+    try:
+        was = datetime.fromisoformat(str(seen))
+    except ValueError:
+        return True
+    return now - was >= SEEN_EVERY
+
+
 async def observe(client: Client, source: str, ci_class: str, facts: dict[str, Any]) -> str:
     """One thing a scan saw: its CI updated (only the scanned fields), else on the review list.
     Returns matched, waiting or ignored."""
-    now = datetime.now(UTC).isoformat()
+    moment = datetime.now(UTC)
+    now = moment.isoformat()
     found = await _matching(client, facts)
     if found is not None:
         key, record = found
@@ -104,8 +119,9 @@ async def observe(client: Client, source: str, ci_class: str, facts: dict[str, A
             set(BY_KEY[key].own) | {"serial", "model", "last_seen"} if key in BY_KEY else set()
         )
         scanned = {k: v for k, v in facts.items() if k in own and v not in (None, "")}
-        scanned["last_seen"] = now
         changed = {k: v for k, v in scanned.items() if str(record.get(k)) != str(v)}
+        if "last_seen" in own and (changed or _stale(record.get("last_seen"), moment)):
+            changed["last_seen"] = now
         if changed:
             names = sorted(set(record.get("scanned") or []) | (set(changed) - {"last_seen"}))
             await client.update(
@@ -304,6 +320,39 @@ def _shelly_state(answer: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _changed_state(current: dict[str, Any], state: dict[str, Any], now: datetime) -> dict[str, Any]:
+    """What a reading changes on a Shelly device: the values that differ, and when it was read
+    and seen only with them or when that's gone stale."""
+    values = {k: v for k, v in state.items() if v is not None and str(current.get(k)) != str(v)}
+    if not current.get("online"):
+        values["online"] = True
+    if values or _stale(current.get("last_seen"), now):
+        values |= {"state_read": now.isoformat(), "last_seen": now.isoformat()}
+    return values
+
+
+def _gone_quiet(current: dict[str, Any], now: datetime) -> bool:
+    """Whether an online device that didn't answer is down. "Last seen" may lag its last answer
+    by SEEN_EVERY, so only once it surely hasn't answered for DOWN_AFTER."""
+    if not current.get("online"):
+        return False
+    seen = current.get("last_seen")
+    return not seen or now - datetime.fromisoformat(str(seen)) >= DOWN_AFTER + SEEN_EVERY
+
+
+async def _read_shelly(
+    http: httpx.AsyncClient, address: str, generation: Any
+) -> dict[str, Any] | None:
+    """A Shelly device's state read here, or None if it didn't answer."""
+    path = "/rpc/Shelly.GetStatus" if (generation or GEN2) >= GEN2 else "/status"
+    try:
+        answer = await http.get(f"http://{address}{path}", timeout=5)
+        answer.raise_for_status()
+        return _shelly_state(answer.json())
+    except httpx.HTTPError, ValueError:
+        return None
+
+
 async def shelly_read(run: JobRun) -> str:
     """Every Shelly device's state; one not answering for 15 minutes is down (an event)."""
     client = Client(run.records)
@@ -330,41 +379,29 @@ async def shelly_read(run: JobRun) -> str:
                         },
                     )
                     continue
-                state: dict[str, Any] | None = None
-                try:
-                    gen2 = (d.get("generation") or GEN2) >= GEN2
-                    path = "/rpc/Shelly.GetStatus" if gen2 else "/status"
-                    answer = await http.get(f"http://{address}{path}", timeout=5)
-                    answer.raise_for_status()
-                    state = _shelly_state(answer.json())
-                except httpx.HTTPError, ValueError:
-                    state = None
+                state = await _read_shelly(http, address, d.get("generation"))
                 current = await client.get("cmdb.shelly_device", d["sys_id"])
                 if state is not None:
                     read += 1
-                    values = {k: v for k, v in state.items() if v is not None} | {
-                        "online": True,
-                        "state_read": now.isoformat(),
-                        "last_seen": now.isoformat(),
-                    }
+                    values = _changed_state(current, state, now)
                     if not current.get("online"):
                         await client.publish(
                             "cmdb.device_recovered", about=("cmdb.shelly_device", d["sys_id"])
                         )
-                    await client.update("cmdb.shelly_device", d["sys_id"], values, current["_etag"])
-                else:
-                    seen = current.get("last_seen")
-                    was = datetime.fromisoformat(seen) if seen else None
-                    if current.get("online") and (was is None or now - was >= DOWN_AFTER):
-                        down += 1
+                    if values:
                         await client.update(
-                            "cmdb.shelly_device", d["sys_id"], {"online": False}, current["_etag"]
+                            "cmdb.shelly_device", d["sys_id"], values, current["_etag"]
                         )
-                        await client.publish(
-                            "cmdb.device_down",
-                            about=("cmdb.shelly_device", d["sys_id"]),
-                            data={"name": d["name"]},
-                        )
+                elif _gone_quiet(current, now):
+                    down += 1
+                    await client.update(
+                        "cmdb.shelly_device", d["sys_id"], {"online": False}, current["_etag"]
+                    )
+                    await client.publish(
+                        "cmdb.device_down",
+                        about=("cmdb.shelly_device", d["sys_id"]),
+                        data={"name": d["name"]},
+                    )
     except Problem as problem:
         if problem.code == "no_connection":
             return "No Shelly connection is set up: nothing to read."
@@ -649,10 +686,10 @@ async def on_agent_task(run: EventRun) -> None:
     if not device_id:
         return
     current = await client.get("cmdb.shelly_device", device_id)
-    now = datetime.now(UTC).isoformat()
     if run.data.get("ok"):
-        values = {k: v for k, v in _shelly_state(task.get("result") or {}).items() if v is not None}
-        values |= {"online": True, "state_read": now, "last_seen": now}
+        values = _changed_state(current, _shelly_state(task.get("result") or {}), datetime.now(UTC))
+        if not values:
+            return
     else:
         values = {"online": False}
         if current.get("online"):

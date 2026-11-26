@@ -1,6 +1,6 @@
 [project]
 name = "p42cloud-cmdb"
-version = "0.1.1"
+version = "0.1.2"
 description = "CMDB: configuration items, their relations and dependency maps"
 requires-python = ">=3.14"
 license = "Apache-2.0"

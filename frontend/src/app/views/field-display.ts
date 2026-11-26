@@ -59,7 +59,12 @@ export class FieldDisplay {
       this.i18n.t(k),
     ),
   );
-  protected readonly json = computed(() => JSON.stringify(this.value(), null, 2));
+  protected readonly json = computed(() => {
+    const value = this.value();
+    // A list of short texts reads one per line, as it's typed.
+    if (this.field().options['lines'] === true && Array.isArray(value)) return value.join('\n');
+    return JSON.stringify(value, null, 2);
+  });
   protected readonly link = computed(() => {
     const value = this.value();
     const state = (this.record()['_reference_state'] as Record<string, string> | undefined)?.[

@@ -15,7 +15,11 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 from p42cloud.sdk import Client, Problem
 
-from p42cloud_cmdb.discovery import _shelly_state, observe  # pyright: ignore[reportPrivateUsage]
+from p42cloud_cmdb.discovery import (  # pyright: ignore[reportPrivateUsage]
+    _changed_state,  # pyright: ignore[reportPrivateUsage]
+    _shelly_state,  # pyright: ignore[reportPrivateUsage]
+    observe,
+)
 from p42cloud_cmdb.index import graph
 from p42cloud_cmdb.network import path
 
@@ -270,3 +274,35 @@ async def test_a_shelly_is_reached_by_its_address_only(
             )
         with pytest.raises(Problem):  # agents' answers are for managers
             await client.list("sys.agent_task")
+
+
+def test_last_seen_is_written_only_when_stale_or_with_a_change() -> None:
+    now = datetime.now(UTC)
+    recent = (now - timedelta(minutes=3)).isoformat()
+    old = (now - timedelta(minutes=11)).isoformat()
+    calm = {"online": True, "switched_on": True, "power_w": 4.2, "last_seen": recent}
+    reading = {"switched_on": True, "power_w": 4.2, "temperature": None}
+    assert _changed_state(calm, reading, now) == {}  # nothing new: no write, no audit entry
+    assert set(_changed_state(calm | {"last_seen": old}, reading, now)) == {
+        "state_read",
+        "last_seen",
+    }
+    switched = _changed_state(calm, reading | {"switched_on": False}, now)
+    assert switched["switched_on"] is False and "last_seen" in switched
+    back = _changed_state(calm | {"online": False}, reading, now)
+    assert back["online"] is True
+
+
+async def test_a_scan_rewrites_last_seen_only_when_stale(as_system: Acting) -> None:
+    async with as_system() as client:
+        tag = _tag()
+        facts = {"name": f"switch {tag}", "serial": f"SN-{tag}", "discovery_key": f"unifi:{tag}"}
+        made = await client.create(
+            "cmdb.network_device", {"name": facts["name"], "serial": facts["serial"]}
+        )
+        await observe(client, "UniFi", "network_device", facts)
+        first = (await client.get("cmdb.network_device", made["sys_id"]))["last_seen"]
+        await observe(client, "UniFi", "network_device", facts)
+        again = (await client.get("cmdb.network_device", made["sys_id"]))["last_seen"]
+    assert first is not None
+    assert again == first  # seen a moment ago: not written again

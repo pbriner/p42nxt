@@ -31,6 +31,10 @@ Core dependency: no
 
 `ipam.reader` (read; includes Places reader), `ipam.manager` (everything).
 
+## Views, navigation and dashboards
+
+Navigation (IPAM): Dashboard, Subnets, IP addresses, VLANs, DNS zones.
+
 ## Workflows, approvals and jobs
 
 Read DNS zones (daily); Reserve the next free address (a subnet's button).
@@ -41,5 +45,6 @@ Read DNS zones (daily); Reserve the next free address (a subnet's button).
 
 ## Outside systems
 
-UniFi console (API key, local connection); DNS servers by zone transfer (AXFR, without a key
+UniFi console (connection type "UniFi console: DNS records for IPAM", API key, local
+connection); DNS servers by zone transfer (AXFR, without a key
 for now). A zone's DNS server is an IP address in your own network, checked when it's saved.

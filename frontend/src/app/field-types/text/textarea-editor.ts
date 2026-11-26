@@ -5,7 +5,8 @@ import { MatInputModule } from '@angular/material/input';
 import { FieldInfo } from '../../core/format';
 import { FieldEditor } from '../unit';
 
-/** Several lines: long text, Markdown, or JSON (edited as text, checked as it's typed). */
+/** Several lines: long text, Markdown, JSON (edited as text, checked as it's typed), or a list
+ *  of short texts (a JSON field with `lines`: one per line, no JSON to type). */
 @Component({
   selector: 'app-textarea-editor',
   imports: [MatFormFieldModule, MatInputModule],
@@ -18,8 +19,8 @@ import { FieldEditor } from '../unit';
       <mat-label>{{ field().label }}</mat-label>
       <textarea
         matInput
-        [class.mono]="json() || field().type === 'markdown'"
-        [rows]="json() ? 4 : 5"
+        [class.mono]="json() || lines() || field().type === 'markdown'"
+        [rows]="json() || lines() ? 4 : 5"
         [required]="field().required"
         [value]="text()"
         (input)="typed($any($event.target).value)"
@@ -45,7 +46,10 @@ export class TextareaEditor implements FieldEditor {
   readonly value = model<unknown>(null);
   readonly error = input<string | null>(null);
   readonly shown = input<string | null>(null);
-  protected readonly json = computed(() => this.field().type === 'json');
+  protected readonly lines = computed(
+    () => this.field().type === 'json' && this.field().options['lines'] === true,
+  );
+  protected readonly json = computed(() => this.field().type === 'json' && !this.lines());
   protected readonly problem = signal<string | null>(null);
   private typedText: string | null = null;
 
@@ -57,10 +61,22 @@ export class TextareaEditor implements FieldEditor {
     if (value === null || value === undefined) {
       return '';
     }
+    if (this.lines()) {
+      return Array.isArray(value) ? value.join('\n') : String(value);
+    }
     return this.json() ? JSON.stringify(value, null, 2) : String(value);
   }
 
   protected typed(text: string): void {
+    if (this.lines()) {
+      this.typedText = text;
+      const items = text
+        .split(/[\n,;]+/)
+        .map((item) => item.trim())
+        .filter((item) => item);
+      this.value.set(items.length ? items : null);
+      return;
+    }
     if (!this.json()) {
       this.value.set(text || null);
       return;

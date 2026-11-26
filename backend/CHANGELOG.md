@@ -2,6 +2,21 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.52.2
+
+- **Local connections by name**: a connection to your own network can have a host name as its
+  address (behind your own reverse proxy, with its real certificate). The name is looked up on
+  every request; every address it has must be in the connection's local ranges, and the request
+  goes to the address just checked. No user or password in the address; changing the address
+  later is checked too.
+- **A device's own certificate**: pasting a certificate a device made itself now works even when
+  it's loosely made (a UniFi Dream Machine's signs certificates without saying it's an
+  authority, which was refused as "invalid CA certificate"). Still only that one is trusted.
+- **Local ranges** are typed one per line (or separated by commas), no longer as JSON.
+- **Fields**: a JSON field can hold a list of short texts (`Json(..., lines=True)`), typed one
+  per line in forms.
+- A test checks that every module with a dashboard has it in its menu.
+
 ## 0.52.1
 
 Security fixes for 0.52.0.

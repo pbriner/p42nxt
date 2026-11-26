@@ -62,8 +62,9 @@ CONNECTION = Table(
         # A local type's connection: the only ranges inside the network it may reach.
         "local_ranges": Json(
             "Local ranges",
-            help="Only for devices in your own network: like 192.168.1.0/24. Nothing else is"
-            " reached.",
+            lines=True,
+            help="Only for devices in your own network: one range per line, like"
+            " 192.168.1.0/24. Nothing else is reached.",
         ),
         # A device in one's own network often has its own certificate (a router, a hypervisor):
         # trusted exactly, this one only, instead of a certificate authority.

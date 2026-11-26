@@ -63,7 +63,7 @@ the database makes, how a value is checked and stored, and which changes keep ev
 | `Formula(expression, precision=, scale=, currency_field= or currency=)` | `numeric(p,s)` | Worked out by the database from the record's own numbers and dates on every save (below) |
 | `Rollup(table, via, measure=, field=, where=, …)` | `numeric(p,s)` | The sum or count of the records pointing to this one, kept right by the database (below) |
 | `AnyRecord(table_field=)` | `uuid` | A record of any table; `table_field` names the field saying which (a reference to `sys.table`, or a table's name), and gives the linked record a related list |
-| `Json` | `jsonb` | Valid JSON |
+| `Json` | `jsonb` | Valid JSON. `lines=True`: a list of short texts, typed one per line (or separated by commas) in forms |
 
 ### References filled from a key
 

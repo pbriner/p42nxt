@@ -30,7 +30,7 @@ Core dependency: no
 
 ## Views, navigation and dashboards
 
-Navigation (Places): Places, Sites, Racks, New place. A place's form lists the places in it.
+Navigation (Places): Dashboard, Places, Sites, Racks, New place. A place's form lists the places in it.
 Dashboard `places`: places by kind.
 
 ## Workflows, approvals and jobs
