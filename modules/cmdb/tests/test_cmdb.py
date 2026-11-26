@@ -31,10 +31,12 @@ async def _ci(client: Client, key: str, values: dict[str, Any]) -> tuple[dict[st
     made = await client.create(f"cmdb.{key}", values)
     found = await client.list(
         "cmdb.ci",
-        where={"and": [
-            {"field": "table", "op": "eq", "value": f"cmdb.{key}"},
-            {"field": "record", "op": "eq", "value": str(made["sys_id"])},
-        ]},
+        where={
+            "and": [
+                {"field": "table", "op": "eq", "value": f"cmdb.{key}"},
+                {"field": "record", "op": "eq", "value": str(made["sys_id"])},
+            ]
+        },
     )
     return made, str(found["records"][0]["sys_id"])
 
@@ -62,7 +64,9 @@ async def test_every_class_is_indexed_and_follows_its_item(as_system: Acting) ->
             "CI-",
         )
         current = await client.get("cmdb.server", server["sys_id"])
-        await client.update("cmdb.server", server["sys_id"], {"status": "in_repair"}, current["_etag"])
+        await client.update(
+            "cmdb.server", server["sys_id"], {"status": "in_repair"}, current["_etag"]
+        )
         assert (await client.get("cmdb.ci", server_ci))["status"] == "in_repair"
         current = await client.get("cmdb.server", server["sys_id"])
         await client.delete("cmdb.server", server["sys_id"], current["_etag"])
@@ -129,12 +133,17 @@ async def test_what_scans_find_goes_to_the_review_list(as_system: Acting) -> Non
             ["os"],
             True,
         )
-        facts = {"name": f"ap {tag}", "mac": f"aa:bb:cc:{tag[:2]}:{tag[2:4]}:{tag[4:]}",
-                 "discovery_key": f"unifi:{tag}"}
+        facts = {
+            "name": f"ap {tag}",
+            "mac": f"aa:bb:cc:{tag[:2]}:{tag[2:4]}:{tag[4:]}",
+            "discovery_key": f"unifi:{tag}",
+        }
         assert await observe(client, "UniFi", "network_device", facts) == "waiting"
         assert await observe(client, "UniFi", "network_device", facts) == "waiting"  # counted
         row = (
-            await client.list("cmdb.review", where={"field": "match_key", "op": "eq", "value": facts["mac"]})
+            await client.list(
+                "cmdb.review", where={"field": "match_key", "op": "eq", "value": facts["mac"]}
+            )
         )["records"][0]
         assert row["times"] == 2
         done = await client.action(
@@ -189,10 +198,10 @@ async def test_a_certificate_is_read_and_warned_of(as_system: Acting, run_job: R
     state, said = await run_job("cmdb.certificates")
     assert state == "succeeded" and said is not None
     async with as_system() as client:
-        assert (await client.get("cmdb.certificate", made["sys_id"]))["warned"] == 14  # noqa: PLR2004
+        assert (await client.get("cmdb.certificate", made["sys_id"]))["warned"] == 14
     await run_job("cmdb.certificates")  # not told twice for the same mark
     async with as_system() as client:
-        assert (await client.get("cmdb.certificate", made["sys_id"]))["warned"] == 14  # noqa: PLR2004
+        assert (await client.get("cmdb.certificate", made["sys_id"]))["warned"] == 14
 
 
 async def test_the_installation_registers_itself(as_system: Acting, run_job: RunJob) -> None:
@@ -212,7 +221,14 @@ async def test_the_installation_registers_itself(as_system: Acting, run_job: Run
 
 
 def test_a_shellys_state_is_read_from_both_generations() -> None:
-    gen2 = {"switch:0": {"output": True, "apower": 12.5, "aenergy": {"total": 1500}, "temperature": {"tC": 40}}}
+    gen2 = {
+        "switch:0": {
+            "output": True,
+            "apower": 12.5,
+            "aenergy": {"total": 1500},
+            "temperature": {"tC": 40},
+        }
+    }
     gen1 = {"relays": [{"ison": False}], "meters": [{"power": 0}], "temperature": 30}
     assert _shelly_state(gen2) == {
         "switched_on": True,
@@ -221,5 +237,3 @@ def test_a_shellys_state_is_read_from_both_generations() -> None:
         "temperature": 40,
     }
     assert _shelly_state(gen1)["switched_on"] is False
-
-
