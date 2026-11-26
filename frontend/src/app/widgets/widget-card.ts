@@ -21,6 +21,7 @@ import { ListViews } from '../core/list-views';
 import { filterQuery } from '../core/navigation';
 import { Tables, path } from '../core/tables';
 import { Chart, Point } from './chart';
+import { Graph, GraphEdge, GraphNode } from './graph';
 
 const LIMITS = { bar: 8, donut: 6, column: 50, line: 50 } as const;
 const RANGES = { '3m': '@today-3m', '1y': '@today-1y', all: null } as const;
@@ -36,6 +37,8 @@ interface SourceAnswer {
   subtitle?: string;
   link?: string;
   points?: { key?: unknown; label: string; value: number }[];
+  nodes?: GraphNode[];
+  edges?: GraphEdge[];
 }
 
 interface Line {
@@ -52,7 +55,7 @@ function and(...parts: unknown[]): unknown {
 /** One widget: its data read through the API as the person, so they see only what they may. */
 @Component({
   selector: 'app-widget-card',
-  imports: [Chart, MatButtonModule, MatCardModule, MatProgressBarModule, RouterLink],
+  imports: [Chart, Graph, MatButtonModule, MatCardModule, MatProgressBarModule, RouterLink],
   templateUrl: './widget-card.html',
   styleUrl: './widget-card.scss',
 })
@@ -74,6 +77,10 @@ export class WidgetCard {
   protected readonly value = signal<number | null>(null);
   protected readonly trend = signal<number[]>([]);
   protected readonly points = signal<Point[]>([]);
+  protected readonly graph = signal<{ nodes: GraphNode[]; edges: GraphEdge[] }>({
+    nodes: [],
+    edges: [],
+  });
   protected readonly series = signal<[string, string] | null>(null);
   protected readonly lines = signal<Line[]>([]);
   protected readonly table = signal<TableInfo | null>(null);
@@ -202,6 +209,10 @@ export class WidgetCard {
       query: w.param ? { [w.param]: value } : {},
     });
     this.answer.set(data);
+    if (w.kind === 'map') {
+      this.graph.set({ nodes: data.nodes ?? [], edges: data.edges ?? [] });
+      return;
+    }
     if (w.kind === 'figure') {
       this.value.set(typeof data.value === 'number' ? data.value : null);
       return;

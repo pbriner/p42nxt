@@ -41,6 +41,7 @@ CONNECTION_TYPE = Table(
         "secrets": Json("Secrets it needs"),
         "base_url": Url("Usual address"),
         "api_key_header": String("Key header", max_length=80),
+        "local": Boolean("Inside your own network", required=True, default=False),
         "custom": Boolean("Made by an administrator", required=True, default=False),
     },
     label_plural="Connection types",
@@ -58,6 +59,19 @@ CONNECTION = Table(
         "label": String("Name", max_length=120, required=True),
         # Empty: the type's usual address (the table's check fills it in, or refuses).
         "base_url": Url("Address", help="Empty: the usual address of its type."),
+        # A local type's connection: the only ranges inside the network it may reach.
+        "local_ranges": Json(
+            "Local ranges",
+            help="Only for devices in your own network: like 192.168.1.0/24. Nothing else is"
+            " reached.",
+        ),
+        # A device in one's own network often has its own certificate (a router, a hypervisor):
+        # trusted exactly, this one only, instead of a certificate authority.
+        "trusted_certificate": Text(
+            "Its own certificate (PEM)",
+            help="Only for devices in your own network with a self-made certificate: paste it,"
+            " and only that one is trusted.",
+        ),
         "health": Choice(
             "Works",
             {"unknown": "Not checked", "ok": "Yes", "failed": "No"},
@@ -120,3 +134,7 @@ class ConnectionType:
     # One connection for the whole installation (a bot, a company system), set up by
     # administrators and used by the type's module only; not one per person.
     shared: bool = False
+    # Devices inside the installation's own network (smart plugs, a router, a hypervisor): a
+    # connection reaches only the ranges an administrator names on it, over http or https.
+    # `allowed_hosts` doesn't apply then.
+    local: bool = False

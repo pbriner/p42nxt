@@ -26,7 +26,7 @@ WIDGET = Table(
         "title": TranslatedText("Title", required=True),
         "kind": Choice(
             "Kind",
-            {"list": "List", "figure": "Figure", "chart": "Chart", "text": "Text"},
+            {"list": "List", "figure": "Figure", "chart": "Chart", "text": "Text", "map": "Map"},
             required=True,
         ),
         # "home", or a module's ID: its dashboard.
@@ -122,7 +122,9 @@ class Widget:
 
     name: str  # unique in the module; the record is named <module>.<name>
     title: str | dict[str, str]
-    kind: Literal["list", "figure", "chart", "text"]
+    # map: a graph of things and their links from a source route (`source`), like what a
+    # server runs and what it needs.
+    kind: Literal["list", "figure", "chart", "text", "map"]
     dashboard: str = HOME  # or the module's own ID
     list: str | None = None
     # For what a list can't count or sum: a GET route of the module (/widget/profit) answers

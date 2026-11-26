@@ -55,6 +55,13 @@ never shown again.
 **Check** (an action on the connection) runs the type's check and records whether it works,
 when, and what it said.
 
+**Devices in your own network** (smart plugs, a router, a hypervisor): a connection type marked
+`local` reaches nothing on the internet and only the ranges an administrator names on the
+connection (**Local ranges**, like `192.168.1.0/24`: inside a network, at most a /16), by
+address, over http or https. It's the one exception to the safe client's rule, explicit on the
+connection and in the audit log. A device with its own certificate (a UniFi console, Proxmox)
+can have it pasted (**Its own certificate**): only that one is trusted.
+
 A secret may have an **Expires** date (when the outside system stops taking it). The daily job
 **Remind owners of expiring secrets** tells the connection's owner two weeks before and again
 on the day (notification kind **A connection's secret expires**). A new value or date resets

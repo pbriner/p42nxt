@@ -2,6 +2,27 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.52.0
+
+What the CMDB needs, and agents.
+
+- **Connections to your own network**: a connection type marked `local` reaches only the ranges
+  an administrator names on the connection (`local_ranges`, inside a network, at most a /16),
+  over http or https, by address; the one, explicit and audited exception to the safe client's
+  rule. A device's own certificate can be pinned (`trusted_certificate`): only that one is
+  trusted.
+- **Map widgets**: a widget of kind `map` draws a graph from its module's source route (nodes
+  with levels, edges with labels), our own SVG; each box opens its record.
+- **Agents**: programs in other networks working for the installation through the public API,
+  outbound only. `POST /api/v1/agents/codes` (administrators) makes a one-time code;
+  `POST /api/v1/agents/enrol` gives the agent its own service account and token;
+  `GET /api/v1/agents/tasks` and `POST /api/v1/agents/tasks/<id>` fetch and answer tasks.
+  Events `sys.agent_enrolled`, `sys.agent_quiet` (not seen for 15 minutes), `sys.agent_back`,
+  `sys.agent_task_done`. A reference agent is in `agent/`.
+- **SDK**: `Client.installation()` (versions, host, database, modules), `Client.agent_task()`,
+  `EVERY_TABLE`: a module may follow every table after a change (never refuse one).
+- **Action inputs can be references** (a picker of records).
+
 ## 0.51.0
 
 Widgets made in the app.

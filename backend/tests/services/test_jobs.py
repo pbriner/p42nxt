@@ -90,6 +90,8 @@ async def _quiet_queue(engine: AsyncEngine) -> None:
                     "UPDATE sys.job_run SET state = 'skipped' WHERE state IN ('queued', 'running')"
                 )
             )
+            # Schedules due at any moment (every 5 minutes) mustn't come first.
+            await conn.execute(text("UPDATE sys.schedule SET next_run = now() + interval '1 day'"))
 
 
 async def _test_job(

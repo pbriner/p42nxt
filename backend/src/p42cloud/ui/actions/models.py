@@ -56,7 +56,7 @@ UI_ACTION = Table(
 )
 
 PLACES = frozenset({"form_button", "form_menu", "list_bulk", "list_row"})
-INPUT_TYPES = frozenset({"string", "text", "choice", "boolean", "date", "integer"})
+INPUT_TYPES = frozenset({"string", "text", "choice", "boolean", "date", "integer", "reference"})
 
 
 @dataclass(frozen=True)

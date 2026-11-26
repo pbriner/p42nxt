@@ -156,7 +156,7 @@ Widget("by_language", "By language", "chart", list="hello.greeting",
 
 | Part | Meaning |
 |---|---|
-| `kind` | `figure` (a number, with an optional `target` and a 12-month `trend` by a date field), `chart` (`bar`, `donut`, `column`, `line`, grouped by a field; dates per `period`), `list` (the first records), `text` |
+| `kind` | `map` (a graph of things and their links from a source route: `{"nodes": [{"id", "label", "kind", "status", "level", "link", "tone"}], "edges": [{"from", "to", "label"}]}`, what it needs to the right, what needs it to the left), `figure` (a number, with an optional `target` and a 12-month `trend` by a date field), `chart` (`bar`, `donut`, `column`, `line`, grouped by a field; dates per `period`), `list` (the first records), `text` |
 | `list`, `filter` | The list view it reads, and a filter on top |
 | `measure`, `field` | `count` (default), or `sum`, `avg`, `min`, `max` of a number field |
 | `field2` | A second number of the same records, as a second series of a bar or column chart (plan against actual) |

@@ -46,6 +46,10 @@ await client.update("hello.greeting", made["sys_id"], {"text": "Hello"}, made["_
   fields of referenced records.
 - `approvals(table, id)`, `decide(approval, decision, note=)` and `pending_approval(table, id)`
   read and decide approvals (`approvals.md`).
+- `installation()` says what the installation is made of (versions, host, database, modules);
+  `agent_task(agent, module, kind, payload)` hands a task to an agent (`agents.md`).
+- `EVERY_TABLE` as a hook's table: a module may follow every table after a change, never refuse
+  one.
 - `comment(table, id, text, kind="comment")` adds a comment, or a work note with
   `kind="work_note"`; `comments(table, id)` reads them (`comments.md`).
 - Records come and go as JSON: exact numbers and times as text, the version as `_etag`, fields

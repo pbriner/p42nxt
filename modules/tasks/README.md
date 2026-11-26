@@ -1,6 +1,6 @@
 # Tasks (`tasks`)
 
-Version: 0.1.0 · Last updated: 2026-11-24
+Version: 0.2.0 · Last updated: 2026-11-24
 
 ## Purpose
 
@@ -66,6 +66,7 @@ Events it listens for:
 |---|---|
 | `sys.job_failed` | Active rules opening on it open a task about the schedule, or count a repeat on the one still open (one per rule and record) |
 | `sys.job_recovered` | Active rules closing on it mark their open task about the schedule done, with a work note |
+| `cmdb.device_down`, `cmdb.device_recovered`, `cmdb.certificate_expiring`, `cmdb.certificate_expired`, `cmdb.review_waiting` | The same for rules on the CMDB's events, when the CMDB is installed |
 | `sys.comment_added`, `sys.work_note_added` | A task's watchers are notified, not the author; work notes only to watchers in the task's group |
 
 Job `tasks.due` (schedule "Due tasks, daily", 06:00 UTC): open tasks due tomorrow are told to

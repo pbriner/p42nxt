@@ -14,6 +14,7 @@ const KINDS: Record<string, string> = {
   boolean: 'boolean',
   date: 'date',
   integer: 'number',
+  reference: 'reference',
 };
 
 /** What an action asks for before it runs, with the same editors as forms. */

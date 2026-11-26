@@ -83,6 +83,26 @@
    "text": "US-Dollar"
   },
   {
+   "key": "sys.event_type|sys.agent_back|label",
+   "english": "An agent is back",
+   "text": "Ein Agent ist zurück"
+  },
+  {
+   "key": "sys.event_type|sys.agent_enrolled|label",
+   "english": "An agent is enrolled",
+   "text": "Ein Agent ist angemeldet"
+  },
+  {
+   "key": "sys.event_type|sys.agent_quiet|label",
+   "english": "An agent goes quiet",
+   "text": "Ein Agent meldet sich nicht mehr"
+  },
+  {
+   "key": "sys.event_type|sys.agent_task_done|label",
+   "english": "An agent did a task",
+   "text": "Ein Agent hat eine Aufgabe erledigt"
+  },
+  {
    "key": "sys.event_type|sys.comment_added|description",
    "english": "Someone commented on a record (about the record; data: the comment's ID).",
    "text": "Jemand hat einen Datensatz kommentiert (über den Datensatz; Daten: die ID des Kommentars)."
@@ -121,6 +141,136 @@
    "key": "sys.event_type|sys.work_note_added|label",
    "english": "A work note is added",
    "text": "Eine Arbeitsnotiz kommt hinzu"
+  },
+  {
+   "key": "sys.field|sys.agent.active|label",
+   "english": "Active",
+   "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|sys.agent.address|label",
+   "english": "Seen from",
+   "text": "Gesehen von"
+  },
+  {
+   "key": "sys.field|sys.agent.enrolled|label",
+   "english": "Enrolled",
+   "text": "Angemeldet"
+  },
+  {
+   "key": "sys.field|sys.agent.host|label",
+   "english": "Host it runs on",
+   "text": "Läuft auf"
+  },
+  {
+   "key": "sys.field|sys.agent.last_seen|label",
+   "english": "Last seen",
+   "text": "Zuletzt gesehen"
+  },
+  {
+   "key": "sys.field|sys.agent.name|label",
+   "english": "Name",
+   "text": "Name"
+  },
+  {
+   "key": "sys.field|sys.agent.notes|label",
+   "english": "Notes",
+   "text": "Notizen"
+  },
+  {
+   "key": "sys.field|sys.agent.person|label",
+   "english": "Acts as",
+   "text": "Handelt als"
+  },
+  {
+   "key": "sys.field|sys.agent.quiet|label",
+   "english": "Quiet",
+   "text": "Still"
+  },
+  {
+   "key": "sys.field|sys.agent.version|label",
+   "english": "Version",
+   "text": "Version"
+  },
+  {
+   "key": "sys.field|sys.agent_code.code|label",
+   "english": "Code hash",
+   "text": "Code-Hash"
+  },
+  {
+   "key": "sys.field|sys.agent_code.expires|label",
+   "english": "Expires",
+   "text": "Läuft ab"
+  },
+  {
+   "key": "sys.field|sys.agent_code.name|label",
+   "english": "For the agent",
+   "text": "Für den Agenten"
+  },
+  {
+   "key": "sys.field|sys.agent_code.used|label",
+   "english": "Used",
+   "text": "Verwendet"
+  },
+  {
+   "key": "sys.field|sys.agent_task.agent|label",
+   "english": "Agent",
+   "text": "Agent"
+  },
+  {
+   "key": "sys.field|sys.agent_task.finished|label",
+   "english": "Finished",
+   "text": "Beendet"
+  },
+  {
+   "key": "sys.field|sys.agent_task.kind|label",
+   "english": "What",
+   "text": "Was"
+  },
+  {
+   "key": "sys.field|sys.agent_task.module|label",
+   "english": "For module",
+   "text": "Für Modul"
+  },
+  {
+   "key": "sys.field|sys.agent_task.payload|label",
+   "english": "Asks",
+   "text": "Fragt"
+  },
+  {
+   "key": "sys.field|sys.agent_task.result|label",
+   "english": "Answered",
+   "text": "Antwort"
+  },
+  {
+   "key": "sys.field|sys.agent_task.started|label",
+   "english": "Started",
+   "text": "Begonnen"
+  },
+  {
+   "key": "sys.field|sys.agent_task.state|choice:done",
+   "english": "Done",
+   "text": "Erledigt"
+  },
+  {
+   "key": "sys.field|sys.agent_task.state|choice:failed",
+   "english": "Failed",
+   "text": "Fehlgeschlagen"
+  },
+  {
+   "key": "sys.field|sys.agent_task.state|choice:queued",
+   "english": "Waiting",
+   "text": "Wartet"
+  },
+  {
+   "key": "sys.field|sys.agent_task.state|choice:running",
+   "english": "Running",
+   "text": "Läuft"
+  },
+  {
+   "key": "sys.field|sys.agent_task.state|label",
+   "english": "State",
+   "text": "Status"
   },
   {
    "key": "sys.field|sys.announcement.about_update|label",
@@ -628,9 +778,29 @@
    "text": "Name"
   },
   {
+   "key": "sys.field|sys.connection.local_ranges|help",
+   "english": "Only for devices in your own network: like 192.168.1.0/24. Nothing else is reached.",
+   "text": "Nur für Geräte in deinem eigenen Netz: etwa 192.168.1.0/24. Nichts anderes wird erreicht."
+  },
+  {
+   "key": "sys.field|sys.connection.local_ranges|label",
+   "english": "Local ranges",
+   "text": "Lokale Bereiche"
+  },
+  {
    "key": "sys.field|sys.connection.owner|label",
    "english": "Owner",
    "text": "Besitzer"
+  },
+  {
+   "key": "sys.field|sys.connection.trusted_certificate|help",
+   "english": "Only for devices in your own network with a self-made certificate: paste it, and only that one is trusted.",
+   "text": "Nur für Geräte in deinem eigenen Netz mit selbst erstelltem Zertifikat: einfügen, und nur diesem wird vertraut."
+  },
+  {
+   "key": "sys.field|sys.connection.trusted_certificate|label",
+   "english": "Its own certificate (PEM)",
+   "text": "Sein eigenes Zertifikat (PEM)"
   },
   {
    "key": "sys.field|sys.connection.type_ref|label",
@@ -731,6 +901,11 @@
    "key": "sys.field|sys.connection_type.label|label",
    "english": "Label",
    "text": "Bezeichnung"
+  },
+  {
+   "key": "sys.field|sys.connection_type.local|label",
+   "english": "Inside your own network",
+   "text": "In deinem eigenen Netz"
   },
   {
    "key": "sys.field|sys.connection_type.module_ref|label",
@@ -3523,6 +3698,11 @@
    "text": "Liste"
   },
   {
+   "key": "sys.field|sys.widget.kind|choice:map",
+   "english": "Map",
+   "text": "Karte"
+  },
+  {
    "key": "sys.field|sys.widget.kind|choice:text",
    "english": "Text",
    "text": "Text"
@@ -3736,6 +3916,21 @@
    "key": "sys.field|sys.widget_audience.widget|label",
    "english": "Widget name",
    "text": "Widget-Name"
+  },
+  {
+   "key": "sys.form_view|sys.agent_code|section:1",
+   "english": "Agent enrolment code",
+   "text": "Anmeldecode für Agenten"
+  },
+  {
+   "key": "sys.form_view|sys.agent_task|section:1",
+   "english": "Agent task",
+   "text": "Agenten-Aufgabe"
+  },
+  {
+   "key": "sys.form_view|sys.agent|section:1",
+   "english": "Agent",
+   "text": "Agent"
   },
   {
    "key": "sys.form_view|sys.announcement|section:1",
@@ -4103,6 +4298,11 @@
    "text": "Wer es bekommt"
   },
   {
+   "key": "sys.job|sys.agents_quiet|label",
+   "english": "Find quiet agents",
+   "text": "Stille Agenten finden"
+  },
+  {
    "key": "sys.job|sys.approval_follow_up|label",
    "english": "Remind and escalate waiting approvals",
    "text": "An wartende Freigaben erinnern und eskalieren"
@@ -4151,6 +4351,21 @@
    "key": "sys.job|sys.secret_expiry|label",
    "english": "Remind owners of expiring secrets",
    "text": "Besitzer an ablaufende Geheimnisse erinnern"
+  },
+  {
+   "key": "sys.list_view|sys.agent_code|label",
+   "english": "Agent enrolment codes",
+   "text": "Anmeldecodes für Agenten"
+  },
+  {
+   "key": "sys.list_view|sys.agent_task|label",
+   "english": "Agent tasks",
+   "text": "Agenten-Aufgaben"
+  },
+  {
+   "key": "sys.list_view|sys.agent|label",
+   "english": "Agents",
+   "text": "Agenten"
   },
   {
    "key": "sys.list_view|sys.announcement|label",
@@ -4973,6 +5188,11 @@
    "text": "Widget-Redaktion"
   },
   {
+   "key": "sys.schedule|sys.agents_quiet|label",
+   "english": "Quiet agents, every 5 minutes",
+   "text": "Stille Agenten, alle 5 Minuten"
+  },
+  {
    "key": "sys.schedule|sys.approval_follow_up|label",
    "english": "Waiting approvals, daily",
    "text": "Wartende Freigaben, täglich"
@@ -5021,6 +5241,36 @@
    "key": "sys.schedule|sys.secret_expiry|label",
    "english": "Expiring secrets, daily",
    "text": "Ablaufende Geheimnisse, täglich"
+  },
+  {
+   "key": "sys.table|sys.agent_code|label",
+   "english": "Agent enrolment code",
+   "text": "Anmeldecode für Agenten"
+  },
+  {
+   "key": "sys.table|sys.agent_code|label_plural",
+   "english": "Agent enrolment codes",
+   "text": "Anmeldecodes für Agenten"
+  },
+  {
+   "key": "sys.table|sys.agent_task|label",
+   "english": "Agent task",
+   "text": "Agenten-Aufgabe"
+  },
+  {
+   "key": "sys.table|sys.agent_task|label_plural",
+   "english": "Agent tasks",
+   "text": "Agenten-Aufgaben"
+  },
+  {
+   "key": "sys.table|sys.agent|label",
+   "english": "Agent",
+   "text": "Agent"
+  },
+  {
+   "key": "sys.table|sys.agent|label_plural",
+   "english": "Agents",
+   "text": "Agenten"
   },
   {
    "key": "sys.table|sys.announcement|label",

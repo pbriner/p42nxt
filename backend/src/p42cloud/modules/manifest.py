@@ -201,9 +201,10 @@ class Module:
         found += [
             FieldError("hooks", "not_its_table", f"{h.table} isn't one of this module's tables.")
             for h in self.hooks
-            # Only the core watches every table (EVERY_TABLE).
+            # Every table (EVERY_TABLE): the core, or a module only after a change (it follows
+            # what happened, as the CMDB indexes administrators' tables; it never refuses one).
             if not h.table.startswith(f"{self.id}.")
-            and not (self.id == CORE and h.table == EVERY_TABLE)
+            and not (h.table == EVERY_TABLE and (self.id == CORE or h.before is None))
         ]
         for migration in self.migrations:
             try:

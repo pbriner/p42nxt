@@ -259,6 +259,28 @@
      "required": false
     }
    ],
+   "agent_task": [
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "agent",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "module",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "kind",
+     "required": true
+    },
+    {
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "payload",
+     "required": false
+    }
+   ],
    "approvals": [
     {
      "kind": "POSITIONAL_OR_KEYWORD",
@@ -434,6 +456,7 @@
      "required": true
     }
    ],
+   "installation": [],
    "list": [
     {
      "kind": "POSITIONAL_OR_KEYWORD",
@@ -659,6 +682,11 @@
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "shared",
     "required": false
+   },
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "local",
+    "required": false
    }
   ]
  },
@@ -741,6 +769,9 @@
     "required": false
    }
   ]
+ },
+ "EVERY_TABLE": {
+  "params": null
  },
  "Email": {
   "params": [
