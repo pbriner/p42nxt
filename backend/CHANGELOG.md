@@ -2,6 +2,13 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.53.0
+
+- **Full screen widgets**: a button on each dashboard card opens it over the whole window, at its
+  own address (for links and wall screens). Esc, close or Back return. Lists show more rows and
+  all their columns, charts get larger with more groups, and maps show more levels, zoom, move
+  and fit.
+
 ## 0.52.3
 
 - **Update selected** in lists no longer offers fields the form shows read-only (set by the

@@ -90,3 +90,32 @@ test('source widgets: a module’s route works out the figure and the points', a
   await words.getByRole('button', { name: 'Show as a table' }).click();
   await expect(words.getByRole('rowheader', { name: 'French' })).toBeVisible();
 });
+
+test('a widget opens full screen, keeps its address and closes with Esc or Back', async ({
+  page,
+}) => {
+  await greetings(page);
+  await page.goto('/dashboard/hello');
+  const pinned = page.locator('app-widget-card').filter({ hasText: 'Pinned greetings' });
+  await pinned.getByRole('button', { name: 'Full screen: Pinned greetings' }).click();
+  const full = page.getByRole('dialog', { name: 'Pinned greetings' });
+  await expect(full).toBeVisible();
+  await expect(page).toHaveURL(/[?&]focus=/);
+  // More of it: the list's columns as a table.
+  await expect(full.getByRole('columnheader').first()).toBeVisible();
+  await expect(full.getByRole('link', { name: /Hallo/ }).first()).toBeVisible();
+  await expect(full.getByRole('button', { name: 'Close full screen' })).toBeFocused();
+
+  await page.reload(); // the address opens it again (links, wall screens)
+  await expect(full).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(full).toBeHidden();
+  await expect(page).not.toHaveURL(/focus=/);
+
+  const donut = page.locator('app-widget-card').filter({ hasText: 'By language' });
+  await donut.getByRole('button', { name: 'Full screen: By language' }).click();
+  await expect(page.getByRole('dialog', { name: 'By language' })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Hello', exact: true })).toBeVisible();
+});

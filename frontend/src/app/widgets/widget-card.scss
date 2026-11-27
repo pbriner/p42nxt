@@ -236,3 +236,42 @@
     color: var(--mat-sys-error);
   }
 }
+
+// Full screen: the body takes the space and scrolls on its own.
+.card.focused {
+  border-radius: 0;
+
+  .body {
+    overflow: auto;
+  }
+}
+
+.expand {
+  margin: -8px -8px 0 0;
+  opacity: 0.7;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+.close {
+  margin: -8px -8px 0 0;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.rows {
+  font: var(--mat-sys-body-medium);
+
+  th[scope='row'] {
+    font-weight: normal;
+  }
+
+  a {
+    color: var(--mat-sys-primary);
+  }
+}

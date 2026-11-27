@@ -151,10 +151,22 @@
               </mat-select>
             </mat-form-field>
           }
-          <app-widget-card [widget]="w" [compact]="item.size === 's'" [params]="paramsFor(item, w)" />
+          <app-widget-card
+            [widget]="w"
+            [compact]="item.size === 's'"
+            [params]="paramsFor(item, w)"
+            [focusable]="!editing()"
+            (expand)="focus(item, w)"
+          />
           <div class="placeholder" *cdkDragPlaceholder></div>
         </div>
       }
     }
   </div>
+
+  @if (focused(); as w) {
+    <div class="focus" role="dialog" aria-modal="true" [attr.aria-label]="w.title" cdkTrapFocus cdkTrapFocusAutoCapture>
+      <app-widget-card [widget]="w" [params]="focusParams()" [focused]="true" (closed)="unfocus()" />
+    </div>
+  }
 </div>

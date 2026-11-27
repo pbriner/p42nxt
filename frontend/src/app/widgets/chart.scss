@@ -280,3 +280,19 @@ button {
   margin-right: 6px;
   border-radius: 2px;
 }
+
+// Full screen: the space goes to the chart.
+:host(.large) {
+  .column-area {
+    height: 420px;
+  }
+
+  .column {
+    max-width: 72px;
+  }
+
+  .donut svg {
+    width: 280px;
+    height: 280px;
+  }
+}

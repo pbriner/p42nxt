@@ -6,8 +6,18 @@ import {
   CdkDropList,
   moveItemInArray,
 } from '@angular/cdk/drag-drop';
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  HostListener,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -36,6 +46,7 @@ import { WidgetCard } from './widget-card';
     CdkDragHandle,
     CdkDragPlaceholder,
     CdkDropList,
+    CdkTrapFocus,
     MatButtonModule,
     MatFormFieldModule,
     MatProgressBarModule,
@@ -116,6 +127,22 @@ export class DashboardBoard {
     return chosen;
   });
 
+  /** The widget shown full screen (`?focus=` in the address, so it can be linked or put on a
+   * wall screen), any widget of this dashboard's, placed or not. */
+  protected readonly focused = computed(() => {
+    const name = this.query()?.get('focus');
+    return name && !this.editing() ? (this.def(name) ?? null) : null;
+  });
+  /** Its choice: the page's, or for one about a record of its own, the one in the address. */
+  protected readonly focusParams = computed((): Record<string, string> => {
+    const w = this.focused();
+    if (!w || !this.perItem(w)) {
+      return this.params();
+    }
+    const value = this.query()?.get(w.param!);
+    return value ? { [w.param!]: value } : {};
+  });
+
   constructor() {
     effect(() => {
       const name = this.name();
@@ -187,6 +214,32 @@ export class DashboardBoard {
   ): Record<string, string> {
     const { [param]: _old, ...rest } = params ?? {};
     return value ? { ...rest, [param]: value } : rest;
+  }
+
+  /** Full screen, in the address: Back returns, and the address opens it again. */
+  protected focus(item: Placed, w: WidgetDef): void {
+    const own = this.perItem(w) ? (item.params ?? {}) : {};
+    void this.router.navigate([], {
+      queryParams: { focus: w.name, ...own },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  protected unfocus(): void {
+    const w = this.focused();
+    const own = w && this.perItem(w) ? { [w.param!]: null } : {};
+    void this.router.navigate([], {
+      queryParams: { focus: null, ...own },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  protected escape(event: Event): void {
+    // An open dialog or menu closes first, on its own.
+    if (this.focused() && !event.defaultPrevented && !this.dialog.openDialogs.length) {
+      this.unfocus();
+    }
   }
 
   /** `''`: all of them (the choice leaves the address). */

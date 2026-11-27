@@ -1,4 +1,10 @@
-<mat-card class="card" appearance="outlined" [class.filled]="widget().filled" [style.--accent]="accent()">
+<mat-card
+  class="card"
+  appearance="outlined"
+  [class.filled]="widget().filled"
+  [class.focused]="focused()"
+  [style.--accent]="accent()"
+>
   @if (busy()) {
     <mat-progress-bar mode="indeterminate" class="progress" />
   }
@@ -9,10 +15,34 @@
         <p class="subtitle">{{ subtitle() }}</p>
       }
     </div>
-    @if (widget().icon) {
-      <span class="tile" aria-hidden="true"
-        ><span class="material-symbols-outlined">{{ widget().icon }}</span></span
+    @if (focused()) {
+      <button
+        mat-icon-button
+        type="button"
+        class="close"
+        cdkFocusInitial
+        [attr.aria-label]="i18n.t('widget.focus_close')"
+        (click)="closed.emit()"
       >
+        <span class="material-symbols-outlined" aria-hidden="true">close_fullscreen</span>
+      </button>
+    } @else {
+      @if (focusable()) {
+        <button
+          mat-icon-button
+          type="button"
+          class="expand"
+          [attr.aria-label]="i18n.t('widget.focus', { title: widget().title })"
+          (click)="expand.emit()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">open_in_full</span>
+        </button>
+      }
+      @if (widget().icon) {
+        <span class="tile" aria-hidden="true"
+          ><span class="material-symbols-outlined">{{ widget().icon }}</span></span
+        >
+      }
     }
   </div>
 
@@ -28,7 +58,7 @@
         }
         @case ('map') {
           @if (graph().nodes.length) {
-            <app-graph [nodes]="graph().nodes" [edges]="graph().edges" />
+            <app-graph [nodes]="graph().nodes" [edges]="graph().edges" [zoomable]="focused()" />
           } @else if (!busy()) {
             <p class="muted">{{ i18n.t('widget.nothing') }}</p>
           }
@@ -104,7 +134,8 @@
               [points]="points()"
               [accent]="widget().filled ? '#ffffff' : accent()"
               [total]="value()"
-              [compact]="compact()"
+              [compact]="compact() && !focused()"
+              [large]="focused()"
               [series]="series()"
               (picked)="open($event)"
             />
@@ -114,7 +145,35 @@
           @if (!lines().length && !busy()) {
             <p class="muted">{{ i18n.t('widget.nothing') }}</p>
           }
-          <ul class="lines">
+          @if (focused() && lines().length) {
+            <div class="table-scroll">
+              <table class="values rows">
+                <thead>
+                  <tr>
+                    @for (h of headers(); track $index) {
+                      <th scope="col">{{ h }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (line of lines(); track line.id) {
+                    <tr>
+                      @for (cell of line.cells; track $index; let first = $first) {
+                        @if (first) {
+                          <th scope="row">
+                            <a [routerLink]="['/form', widget().table, line.id]">{{ cell }}</a>
+                          </th>
+                        } @else {
+                          <td>{{ cell }}</td>
+                        }
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          <ul class="lines" [hidden]="focused()">
             @for (line of lines(); track line.id) {
               <li>
                 <a [routerLink]="['/form', widget().table, line.id]">
