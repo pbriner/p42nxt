@@ -29,7 +29,11 @@ async def _send(http: httpx.AsyncClient, run: CallRun) -> dict[str, Any]:
     payload = run.payload
     try:
         txid = await kraken.add_order(
-            http, str(payload["pair"]), Decimal(str(payload["volume"])), reference(payload)
+            http,
+            str(payload["pair"]),
+            Decimal(str(payload["volume"])),
+            reference(payload),
+            stock=bool(payload.get("stock")),  # calls queued before 0.9.1 were all coins
         )
     except KrakenError as error:
         if error.temporary:

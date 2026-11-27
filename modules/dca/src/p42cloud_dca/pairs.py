@@ -69,7 +69,12 @@ async def move_plans(conn: AsyncConnection) -> None:
 
 def pair_of(record: dict[str, Any]) -> Pair:
     """A pair record as the cycle uses it."""
-    return Pair(str(record["code"]), str(record["asset"]), str(record["currency"]))
+    return Pair(
+        str(record["code"]),
+        str(record["asset"]),
+        str(record["currency"]),
+        stock=record.get("kind") == "stock",
+    )
 
 
 async def plan_pair(client: Client, plan: dict[str, Any]) -> Pair:

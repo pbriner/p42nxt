@@ -67,6 +67,15 @@ async def public(http: httpx.AsyncClient, path: str, **params: str) -> Any:
     return _result(await http.get(f"/0/public/{path}", params=params))
 
 
+TOKENIZED = "tokenized_asset"  # Kraken's asset class for xStocks, asked for on each call
+
+
+def _of(pair: Pair) -> dict[str, str]:
+    """A pair as Kraken's market calls take it: a stock also names its asset class, or Kraken
+    answers that the pair is unknown (and refuses the class for coins)."""
+    return {"pair": pair.name, "asset_class": TOKENIZED} if pair.stock else {"pair": pair.name}
+
+
 def _altname(value: object) -> object:
     """A pair's own name in an answer (price history answers lists, not pairs)."""
     return cast(dict[str, Any], value).get("altname") if isinstance(value, dict) else None
@@ -105,9 +114,9 @@ KRAKEN = ConnectionType(
 )
 
 
-async def price(http: httpx.AsyncClient, pair: str) -> Decimal:
+async def price(http: httpx.AsyncClient, pair: Pair) -> Decimal:
     """The last trade's price."""
-    ticker = _of_pair(await public(http, "Ticker", pair=pair), pair)
+    ticker = _of_pair(await public(http, "Ticker", **_of(pair)), pair.name)
     return Decimal(str(ticker["c"][0]))
 
 
@@ -125,8 +134,8 @@ class Ticker:
         return (self.ask - self.bid) / self.bid if self.bid > 0 else Decimal(1)
 
 
-async def ticker(http: httpx.AsyncClient, pair: str) -> Ticker:
-    found = _of_pair(await public(http, "Ticker", pair=pair), pair)
+async def ticker(http: httpx.AsyncClient, pair: Pair) -> Ticker:
+    found = _of_pair(await public(http, "Ticker", **_of(pair)), pair.name)
     return Ticker(
         last=Decimal(str(found["c"][0])),
         bid=Decimal(str(found["b"][0])),
@@ -134,8 +143,10 @@ async def ticker(http: httpx.AsyncClient, pair: str) -> Ticker:
     )
 
 
-async def market(http: httpx.AsyncClient, pair: str) -> Market:
-    info = _of_pair(await public(http, "AssetPairs", pair=pair), pair)
+async def market(http: httpx.AsyncClient, pair: Pair) -> Market:
+    # Pair details name the class differently from the other calls.
+    asked = {"pair": pair.name, "aclass_base": TOKENIZED} if pair.stock else {"pair": pair.name}
+    info = _of_pair(await public(http, "AssetPairs", **asked), pair.name)
     return Market(
         ordermin=Decimal(str(info.get("ordermin") or "0")),
         lot_decimals=int(info.get("lot_decimals", 8)),
@@ -162,6 +173,7 @@ class Pair:
     name: str  # as Kraken names it: XBTCHF, NVDAxUSD
     asset: str = ""  # BTC, NVDAx
     currency: str = ""  # CHF
+    stock: bool = False  # a tokenized stock: Kraken wants its asset class on every call
 
     def __post_init__(self) -> None:
         # Orders from before pairs were records only know the name (the six coin pairs).
@@ -190,9 +202,12 @@ def stock(base: str, info: dict[str, Any]) -> bool:
 
 
 async def pairs(http: httpx.AsyncClient) -> list[dict[str, Any]]:
-    """Every pair Kraken trades now, paid in CHF, EUR or USD, as dca.pair records."""
+    """Every pair Kraken trades now, paid in CHF, EUR or USD, as dca.pair records. Kraken
+    lists tokenized stocks only when asked for them, apart from the coins."""
+    listed = cast(dict[str, Any], await public(http, "AssetPairs"))
+    listed |= cast(dict[str, Any], await public(http, "AssetPairs", aclass_base=TOKENIZED))
     found: list[dict[str, Any]] = []
-    for info in cast(dict[str, Any], await public(http, "AssetPairs")).values():
+    for info in listed.values():
         wsname = str(info.get("wsname") or "")
         if "/" not in wsname or str(info.get("status", "online")) != "online":
             continue
@@ -252,12 +267,18 @@ def _ref(reference: int | str) -> dict[str, str]:
 
 
 async def add_order(
-    http: httpx.AsyncClient, pair: str, volume: Decimal, reference: int | str
+    http: httpx.AsyncClient,
+    pair: str,
+    volume: Decimal,
+    reference: int | str,
+    *,
+    stock: bool = False,
 ) -> str:
     """A market buy, carrying our reference so it can be found again; Kraken's order ID."""
     result = await private(
         http,
         "AddOrder",
+        **({"asset_class": TOKENIZED} if stock else {}),
         pair=pair,
         type="buy",
         ordertype="market",
@@ -286,15 +307,14 @@ async def find(http: httpx.AsyncClient, reference: int | str) -> Fill | None:
     return None
 
 
-async def closes(http: httpx.AsyncClient, pair: str) -> list[tuple[datetime, Decimal]]:
+async def closes(http: httpx.AsyncClient, pair: Pair) -> list[tuple[datetime, Decimal]]:
     """Each day's close (UTC days), as far back as Kraken gives them (720 days)."""
-    candles = cast(
-        list[list[Any]], _of_pair(await public(http, "OHLC", pair=pair, interval="1440"), pair)
-    )
+    answer = await public(http, "OHLC", **_of(pair), interval="1440")
+    candles = cast(list[list[Any]], _of_pair(answer, pair.name))
     return [(datetime.fromtimestamp(int(c[0]), tz=UTC), Decimal(str(c[4]))) for c in candles]
 
 
-async def last_close(http: httpx.AsyncClient, pair: str) -> Decimal | None:
+async def last_close(http: httpx.AsyncClient, pair: Pair) -> Decimal | None:
     """Yesterday's close: the last finished day (Kraken's last candle is today, still open)."""
     days = await closes(http, pair)
     return days[-2][1] if len(days) >= 2 else None  # noqa: PLR2004 - today and the day before

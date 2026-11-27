@@ -64,7 +64,7 @@ class View:
             return last, "at the last check"
         try:
             async with self.client.connection(kraken.TYPE) as http:
-                return await kraken.price(http, self.pair.name), "Kraken, now"
+                return await kraken.price(http, self.pair), "Kraken, now"
         except Problem, KrakenError, httpx.HTTPError:
             pass
         if last is not None:
@@ -270,7 +270,7 @@ async def _profit_over_time(v: View) -> dict[str, Any]:
     if v.buys:
         try:
             async with v.client.connection(kraken.TYPE) as http:
-                closes = await kraken.closes(http, v.pair.name)
+                closes = await kraken.closes(http, v.pair)
         except Problem, KrakenError, httpx.HTTPError:
             closes = []
     found = stats.profit_by_day(v.buys, closes, price, v.now)

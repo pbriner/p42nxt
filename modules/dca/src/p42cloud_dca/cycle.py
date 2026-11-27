@@ -143,7 +143,12 @@ async def _buy(  # noqa: PLR0913 - what's bought, for whom, at what price, when
         await client.call(
             "dca.place_order",
             # The order's own ID is its reference at Kraken (client order ID).
-            {"pair": pair.name, "volume": str(decision.amount), "cl_ord_id": order["sys_id"]},
+            {
+                "pair": pair.name,
+                "volume": str(decision.amount),
+                "cl_ord_id": order["sys_id"],
+                "stock": pair.stock,
+            },
             owner=plan["owner"],
             about=("dca.order", order["sys_id"]),
         )
@@ -218,8 +223,8 @@ async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tup
             return await _say(client, plan, said, now, await _price(http, pair)), False
         if plan["live"] and (stopped := await _real_orders_stopped(client)):
             return await _say(client, plan, stopped, now, await _price(http, pair)), False
-        price = await kraken.price(http, pair.name)
-        market = await kraken.market(http, pair.name)
+        price = await kraken.price(http, pair)
+        market = await kraken.market(http, pair)
         free = await kraken.free_balance(http, pair.currency)
     since = strategy.period_start(now, plan["deposit_day"], plan["buy_hour"])
     spent = _spent(plan, orders, since)
@@ -305,8 +310,8 @@ async def _before_real_buy(
     ours = {str(o[k]) for o in [*orders, *mine] for k in ("kraken_txid", "sys_id") if o[k]}
     async with _kraken(client, plan) as http:
         others = await kraken.others(http, pair.name, since, ours)
-        ticker = await kraken.ticker(http, pair.name)
-        close = await kraken.last_close(http, pair.name)
+        ticker = await kraken.ticker(http, pair)
+        close = await kraken.last_close(http, pair)
     if others:
         first = others[0]
         kind = "an open order" if first.status in ("open", "pending") else "a buy"
@@ -350,7 +355,7 @@ def _market_wrong(ticker: kraken.Ticker, close: Decimal | None) -> str | None:
 async def _price(http: httpx.AsyncClient, pair: Pair) -> Decimal | None:
     """The price for a check that stops early; one Kraken can't give doesn't stop it."""
     try:
-        return await kraken.price(http, pair.name)
+        return await kraken.price(http, pair)
     except KrakenError, httpx.HTTPError:
         return None
 
@@ -410,7 +415,7 @@ async def _value_price(client: Client, plan: dict[str, Any], pair: Pair, now: da
     if last is not None and checked is not None and now - checked < timedelta(minutes=10):
         return last
     async with _kraken(client, plan) as http:
-        return await kraken.price(http, pair.name)
+        return await kraken.price(http, pair)
 
 
 async def check_targets(client: Client, now: datetime) -> int:
