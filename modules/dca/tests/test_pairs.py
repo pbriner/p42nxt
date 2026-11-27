@@ -12,24 +12,36 @@ from p42cloud.sdk.testing import RunJob, StandIn
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from p42cloud_dca.kraken import TYPE, pairs
+from p42cloud_dca.kraken import TYPE, add_order, pairs
 from p42cloud_dca.pairs import move_plans
 from tests.helpers import Acting, connect, investor, new_plan, pair_id, read
 
-# How Kraken lists pairs: a coin, a tokenized stock, one paid in pounds, one offline.
-ASSET_PAIRS: dict[str, Any] = {
+# How Kraken lists pairs: a coin, one paid in pounds, one offline; and apart from them, only
+# when asked for tokenized assets, a stock.
+COINS: dict[str, Any] = {
     "XXBTZCHF": {"altname": "XBTCHF", "wsname": "XBT/CHF", "status": "online"},
+    "XXBTZGBP": {"altname": "XBTGBP", "wsname": "XBT/GBP", "status": "online"},
+    "ADAEUR": {"altname": "ADAEUR", "wsname": "ADA/EUR", "status": "delisted"},
+}
+STOCKS: dict[str, Any] = {
     "NVDAxUSD": {
         "altname": "NVDAxUSD",
         "wsname": "NVDAx/USD",
+        "aclass_base": "tokenized_asset",
         "status": "online",
         "ordermin": "0.01",
         "lot_decimals": 6,
         "costmin": "1",
     },
-    "XXBTZGBP": {"altname": "XBTGBP", "wsname": "XBT/GBP", "status": "online"},
-    "ADAEUR": {"altname": "ADAEUR", "wsname": "ADA/EUR", "status": "delisted"},
 }
+
+
+def listed(params: httpx.QueryParams) -> Any:
+    """AssetPairs as Kraken answers it: stocks only with their class, even by name."""
+    stocks = params.get("aclass_base") == "tokenized_asset"
+    found = STOCKS if stocks else COINS
+    asked = params.get("pair")
+    return {k: v for k, v in found.items() if not asked or v["altname"] == asked}
 
 
 class Kraken:
@@ -37,10 +49,13 @@ class Kraken:
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path
+        params = request.url.params
+        result: Any
         if path == "/0/public/AssetPairs":
-            asked = request.url.params.get("pair")
-            result: Any = {"NVDAxUSD": ASSET_PAIRS["NVDAxUSD"]} if asked else ASSET_PAIRS
-        elif path == "/0/public/Ticker":
+            result = listed(params)
+        elif path in ("/0/public/Ticker", "/0/public/OHLC"):
+            if params.get("asset_class") != "tokenized_asset":
+                return httpx.Response(200, json={"error": ["EQuery:Unknown asset pair"]})
             result = {"NVDAxUSD": {"c": ["180.50", "1"]}}
         elif path == "/0/private/BalanceEx":
             result = {"ZUSD": {"balance": "1000", "hold_trade": "0"}}
@@ -57,8 +72,8 @@ def kraken(stand_in: StandIn) -> Kraken:
 
 
 async def test_krakens_list_becomes_coins_and_stocks() -> None:
-    def answer(_: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json={"error": [], "result": ASSET_PAIRS})
+    def answer(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"error": [], "result": listed(request.url.params)})
 
     async with httpx.AsyncClient(
         transport=httpx.MockTransport(answer), base_url="https://api.kraken.com"
@@ -73,6 +88,22 @@ async def test_krakens_list_becomes_coins_and_stocks() -> None:
         "kind": "coin",
     }
     assert (found["NVDAxUSD"]["label"], found["NVDAxUSD"]["kind"]) == ("NVDAx / USD", "stock")
+
+
+async def test_a_stock_order_names_its_asset_class() -> None:
+    sent: list[bytes] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        sent.append(request.content)
+        return httpx.Response(200, json={"error": [], "result": {"txid": ["O-1"]}})
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(answer), base_url="https://api.kraken.com"
+    ) as http:
+        await add_order(http, "NVDAxUSD", Decimal("0.2"), "a", stock=True)
+        await add_order(http, "XBTCHF", Decimal("0.001"), "b")
+    assert b"asset_class=tokenized_asset" in sent[0]
+    assert b"asset_class" not in sent[1]  # Kraken refuses it for coins
 
 
 async def test_a_plan_buys_a_tokenized_stock_by_krakens_name(

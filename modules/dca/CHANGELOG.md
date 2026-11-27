@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.1
+
+- Tokenized stocks now show up under **Pairs**. Kraken lists them apart from the coins, and
+  only when asked, so the daily read missed them. Prices, minimums, price history and orders
+  for a stock now also ask Kraken for it the way Kraken needs.
+
 ## 0.9.0
 
 - **Stocks too**: a plan buys any pair Kraken trades in CHF, EUR or USD, including tokenized
