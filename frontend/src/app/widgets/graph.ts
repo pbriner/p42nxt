@@ -1,5 +1,8 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { Router } from '@angular/router';
+
+import { I18n } from '../core/i18n';
 
 /** A thing on a map: its level is where it stands from the one the map is about (0): what it
  *  needs to the right (1, 2 …), what needs it to the left (-1, -2 …). */
@@ -19,6 +22,13 @@ export interface GraphEdge {
   label?: string;
 }
 
+interface View {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 const COLUMN = 190;
 const ROW = 64;
 const BOX = { width: 160, height: 44 };
@@ -28,14 +38,49 @@ const MARGIN = 16;
  *  with their labels; each box opens its record. A list of the same follows for screen readers. */
 @Component({
   selector: 'app-graph',
+  imports: [MatButtonModule],
   template: `
-    <div class="scroll">
+    @if (zoomable()) {
+      <div class="tools" role="group" [attr.aria-label]="i18n.t('graph.view')">
+        <button
+          mat-icon-button
+          type="button"
+          [attr.aria-label]="i18n.t('graph.zoom_in')"
+          (click)="zoom(0.8)"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">zoom_in</span>
+        </button>
+        <button
+          mat-icon-button
+          type="button"
+          [attr.aria-label]="i18n.t('graph.zoom_out')"
+          (click)="zoom(1.25)"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">zoom_out</span>
+        </button>
+        <button
+          mat-icon-button
+          type="button"
+          [attr.aria-label]="i18n.t('graph.fit')"
+          (click)="fit()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">fit_screen</span>
+        </button>
+      </div>
+    }
+    <div class="scroll" [class.zoomable]="zoomable()">
       <svg
-        [attr.width]="size().width"
-        [attr.height]="size().height"
-        [attr.viewBox]="'0 0 ' + size().width + ' ' + size().height"
+        #svg
+        [attr.width]="zoomable() ? '100%' : size().width"
+        [attr.height]="zoomable() ? '100%' : size().height"
+        [attr.viewBox]="shownBox()"
         role="img"
         [attr.aria-label]="summary()"
+        (wheel)="wheel($event, svg)"
+        (pointerdown)="grab($event, svg)"
+        (pointermove)="drag($event, svg)"
+        (pointerup)="release($event, svg)"
+        (pointercancel)="release($event, svg)"
       >
         <defs>
           <marker
@@ -96,8 +141,34 @@ const MARGIN = 16;
     </ul>
   `,
   styles: `
+    :host {
+      display: block;
+      position: relative;
+    }
     .scroll {
       overflow-x: auto;
+    }
+    /* Full screen: the map fills the space, moved and zoomed instead of scrolled. */
+    :host:has(.zoomable) {
+      height: 100%;
+    }
+    .scroll.zoomable {
+      overflow: hidden;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    .scroll.zoomable:active {
+      cursor: grabbing;
+    }
+    .tools {
+      position: absolute;
+      top: 0;
+      right: 0;
+      display: flex;
+      gap: 4px;
+      border-radius: var(--app-radius);
+      background: var(--mat-sys-surface-container);
     }
     .edge {
       stroke: var(--mat-sys-outline);
@@ -141,10 +212,111 @@ const MARGIN = 16;
   `,
 })
 export class Graph {
+  protected readonly i18n = inject(I18n);
   private readonly router = inject(Router);
   readonly nodes = input.required<GraphNode[]>();
   readonly edges = input<GraphEdge[]>([]);
+  /** Full screen: zoom (wheel, buttons), drag to move, fit to the space. */
+  readonly zoomable = input(false);
   protected readonly box = BOX;
+  /** The part of the map shown (SVG units); null: all of it. */
+  private readonly view = signal<View | null>(null);
+  private grabbed: { x: number; y: number; view: View; moved: boolean } | null = null;
+  private dragged = false;
+
+  protected readonly shownBox = computed(() => {
+    const v = this.view() ?? this.whole();
+    return `${v.x} ${v.y} ${v.width} ${v.height}`;
+  });
+
+  constructor() {
+    // Another map (another record chosen): seen whole again.
+    effect(() => {
+      this.nodes();
+      this.view.set(null);
+    });
+  }
+
+  private whole(): View {
+    return { x: 0, y: 0, ...this.size() };
+  }
+
+  /** SVG units per screen pixel: the view is fitted into the box keeping its proportions. */
+  private scale(svg: Element, v: View): number {
+    const rect = svg.getBoundingClientRect();
+    return Math.max(v.width / (rect.width || 1), v.height / (rect.height || 1));
+  }
+
+  /** Below 1 zooms in. Around a point (SVG units), else the middle; never past 8× either way. */
+  protected zoom(by: number, at?: { x: number; y: number }): void {
+    const v = this.view() ?? this.whole();
+    const whole = this.whole();
+    const width = Math.min(whole.width * 8, Math.max(whole.width / 8, v.width * by));
+    const factor = width / v.width;
+    const cx = at?.x ?? v.x + v.width / 2;
+    const cy = at?.y ?? v.y + v.height / 2;
+    this.view.set({
+      x: cx - (cx - v.x) * factor,
+      y: cy - (cy - v.y) * factor,
+      width,
+      height: v.height * factor,
+    });
+  }
+
+  protected fit(): void {
+    this.view.set(null);
+  }
+
+  protected wheel(event: WheelEvent, svg: Element): void {
+    if (!this.zoomable()) {
+      return;
+    }
+    event.preventDefault();
+    const v = this.view() ?? this.whole();
+    const rect = svg.getBoundingClientRect();
+    const k = this.scale(svg, v);
+    // The point under the pointer stays there (the view is centred in the box).
+    const at = {
+      x: v.x + v.width / 2 + (event.clientX - rect.left - rect.width / 2) * k,
+      y: v.y + v.height / 2 + (event.clientY - rect.top - rect.height / 2) * k,
+    };
+    this.zoom(event.deltaY > 0 ? 1.15 : 1 / 1.15, at);
+  }
+
+  protected grab(event: PointerEvent, svg: Element): void {
+    if (!this.zoomable() || event.button !== 0) {
+      return;
+    }
+    this.grabbed = {
+      x: event.clientX,
+      y: event.clientY,
+      view: this.view() ?? this.whole(),
+      moved: false,
+    };
+    this.dragged = false;
+    svg.setPointerCapture?.(event.pointerId);
+  }
+
+  protected drag(event: PointerEvent, svg: Element): void {
+    const from = this.grabbed;
+    if (!from) {
+      return;
+    }
+    const dx = event.clientX - from.x;
+    const dy = event.clientY - from.y;
+    if (!from.moved && Math.hypot(dx, dy) < 4) {
+      return; // a click on a box, not a drag
+    }
+    from.moved = true;
+    const k = this.scale(svg, from.view);
+    this.view.set({ ...from.view, x: from.view.x - dx * k, y: from.view.y - dy * k });
+  }
+
+  protected release(event: PointerEvent, svg: Element): void {
+    this.dragged = this.grabbed?.moved ?? false;
+    this.grabbed = null;
+    svg.releasePointerCapture?.(event.pointerId);
+  }
 
   private readonly levels = computed(() => {
     const all = this.nodes().map((n) => n.level);
@@ -215,6 +387,10 @@ export class Graph {
   }
 
   protected open(node: GraphNode): void {
+    if (this.dragged) {
+      this.dragged = false;
+      return; // the end of a drag over a box
+    }
     if (node.link && node.link.startsWith('/') && !node.link.startsWith('//')) {
       void this.router.navigateByUrl(node.link);
     }

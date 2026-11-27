@@ -42,6 +42,11 @@ administrator, modules, safety; then the administrator sets up their second fact
   - Charts: bars, a donut with its legend and shares, columns over time, a line with a
     crosshair; dates in 3 months, a year or all; clicking a bar or slice opens the matching
     list; every chart can show as a table.
+  - **Full screen**: the button on a card opens it over the whole window, with its own address
+    (`?focus=<widget>` and the chosen record), so it can be linked or left on a wall screen.
+    Esc, the close button or Back return. Lists show up to 50 rows with all their columns,
+    charts are larger with more groups, and a map shows up to 6 levels each way, zooms (wheel
+    or buttons), moves by dragging and fits the screen.
 - **Lists** (`/list/<list view>`), the same for every table:
   - **The address holds the list**: filters in the API's own form (`filter[kind][in]=service`),
     the sort, the search and the saved view, so a list can be bookmarked or sent.

@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
   untracked,
 } from '@angular/core';
@@ -24,6 +25,11 @@ import { Chart, Point } from './chart';
 import { Graph, GraphEdge, GraphNode } from './graph';
 
 const LIMITS = { bar: 8, donut: 6, column: 50, line: 50 } as const;
+/** Full screen has room for more: groups per chart, rows of a list. */
+const FOCUS_LIMITS = { bar: 20, donut: 10, column: 120, line: 120 } as const;
+const ROWS = 5;
+const FOCUS_ROWS = 50;
+const FOCUS_DEPTH = 6;
 const RANGES = { '3m': '@today-3m', '1y': '@today-1y', all: null } as const;
 type Range = keyof typeof RANGES;
 
@@ -45,6 +51,8 @@ interface Line {
   id: string;
   title: string;
   detail: string;
+  /** Each column's value, for the table full screen. */
+  cells: string[];
 }
 
 function and(...parts: unknown[]): unknown {
@@ -70,6 +78,12 @@ export class WidgetCard {
   readonly compact = input(false);
   /** What the page chose for widgets about one record (a plan). */
   readonly params = input<Record<string, string>>({});
+  /** Shown full screen: more of it, and a button to close. */
+  readonly focused = input(false);
+  /** Offers the full-screen button (not while the dashboard is customized). */
+  readonly focusable = input(false);
+  readonly expand = output<void>();
+  readonly closed = output<void>();
   protected readonly unchosen = signal(false);
 
   protected readonly busy = signal(false);
@@ -83,6 +97,7 @@ export class WidgetCard {
   });
   protected readonly series = signal<[string, string] | null>(null);
   protected readonly lines = signal<Line[]>([]);
+  protected readonly headers = signal<string[]>([]);
   protected readonly table = signal<TableInfo | null>(null);
   protected readonly asTable = signal(false);
   protected readonly range = signal<Range>('all');
@@ -135,6 +150,7 @@ export class WidgetCard {
       const w = this.widget();
       this.range();
       this.params();
+      this.focused();
       untracked(() => void this.load(w));
     });
     let timer: ReturnType<typeof setInterval> | null = null;
@@ -205,9 +221,11 @@ export class WidgetCard {
     if (w.param && !value) {
       return;
     }
-    const { data } = await this.api.get<SourceAnswer>(w.source!, {
-      query: w.param ? { [w.param]: value } : {},
-    });
+    const query: Record<string, string> = w.param && value ? { [w.param]: value } : {};
+    if (w.kind === 'map' && this.focused()) {
+      query['depth'] = String(FOCUS_DEPTH); // full screen has room for more levels each way
+    }
+    const { data } = await this.api.get<SourceAnswer>(w.source!, { query });
     this.answer.set(data);
     if (w.kind === 'map') {
       this.graph.set({ nodes: data.nodes ?? [], edges: data.edges ?? [] });
@@ -262,7 +280,7 @@ export class WidgetCard {
       field: w.field,
       group: w.group,
       period: w.period,
-      limit: LIMITS[kind],
+      limit: (this.focused() ? FOCUS_LIMITS : LIMITS)[kind],
       where: this.where(w, over && since ? { field: over, op: 'gte', value: since } : null),
     });
     // Colours follow the entity: a choice's place in its list, else the key's order.
@@ -324,7 +342,12 @@ export class WidgetCard {
       records: Record<string, unknown>[];
       total: number | null;
     }>(path(w.table!), {
-      query: { limit: 5, sort: this.viewSort, where: this.where(w), count: true },
+      query: {
+        limit: this.focused() ? FOCUS_ROWS : ROWS,
+        sort: this.viewSort,
+        where: this.where(w),
+        count: true,
+      },
     });
     const value = (r: Record<string, unknown>, c: string) =>
       shown(
@@ -335,6 +358,7 @@ export class WidgetCard {
         (k) => this.i18n.t(k),
       );
     this.value.set(data.total);
+    this.headers.set(columns.map((c) => info.fields.find((f) => f.name === c)?.label ?? c));
     this.lines.set(
       data.records.map((r) => ({
         id: String(r['sys_id']),
@@ -348,6 +372,7 @@ export class WidgetCard {
           .map((c) => value(r, c))
           .filter((v) => v !== '—')
           .join(' · '),
+        cells: columns.map((c) => value(r, c)),
       })),
     );
   }

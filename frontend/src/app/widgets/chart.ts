@@ -19,11 +19,13 @@ export interface Point {
 const DONUT = 140;
 const RING = 16;
 const LINE_HEIGHT = 160;
+const LARGE_HEIGHT = 420;
 const MANY_LABELS = 8;
 
 /** Plain charts: bars, a donut, columns over time, a line. No library; a table on the card. */
 @Component({
   selector: 'app-chart',
+  host: { '[class.large]': 'large()' },
   templateUrl: './chart.html',
   styleUrl: './chart.scss',
 })
@@ -34,6 +36,8 @@ export class Chart {
   readonly accent = input('var(--chart-1)');
   readonly total = input<number | null>(null);
   readonly compact = input(false);
+  /** Full screen: taller columns and line, a bigger donut. */
+  readonly large = input(false);
   /** The two series' names, when the points carry a second value. */
   readonly series = input<[string, string] | null>(null);
   readonly picked = output<Point>();
@@ -116,7 +120,7 @@ export class Chart {
 
   // ---- line ----
 
-  protected readonly lineHeight = LINE_HEIGHT;
+  protected readonly lineHeight = computed(() => (this.large() ? LARGE_HEIGHT : LINE_HEIGHT));
 
   private y(value: number): number {
     const range = this.max() - this.min() || 1;

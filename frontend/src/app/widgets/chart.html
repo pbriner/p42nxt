@@ -112,7 +112,7 @@
       #box
       (pointermove)="track($event, box)"
       (pointerleave)="hover.set(null)"
-      [style.height.px]="lineHeight"
+      [style.height.px]="lineHeight()"
     >
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         @for (g of grid(); track $index) {

@@ -126,3 +126,17 @@
   width: 100%;
   margin-bottom: 4px;
 }
+
+// Full screen: above the app's bars, below dialogs and menus (they open over it).
+.focus {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  background: var(--mat-sys-surface);
+
+  app-widget-card {
+    flex: 1;
+    min-width: 0;
+  }
+}
