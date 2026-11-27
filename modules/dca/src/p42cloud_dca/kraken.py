@@ -67,10 +67,20 @@ async def public(http: httpx.AsyncClient, path: str, **params: str) -> Any:
     return _result(await http.get(f"/0/public/{path}", params=params))
 
 
+def _altname(value: object) -> object:
+    """A pair's own name in an answer (price history answers lists, not pairs)."""
+    return cast(dict[str, Any], value).get("altname") if isinstance(value, dict) else None
+
+
 def _of_pair(result: dict[str, Any], pair: str) -> Any:
-    """Kraken names pairs its own way (XXBTZCHF for XBTCHF): matched ignoring X and Z."""
+    """Kraken names pairs its own way (XXBTZCHF for XBTCHF): by its exact name first (a
+    tokenized stock like NVDAxUSD is answered by that name), else ignoring X and Z."""
     if pair in result:
         return result[pair]
+    for name, found in result.items():
+        named = _altname(found)
+        if name.lower() == pair.lower() or named == pair:
+            return found
     bare = pair.replace("X", "").replace("Z", "")
     for name, value in result.items():
         if name.replace("X", "").replace("Z", "") == bare:
@@ -147,17 +157,59 @@ async def free_balance(http: httpx.AsyncClient, currency: str) -> Decimal:
 
 @dataclass(frozen=True)
 class Pair:
-    """A plan's pair as Kraken names it, and its two currencies."""
+    """A plan's pair: Kraken's name for it, what it buys and the currency it pays with."""
 
-    name: str  # XBTCHF
+    name: str  # as Kraken names it: XBTCHF, NVDAxUSD
+    asset: str = ""  # BTC, NVDAx
+    currency: str = ""  # CHF
 
-    @property
-    def asset(self) -> str:
-        return "BTC" if self.name.startswith("XBT") else self.name[:3]
+    def __post_init__(self) -> None:
+        # Orders from before pairs were records only know the name (the six coin pairs).
+        if not self.asset:
+            object.__setattr__(
+                self, "asset", "BTC" if self.name.startswith("XBT") else self.name[:3]
+            )
+        if not self.currency:
+            object.__setattr__(self, "currency", self.name[-3:])
 
-    @property
-    def currency(self) -> str:
-        return self.name[3:]
+
+# What a pair's base is called where people read it (Kraken's own names for some coins).
+_SHOWN = {"XBT": "BTC", "XXBT": "BTC", "XDG": "DOGE", "XXDG": "DOGE", "XETH": "ETH"}
+CURRENCIES = ("CHF", "EUR", "USD")  # pairs paid in these are offered
+
+
+def _currency(quote: str) -> str:
+    return quote[1:] if len(quote) == 4 and quote[0] == "Z" else quote  # noqa: PLR2004 - ZCHF
+
+
+def stock(base: str, info: dict[str, Any]) -> bool:
+    """A tokenized stock (xStocks: NVDAx, AAPLx) rather than a coin."""
+    if str(info.get("aclass_base", "")).startswith("tokenized"):
+        return True
+    return len(base) > 1 and base.endswith("x") and base[:-1].isupper()
+
+
+async def pairs(http: httpx.AsyncClient) -> list[dict[str, Any]]:
+    """Every pair Kraken trades now, paid in CHF, EUR or USD, as dca.pair records."""
+    found: list[dict[str, Any]] = []
+    for info in cast(dict[str, Any], await public(http, "AssetPairs")).values():
+        wsname = str(info.get("wsname") or "")
+        if "/" not in wsname or str(info.get("status", "online")) != "online":
+            continue
+        base, quote = wsname.split("/", 1)
+        if _currency(quote) not in CURRENCIES:
+            continue
+        asset = _SHOWN.get(base, base)
+        found.append(
+            {
+                "code": str(info["altname"]),
+                "label": f"{asset} / {_currency(quote)}",
+                "asset": asset,
+                "currency": _currency(quote),
+                "kind": "stock" if stock(base, info) else "coin",
+            }
+        )
+    return found
 
 
 @dataclass(frozen=True)
@@ -249,6 +301,8 @@ async def last_close(http: httpx.AsyncClient, pair: str) -> Decimal | None:
 
 
 def _same_pair(described: str, pair: str) -> bool:
+    if described.lower() == pair.lower():
+        return True
     return described.replace("X", "").replace("Z", "") == pair.replace("X", "").replace("Z", "")
 
 

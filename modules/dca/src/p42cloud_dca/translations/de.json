@@ -133,9 +133,69 @@
    "text": "Client-Referenz"
   },
   {
+   "key": "sys.field|dca.pair.asset|label",
+   "english": "Buys",
+   "text": "Kauft"
+  },
+  {
+   "key": "sys.field|dca.pair.code|label",
+   "english": "Kraken's name",
+   "text": "Name bei Kraken"
+  },
+  {
+   "key": "sys.field|dca.pair.currency|label",
+   "english": "Pays with",
+   "text": "Bezahlt mit"
+  },
+  {
+   "key": "sys.field|dca.pair.kind|choice:coin",
+   "english": "Coin",
+   "text": "Kryptowährung"
+  },
+  {
+   "key": "sys.field|dca.pair.kind|choice:stock",
+   "english": "Tokenized stock",
+   "text": "Tokenisierte Aktie"
+  },
+  {
+   "key": "sys.field|dca.pair.kind|label",
+   "english": "Kind",
+   "text": "Art"
+  },
+  {
+   "key": "sys.field|dca.pair.label|label",
+   "english": "Pair",
+   "text": "Paar"
+  },
+  {
+   "key": "sys.field|dca.pair.offered|label",
+   "english": "Kraken offers it",
+   "text": "Kraken bietet es an"
+  },
+  {
    "key": "sys.field|dca.plan.active|label",
    "english": "Active",
    "text": "Aktiv"
+  },
+  {
+   "key": "sys.field|dca.plan.amount_in|choice:asset",
+   "english": "What it buys",
+   "text": "Dem, was er kauft"
+  },
+  {
+   "key": "sys.field|dca.plan.amount_in|choice:currency",
+   "english": "What it pays with",
+   "text": "Dem, womit er bezahlt"
+  },
+  {
+   "key": "sys.field|dca.plan.amount_in|label",
+   "english": "Amount is in",
+   "text": "Betrag ist in"
+  },
+  {
+   "key": "sys.field|dca.plan.amount|help",
+   "english": "In what it buys (0.001 BTC) or what it pays (50 USD): see Amount is in.",
+   "text": "In dem, was er kauft (0.001 BTC), oder dem, was er bezahlt (50 USD): siehe Betrag ist in."
   },
   {
    "key": "sys.field|dca.plan.amount|label",
@@ -268,41 +328,6 @@
    "text": "Besitzer"
   },
   {
-   "key": "sys.field|dca.plan.pair|choice:ethchf",
-   "english": "ETH / CHF",
-   "text": "ETH / CHF"
-  },
-  {
-   "key": "sys.field|dca.plan.pair|choice:etheur",
-   "english": "ETH / EUR",
-   "text": "ETH / EUR"
-  },
-  {
-   "key": "sys.field|dca.plan.pair|choice:ethusd",
-   "english": "ETH / USD",
-   "text": "ETH / USD"
-  },
-  {
-   "key": "sys.field|dca.plan.pair|choice:xbtchf",
-   "english": "BTC / CHF",
-   "text": "BTC / CHF"
-  },
-  {
-   "key": "sys.field|dca.plan.pair|choice:xbteur",
-   "english": "BTC / EUR",
-   "text": "BTC / EUR"
-  },
-  {
-   "key": "sys.field|dca.plan.pair|choice:xbtusd",
-   "english": "BTC / USD",
-   "text": "BTC / USD"
-  },
-  {
-   "key": "sys.field|dca.plan.pair|label",
-   "english": "Pair",
-   "text": "Paar"
-  },
-  {
    "key": "sys.field|dca.plan.period_end|label",
    "english": "Period ends",
    "text": "Periode endet"
@@ -363,6 +388,16 @@
    "text": "Jetzt erreicht"
   },
   {
+   "key": "sys.field|dca.plan.trading_pair|help",
+   "english": "What it buys and pays with: coins and tokenized stocks (like NVDAx).",
+   "text": "Was er kauft und womit er bezahlt: Kryptowährungen und tokenisierte Aktien (wie NVDAx)."
+  },
+  {
+   "key": "sys.field|dca.plan.trading_pair|label",
+   "english": "Pair",
+   "text": "Paar"
+  },
+  {
    "key": "sys.field|dca.tier.amount|label",
    "english": "Amount (0: skip)",
    "text": "Betrag (0: auslassen)"
@@ -391,6 +426,11 @@
    "key": "sys.form_view|dca.order|section:1",
    "english": "DCA order",
    "text": "DCA-Auftrag"
+  },
+  {
+   "key": "sys.form_view|dca.pair|section:1",
+   "english": "Pair",
+   "text": "Paar"
   },
   {
    "key": "sys.form_view|dca.plan|section:1",
@@ -438,9 +478,19 @@
    "text": "DCA-Pläne prüfen"
   },
   {
+   "key": "sys.job|dca.pairs|label",
+   "english": "Read Kraken's pairs",
+   "text": "Paare von Kraken lesen"
+  },
+  {
    "key": "sys.list_view|dca.order|label",
    "english": "DCA orders",
    "text": "DCA-Aufträge"
+  },
+  {
+   "key": "sys.list_view|dca.pair|label",
+   "english": "Pairs",
+   "text": "Paare"
   },
   {
    "key": "sys.list_view|dca.plan|label",
@@ -593,6 +643,16 @@
    "text": "Kraken DCA"
   },
   {
+   "key": "sys.nav_item|dca.pairs|label",
+   "english": "Pairs",
+   "text": "Paare"
+  },
+  {
+   "key": "sys.nav_item|dca.pairs|section",
+   "english": "Kraken DCA",
+   "text": "Kraken DCA"
+  },
+  {
    "key": "sys.nav_item|dca.plans|label",
    "english": "Plans",
    "text": "Pläne"
@@ -668,6 +728,11 @@
    "text": "DCA-Zyklus"
   },
   {
+   "key": "sys.schedule|dca.pairs|label",
+   "english": "Kraken's pairs, daily",
+   "text": "Paare von Kraken, täglich"
+  },
+  {
    "key": "sys.table|dca.order|label",
    "english": "DCA order",
    "text": "DCA-Auftrag"
@@ -676,6 +741,16 @@
    "key": "sys.table|dca.order|label_plural",
    "english": "DCA orders",
    "text": "DCA-Aufträge"
+  },
+  {
+   "key": "sys.table|dca.pair|label",
+   "english": "Pair",
+   "text": "Paar"
+  },
+  {
+   "key": "sys.table|dca.pair|label_plural",
+   "english": "Pairs",
+   "text": "Paare"
   },
   {
    "key": "sys.table|dca.plan|label",

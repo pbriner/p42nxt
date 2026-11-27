@@ -13,6 +13,7 @@ from p42cloud.sdk import Client, Problem, Route, RouteRequest, Widget
 from p42cloud_dca import kraken, stats
 from p42cloud_dca.kraken import KrakenError, Pair
 from p42cloud_dca.paging import every
+from p42cloud_dca.pairs import plan_pair
 
 FRESH = timedelta(minutes=10)  # a plan's last price this recent is used as it is
 
@@ -100,7 +101,7 @@ async def view(request: RouteRequest) -> View:
         for o in orders
         if o["state"] == wanted
     ]
-    return View(plan, Pair(str(plan["pair"]).upper()), real, buys, client, datetime.now(UTC))
+    return View(plan, await plan_pair(client, plan), real, buys, client, datetime.now(UTC))
 
 
 # ---- figures ----
