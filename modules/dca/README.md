@@ -21,7 +21,8 @@ Core dependency: no
 
 | Table | What a record is | Main fields | Notes |
 |---|---|---|---|
-| `dca.plan` | A plan | name, pair, amount, mode, deposit day, buy hour, end date, max price, monthly limit, price tiers, active; what the cycle found (next buy, buys left, last price, free balance, last said) | Personal (owner) |
+| `dca.pair` | A pair Kraken trades, paid in CHF, EUR or USD | Kraken's name, pair, buys, pays with, kind (coin, tokenized stock), offered | Read by investors; written by the module only (the six BTC and ETH pairs from the install, the rest read daily) |
+| `dca.plan` | A plan | name, pair (a `dca.pair`), amount, amount is in (what it buys or what it pays with), mode, deposit day, buy hour, end date, max price, monthly limit, price tiers, active; what the cycle found (next buy, buys left, last price, free balance, last said) | Personal (owner) |
 | `dca.tier` | A price tier of a plan | plan, price change %, amount (0: skip), on | Personal |
 | `dca.order` | A buy: a dry run or a real order (sending, bought, answer lost, failed) | plan, why, state, amount, price, cost, fee, currency, when | Personal; written by the cycle only |
 
@@ -29,12 +30,12 @@ Core dependency: no
 
 | Role | Can | Record conditions / personal data |
 |---|---|---|
-| `dca.user` (DCA investor) | Make and change their plans and tiers; read their orders | Everything is personal: only the owner sees it, administrators included |
-| `dca.keeper` (DCA cycle) | Read plans and tiers, write what the cycle found, write orders | Only the module's service account (the cycle) gets it |
+| `dca.user` (DCA investor) | Make and change their plans and tiers; read their orders and the pairs | Everything is personal: only the owner sees it, administrators included |
+| `dca.keeper` (DCA cycle) | Read plans and tiers, write what the cycle found, write orders and pairs | Only the module's service account (the cycle) gets it |
 
 ## Views, navigation and dashboards
 
-Finance → Kraken DCA: Dashboard, Plans, Orders, New plan. The dashboard (`/dashboard/dca`)
+Finance → Kraken DCA: Dashboard, Plans, Orders, Pairs, New plan. The dashboard (`/dashboard/dca`)
 shows one plan at a time, chosen above the widgets (kept in the address): 12 figures and 7
 charts, all source widgets of the module's routes, each also available for the home dashboard.
 They count real orders, or the dry runs while there are none. The plan's form: Plan, When, Limits, Price
@@ -42,7 +43,13 @@ tiers, What it found; its tiers and orders as related lists.
 
 ## Workflows, approvals and jobs
 
-The job `dca.cycle` (schedule "DCA cycle", every 5 minutes): for each active plan, with the
+The job `dca.pairs` (schedule "Kraken's pairs, daily"): reads Kraken's pairs (AssetPairs,
+through the first plan's connection that answers) and keeps `dca.pair` up to date: new ones
+added, gone ones marked as no longer offered (a plan can't choose those). Upgrade 0.9.0 links
+plans to the pair record of their former fixed choice.
+
+The job `dca.cycle` (schedule "DCA cycle", every 5 minutes): a plan whose amount is in what it
+pays with buys what that amount (and its tiers' amounts) pays for at the current price. for each active plan, with the
 plan's Kraken connection (`connection`: one of its owner's own; empty: the owner's only one), it reads the price, the pair's minimums and the free balance, spreads
 the balance (less this period's dry runs) until the period ends, applies the price tiers, the max
 price and the monthly limit, and records a dry run when a buy is due. A buy the free

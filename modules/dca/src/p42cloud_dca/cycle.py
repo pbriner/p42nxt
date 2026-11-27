@@ -16,6 +16,7 @@ from p42cloud_dca import kraken, stats, strategy
 from p42cloud_dca.kraken import KrakenError, Pair
 from p42cloud_dca.orders import apply_fill, hold, tell_bought
 from p42cloud_dca.paging import every
+from p42cloud_dca.pairs import plan_pair
 
 FEE = Decimal("0.0026")  # Kraken's taker fee, for dry runs
 MAX_MESSAGE = 500
@@ -93,12 +94,16 @@ def _cooled_down(plan: dict[str, Any], orders: list[dict[str, Any]], now: dateti
     )
 
 
-async def _tiers(client: Client, plan: dict[str, Any]) -> list[strategy.Tier]:
+async def _tiers(
+    client: Client, plan: dict[str, Any], per: Decimal = Decimal(1)
+) -> list[strategy.Tier]:
     found = await client.list(
         "dca.tier", where={"field": "plan", "op": "eq", "value": plan["sys_id"]}, limit=100
     )
     return [
-        strategy.Tier(Decimal(str(t["threshold_percent"])), Decimal(str(t["amount"])), t["enabled"])
+        strategy.Tier(
+            Decimal(str(t["threshold_percent"])), Decimal(str(t["amount"])) / per, t["enabled"]
+        )
         for t in found["records"]
     ]
 
@@ -201,7 +206,7 @@ async def _real_orders_stopped(client: Client) -> str | None:
 
 async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tuple[str, bool]:
     """One plan's check: what it says, and whether it bought."""
-    pair = Pair(plan["pair"].upper())
+    pair = await plan_pair(client, plan)
     orders = await _orders(client, plan)
     async with _kraken(client, plan) as http:
         if plan["live"] or any(o["state"] in ("submitting", "unknown") for o in orders):
@@ -218,7 +223,9 @@ async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tup
         free = await kraken.free_balance(http, pair.currency)
     since = strategy.period_start(now, plan["deposit_day"], plan["buy_hour"])
     spent = _spent(plan, orders, since)
-    amount = Decimal(str(plan["amount"]))
+    # A plan in money buys what that amount pays for now; tiers' amounts count the same way.
+    per = price if plan.get("amount_in") == "currency" and price > 0 else Decimal(1)
+    amount = Decimal(str(plan["amount"])) / per
     limit = _decimal(plan["monthly_limit"])
     plan_timing = strategy.timing(
         mode=plan["mode"],
@@ -233,7 +240,7 @@ async def check_plan(client: Client, plan: dict[str, Any], now: datetime) -> tup
         spent=spent,
     )
     choice = strategy.choose_tier(
-        await _tiers(client, plan) if plan["dynamic"] else [],
+        await _tiers(client, plan, per) if plan["dynamic"] else [],
         amount,
         price,
         _reference(plan, orders),
@@ -431,7 +438,7 @@ async def check_targets(client: Client, now: datetime) -> int:
                 for o in counted
             ]
         )
-        pair = Pair(plan["pair"].upper())
+        pair = await plan_pair(client, plan)
         try:
             price = await _value_price(client, plan, pair, now)
         except KrakenError, Problem, httpx.HTTPError:

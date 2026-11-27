@@ -14,7 +14,8 @@ import httpx
 from p42cloud.sdk import CallRefused, CallRun, Client, GaveUp, OutsideCall, Records
 
 from p42cloud_dca import kraken
-from p42cloud_dca.kraken import KrakenError, Pair
+from p42cloud_dca.kraken import KrakenError
+from p42cloud_dca.pairs import order_pair
 
 
 def reference(payload: dict[str, Any]) -> int | str:
@@ -68,7 +69,7 @@ async def apply_fill(client: Client, order: dict[str, Any], fill: dict[str, Any]
 
 
 async def tell_bought(client: Client, order: dict[str, Any], plan: dict[str, Any]) -> None:
-    pair = Pair(str(order["pair"]))
+    pair = await order_pair(client, str(order["pair"]))
     await client.notify(
         "dca.buy",
         f"Bought: {plan['name']}",

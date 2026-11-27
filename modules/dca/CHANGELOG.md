@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.0
+
+- **Stocks too**: a plan buys any pair Kraken trades in CHF, EUR or USD, including tokenized
+  stocks like NVDAx / USD where Kraken offers them to you. The pairs are read from Kraken every
+  day and listed under **Pairs**; the six BTC and ETH pairs are there from the start. Plans
+  keep their pair (the upgrade links them).
+- **Amount is in**: what it buys (0.001 BTC) or what it pays with (50 USD). Stock plans start
+  with what they pay with; each buy works out what the amount pays for at the price then.
+- Kraken's pair names are used exactly (NVDAxUSD), no longer guessed from the coin pairs.
+
 ## 0.8.4
 
 - A buy that costs more than the free balance on Kraken (often a price tier's bigger amount)

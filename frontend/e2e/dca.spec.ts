@@ -8,6 +8,10 @@ test('a DCA plan is made in the form and says when it buys', async ({ page }, in
   const name = `Bitcoin ${info.project.name}`;
   await page.goto('/form/dca.plan/new');
   await page.getByRole('textbox', { name: 'Name' }).fill(name);
+  // Picked from Kraken's pairs (coins and tokenized stocks), found by typing.
+  const pair = page.getByRole('combobox', { name: 'Pair' });
+  await pair.fill('BTC / CHF');
+  await page.getByRole('option', { name: 'BTC / CHF' }).first().click();
   await page.getByRole('spinbutton', { name: 'Amount per buy' }).fill('0.0001');
   await page.getByRole('button', { name: 'Create' }).click();
   await expect(

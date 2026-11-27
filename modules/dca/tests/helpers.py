@@ -39,11 +39,18 @@ async def connect(as_person: Acting, person: str) -> None:
             )
 
 
-async def new_plan(as_person: Acting, person: str, **values: Any) -> dict[str, Any]:
+async def pair_id(client: Client, code: str = "XBTCHF") -> str:
+    """A pair's record by Kraken's name (the six coin pairs are there from the start)."""
+    found = await client.list("dca.pair", where={"field": "code", "op": "eq", "value": code})
+    return str(found["records"][0]["sys_id"])
+
+
+async def new_plan(
+    as_person: Acting, person: str, *, code: str = "XBTCHF", **values: Any
+) -> dict[str, Any]:
     async with as_person(person) as client:
-        return await client.create(
-            "dca.plan", {"name": "Bitcoin", "pair": "xbtchf", "amount": "0.001"} | values
-        )
+        base = {"name": "Bitcoin", "trading_pair": await pair_id(client, code), "amount": "0.001"}
+        return await client.create("dca.plan", base | values)
 
 
 async def read(as_person: Acting, person: str, table: str, **where: Any) -> list[dict[str, Any]]:

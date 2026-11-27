@@ -1,7 +1,7 @@
 # Kraken DCA
 
-Buy a little bitcoin or ether at a time, spread evenly until your next deposit, on your own
-Kraken account. A plan makes dry runs until you switch on real orders.
+Buy a little at a time, spread evenly until your next deposit, on your own Kraken account:
+coins like bitcoin, or tokenized stocks like NVDAx where Kraken offers them to you. A plan makes dry runs until you switch on real orders.
 
 ## Connect your Kraken account
 
@@ -15,10 +15,18 @@ Nobody else sees your connection or your plans, administrators included.
 
 ## Make a plan
 
-Kraken DCA → **New plan**: the pair (for example BTC / CHF), the amount per buy (in bitcoin or
-ether), and until when the money should last: your next **deposit day** (at the hour you choose,
+Kraken DCA → **New plan**: the pair (type to find it, for example BTC / CHF or NVDAx / USD),
+the amount per buy, and until when the money should last: your next **deposit day** (at the hour you choose,
 UTC), or an **end date**. Optional: a price it never buys above, and the most it spends per month
 (from deposit day to deposit day).
+
+**Amount is in** says what the amount counts: what it buys (0.001 BTC) or what it pays with
+(50 USD). A plan for a stock starts with what it pays with, since Kraken sells stocks in
+fractions for an amount of money; at each buy the app works out how much that buys now.
+
+The pairs come from Kraken: **Pairs** lists them, read every day (the job **Read Kraken's
+pairs**, which an administrator can also start by hand once you have a plan). A tokenized stock
+follows the share's price but isn't the share itself.
 
 ## When does it buy?
 

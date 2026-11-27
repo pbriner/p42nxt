@@ -27,6 +27,7 @@ from p42cloud.sdk import (
     Job,
     Json,
     ListView,
+    Migration,
     Module,
     NotificationKind,
     Problem,
@@ -45,10 +46,11 @@ from p42cloud.sdk import (
 )
 from p42cloud.sdk import Decimal as Number
 
-from p42cloud_dca import cycle
+from p42cloud_dca import cycle, pairs
 from p42cloud_dca.kraken import KRAKEN
 from p42cloud_dca.kraken import TYPE as KRAKEN_TYPE
 from p42cloud_dca.orders import PLACE_ORDER
+from p42cloud_dca.pairs import PAIR
 from p42cloud_dca.widgets import ROUTES, WIDGETS
 
 
@@ -68,14 +70,6 @@ LIVE_ALLOWED = Setting(
     public=True,
 )
 
-PAIRS = {
-    "xbtchf": "BTC / CHF",
-    "xbteur": "BTC / EUR",
-    "xbtusd": "BTC / USD",
-    "ethchf": "ETH / CHF",
-    "etheur": "ETH / EUR",
-    "ethusd": "ETH / USD",
-}
 # What the cycle writes on a plan; people change the rest.
 BOOKKEEPING = (
     "status",
@@ -103,14 +97,32 @@ PLAN = Table(
             "sys.connection",
             help="Which of your Kraken accounts it trades through. Empty: your only one.",
         ),
-        "pair": Choice("Pair", PAIRS, required=True, default="xbtchf"),
+        # What it buys: Kraken's pairs as records (coins and tokenized stocks); required on
+        # saving (a check), so plans from before could be linked by the upgrade.
+        "trading_pair": Reference(
+            "Pair",
+            "dca.pair",
+            help="What it buys and pays with: coins and tokenized stocks (like NVDAx).",
+        ),
         "mode": Choice(
             "Spread until",
             {"recurring": "The next deposit day", "lump_sum": "An end date"},
             required=True,
             default="recurring",
         ),
-        "amount": Number("Amount per buy", scale=8, required=True),
+        "amount": Number(
+            "Amount per buy",
+            scale=8,
+            required=True,
+            help="In what it buys (0.001 BTC) or what it pays (50 USD): see Amount is in.",
+        ),
+        # Stocks are bought for an amount of money (50 USD), coins usually by quantity.
+        "amount_in": Choice(
+            "Amount is in",
+            {"asset": "What it buys", "currency": "What it pays with"},
+            required=True,
+            default="asset",
+        ),
         "deposit_day": Integer("Deposit day (1 to 28)", required=True, default=24),
         "buy_hour": Integer("Hour (UTC, 0 to 23)", required=True, default=8),
         "end_date": Date("End date"),
@@ -220,9 +232,10 @@ ORDER = Table(
 PEOPLE_WRITE = (
     "name",
     "connection",
-    "pair",
+    "trading_pair",
     "mode",
     "amount",
+    "amount_in",
     "deposit_day",
     "buy_hour",
     "end_date",
@@ -246,6 +259,7 @@ USER = Role(
         Grant("dca.plan", ("write",), fields=PEOPLE_WRITE),
         Grant("dca.tier", ("read", "create", "write", "delete", "restore")),
         Grant("dca.order", ("read",)),
+        Grant("dca.pair", ("read",)),
     ),
     description="Makes their own DCA plans; sees only their own plans and orders.",
 )
@@ -259,6 +273,7 @@ KEEPER = Role(
         Grant("dca.plan", ("write",), fields=BOOKKEEPING),
         Grant("dca.tier", ("read",)),
         Grant("dca.order", ("read", "create", "write")),
+        Grant("dca.pair", ("read", "create", "write")),
     ),
     description="Checks the plans and records their orders: for the DCA cycle.",
 )
@@ -305,11 +320,12 @@ def _check_values(values: dict[str, Any], merged: dict[str, Any]) -> None:
 TIMING = frozenset(
     {
         "amount",
+        "amount_in",
         "mode",
         "deposit_day",
         "buy_hour",
         "end_date",
-        "pair",
+        "trading_pair",
         "active",
         "monthly_limit",
         "live",
@@ -403,6 +419,7 @@ async def _check_plan(change: Change) -> None:
         current = await Client.of(change).get("dca.plan", change.sys_id)
     merged = current | values
     _check_values(values, merged)
+    await _check_pair(change, merged)
     await _check_status(change, current)
     await _check_connection(change, merged)
     await _check_live(change, merged | values)
@@ -415,6 +432,21 @@ async def _check_plan(change: Change) -> None:
             if not merged.get("active", True)
             else "The next buy is planned at the next check (within 5 minutes)."
         )
+
+
+async def _check_pair(change: Change, merged: dict[str, Any]) -> None:
+    """Every plan buys a pair, one Kraken offers when it's chosen."""
+    if _by_cycle(change):
+        return
+    if not merged.get("trading_pair"):
+        raise _invalid("trading_pair", "Choose what it buys.")
+    if "trading_pair" in change.values:
+        pair = await Client.of(change).get("dca.pair", str(merged["trading_pair"]))
+        if not pair["offered"]:
+            raise _invalid("trading_pair", f"Kraken no longer offers {pair['label']}.")
+        if change.operation == "create" and "amount_in" not in change.sent:
+            # A stock is bought for money (Kraken sells fractions by amount).
+            change.values["amount_in"] = "currency" if pair["kind"] == "stock" else "asset"
 
 
 async def _check_tier(change: Change) -> None:
@@ -436,7 +468,7 @@ module = Module(
     # The package's version: one place to raise it (pyproject.toml).
     version=package_version("p42cloud-dca"),
     depends_on={"sys": ">=0.38,<1"},
-    tables=(PLAN, TIER, ORDER),
+    tables=(PAIR, PLAN, TIER, ORDER),
     roles=(USER, KEEPER),
     hooks=(
         TableHook("dca.plan", before=_check_plan),
@@ -486,14 +518,37 @@ module = Module(
             channels=("telegram",),
         ),
     ),
-    jobs=(Job("cycle", "Check the DCA plans", cycle.run, timeout=240, retries=0),),
-    schedules=(Schedule("cycle", "DCA cycle", "cycle", "*/5 * * * *"),),
+    jobs=(
+        Job("cycle", "Check the DCA plans", cycle.run, timeout=240, retries=0),
+        Job("pairs", "Read Kraken's pairs", pairs.refresh, timeout=120),
+    ),
+    schedules=(
+        Schedule("cycle", "DCA cycle", "cycle", "*/5 * * * *"),
+        Schedule("pairs", "Kraken's pairs, daily", "pairs", "25 4 * * *"),
+    ),
+    seed=pairs.seed,
+    migrations=(Migration("0.9.0", pairs.move_plans),),
     views=(
         ListView(
             "dca.plan",
-            ("name", "pair", "amount", "active", "live", "status", "next_buy", "last_message"),
+            (
+                "name",
+                "trading_pair",
+                "amount",
+                "active",
+                "live",
+                "status",
+                "next_buy",
+                "last_message",
+            ),
             sort=("name",),
             search=("name",),
+        ),
+        ListView(
+            "dca.pair",
+            ("label", "kind", "asset", "currency", "code", "offered"),
+            sort=("label",),
+            search=("label", "asset", "code"),
         ),
         ListView(
             "dca.tier",
@@ -511,7 +566,9 @@ module = Module(
         FormView(
             "dca.plan",
             (
-                FormSection("Plan", ("name", "connection", "pair", "amount", "active")),
+                FormSection(
+                    "Plan", ("name", "connection", "trading_pair", "amount", "amount_in", "active")
+                ),
                 FormSection("Real orders", ("live", "keys_checked", "status", "hold_reason")),
                 FormSection("When", ("mode", "deposit_day", "buy_hour", "end_date")),
                 FormSection("Limits", ("max_price", "monthly_limit")),
@@ -553,6 +610,13 @@ module = Module(
                     "dca.order",
                     icon="receipt_long",
                     keywords=("buys", "bitcoin"),
+                ),
+                Item(
+                    "pairs",
+                    "Pairs",
+                    "dca.pair",
+                    icon="currency_exchange",
+                    keywords=("stocks", "coins", "xstocks"),
                 ),
                 Item("new_plan", "New plan", "dca.plan", kind="create", icon="add"),
             ),
