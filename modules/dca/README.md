@@ -7,7 +7,8 @@ Version: 0.4.0 · Last updated: 2026-11-14
 
 Dollar cost averaging on each person's own Kraken account: a plan buys a little at a time,
 spread evenly until the next deposit (or an end date). Dry runs until the owner switches on
-real orders, which the installation must allow too.
+real orders, which the installation must allow too. A test installation reads Kraken but holds
+real orders (they end as failed, with the reason).
 
 ## Depends on
 

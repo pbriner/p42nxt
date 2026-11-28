@@ -2,6 +2,16 @@
 
 The core (`sys`): the engine and the platform's own features.
 
+## 0.54.0
+
+- **Silent mode**: an installation that isn't production holds Telegram messages, outside calls
+  and changes through connections, and lists them as **Held**. Reading goes on. Production always
+  delivers. A banner on every page says it's a test installation and whether it holds.
+- Setting **Deliver outside on a test installation** turns delivery on for one on purpose
+  (audited, shown in the banner); it has no effect in production.
+- For modules: `client.connection(..., acting=True)` holds every request (a device switched with
+  GET), `acting=False` none (an API that reads with POST); `Held` and the test fixture `silent`.
+
 ## 0.53.0
 
 - **Full screen widgets**: a button on each dashboard card opens it over the whole window, at its

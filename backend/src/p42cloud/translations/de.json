@@ -2408,6 +2408,11 @@
    "text": "Fehlgeschlagen"
   },
   {
+   "key": "sys.field|sys.notification_delivery.state|choice:held",
+   "english": "Held",
+   "text": "Zurückgehalten"
+  },
+  {
    "key": "sys.field|sys.notification_delivery.state|choice:pending",
    "english": "Waiting",
    "text": "Wartet"
@@ -2581,6 +2586,11 @@
    "key": "sys.field|sys.outside_call.state|choice:failed",
    "english": "Failed",
    "text": "Fehlgeschlagen"
+  },
+  {
+   "key": "sys.field|sys.outside_call.state|choice:held",
+   "english": "Held",
+   "text": "Zurückgehalten"
   },
   {
    "key": "sys.field|sys.outside_call.state|choice:pending",

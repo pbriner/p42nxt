@@ -34,9 +34,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from p42cloud.data.catalog import load_catalog
 from p42cloud.data.records import Records
+from p42cloud.kernel import outgoing
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import EVERYTHING, Context, working_as
 from p42cloud.kernel.db import create_engine, transaction
+from p42cloud.kernel.outgoing import set_delivery
 from p42cloud.kernel.secrets import Sealer, use_sealer
 from p42cloud.kernel.setup import set_up_database
 from p42cloud.modules.core import CORE
@@ -103,9 +105,11 @@ async def p42_installation(
         await conn.execute(text(f'CREATE DATABASE "{name}"'))
     settings = Settings(
         environment="test",
+        deliver_outside=True,  # tests reach their stand-ins; silent mode has its own
         database_url=f"postgresql+asyncpg://p42_app:p42-app-dev-only@{_HOST}/{name}",
         owner_database_url=f"postgresql+asyncpg://p42_owner:p42-owner-dev-only@{_HOST}/{name}",
     )
+    outgoing.configure(settings)  # what the app and the worker do when they start
     try:
         await set_up_database(f"{_SERVER}/{name}", settings)
         owner = create_engine(settings.owner_database_url)
@@ -221,6 +225,15 @@ def call_route(p42_engine: AsyncEngine) -> CallRoute:
 
 
 type StandIn = Callable[[str, Callable[[httpx.Request], httpx.Response]], None]
+
+
+@pytest.fixture
+def silent() -> Iterator[None]:
+    """A test installation as it starts: what changes things outside is held (`Held`), outside
+    calls end held, Telegram messages are held. The module tests' installation delivers."""
+    set_delivery(False)
+    yield
+    set_delivery(None)
 
 
 @pytest.fixture

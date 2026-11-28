@@ -253,3 +253,18 @@ async def test_the_module_hears_when_a_call_ends_without_an_answer(
     assert [g.why for g in GAVE_UP] == ["refused", "unclear"]
     assert await deliver(engine, later + LATER) is None  # tried no more
     assert (await _state(engine, refused))["state"] == "failed"
+
+
+async def test_a_test_installation_holds_calls_and_tells_the_module(
+    engine: AsyncEngine, declared: None, silent: None
+) -> None:
+    await _settle(engine, datetime.now(UTC) + LATER)
+    anna = await _person_with_connection(engine)
+    async with acting(engine, anna) as records:
+        ident = await record(records, CALL, {"pair": "XBTCHF"})
+    assert await deliver(engine) == "held"
+    seen = await _state(engine, ident)
+    assert seen["state"] == "held" and "test installation" in seen["message"]
+    assert not PLACED  # never sent
+    assert [g.why for g in GAVE_UP] == ["not_sent"]
+    assert await deliver(engine, datetime.now(UTC) + LATER) is None  # and not tried again

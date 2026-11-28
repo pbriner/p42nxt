@@ -23,6 +23,7 @@ from p42cloud.data.records import Records
 from p42cloud.kernel.context import EVERYTHING, Context, current, working_as
 from p42cloud.kernel.db import switch_role, transaction
 from p42cloud.kernel.errors import FieldError, Problem
+from p42cloud.kernel.outgoing import HELD, outside_allowed
 from p42cloud.security.access.service import access_for
 from p42cloud.services.calls.models import CallRun, GaveUp, OutsideCall, Refused
 from p42cloud.services.connections.service import connect
@@ -263,6 +264,12 @@ async def deliver(engine: AsyncEngine, now: datetime | None = None) -> str | Non
         )
         if row.was == "answered":
             state, values = "answered", {"answer": row.answer}
+        elif not outside_allowed():
+            # A test installation: never sent. The module hears it wasn't, like a stop before.
+            await _set(engine, row.sys_id, state="held", message=HELD)
+            if call.gave_up is not None:
+                await _give_up(engine, row, call, run, GaveUp("not_sent", HELD))
+            return "held"
         else:
             state, values = await _attempt(engine, row, call, run)
         if state == "answered":

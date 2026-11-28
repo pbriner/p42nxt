@@ -389,16 +389,21 @@ def _may_use(records: Records, module: str, owner: uuid.UUID) -> bool:
 
 
 @asynccontextmanager
-async def connect(
+async def connect(  # noqa: PLR0913 - which connection, and how it's used, all by keyword
     records: Records,
     type_name: str,
     *,
     owner: uuid.UUID | None = None,
     label: str | None = None,
     connection: uuid.UUID | None = None,
+    acting: bool | None = None,
 ) -> AsyncGenerator[httpx.AsyncClient]:
     """A ready client for someone's connection of a type (the person's own by default); one
-    named connection of theirs when given (never another person's, nor of another type)."""
+    named connection of theirs when given (never another person's, nor of another type).
+
+    On a test installation it holds what changes things outside: by default anything but
+    reading (GET); everything when `acting` (a module that changes things with GET); nothing
+    when `acting` is False (a module that reads with POST, like Kraken's private API)."""
     module, kind = _type(type_name)
     who = owner or records.situation.person
     if kind.shared:
@@ -459,6 +464,7 @@ async def connect(
         auth=_Auth(kind, secrets),
         transport=_Retrying(inner),
         local_ranges=list(row.local_ranges or []) if kind.local else None,
+        holds="nothing" if acting is False else "everything" if acting else "changes",
     )
     try:
         yield client
@@ -484,7 +490,10 @@ async def check(records: Records, connection: uuid.UUID) -> str:
     _, kind = _type(row.type)
     health, message = "ok", "It answers."
     try:
-        async with connect(records, row.type, owner=row.owner, label=row.label) as http:
+        # A check only reads, whatever method the type's check uses.
+        async with connect(
+            records, row.type, owner=row.owner, label=row.label, acting=False
+        ) as http:
             if kind.check is not None:
                 message = await kind.check(http)
     except (httpx.HTTPError, Problem) as error:

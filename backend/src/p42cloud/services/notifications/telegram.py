@@ -24,6 +24,7 @@ from p42cloud.data.records import Records
 from p42cloud.kernel.context import EVERYTHING, Context, working_as
 from p42cloud.kernel.db import switch_role, transaction
 from p42cloud.kernel.errors import FieldError, Problem
+from p42cloud.kernel.outgoing import HELD, outside_allowed
 from p42cloud.services.connections.models import ConnectionType
 from p42cloud.services.connections.service import connect
 from p42cloud.services.notifications.models import CHANNELS
@@ -260,6 +261,10 @@ async def deliver(engine: AsyncEngine, public_url: str | None = None) -> str | N
                 return None
             due = _Due(**row._mapping)
             attempts = due.attempts + 1
+            if not outside_allowed():  # a test installation: the notification in the app only
+                await switch_role(conn, "sys")
+                await _set(conn, due.sys_id, state="held", attempts=attempts, message=HELD)
+                return "held"
             records = Records(conn, await load_catalog(conn))
             try:
                 async with connect(records, TYPE) as http:

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5
+
+- On a test installation, switching a Shelly plug is held and says so, instead of switching the
+  real plug. Needs core 0.54.
+
 ## 0.1.4
 
 - **Review tasks**: "Something found waits for review" is now about the scan that found it, and

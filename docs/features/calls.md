@@ -49,6 +49,7 @@ The worker delivers calls in turn with job runs:
 | Answered | The other side answered; the module's `done` hasn't finished yet |
 | Done | Answered, and `done` has run |
 | Failed | The other side said no for good, or there were no tries left |
+| Held | A test installation: never sent ([Silent mode](silent-mode.md)); the module's `gave_up` hears `not_sent` |
 
 - When **nothing could reach** the other side (no connection), the call waits and is sent again.
 - When **the answer is lost**, the next attempt first asks with `reconcile`. Only if the call

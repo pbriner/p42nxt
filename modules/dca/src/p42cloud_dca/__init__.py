@@ -467,7 +467,7 @@ module = Module(
     publisher="p42",
     # The package's version: one place to raise it (pyproject.toml).
     version=package_version("p42cloud-dca"),
-    depends_on={"sys": ">=0.38,<1"},
+    depends_on={"sys": ">=0.54,<1"},
     tables=(PAIR, PLAN, TIER, ORDER),
     roles=(USER, KEEPER),
     hooks=(

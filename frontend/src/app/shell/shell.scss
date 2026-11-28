@@ -136,3 +136,19 @@ main {
     padding: 0 5px;
   }
 }
+
+// A test installation: says so on every page, and whether it holds what goes outside.
+.silent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  font: var(--mat-sys-label-large);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+
+  &[data-held='false'] {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+}

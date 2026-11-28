@@ -30,7 +30,11 @@ WAITING = "Waiting:"
 def _kraken(client: Client, plan: dict[str, Any]) -> Any:
     """The plan's Kraken account: its connection (its owner's only one, for plans before it was
     named)."""
-    return client.connection(kraken.TYPE, owner=plan["owner"], connection=plan.get("connection"))
+    # Kraken's private API reads with POST too (the balance): only reading here, orders go out
+    # as outside calls, which a test installation holds.
+    return client.connection(
+        kraken.TYPE, owner=plan["owner"], connection=plan.get("connection"), acting=False
+    )
 
 
 def _decimal(value: Any) -> Decimal | None:

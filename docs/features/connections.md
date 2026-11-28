@@ -91,6 +91,9 @@ a key. A person may use their own connections; a module's jobs may use connectio
 module's own types for the people they work for. Reading calls (`GET`, `HEAD`) are tried again
 when the other side is busy (429, 502, 503, 504), waiting as it asks, at most 30 seconds.
 
+On a test installation, requests that change something are held (`acting=` says more when the
+method doesn't tell); see [Silent mode](silent-mode.md).
+
 ## Changing things in an outside system
 
 To change something in an outside system (place an order, create a ticket), a module records an

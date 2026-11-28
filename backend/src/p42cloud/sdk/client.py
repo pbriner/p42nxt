@@ -260,14 +260,19 @@ class Client:
         owner: UUID | str | None = None,
         label: str | None = None,
         connection: UUID | str | None = None,
+        acting: bool | None = None,
     ) -> AsyncGenerator[httpx.AsyncClient]:
         """A ready client for a connection of one of the module's types: the person's own, or
         (in the module's jobs) the one of the person they work for; one of theirs in particular
         when `connection` names it (only theirs, and only of the type). It knows the address and
-        signs in; the module never sees a secret."""
+        signs in; the module never sees a secret.
+
+        On a test installation, what would change things outside raises `Held` (an
+        `httpx.HTTPError`): by default any request but reading (GET). `acting=True` holds every
+        request (a device switched with GET); `acting=False` holds none (reading with POST)."""
         who = self._id(owner) if owner is not None else None
         which = self._id(connection) if connection is not None else None
         async with connect(
-            self._records, type_name, owner=who, label=label, connection=which
+            self._records, type_name, owner=who, label=label, connection=which, acting=acting
         ) as http:
             yield http

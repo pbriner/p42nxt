@@ -63,7 +63,7 @@ class View:
         if last is not None and checked is not None and self.now - checked < FRESH:
             return last, "at the last check"
         try:
-            async with self.client.connection(kraken.TYPE) as http:
+            async with self.client.connection(kraken.TYPE, acting=False) as http:
                 return await kraken.price(http, self.pair), "Kraken, now"
         except Problem, KrakenError, httpx.HTTPError:
             pass
@@ -269,7 +269,7 @@ async def _profit_over_time(v: View) -> dict[str, Any]:
     closes: list[tuple[datetime, Decimal]] = []
     if v.buys:
         try:
-            async with v.client.connection(kraken.TYPE) as http:
+            async with v.client.connection(kraken.TYPE, acting=False) as http:
                 closes = await kraken.closes(http, v.pair)
         except Problem, KrakenError, httpx.HTTPError:
             closes = []

@@ -17,6 +17,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from p42cloud.data import installation
+from p42cloud.kernel import outgoing
 from p42cloud.kernel.config import Settings, get_settings
 from p42cloud.kernel.db import create_engine
 from p42cloud.kernel.secrets import Sealer, use_sealer
@@ -41,6 +42,7 @@ SETTINGS_EVERY = timedelta(seconds=installation.REFRESH)
 
 async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
     settings = settings or get_settings()
+    outgoing.configure(settings)
     engine = create_engine(settings.database_url)
     compose([CORE, *discover(settings.modules_dir)])
     if settings.master_key_file is not None:  # without it, jobs can't open the vault
@@ -54,7 +56,7 @@ async def work(stop: asyncio.Event, settings: Settings | None = None) -> None:
                 await _each_minute(engine, now)
                 last_recover = now
             if now - last_settings >= SETTINGS_EVERY:
-                await installation.refresh(engine)  # the app's address, for links in messages
+                await installation.refresh(engine)  # the app's address; whether to deliver outside
                 last_settings = now
             if now - last_tick >= TICK:
                 await tick(engine, now)

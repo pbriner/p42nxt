@@ -369,6 +369,11 @@
      "kind": "KEYWORD_ONLY",
      "name": "connection",
      "required": false
+    },
+    {
+     "kind": "KEYWORD_ONLY",
+     "name": "acting",
+     "required": false
     }
    ],
    "convert": [
@@ -1068,6 +1073,16 @@
     "kind": "POSITIONAL_OR_KEYWORD",
     "name": "fields",
     "required": false
+   }
+  ]
+ },
+ "Held": {
+  "methods": {},
+  "params": [
+   {
+    "kind": "POSITIONAL_OR_KEYWORD",
+    "name": "message",
+    "required": true
    }
   ]
  },

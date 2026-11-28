@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from p42cloud.data import installation
 from p42cloud.data.catalog import MetadataCache
+from p42cloud.kernel import outgoing
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine
@@ -113,6 +114,7 @@ def create_app(
 ) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        outgoing.configure(settings)
         services = await _start(settings, sealer=sealer, http=http, upgrade=upgrade)
         app.state.services = services
         module_routes.mount(modules_router)  # the modules are composed by now

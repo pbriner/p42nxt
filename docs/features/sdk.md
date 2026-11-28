@@ -88,6 +88,7 @@ at the root gives an environment for all of them. The app image holds the platfo
 `run_job("<module>.<job>")` runs one of the module's jobs at once, as its service account,
 like the worker (`jobs.md`). `call_route(person, method, address)` calls a module route as a
 person (`module-routes.md`). `deliver_calls()` sends the outside calls that are due, as the worker would (`later=True` as if
-their waits were over); `deliver_events()` hands out the events that are due, the same way. `stand_in("<module>.<type>", answer)` answers a connection type's
+their waits were over); `deliver_events()` hands out the events that are due, the same way. `silent` runs a test as a
+silent installation (`silent-mode.md`). `stand_in("<module>.<type>", answer)` answers a connection type's
 requests with the test's own function instead of the outside system (an `httpx` handler), with
 secrets sealed by a key made for the test.

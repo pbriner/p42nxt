@@ -15,7 +15,9 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 
 from p42cloud.kernel import outgoing
+from p42cloud.kernel.config import Settings
 from p42cloud.kernel.outgoing import (
+    Held,
     Refused,
     is_name,
     never_local,
@@ -209,3 +211,62 @@ async def test_a_devices_own_certificate_is_trusted_when_pinned(
 async def test_only_the_pinned_certificate_is_trusted(tmp_path: Path) -> None:
     with pytest.raises(ssl.SSLCertVerificationError):
         await _handshake(_self_made(authority=False), _self_made(authority=False)[0], tmp_path)
+
+
+def _installation(monkeypatch: pytest.MonkeyPatch, environment: str, deliver: bool) -> None:
+    """A process started as this kind of installation (its own reading of settings)."""
+    monkeypatch.setattr(outgoing, "_READ", {})
+    outgoing.configure(
+        Settings(
+            environment=environment,  # pyright: ignore[reportArgumentType]
+            deliver_outside=deliver,
+            database_url="postgresql+asyncpg://x@localhost/x",
+            owner_database_url="postgresql+asyncpg://y@localhost/x",
+        )
+    )
+
+
+def test_production_delivers_and_anything_else_holds_unless_turned_on(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _installation(monkeypatch, "production", deliver=False)
+    assert outgoing.outside_allowed()
+    outgoing.set_delivery(False)  # the setting has no effect in production
+    assert outgoing.outside_allowed()
+    for environment in ("development", "test", "qa"):
+        _installation(monkeypatch, environment, deliver=False)
+        assert not outgoing.outside_allowed()
+        outgoing.set_delivery(True)  # an administrator turned delivery on
+        assert outgoing.outside_allowed()
+        outgoing.set_delivery(None)
+        assert not outgoing.outside_allowed()
+
+
+def test_not_knowing_the_installation_holds(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(outgoing, "_READ", {})
+    monkeypatch.delenv("P42_DATABASE_URL", raising=False)
+    monkeypatch.chdir("/")  # no .env to read either
+    outgoing.get_settings.cache_clear()
+    try:
+        assert not outgoing.outside_allowed()
+    finally:
+        outgoing.get_settings.cache_clear()
+
+
+async def test_a_test_installation_holds_changes_and_what_a_module_marks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _installation(monkeypatch, "test", deliver=False)
+    transport = httpx.MockTransport(_ok)
+    async with safe_client(transport=transport, holds="changes") as client:
+        assert (await client.get("https://1.1.1.1/status")).status_code == 200  # reading
+        with pytest.raises(Held, match="test installation"):
+            await client.post("https://1.1.1.1/orders")
+    async with safe_client(transport=transport, holds="everything") as client:
+        with pytest.raises(Held):  # a device switched with GET
+            await client.get("https://1.1.1.1/relay/0?turn=on")
+    async with safe_client(transport=transport, holds="nothing") as client:
+        assert (await client.post("https://1.1.1.1/0/private/Balance")).status_code == 200
+    _installation(monkeypatch, "production", deliver=False)
+    async with safe_client(transport=transport, holds="everything") as client:
+        assert (await client.post("https://1.1.1.1/orders")).status_code == 200

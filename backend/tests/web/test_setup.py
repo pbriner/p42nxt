@@ -93,7 +93,13 @@ async def test_the_installer_is_open_once_and_only_with_its_code(fresh: Settings
         after = (await client.get("/api/v1/installation")).json()
         closed = await client.get("/api/v1/setup/modules")
         closed_settings = await client.get("/api/v1/setup/settings")
-    assert before == {"name": "P42cloud", "language": "en", "setup_open": True}
+    assert before == {
+        "name": "P42cloud",
+        "language": "en",
+        "setup_open": True,
+        "test_installation": True,
+        "held": True,  # a test installation holds what goes outside unless turned on
+    }
     assert any(m["id"] == "sys" and m["required"] for m in modules)
     assert (wrong.status_code, wrong.json()["code"]) == (403, "wrong_setup_code")
     assert unconfirmed.json()["code"] == "confirm"
@@ -101,7 +107,13 @@ async def test_the_installer_is_open_once_and_only_with_its_code(fresh: Settings
     assert done.json() == {"stage": "enroll"}  # signed in up to setting up the second factor
     assert "p42_session" in done.headers["set-cookie"]
     assert (again.status_code, again.json()["code"]) == (409, "set_up")
-    assert after == {"name": "Acme", "language": "de", "setup_open": False}
+    assert after == {
+        "name": "Acme",
+        "language": "de",
+        "setup_open": False,
+        "test_installation": True,
+        "held": True,
+    }
     assert closed.status_code == 409
     assert machine == {"backup_folder": "", "release_address": ""}
     assert [e["field"] for e in temporary.json()["errors"]] == ["backup_folder", "release_address"]

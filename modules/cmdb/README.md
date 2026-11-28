@@ -6,7 +6,8 @@ Version: 0.1.0 · Last updated: 2026-11-26
 
 The configuration items (CIs) a company runs, from a rack to a container, their relations and
 maps of what needs what; devices found by UniFi and Proxmox reviewed before they're added;
-Shelly devices read and switched; certificates warned of; the installation registering itself.
+Shelly devices read and switched (switching is held on a test installation); certificates warned of; the
+installation registering itself.
 
 ## Depends on
 

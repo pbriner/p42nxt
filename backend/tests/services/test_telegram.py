@@ -297,3 +297,24 @@ async def test_upgrades_keep_the_channels_an_administrator_chose(
     later = await upgrade(NotificationKind("a", "A"), NotificationKind("b", "B"))
     assert first == {"zz.a": [], "zz.b": ["telegram"]}
     assert later == {"zz.a": ["telegram"], "zz.b": []}  # kept; followed the module
+
+
+async def test_a_test_installation_holds_messages_but_notifies_in_the_app(
+    engine: AsyncEngine, fake: FakeTelegram, silent: None
+) -> None:
+    pat = await _person(engine, "Pat")
+    await _drain(engine)
+    await _link(engine, fake, pat, chat=777)
+    before = len(fake.sent)
+    async with acting(engine, None) as records:
+        await send(records.conn, URGENT, "Your order went through", people=[pat])
+    assert await _drain(engine) == ["held"]
+    assert len(fake.sent) == before  # nothing reached Telegram
+    async with acting(engine, pat) as records:
+        shown = await records.list("sys.notification")
+    async with acting(engine, None) as records:  # what administrators see in the deliveries
+        held = await records.list(
+            "sys.notification_delivery", where={"field": "person", "op": "eq", "value": str(pat)}
+        )
+    assert any(n.values["title"] == "Your order went through" for n in shown.records)
+    assert {d.values["state"] for d in held.records} == {"held"}

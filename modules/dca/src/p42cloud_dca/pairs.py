@@ -100,7 +100,7 @@ async def _offered(client: Client) -> list[dict[str, Any]] | None:
         tried.add(who)
         try:
             async with client.connection(
-                KRAKEN_TYPE, owner=who[0], connection=who[1] or None
+                KRAKEN_TYPE, owner=who[0], connection=who[1] or None, acting=False
             ) as http:
                 return await kraken.pairs(http)
         except Problem, KrakenError, httpx.HTTPError:
