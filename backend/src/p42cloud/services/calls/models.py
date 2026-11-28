@@ -47,6 +47,7 @@ STATES = {
     "answered": "Answered",
     "done": "Done",
     "failed": "Failed",
+    "held": "Held",
 }
 
 OUTSIDE_CALL = Table(
@@ -76,6 +77,7 @@ OUTSIDE_CALL = Table(
                 "failed": "error",
                 "unknown": "tertiary",
                 "sending": "tertiary",
+                "held": "muted",
             },
         ),
         "attempts": Integer("Attempts", required=True, default=0),

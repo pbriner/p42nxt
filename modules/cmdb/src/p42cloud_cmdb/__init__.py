@@ -472,7 +472,7 @@ module = Module(
     name="CMDB",
     publisher="p42",
     version=package_version("p42cloud-cmdb"),
-    depends_on={"sys": ">=0.52.1,<1", "places": ">=0.1,<1", "partners": ">=0.1,<1"},
+    depends_on={"sys": ">=0.54,<1", "places": ">=0.1,<1", "partners": ">=0.1,<1"},
     tables=TABLES,
     roles=(READER, EDITOR, OPERATOR, MANAGER),
     hooks=(

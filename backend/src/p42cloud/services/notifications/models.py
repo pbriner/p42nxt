@@ -122,10 +122,10 @@ DELIVERY = Table(
         "channel": Choice("Channel", CHANNELS, required=True),
         "state": Choice(
             "State",
-            {"pending": "Waiting", "sent": "Sent", "failed": "Failed"},
+            {"pending": "Waiting", "sent": "Sent", "failed": "Failed", "held": "Held"},
             required=True,
             default="pending",
-            tones={"sent": "primary", "failed": "error"},
+            tones={"sent": "primary", "failed": "error", "held": "muted"},
         ),
         "attempts": Integer("Attempts", required=True, default=0),
         "not_before": DateTime("Not before"),

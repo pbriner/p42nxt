@@ -18,6 +18,7 @@ from p42cloud.data import settings
 from p42cloud.kernel.context import EVERYTHING, Context, working_as
 from p42cloud.kernel.db import transaction
 from p42cloud.kernel.errors import Problem
+from p42cloud.kernel.outgoing import outside_allowed
 from p42cloud.modules.setup import Setup, is_open, machine_settings, optional_modules, set_up
 from p42cloud.security.sign_in.events import event, failures
 from p42cloud.web.caller import address, check_origin
@@ -56,7 +57,8 @@ def _services(request: Request) -> Services:
 @router.get("/installation")
 @requires(PUBLIC)
 async def installation(request: Request) -> dict[str, Any]:
-    """The installation's name and language, and whether the web installer is still open."""
+    """The installation's name and language, whether the web installer is still open, and
+    whether it's a test installation and holds what goes outside (silent mode)."""
     services = _services(request)
     with working_as(Context(channel="ui", access=EVERYTHING)):
         async with transaction(services.engine, "sys") as conn:
@@ -66,6 +68,8 @@ async def installation(request: Request) -> dict[str, Any]:
         "name": name,
         "language": language,
         "setup_open": bool(services.settings.setup_code) and await is_open(services.engine),
+        "test_installation": services.settings.environment != "production",
+        "held": not outside_allowed(),
     }
 
 

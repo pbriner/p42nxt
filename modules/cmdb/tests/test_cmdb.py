@@ -8,12 +8,14 @@ from contextlib import AbstractAsyncContextManager
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import httpx
 import pytest
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
-from p42cloud.sdk import Client, Problem
+from p42cloud.sdk import ActionRun, Client, Problem
+from p42cloud.sdk.testing import StandIn
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from p42cloud_cmdb import repair_reviews
@@ -21,6 +23,7 @@ from p42cloud_cmdb.discovery import (  # pyright: ignore[reportPrivateUsage]
     _changed_state,  # pyright: ignore[reportPrivateUsage]
     _shelly_state,  # pyright: ignore[reportPrivateUsage]
     observe,
+    switch_on,
 )
 from p42cloud_cmdb.index import graph
 from p42cloud_cmdb.network import path
@@ -405,3 +408,38 @@ async def test_a_scans_finds_are_one_task_closed_once_reviewed(
     async with as_system() as client:
         closed = await client.get("tasks.task", task["sys_id"])
     assert closed["state"] not in ("new", "in_progress", "waiting")
+
+
+async def test_switching_a_plug_is_held_on_a_test_installation(
+    as_system: Acting, stand_in: StandIn, silent: None
+) -> None:
+    reached: list[str] = []
+
+    def plug_answers(request: httpx.Request) -> httpx.Response:
+        reached.append(str(request.url))
+        return httpx.Response(200, json={"was_on": False})
+
+    stand_in("cmdb.shelly", plug_answers)
+    async with as_system() as client:
+        there = await client.list(
+            "sys.connection", where={"field": "type", "op": "eq", "value": "cmdb.shelly"}
+        )
+        if not there["records"]:
+            await client.create(
+                "sys.connection",
+                {"type": "cmdb.shelly", "label": "Plugs", "local_ranges": ["192.168.1.0/24"]},
+            )
+        plug = await client.create(
+            "cmdb.shelly_device", {"name": f"plug {_tag()}", "address": "192.168.1.42"}
+        )
+        run = ActionRun(
+            client._records,  # pyright: ignore[reportPrivateUsage]  (as the action route does)
+            "cmdb.shelly_device",
+            plug["sys_id"],
+            plug,
+            {},
+        )
+        with pytest.raises(Problem) as held:
+            await switch_on(run)
+    assert held.value.code == "held" and "test installation" in held.value.title
+    assert reached == []  # the plug was never asked, though switching is a GET

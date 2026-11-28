@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from p42cloud.data import installation
 from p42cloud.data.settings import Setting, write
 from p42cloud.data.types import Invalid
+from p42cloud.kernel import outgoing
 from p42cloud.kernel.config import Settings, get_settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine, owner_transaction
@@ -116,5 +117,23 @@ async def test_processes_read_the_settings_while_running(
         assert installation.public_url(upgraded) == upgraded.public_url
     finally:
         await _set(owner, "sys.session_idle_minutes", "30")
+        await installation.refresh(app)
+        await app.dispose()
+
+
+async def test_turning_delivery_off_holds_within_the_next_read(
+    owner: AsyncEngine, upgraded: Settings
+) -> None:
+    """Tests deliver (their environment says so); an administrator's setting wins once read."""
+    app = create_engine(upgraded.database_url)
+    try:
+        await _set(owner, "sys.deliver_outside", "false")
+        await installation.refresh(app)
+        assert not outgoing.outside_allowed()
+        await _set(owner, "sys.deliver_outside", "true")
+        await installation.refresh(app)
+        assert outgoing.outside_allowed()
+    finally:
+        await _set(owner, "sys.deliver_outside", "true")
         await installation.refresh(app)
         await app.dispose()

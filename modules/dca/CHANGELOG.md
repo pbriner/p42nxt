@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.2
+
+- On a test installation, plans still read prices and balances from Kraken, but real orders are
+  held and end as failed with the reason. Needs core 0.54.
+
 ## 0.9.1
 
 - Tokenized stocks now show up under **Pairs**. Kraken lists them apart from the coins, and

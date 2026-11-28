@@ -6,12 +6,13 @@ elsewhere if needed.
 
 import os
 import uuid
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 
 import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
+from p42cloud.kernel import outgoing
 from p42cloud.kernel.config import Settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import create_engine
@@ -40,11 +41,14 @@ async def database() -> AsyncIterator[str]:
 
 @pytest.fixture(scope="session")
 def settings(database: str) -> Settings:
-    return Settings(
+    made = Settings(
         environment="test",
+        deliver_outside=True,  # tests reach their stand-ins; silent mode has its own
         database_url=f"postgresql+asyncpg://p42_app:p42-app-dev-only@{HOST}/{database}",
         owner_database_url=f"postgresql+asyncpg://p42_owner:p42-owner-dev-only@{HOST}/{database}",
     )
+    outgoing.configure(made)  # what the app and the worker do when they start
+    return made
 
 
 @pytest.fixture(scope="session")
@@ -119,3 +123,20 @@ async def new_module(
             await conn.execute(text(f'DROP OWNED BY "{role}"'))
             await conn.execute(text(f'DROP ROLE "{role}"'))
     await admin.dispose()
+
+
+@pytest.fixture
+def silent(settings: Settings) -> Iterator[None]:
+    """A test installation as it starts: delivery outside off (the tests' own is on)."""
+    outgoing.set_delivery(False)
+    yield
+    outgoing.set_delivery(None)
+
+
+@pytest.fixture(autouse=True)
+def _delivery_as_it_was() -> Iterator[None]:
+    """An app started in a test reads its own settings; the next test gets the session's back."""
+    kept = dict(outgoing._READ)  # pyright: ignore[reportPrivateUsage]
+    yield
+    outgoing._READ.clear()  # pyright: ignore[reportPrivateUsage]
+    outgoing._READ.update(kept)  # pyright: ignore[reportPrivateUsage]

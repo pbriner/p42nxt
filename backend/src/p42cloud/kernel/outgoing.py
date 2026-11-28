@@ -24,8 +24,11 @@ import re
 import socket
 import ssl
 from collections.abc import Iterable
+from typing import Literal
 
 import httpx
+
+from p42cloud.kernel.config import Settings, get_settings
 
 TIMEOUT = httpx.Timeout(15.0, connect=5.0)
 
@@ -35,6 +38,49 @@ class Refused(httpx.HTTPError):
 
     def __init__(self, message: str) -> None:
         super().__init__(message)
+
+
+class Held(Refused):
+    """A change in an outside system that a test installation doesn't make (silent mode)."""
+
+
+HELD = "Held: this is a test installation, so nothing that changes things outside is sent."
+READING = frozenset({"GET", "HEAD", "OPTIONS"})
+# What a client holds on a test installation: nothing (the platform's own reading, sign-in),
+# changes (anything but reading: a connection's default), or everything (a module said so).
+type Holds = Literal["nothing", "changes", "everything"]
+
+# What this process was started with (production, the environment's delivery) and the setting
+# "Deliver outside" as it last read it.
+_READ: dict[str, bool] = {}
+
+
+def configure(settings: Settings) -> None:
+    """The process's own settings, given when it starts (the app, the worker, tests)."""
+    _READ["production"] = settings.environment == "production"
+    _READ["started"] = settings.deliver_outside
+
+
+def set_delivery(on: bool | None) -> None:
+    """The setting's value, given by whoever reads settings (every 30 seconds); None: unread,
+    the environment's counts."""
+    if on is None:
+        _READ.pop("deliver", None)
+    else:
+        _READ["deliver"] = on
+
+
+def outside_allowed() -> bool:
+    """Whether messages and changes reach the outside: always in production; elsewhere only
+    when an administrator turned delivery on. Unknown: held (fail closed)."""
+    if "production" not in _READ:
+        try:
+            configure(get_settings())
+        except ValueError:
+            return False
+    if _READ["production"]:
+        return True
+    return _READ.get("deliver", _READ["started"])
 
 
 def _inside(address: str) -> bool:
@@ -180,13 +226,20 @@ class _Guard(httpx.AsyncBaseTransport):
         inner: httpx.AsyncBaseTransport,
         allowed: tuple[str, ...] | None,
         local: tuple[str, ...] | None = None,
+        holds: Holds = "nothing",
     ) -> None:
         self._inner = inner
         self._allowed = allowed
         self._local = local
+        self._holds = holds
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         url = request.url
+        acts = self._holds == "everything" or (
+            self._holds == "changes" and request.method not in READING
+        )
+        if acts and not outside_allowed():
+            raise Held(HELD)
         if self._local is not None:
             # Only the ranges named on the connection, by address, and nothing outside them.
             if url.scheme not in ("http", "https"):
@@ -219,16 +272,19 @@ def safe_client(  # noqa: PLR0913 - the client's options, all by keyword
     transport: httpx.AsyncBaseTransport | None = None,
     local_ranges: Iterable[str] | None = None,
     trusted: str | None = None,
+    holds: Holds = "nothing",
 ) -> httpx.AsyncClient:
     """A client for outside calls; `transport` is for tests (it is still guarded).
     `local_ranges`: a local connection's ranges, the only addresses it then reaches; `trusted`:
-    the one certificate (PEM) such a device has made itself, trusted instead of any authority."""
+    the one certificate (PEM) such a device has made itself, trusted instead of any authority;
+    `holds`: what a test installation keeps from being sent (`Held`)."""
     if transport is None and trusted:
         transport = httpx.AsyncHTTPTransport(retries=0, verify=pinned_context(trusted))
     guard = _Guard(
         transport or httpx.AsyncHTTPTransport(retries=0),
         tuple(allowed_hosts) if allowed_hosts is not None else None,
         tuple(local_ranges) if local_ranges is not None else None,
+        holds,
     )
     return httpx.AsyncClient(
         transport=guard, base_url=base_url, timeout=timeout, auth=auth, follow_redirects=False

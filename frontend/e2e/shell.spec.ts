@@ -75,3 +75,11 @@ test('signing out ends the session', async ({ page, context }, info) => {
   await page.goto('/');
   await expect(page).toHaveURL(/\/sign-in/);
 });
+
+test('a test installation says on every page that it holds what goes outside', async ({ page }) => {
+  await page.goto('/');
+  const banner = page.getByRole('status').filter({ hasText: 'Test installation' });
+  await expect(banner).toHaveText(/messages and outside calls are held/);
+  await page.goto('/list/sys.person');
+  await expect(banner).toBeVisible();
+});

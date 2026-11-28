@@ -89,6 +89,8 @@ export const EN = {
   'bell.minutes': '{n} min ago',
   'bell.hours': '{n} h ago',
   'bell.failed': "Notifications can't be loaded right now.",
+  'silent.held': 'Test installation: messages and outside calls are held.',
+  'silent.delivered': 'Test installation: messages and outside calls ARE delivered.',
   'stage.qa': 'QA',
   'stage.test': 'Test',
   'stage.development': 'Dev',

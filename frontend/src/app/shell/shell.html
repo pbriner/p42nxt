@@ -64,6 +64,14 @@
         </button>
       </div>
     </header>
+    @if (installation.testInstallation()) {
+      <div class="silent" role="status" [attr.data-held]="installation.held()">
+        <span class="material-symbols-outlined" aria-hidden="true">{{
+          installation.held() ? 'pause_circle' : 'campaign'
+        }}</span>
+        <span>{{ installation.held() ? i18n.t('silent.held') : i18n.t('silent.delivered') }}</span>
+      </div>
+    }
     <app-announcements />
     <main id="content" tabindex="-1">
       <router-outlet />

@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="P42_", env_file=".env", extra="ignore")
 
     environment: Environment = "production"
+    # Outside production, messages and changes in outside systems are held unless this is on
+    # (the setting "Deliver outside" starts with it; production always delivers).
+    deliver_outside: bool = False
     # The app connects with this role. It owns nothing and switches to a module's role for
     # each piece of work (docs/architecture.md, Runtime).
     database_url: str

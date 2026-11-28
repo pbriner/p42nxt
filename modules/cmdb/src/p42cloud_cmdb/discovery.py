@@ -20,6 +20,7 @@ from p42cloud.sdk import (
     Client,
     ConnectionType,
     EventRun,
+    Held,
     JobRun,
     Problem,
 )
@@ -498,10 +499,13 @@ async def _switch(run: ActionRun, on: bool | None) -> ActionResult:
         )
     else:
         path = "/relay/0?turn=" + ("toggle" if on is None else ("on" if on else "off"))
-    async with client.connection("cmdb.shelly") as http:
+    # Switching is a GET, but it changes the device: a test installation holds it.
+    async with client.connection("cmdb.shelly", acting=True) as http:
         try:
             answer = await http.get(f"http://{device_address(d['address'])}{path}", timeout=5)
             answer.raise_for_status()
+        except Held as held:
+            raise Problem(409, "held", f"{d['name']}: {held}") from held
         except httpx.HTTPError as error:
             raise Problem(502, "unreachable", f"{d['name']} doesn't answer.") from error
     words = "toggled" if on is None else ("switched on" if on else "switched off")

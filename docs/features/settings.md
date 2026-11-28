@@ -37,4 +37,5 @@ and tests set `P42_PUBLIC_URL` and the others there).
 | `sys.registry_url` | the image's | **Release address**: where signed releases are published (`releases.md`); a released image brings its repository's, a local build none; empty, the installation never asks. https in production |
 | `sys.requests_per_minute` | `600` | Per person, token or address (10 to 100,000) |
 | `sys.session_idle_minutes`, `sys.session_max_hours` | `30`, `12` | When a session ends: after this long without use (5 to 1440 minutes), and in any case (1 to 720 hours) |
+| `sys.deliver_outside` | the environment's (`false`) | Whether a test installation sends messages, outside calls and changes through connections ([Silent mode](silent-mode.md)); no effect in production |
 | `sys.passwords_off_for` | none | Kinds of person (`employee`, `external`) who may sign in only through a sign-in provider. People with emergency access keep their password |

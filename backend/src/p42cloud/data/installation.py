@@ -20,6 +20,7 @@ from p42cloud.data.types import Invalid
 from p42cloud.kernel.config import Settings, get_settings
 from p42cloud.kernel.context import Context, working_as
 from p42cloud.kernel.db import transaction
+from p42cloud.kernel.outgoing import set_delivery
 
 REFRESH = 30.0  # seconds
 
@@ -122,7 +123,34 @@ SESSION_MAX = Setting(
     help="A session ends after this long in any case.",
     adopt="session_max_hours",
 )
-SETTINGS = (PUBLIC_URL, RELEASE_ADDRESS, REQUESTS_PER_MINUTE, SESSION_IDLE, SESSION_MAX)
+
+
+def _yes_no(given: Any) -> bool:
+    if not isinstance(given, bool):
+        raise Invalid("On or off.")
+    return given
+
+
+DELIVER_OUTSIDE = Setting(
+    "sys.deliver_outside",
+    "Deliver outside on a test installation",
+    False,
+    check=_yes_no,
+    help=(
+        "Off: an installation that isn't production holds messages (Telegram), outside calls"
+        " and changes through connections, and lists them as held. On: they are sent, as in"
+        " production. Production always sends; this has no effect there."
+    ),
+    adopt="deliver_outside",
+)
+SETTINGS = (
+    PUBLIC_URL,
+    RELEASE_ADDRESS,
+    REQUESTS_PER_MINUTE,
+    SESSION_IDLE,
+    SESSION_MAX,
+    DELIVER_OUTSIDE,
+)
 
 # What this process last read: setting name → value.
 _LIVE: dict[str, Any] = {}
@@ -141,6 +169,8 @@ async def refresh(engine: AsyncEngine) -> None:
             values = {str(r.name): r.value for r in found}
     _LIVE.clear()
     _LIVE.update(values)
+    deliver = values.get(DELIVER_OUTSIDE.name)
+    set_delivery(deliver if isinstance(deliver, bool) else None)
 
 
 def _text(setting: Setting, environment: str | None) -> str | None:

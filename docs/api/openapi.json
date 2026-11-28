@@ -474,7 +474,7 @@
   },
   "info": {
     "title": "P42cloud",
-    "version": "0.53.0"
+    "version": "0.54.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1021,7 +1021,7 @@
     },
     "/api/v1/installation": {
       "get": {
-        "description": "The installation's name and language, and whether the web installer is still open.",
+        "description": "The installation's name and language, whether the web installer is still open, and\nwhether it's a test installation and holds what goes outside (silent mode).",
         "operationId": "installation_api_v1_installation_get",
         "responses": {
           "200": {

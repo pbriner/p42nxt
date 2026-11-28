@@ -355,3 +355,22 @@ async def test_a_plan_from_before_gets_its_connection_named_later(
             "dca.plan", plan["sys_id"], {"connection": mine["sys_id"]}, current["_etag"]
         )
     assert named["connection"] == mine["sys_id"]
+
+
+@pytest.mark.usefixtures("silent")
+async def test_a_test_installation_reads_kraken_but_holds_the_order(
+    as_system: Acting,
+    as_person: Acting,
+    run_job: RunJob,
+    deliver_calls: DeliverCalls,
+    kraken: LiveKraken,
+) -> None:
+    await _allow(as_system, True)
+    ivy, plan = await _live_plan(as_system, as_person)  # checking the key only reads
+    await run_job("dca.cycle")  # the price and the balance are read (Kraken reads with POST)
+    (sending,) = await read(as_person, ivy, "dca.order", plan=plan["sys_id"])
+    assert sending["state"] == "submitting"
+    assert "held" in await deliver_calls()  # (with any left by other tests)
+    (order,) = await read(as_person, ivy, "dca.order", plan=plan["sys_id"])
+    assert order["state"] == "failed" and "test installation" in order["error"]
+    assert kraken.orders == {}  # nothing reached Kraken

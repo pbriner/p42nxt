@@ -91,6 +91,8 @@ export const DE: Record<TextKey, string> = {
   'bell.minutes': 'vor {n} Min.',
   'bell.hours': 'vor {n} Std.',
   'bell.failed': 'Benachrichtigungen können gerade nicht geladen werden.',
+  'silent.held': 'Testinstallation: Nachrichten und Aufrufe nach aussen werden zurückgehalten.',
+  'silent.delivered': 'Testinstallation: Nachrichten und Aufrufe nach aussen WERDEN zugestellt.',
   'stage.qa': 'QA',
   'stage.test': 'Test',
   'stage.development': 'Dev',

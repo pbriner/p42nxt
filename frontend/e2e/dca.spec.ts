@@ -14,8 +14,11 @@ test('a DCA plan is made in the form and says when it buys', async ({ page }, in
   await page.getByRole('option', { name: 'BTC / CHF' }).first().click();
   await page.getByRole('spinbutton', { name: 'Amount per buy' }).fill('0.0001');
   await page.getByRole('button', { name: 'Create' }).click();
+  // Exact: the field itself, not the summary that may also say it ("Last said: …").
   await expect(
-    page.getByText('The next buy is planned at the next check (within 5 minutes).'),
+    page.getByText('The next buy is planned at the next check (within 5 minutes).', {
+      exact: true,
+    }),
   ).toBeVisible();
   await noSidewaysScroll(page);
 

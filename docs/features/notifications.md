@@ -75,6 +75,8 @@ administrators may change them (Automation → Notification kinds), and an upgra
 channels nobody changed. A person's own choice is a record of `sys.notification_subscription`
 (personal), set with the switches in the profile; without one, the kind's default applies.
 
+**On a test installation** messages are held, not sent ([Silent mode](silent-mode.md)).
+
 **What's sent.** The severity, the title and, if the app has a public address
 (the setting `sys.public_url`), the link. The message only with **Send the whole message** (off by default:
 details such as amounts stay in the app, since Telegram is a third party). Plain text only.
